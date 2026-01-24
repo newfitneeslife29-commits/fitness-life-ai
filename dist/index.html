@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Fitness Life AI</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Theme Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ea580c", // Darker Orange (Orange 600)
+                        "primary-dark": "#c2410c", // Orange 700
+                        "primary-light": "#ffedd5", // Orange 100
+                        "accent": "#3b82f6", // Blue for contrast
+                        "background-light": "#ffffff",
+                        "background-dark": "#121518", 
+                        "surface-light": "#f3f4f6",
+                        "surface-dark": "#1c2126",
+                        "surface-raised-light": "#ffffff",
+                        "surface-raised-dark": "#2b303b",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem", "full": "9999px"},
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slight': 'bounce-slight 0.3s ease-in-out',
+                    },
+                    keyframes: {
+                        'bounce-slight': {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.05)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+        }
+        .material-symbols-outlined.filled {
+             font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #374151; }
+        
+        body {
+            background-color: #ffffff;
+        }
+        .dark body {
+            background-color: #121518;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+        "clsx": "https://esm.sh/clsx@^2.1.1",
+        "canvas-confetti": "https://esm.sh/canvas-confetti@^1.9.3"
+      }
+    }
+    </script>
+  <script type="module" crossorigin src="/assets/index-CGwLqdCO.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-tn0RQdqM.css">
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased selection:bg-primary selection:text-white overflow-hidden transition-colors duration-300">
+    <div id="root"></div>
+</body>
+</html>
