@@ -30,6 +30,7 @@ const StatsPanel: React.FC<Props> = ({ stats, sessionSeconds, text, onReset }) =
 
   return (
     <section className="rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/5 p-4 sm:p-6 flex flex-col gap-4">
+      <h2 className="text-lg font-black text-slate-900 dark:text-white">{text.stats}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {tiles.map(([label, value]) => (
           <div key={label} className="rounded-xl bg-surface-light dark:bg-white/5 p-3">

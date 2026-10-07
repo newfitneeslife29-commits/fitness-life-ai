@@ -10,27 +10,13 @@ import CreditBar from './CreditBar';
 import Hand from './Hand';
 import { getTexts } from './i18n';
 import PayTable from './PayTable';
+import SettingsMenu from './SettingsMenu';
 import { playSound, SoundName } from './sound';
 import StatsPanel from './StatsPanel';
 
 const FLIP_DELAY_MS = 120;
 const FLIP_STAGGER_MS = 80;
 const BIG_WINS: HandRank[] = ['ROYAL_FLUSH', 'STRAIGHT_FLUSH', 'FOUR_OF_A_KIND'];
-
-const Toggle: React.FC<{ icon: string; label: string; on: boolean; onClick: () => void }> = ({ icon, label, on, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={on}
-    title={label}
-    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
-      on ? 'bg-primary text-white' : 'bg-surface-light dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
-    }`}
-  >
-    <span className="material-symbols-outlined text-lg">{icon}</span>
-    <span className="hidden sm:inline">{label}</span>
-  </button>
-);
 
 const VideoPoker: React.FC = () => {
   const { language } = useUser();
@@ -133,6 +119,10 @@ const VideoPoker: React.FC = () => {
   // Atajos de teclado: 1–5 retener, Espacio/Enter repartir/cambiar, B apostar 1, M apuesta máx.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (showStats) {
+        if (e.key === 'Escape') setShowStats(false);
+        return;
+      }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement;
       if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -148,7 +138,7 @@ const VideoPoker: React.FC = () => {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [toggleHold, main, betOne, betMax]);
+  }, [toggleHold, main, betOne, betMax, showStats]);
 
   let status = '';
   if (!animating) {
@@ -160,86 +150,150 @@ const VideoPoker: React.FC = () => {
   }
   const showWin = state.phase === 'RESULT' && !animating;
 
+  const glow = { textShadow: '0 0 10px rgba(253,224,71,.7)' };
+
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 md:p-8 flex flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined text-white text-2xl">playing_cards</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">{text.title}</h1>
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">{text.subtitle}</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Toggle icon={muted ? 'volume_off' : 'volume_up'} label={text.sound} on={!muted} onClick={() => setMuted((m) => !m)} />
-          <Toggle icon="palette" label={text.fourColor} on={fourColor} onClick={() => setFourColor((v) => !v)} />
-          <Toggle icon="lightbulb" label={text.hints} on={showHints} onClick={() => setShowHints((v) => !v)} />
-          <Toggle icon="bar_chart" label={text.stats} on={showStats} onClick={() => setShowStats((v) => !v)} />
-        </div>
-      </header>
-
-      <div className="rounded-3xl bg-gradient-to-b from-blue-900 to-blue-950 p-3 sm:p-6 shadow-2xl ring-1 ring-black/20 flex flex-col gap-4 sm:gap-5">
-        <PayTable bet={state.bet} winning={showWin && state.lastWin > 0 ? state.result : null} text={text} />
-
-        <p
-          className="min-h-[1.5rem] text-center text-sm sm:text-lg font-black uppercase tracking-wide text-yellow-300"
-          aria-live="polite"
-          role="status"
-        >
-          {status}
-        </p>
-
-        <Hand
-          hand={shown}
-          faceUp={faceUp}
-          held={state.held}
-          hints={hints}
-          canHold={canHold}
-          fourColor={fourColor}
-          text={text}
-          onToggle={toggleHold}
-        />
-
-        <CreditBar win={showWin ? state.lastWin : 0} bet={state.bet} credits={state.credits} text={text} />
-
-        {!canDeal && state.phase !== 'DEALT' ? (
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ADD_CREDITS', amount: STARTING_CREDITS })}
-            className="w-full py-3 rounded-xl font-black uppercase tracking-wide bg-primary text-white hover:bg-primary-dark shadow-lg"
+    <div className="w-full max-w-3xl mx-auto px-3 py-4 sm:p-8 flex flex-col gap-3">
+      {/* Mueble de la máquina: marco cromado */}
+      <div
+        className="rounded-[26px] p-[6px] sm:p-2 shadow-[0_25px_60px_rgba(0,0,0,.55)]"
+        style={{ background: 'linear-gradient(160deg, #f4f4f5 0%, #a1a1aa 25%, #52525b 50%, #d4d4d8 75%, #3f3f46 100%)' }}
+      >
+        <div className="rounded-[20px] bg-gradient-to-b from-zinc-800 via-zinc-900 to-black p-2.5 sm:p-5 flex flex-col gap-3 sm:gap-4">
+          {/* Marquesina */}
+          <div
+            className="relative z-10 rounded-xl px-4 py-2.5 sm:py-3 flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(180deg, #7f1d1d 0%, #b91c1c 45%, #7f1d1d 100%)',
+              boxShadow: 'inset 0 0 0 2px #fbbf24, inset 0 0 0 5px #7f1d1d, inset 0 0 0 6px #fde68a88, 0 0 20px rgba(220,38,38,.35)',
+            }}
           >
-            {text.reload}
-          </button>
-        ) : (
-          <Controls
-            phase={state.phase}
-            busy={animating}
-            canDeal={canDeal}
-            text={text}
-            onBetOne={betOne}
-            onBetMax={betMax}
-            onMain={main}
-          />
-        )}
+            <div
+              aria-hidden="true"
+              className="absolute inset-[3px] rounded-[10px] pointer-events-none animate-pulse"
+              style={{ backgroundImage: 'radial-gradient(circle, #fde68a 0 1.6px, transparent 2px)', backgroundSize: '12px 12px', opacity: 0.18 }}
+            />
+            <div className="relative text-center leading-none">
+              <h1
+                className="text-xl sm:text-3xl font-black italic uppercase tracking-wider text-yellow-300"
+                style={{ textShadow: '0 2px 0 #7c2d12, 0 0 14px rgba(253,224,71,.6)' }}
+              >
+                {text.title}
+              </h1>
+              <p className="mt-1 text-[9px] sm:text-xs font-bold uppercase tracking-[.3em] text-yellow-100/90">{text.subtitle}</p>
+            </div>
+            <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2">
+              <SettingsMenu
+                text={text}
+                options={[
+                  { icon: muted ? 'volume_off' : 'volume_up', label: text.sound, on: !muted, onClick: () => setMuted((m) => !m) },
+                  { icon: 'lightbulb', label: text.hints, on: showHints, onClick: () => setShowHints((v) => !v) },
+                  { icon: 'palette', label: text.fourColor, on: fourColor, onClick: () => setFourColor((v) => !v) },
+                  { icon: 'bar_chart', label: text.stats, onClick: () => setShowStats(true) },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Pantalla */}
+          <div
+            className="relative rounded-xl p-2 sm:p-4 flex flex-col gap-3 sm:gap-4 overflow-hidden"
+            style={{
+              background: 'radial-gradient(ellipse at 50% 35%, #1638c9 0%, #0b1f8f 55%, #050f4d 100%)',
+              boxShadow: 'inset 0 0 0 3px #000, inset 0 0 40px rgba(0,0,0,.65), 0 0 0 1px #52525b',
+            }}
+          >
+            <PayTable bet={state.bet} winning={showWin && state.lastWin > 0 ? state.result : null} text={text} />
+
+            <p
+              className="min-h-[1.4rem] text-center text-sm sm:text-xl font-black uppercase tracking-wide text-yellow-300"
+              style={glow}
+              aria-live="polite"
+              role="status"
+            >
+              {status}
+            </p>
+
+            <Hand
+              hand={shown}
+              faceUp={faceUp}
+              held={state.held}
+              hints={hints}
+              canHold={canHold}
+              fourColor={fourColor}
+              text={text}
+              onToggle={toggleHold}
+            />
+
+            <CreditBar win={showWin ? state.lastWin : 0} bet={state.bet} credits={state.credits} text={text} />
+
+            {/* Reflejo del cristal y líneas de barrido */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(155deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 35%), repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px)',
+              }}
+            />
+          </div>
+
+          {/* Consola de botones */}
+          <div className="rounded-xl bg-gradient-to-b from-zinc-700 to-zinc-900 p-2.5 sm:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.15)]">
+            {!canDeal && state.phase !== 'DEALT' ? (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'ADD_CREDITS', amount: STARTING_CREDITS })}
+                className="w-full py-3 sm:py-4 rounded-lg font-black uppercase tracking-wider text-sm text-white border-b-[5px] border-red-950 bg-gradient-to-b from-orange-300 via-red-500 to-red-700 active:border-b-[1px] active:translate-y-[4px]"
+              >
+                {text.reload}
+              </button>
+            ) : (
+              <Controls
+                phase={state.phase}
+                busy={animating}
+                canDeal={canDeal}
+                text={text}
+                onBetOne={betOne}
+                onBetMax={betMax}
+                onMain={main}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
-      <p className="hidden sm:block text-center text-xs text-slate-500 dark:text-slate-400">{text.shortcuts}</p>
+      <p className="text-center text-[11px] text-slate-500 dark:text-slate-400">{text.disclaimer}</p>
 
       {showStats && (
-        <StatsPanel
-          stats={state.stats}
-          sessionSeconds={Math.floor((now - sessionStart) / 1000)}
-          text={text}
-          onReset={() => dispatch({ type: 'RESET_STATS' })}
-        />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowStats(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={text.stats}
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowStats(false)}
+              aria-label={text.close}
+              className="absolute right-3 top-3 z-10 p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <StatsPanel
+              stats={state.stats}
+              sessionSeconds={Math.floor((now - sessionStart) / 1000)}
+              text={text}
+              onReset={() => dispatch({ type: 'RESET_STATS' })}
+            />
+          </div>
+        </div>
       )}
-
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
-        <span className="material-symbols-outlined text-base">info</span>
-        {text.disclaimer}
-      </p>
     </div>
   );
 };
