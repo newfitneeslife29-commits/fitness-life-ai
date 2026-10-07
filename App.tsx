@@ -8,6 +8,7 @@ import Community from './components/Community';
 import AICoach from './components/AICoach';
 import Nutrition from './components/Nutrition';
 import Achievements from './components/Achievements';
+import Progress from './components/Progress';
 import Profile from './components/Profile';
 import Onboarding from './components/Onboarding';
 import AboutUs from './components/AboutUs';
@@ -84,6 +85,7 @@ const AppContent: React.FC = () => {
           <Route path="/community" element={<Community />} />
           <Route path="/ai-coach" element={<AICoach />} />
           <Route path="/nutrition" element={<Nutrition />} />
+          <Route path="/progress" element={<Progress />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />

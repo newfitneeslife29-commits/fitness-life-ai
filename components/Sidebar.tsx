@@ -31,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             nutrition: "Nutrition",
             aiCoach: "AI Coach",
             community: "Community",
+            progress: "Progress",
             achievements: "Achievements",
             profile: "Profile",
             settings: "Settings",
@@ -48,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             nutrition: "Nutrición",
             aiCoach: "Entrenador IA",
             community: "Comunidad",
+            progress: "Progreso",
             achievements: "Logros",
             profile: "Perfil",
             settings: "Ajustes",
@@ -140,6 +142,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         >
                             <span className={`material-symbols-outlined ${isActive('/community') ? 'filled' : ''}`}>social_leaderboard</span>
                             <span className="text-sm font-bold">{text.community}</span>
+                        </Link>
+
+                        <Link
+                            to="/progress"
+                            onClick={() => setIsOpen && setIsOpen(false)}
+                            className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${isActive('/progress') ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                        >
+                            <span className={`material-symbols-outlined ${isActive('/progress') ? 'filled' : ''}`}>monitoring</span>
+                            <span className="text-sm font-bold">{text.progress}</span>
                         </Link>
 
                         <Link

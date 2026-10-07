@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { WorkoutRoutine } from '../data/workoutCatalog';
 import confetti from 'canvas-confetti';
+import { useUser } from '../context/UserContext';
+import { finishSession, getLastSets, logSet, SetRecord, startSession } from '../services/workoutService';
+import { displayToKg, kgToDisplay, parseRepRange, sessionVolume, Suggestion, suggestNext } from '../lib/progression';
 
 const ActiveTraining: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const workoutData = location.state?.workout as WorkoutRoutine | undefined;
+    const { user, addXP } = useUser();
+    const unit = user.weight_unit === 'lbs' ? 'lbs' : 'kg';
+    const weightStep = unit === 'lbs' ? 5 : 2.5;
 
     // Default fallback
     const title = workoutData?.title || "Quick Start Workout";
@@ -25,9 +31,38 @@ const ActiveTraining: React.FC = () => {
     const [restTime, setRestTime] = useState(60);
     const [timeLeft, setTimeLeft] = useState(60);
 
+    // Logging state
+    const sessionIdRef = useRef<string | null>(null);
+    const [loggedSets, setLoggedSets] = useState<SetRecord[]>([]);
+    const [lastSets, setLastSets] = useState<Record<string, SetRecord[]>>({});
+
     const currentExercise = exercises[currentExerciseIndex];
+    const lastForCurrent = lastSets[currentExercise.name] || [];
+    const suggestion: Suggestion | null = suggestNext(currentExercise.name, currentExercise.reps, lastForCurrent);
     const totalSets = currentExercise.sets;
     const progress = ((currentExerciseIndex) / exercises.length) * 100;
+
+    // Open a session and load what the user lifted last time for each exercise.
+    useEffect(() => {
+        // StrictMode runs effects twice in development; the ref survives, so
+        // only one session is created.
+        if (sessionIdRef.current) return;
+        sessionIdRef.current = startSession({ id: workoutData?.id, title });
+        getLastSets(exercises.map(e => e.name)).then(setLastSets);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Prefill weight and reps when an exercise starts: the progression
+    // suggestion if there is history, otherwise the bottom of the rep range.
+    useEffect(() => {
+        if (suggestion) {
+            setWeight(kgToDisplay(suggestion.weight_kg, unit));
+            setReps(suggestion.reps);
+        } else {
+            setReps(parseRepRange(currentExercise.reps)?.min ?? 10);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentExerciseIndex, lastSets]);
 
     // Parse Rest Time from string (e.g. "60s" -> 60)
     useEffect(() => {
@@ -50,7 +85,29 @@ const ActiveTraining: React.FC = () => {
         return () => clearInterval(interval);
     }, [isResting, timeLeft]);
 
+    const endWorkout = async (sets: SetRecord[]) => {
+        if (sessionIdRef.current && sets.length > 0) {
+            await finishSession(sessionIdRef.current, sessionVolume(sets));
+            addXP(50 + sets.length * 10);
+            navigate('/progress', { state: { finishedSessionId: sessionIdRef.current } });
+        } else {
+            navigate('/training');
+        }
+    };
+
     const handleCompleteSet = () => {
+        let sets = loggedSets;
+        if (sessionIdRef.current && reps > 0) {
+            const record = logSet(sessionIdRef.current, {
+                exercise_name: currentExercise.name,
+                set_index: currentSet,
+                weight_kg: displayToKg(Math.max(weight, 0), unit),
+                reps,
+            });
+            sets = [...loggedSets, record];
+            setLoggedSets(sets);
+        }
+
         if (currentSet < totalSets) {
             // Next Set
             setCurrentSet(prev => prev + 1);
@@ -66,8 +123,18 @@ const ActiveTraining: React.FC = () => {
             } else {
                 // Workout Complete
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                navigate('/achievements'); // Redirect to achievements or summary
+                endWorkout(sets);
             }
+        }
+    };
+
+    const skipExercise = () => {
+        if (currentExerciseIndex < exercises.length - 1) {
+            setCurrentExerciseIndex(prev => prev + 1);
+            setCurrentSet(1);
+            setIsResting(false);
+        } else {
+            endWorkout(loggedSets);
         }
     };
 
@@ -193,9 +260,9 @@ const ActiveTraining: React.FC = () => {
                             <span className="material-symbols-outlined text-primary text-[20px]">timer</span>
                             <span className="font-mono font-medium text-sm">Active</span>
                         </div>
-                        <Link to="/training" className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors whitespace-nowrap">
+                        <button onClick={() => endWorkout(loggedSets)} className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors whitespace-nowrap">
                             End <span className="hidden sm:inline">Workout</span>
-                        </Link>
+                        </button>
                     </div>
                 </div>
                 {/* Mobile Progress Bar at bottom of header */}
@@ -247,13 +314,13 @@ const ActiveTraining: React.FC = () => {
                         <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-center">
                             <div className="grid grid-cols-2 gap-4 sm:gap-8 max-w-2xl mx-auto w-full">
                                 <div className="flex flex-col gap-2 sm:gap-3 group/input">
-                                    <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Weight (kg)</label>
+                                    <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Weight ({unit})</label>
                                     <div className="relative flex items-center">
-                                        <button onClick={() => setWeight(w => w - 2.5)} className="absolute left-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-l-xl transition-colors">
+                                        <button onClick={() => setWeight(w => Math.max(0, w - weightStep))} className="absolute left-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-l-xl transition-colors">
                                             <span className="material-symbols-outlined">remove</span>
                                         </button>
                                         <input className="w-full bg-gray-100 dark:bg-surface-darker text-center text-3xl sm:text-5xl md:text-6xl font-black text-gray-900 dark:text-white rounded-xl py-4 sm:py-6 focus:ring-2 focus:ring-primary focus:outline-none border-none" type="number" value={weight} readOnly/>
-                                        <button onClick={() => setWeight(w => w + 2.5)} className="absolute right-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-r-xl transition-colors">
+                                        <button onClick={() => setWeight(w => w + weightStep)} className="absolute right-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-r-xl transition-colors">
                                             <span className="material-symbols-outlined">add</span>
                                         </button>
                                     </div>
@@ -261,7 +328,7 @@ const ActiveTraining: React.FC = () => {
                                 <div className="flex flex-col gap-2 sm:gap-3">
                                     <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Reps</label>
                                     <div className="relative flex items-center">
-                                        <button onClick={() => setReps(r => r - 1)} className="absolute left-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-l-xl transition-colors">
+                                        <button onClick={() => setReps(r => Math.max(0, r - 1))} className="absolute left-0 w-10 sm:w-12 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-l-xl transition-colors">
                                             <span className="material-symbols-outlined">remove</span>
                                         </button>
                                         <input className="w-full bg-gray-100 dark:bg-surface-darker text-center text-3xl sm:text-5xl md:text-6xl font-black text-gray-900 dark:text-white rounded-xl py-4 sm:py-6 focus:ring-2 focus:ring-primary focus:outline-none border-none" type="number" value={reps} readOnly/>
@@ -271,6 +338,14 @@ const ActiveTraining: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                            {lastForCurrent.length > 0 && (
+                                <p className="mt-4 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                    Last time: {lastForCurrent.filter(s => !s.is_warmup).map(s => `${kgToDisplay(s.weight_kg, unit)}×${s.reps}`).join(' · ')}
+                                    {suggestion?.increased && (
+                                        <span className="ml-2 font-bold text-primary">+{kgToDisplay(suggestion.weight_kg, unit) - kgToDisplay(Math.max(...lastForCurrent.map(s => s.weight_kg)), unit)} {unit} today</span>
+                                    )}
+                                </p>
+                            )}
                         </div>
 
                         <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-gray-800/50 flex justify-between items-center bg-gray-50 dark:bg-surface-darker/30 gap-2">
@@ -287,7 +362,7 @@ const ActiveTraining: React.FC = () => {
                                     {currentSet >= totalSets && currentExerciseIndex === exercises.length - 1 ? 'Finish' : `Complete Set ${currentSet}`}
                                 </span>
                             </button>
-                            <button className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg hover:bg-white/5">
+                            <button onClick={skipExercise} className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg hover:bg-white/5">
                                 <span className="material-symbols-outlined text-[18px]">skip_next</span>
                                 <span className="hidden sm:inline">Skip</span>
                             </button>
