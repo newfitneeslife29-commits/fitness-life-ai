@@ -1,0 +1,21 @@
+{
+  "name": "cloudhash",
+  "version": "1.0.0",
+  "description": "CloudHash: plataforma de minería de Bitcoin en la nube con pagos Stripe",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
+    "test": "NODE_ENV=test DB_FILE=:memory: OFFLINE_NETWORK=1 node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.22.3",
+    "stripe": "^17.7.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "private": true
+}

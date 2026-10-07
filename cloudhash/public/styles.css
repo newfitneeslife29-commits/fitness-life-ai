@@ -1,0 +1,61 @@
+:root {
+  --bg: #0d1117; --panel: #161b22; --line: #30363d; --text: #e6edf3; --muted: #8b949e;
+  --accent: #f7931a; --good: #3fb950; --bad: #f85149; --warn: #d29922;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--accent); }
+.topbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 18px; }
+.logo { color: var(--accent); }
+nav { display: flex; gap: 16px; flex: 1; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a.active { color: var(--text); font-weight: 600; }
+#session { display: flex; gap: 12px; align-items: center; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 48px; }
+h1 { margin: 16px 0 8px; } h2 { margin-top: 32px; font-size: 18px; }
+.lead { color: var(--muted); max-width: 720px; }
+.muted { color: var(--muted); }
+.banner { padding: 10px 24px; background: #1f6feb33; border-bottom: 1px solid var(--line); }
+.banner.warn { background: #d2992233; }
+.banner.error { background: #f8514933; }
+.network { display: flex; gap: 24px; padding: 8px 24px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.network b { color: var(--text); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.plan h3 { margin: 0; font-size: 20px; }
+.plan .hash { font-size: 28px; font-weight: 700; color: var(--accent); }
+.plan .price { font-size: 22px; font-weight: 600; }
+.plan dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; margin: 12px 0; }
+.plan dt { color: var(--muted); } .plan dd { margin: 0; text-align: right; }
+.qty { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.qty input { width: 70px; }
+.btn { background: var(--accent); color: #111; border: 0; border-radius: 8px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 4px 0; }
+.risk { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); color: var(--muted); font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.stat b { font-size: 19px; word-break: break-all; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tag { padding: 2px 8px; border-radius: 99px; font-size: 12px; background: var(--line); }
+.tag.active, .tag.paid { background: #3fb95033; color: var(--good); }
+.tag.pending { background: #d2992233; color: var(--warn); }
+.tag.rejected, .tag.cancelled { background: #f8514933; color: var(--bad); }
+.form { display: flex; flex-direction: column; gap: 12px; max-width: 460px; }
+.form.inline { flex-direction: row; flex-wrap: wrap; align-items: flex-end; max-width: none; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.form label.check { flex-direction: row; align-items: center; }
+input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 24px; width: min(420px, 92vw); }
+dialog::backdrop { background: #0009; }
+.error { color: var(--bad); min-height: 1em; margin: 0; }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; border-top: 1px solid var(--line); }
+@media (max-width: 600px) { .topbar, main { padding-left: 16px; padding-right: 16px; } }

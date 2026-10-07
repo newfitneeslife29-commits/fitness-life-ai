@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloudHash · Minería en la nube</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">⛏</span> CloudHash</div>
+    <nav id="nav">
+      <a href="#mineros">Mineros</a>
+      <a href="#panel" data-auth>Panel</a>
+      <a href="#retiros" data-auth>Retiros</a>
+      <a href="#admin" data-admin>Admin</a>
+    </nav>
+    <div id="session"></div>
+  </header>
+
+  <div id="demo-banner" class="banner warn" hidden>
+    Modo DEMO: no hay claves de Stripe configuradas, las compras se activan sin cobro real.
+  </div>
+  <div id="flash" class="banner" hidden></div>
+
+  <section id="network" class="network"></section>
+
+  <main>
+    <section data-view="mineros">
+      <h1>Compra hashrate real de Bitcoin</h1>
+      <p class="lead">Cada contrato asigna TH/s de nuestra flota. Lo que esa potencia mina se acredita cada minuto a tu saldo, menos la comisión de mantenimiento.</p>
+      <p class="muted" id="capacity"></p>
+      <div id="plans" class="grid"></div>
+      <p class="risk">
+        <strong>Aviso de riesgo:</strong> la producción depende del precio de Bitcoin y de la dificultad de la red, que cambian a diario.
+        Las estimaciones usan los valores actuales y no son una rentabilidad garantizada. Puedes recuperar menos de lo que pagas.
+      </p>
+    </section>
+
+    <section data-view="panel" hidden>
+      <h1>Tu panel</h1>
+      <div class="stats" id="stats"></div>
+      <h2>Contratos</h2>
+      <div class="table-wrap"><table id="contracts"></table></div>
+      <h2>Recompensas por día</h2>
+      <div class="table-wrap"><table id="rewards"></table></div>
+      <h2>Pedidos</h2>
+      <div class="table-wrap"><table id="orders"></table></div>
+    </section>
+
+    <section data-view="retiros" hidden>
+      <h1>Retiros</h1>
+      <form id="withdraw-form" class="card form">
+        <p id="withdraw-info" class="muted"></p>
+        <label>Dirección Bitcoin <input name="address" required placeholder="bc1q…" autocomplete="off"></label>
+        <label>Cantidad (BTC) <input name="amountBtc" type="number" step="0.00000001" min="0" required></label>
+        <button class="btn">Solicitar retiro</button>
+      </form>
+      <h2>Historial</h2>
+      <div class="table-wrap"><table id="withdrawals"></table></div>
+    </section>
+
+    <section data-view="admin" hidden>
+      <h1>Administración</h1>
+      <div class="stats" id="admin-stats"></div>
+      <h2>Ajustes</h2>
+      <form id="settings-form" class="card form inline">
+        <label>Capacidad real (TH/s) <input name="capacity_th" type="number" step="any" min="0"></label>
+        <label>Mantenimiento (USD/TH/día) <input name="maintenance_usd_per_th_day" type="number" step="any" min="0"></label>
+        <label>Comisión de retiro (BTC) <input name="withdraw_fee_btc" type="number" step="any" min="0"></label>
+        <label>Retiro mínimo (BTC) <input name="min_withdraw_btc" type="number" step="any" min="0"></label>
+        <button class="btn">Guardar</button>
+      </form>
+      <h2>Planes</h2>
+      <div class="table-wrap"><table id="admin-plans"></table></div>
+      <form id="plan-form" class="card form inline">
+        <input type="hidden" name="id">
+        <label>Nombre <input name="name" required></label>
+        <label>TH/s <input name="hashrate_th" type="number" step="any" min="0" required></label>
+        <label>Días <input name="duration_days" type="number" min="1" required></label>
+        <label>Precio (USD) <input name="price_usd" type="number" step="0.01" min="0.5" required></label>
+        <label class="check"><input name="active" type="checkbox" checked> Activo</label>
+        <button class="btn">Guardar plan</button>
+        <button type="reset" class="btn ghost">Nuevo</button>
+      </form>
+      <h2>Retiros</h2>
+      <div class="table-wrap"><table id="admin-withdrawals"></table></div>
+    </section>
+  </main>
+
+  <dialog id="auth-dialog">
+    <form id="auth-form" class="form">
+      <h2 id="auth-title">Iniciar sesión</h2>
+      <label>Correo <input name="email" type="email" required autocomplete="email"></label>
+      <label>Contraseña <input name="password" type="password" minlength="8" required></label>
+      <p id="auth-error" class="error"></p>
+      <button class="btn">Continuar</button>
+      <button type="button" class="link" id="auth-toggle">¿No tienes cuenta? Regístrate</button>
+      <button type="button" class="link" onclick="this.closest('dialog').close()">Cerrar</button>
+    </form>
+  </dialog>
+
+  <footer>CloudHash · Los contratos están respaldados por capacidad real declarada · Sin rentabilidad garantizada</footer>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
