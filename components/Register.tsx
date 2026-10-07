@@ -12,6 +12,7 @@ const Register: React.FC = () => {
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [showPremiumModal, setShowPremiumModal] = useState(false);
+    const [newUserId, setNewUserId] = useState<string | null>(null);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,6 +36,8 @@ const Register: React.FC = () => {
                 }
                 throw error;
             }
+
+            setNewUserId(data?.user?.id ?? null);
 
             if (data?.user && !data.session) {
                 setSuccessMessage("Registration successful! Please check your email to confirm your account.");
@@ -199,7 +202,9 @@ const Register: React.FC = () => {
             <PremiumModal
                 isOpen={showPremiumModal}
                 onClose={handleSkipPremium}
-                paymentUrl="https://buy.stripe.com/test_5kQ6oJ2Q51SK8FxgmB77O01"
+                paymentUrl={import.meta.env.VITE_STRIPE_PAYMENT_LINK || "https://buy.stripe.com/test_5kQ6oJ2Q51SK8FxgmB77O01"}
+                userId={newUserId}
+                email={email}
             />
         </div >
     );

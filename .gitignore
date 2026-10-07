@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build output (never commit: it embeds env values)
+dist
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Supabase local state
+supabase/.temp
+supabase/.branches

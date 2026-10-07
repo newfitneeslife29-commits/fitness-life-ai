@@ -4,29 +4,36 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const Onboarding: React.FC = () => {
-    const { completeOnboarding, updateProfile, saveSubscription } = useUser();
+    const { completeOnboarding, refreshPremium } = useUser();
     const location = useLocation();
     const navigate = useNavigate();
+    const [premiumPending, setPremiumPending] = useState(false);
+    const premiumPollStarted = React.useRef(false);
 
-    // Check for premium success return
+    // Back from Stripe: Premium is activated by the webhook, never by this URL.
+    // Poll the profile for a few seconds until the webhook has run.
     React.useEffect(() => {
         const params = new URLSearchParams(location.search);
-        if (params.get('premium') === 'true') {
-            updateProfile({ is_premium: true });
-            saveSubscription({
-                price_id: 'price_1SsGIDRk8uNqINoTg9QTs2yT', // Test Price ID matched
-                status: 'active'
-            });
-            confetti({
-                particleCount: 150,
-                spread: 100,
-                origin: { y: 0.6 },
-                colors: ['#FFD700', '#F44336', '#2196F3']
-            });
-            // Clean URL
-            navigate('/onboarding', { replace: true });
-        }
-    }, [location, updateProfile, navigate]);
+        if (params.get('premium') !== 'true' || premiumPollStarted.current) return;
+        premiumPollStarted.current = true;
+        navigate('/onboarding', { replace: true });
+        setPremiumPending(true);
+        (async () => {
+            for (let attempt = 0; attempt < 10; attempt++) {
+                if (await refreshPremium()) {
+                    confetti({
+                        particleCount: 150,
+                        spread: 100,
+                        origin: { y: 0.6 },
+                        colors: ['#FFD700', '#F44336', '#2196F3']
+                    });
+                    break;
+                }
+                await new Promise(r => setTimeout(r, 2000));
+            }
+            setPremiumPending(false);
+        })();
+    }, [location.search]);
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -122,6 +129,13 @@ const Onboarding: React.FC = () => {
                     <h1 className="text-2xl font-black text-slate-900 dark:text-white">Welcome to Fitness Life</h1>
                     <span className="text-primary font-bold">Step {step}/3</span>
                 </div>
+
+                {premiumPending && (
+                    <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+                        <span className="material-symbols-outlined text-primary animate-spin">progress_activity</span>
+                        Confirming your Premium payment...
+                    </div>
+                )}
 
                 {step === 1 && (
                     <div className="space-y-4 animate-bounce-slight">

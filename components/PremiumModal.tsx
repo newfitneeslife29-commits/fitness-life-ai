@@ -4,10 +4,18 @@ interface PremiumModalProps {
     isOpen: boolean;
     onClose: () => void;
     paymentUrl: string;
+    // Supabase user id: Stripe sends it back to our webhook as client_reference_id,
+    // which is how the payment is tied to this account.
+    userId?: string | null;
+    email?: string | null;
 }
 
-const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose, paymentUrl }) => {
+const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose, paymentUrl, userId, email }) => {
     if (!isOpen) return null;
+
+    const checkoutUrl = new URL(paymentUrl);
+    if (userId) checkoutUrl.searchParams.set('client_reference_id', userId);
+    if (email) checkoutUrl.searchParams.set('prefilled_email', email);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto">
@@ -51,7 +59,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose, paymentUrl
 
                     <div className="flex flex-col gap-3">
                         <a
-                            href={paymentUrl}
+                            href={checkoutUrl.toString()}
                             className="w-full md:w-auto bg-primary text-black text-center font-black text-lg py-4 px-8 rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-dark hover:scale-[1.02] transition-all transform tracking-wide uppercase"
                         >
                             ¡Empezar Ahora!

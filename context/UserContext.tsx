@@ -49,7 +49,7 @@ interface UserContextType {
     addCustomRoutine: (routine: WorkoutRoutine) => void;
     addXP: (amount: number) => void;
     updateProfile: (data: Partial<UserProfile>) => Promise<void>;
-    saveSubscription: (data: any) => Promise<void>;
+    refreshPremium: () => Promise<boolean>;
     // Nutrition Global State
     dailyLog: FoodItem[];
     addToLog: (item: FoodItem) => void;
@@ -220,7 +220,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data.weight_unit) dbUpdates.weight_unit = data.weight_unit;
             if (data.height_unit) dbUpdates.height_unit = data.height_unit;
             if (data.onboarding_completed !== undefined) dbUpdates.onboarding_completed = data.onboarding_completed;
-            if (data.is_premium !== undefined) dbUpdates.is_premium = data.is_premium;
+            // is_premium is never written from the client: only the Stripe webhook sets it.
 
             const { error } = await supabase.from('profiles').upsert(dbUpdates);
 
@@ -234,20 +234,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const saveSubscription = async (subData: any) => {
+    // Re-read Premium status (set server-side by the Stripe webhook).
+    const refreshPremium = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-            const subscriptionEntry = {
-                id: subData.id || `sub_${new Date().getTime()}`,
-                user_id: session.user.id,
-                status: 'active',
-                created: new Date().toISOString(),
-                price_id: subData.price_id || 'price_default'
-            };
-
-            const { error } = await supabase.from('subscriptions').insert(subscriptionEntry);
-            if (error) console.error("Error saving subscription:", error);
-        }
+        if (!session?.user) return false;
+        const { data } = await supabase
+            .from('profiles')
+            .select('is_premium')
+            .eq('id', session.user.id)
+            .single();
+        const isPremium = data?.is_premium === true;
+        setUser(prev => ({ ...prev, is_premium: isPremium }));
+        return isPremium;
     };
 
     const completeOnboarding = async (data: Partial<UserProfile>) => {
@@ -337,7 +335,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             dailyLog, addToLog, removeFromLog,
             notifications, markAsRead, clearNotifications,
             logout, loading,
-            saveSubscription
+            refreshPremium
         }}>
             {children}
         </UserContext.Provider>
