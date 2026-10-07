@@ -17,6 +17,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import VideoPoker from './components/videopoker/VideoPoker';
 import { UserProvider, useUser } from './context/UserContext';
 
 const AppContent: React.FC = () => {
@@ -88,6 +89,7 @@ const AppContent: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/about" element={<AboutUs />} />
+          <Route path="/games/video-poker" element={<VideoPoker />} />
         </Routes>
       </main>
     </div>

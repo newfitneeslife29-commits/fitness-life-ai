@@ -35,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             profile: "Profile",
             settings: "Settings",
             aboutUs: "About Us",
+            videoPoker: "Video Poker",
             signOut: "Sign Out",
             notifications: "Notifications",
             clearAll: "Clear All",
@@ -52,6 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             profile: "Perfil",
             settings: "Ajustes",
             aboutUs: "Sobre Nosotros",
+            videoPoker: "Video Póker",
             signOut: "Cerrar Sesión",
             notifications: "Notificaciones",
             clearAll: "Borrar Todo",
@@ -149,6 +151,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         >
                             <span className={`material-symbols-outlined ${isActive('/achievements') ? 'filled' : ''}`}>emoji_events</span>
                             <span className="text-sm font-bold">{text.achievements}</span>
+                        </Link>
+
+                        <Link
+                            to="/games/video-poker"
+                            onClick={() => setIsOpen && setIsOpen(false)}
+                            className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${isActive('/games/video-poker') ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                        >
+                            <span className={`material-symbols-outlined ${isActive('/games/video-poker') ? 'filled' : ''}`}>playing_cards</span>
+                            <span className="text-sm font-bold">{text.videoPoker}</span>
                         </Link>
 
                         <Link
