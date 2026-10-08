@@ -5,7 +5,8 @@ name: Deploy backend
 # database migration, stores the function secrets in Supabase and deploys
 # the AI nutrition coach.
 #
-# Secrets:   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY,
+# Secrets:   SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
+#            SUPABASE_DB_PASSWORD (optional fallback for the migration),
 #            REVENUECAT_SECRET_KEY (optional until Premium is set up)
 # Variables: SUPABASE_PROJECT_REF
 on:
@@ -53,7 +54,7 @@ jobs:
           done
           problems=0
           fail() { echo "::error::$1"; problems=1; }
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
             [ -z "${!name}" ] && fail "$name is missing (Settings → Secrets and variables → Actions)."
             value="${!name}"
             [[ "$value" =~ ^[[:space:]] || "$value" =~ [[:space:]]$ ]] && fail "$name has spaces or line breaks at the start or end: paste it again."
@@ -92,8 +93,28 @@ jobs:
           fi
           echo "Anonymous sign-ins are on."
 
+      # Through the Management API with the access token, so the database
+      # password is only a fallback. Migrations must stay idempotent
+      # (create ... if not exists), since they run on every deploy.
       - name: Apply database migrations
-        run: supabase db push
+        run: |
+          body=$(cat supabase/migrations/*.sql | jq -Rs '{query: .}')
+          status=$(curl -sS -o /tmp/query.json -w "%{http_code}" -X POST \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$body")
+          if [ "$status" -lt 300 ]; then
+            echo "Database is up to date."
+            exit 0
+          fi
+          echo "Management API answered HTTP $status: $(cat /tmp/query.json)"
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::error::Could not create the ai_usage table. Give the access token database permissions, or add the SUPABASE_DB_PASSWORD secret."
+            exit 1
+          fi
+          supabase db push || {
+            echo "::error::Database password rejected. Reset it in Supabase (Project Settings → Database → Reset database password) and update the SUPABASE_DB_PASSWORD secret."
+            exit 1
+          }
 
       - name: Store the function secrets
         run: |
