@@ -28,11 +28,7 @@ jobs:
 
       - name: Check that the secrets and variables exist and look right
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           # Values pasted in the wrong tab (Secrets instead of Variables or the reverse).
-          URL_AS_SECRET: ${{ secrets.VITE_SUPABASE_URL != '' }}
-          ANON_AS_SECRET: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}
           REF_AS_SECRET: ${{ secrets.SUPABASE_PROJECT_REF != '' }}
           TOKEN_AS_VARIABLE: ${{ vars.SUPABASE_ACCESS_TOKEN != '' }}
           PASSWORD_AS_VARIABLE: ${{ vars.SUPABASE_DB_PASSWORD != '' }}
@@ -52,12 +48,12 @@ jobs:
             fi
           }
           echo "What each value looks like:"
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
             echo "  $name → $(looks_like "${!name}")"
           done
           problems=0
           fail() { echo "::error::$1"; problems=1; }
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
             [ -z "${!name}" ] && fail "$name is missing (Settings → Secrets and variables → Actions)."
             value="${!name}"
             [[ "$value" =~ ^[[:space:]] || "$value" =~ [[:space:]]$ ]] && fail "$name has spaces or line breaks at the start or end: paste it again."
@@ -65,10 +61,6 @@ jobs:
           [ -n "$SUPABASE_ACCESS_TOKEN" ] && [[ "$SUPABASE_ACCESS_TOKEN" != sbp_* ]] && fail "SUPABASE_ACCESS_TOKEN must start with sbp_ (Supabase → avatar → Account preferences → Access Tokens)."
           [ -n "$ANTHROPIC_API_KEY" ] && [[ "$ANTHROPIC_API_KEY" != sk-ant-* ]] && fail "ANTHROPIC_API_KEY must start with sk-ant- (console.anthropic.com → API keys)."
           [ -n "$SUPABASE_PROJECT_REF" ] && ! [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]] && fail "SUPABASE_PROJECT_REF must be the 20-letter Project ID (Project Settings → General), not the URL."
-          [ -n "$VITE_SUPABASE_URL" ] && [ "$VITE_SUPABASE_URL" != "https://$SUPABASE_PROJECT_REF.supabase.co" ] && fail "VITE_SUPABASE_URL must be https://<Project ID>.supabase.co and match SUPABASE_PROJECT_REF."
-          [ -n "$VITE_SUPABASE_ANON_KEY" ] && [[ "$VITE_SUPABASE_ANON_KEY" != eyJ* && "$VITE_SUPABASE_ANON_KEY" != sb_publishable_* ]] && fail "VITE_SUPABASE_ANON_KEY must be the anon public key (eyJ…) or the publishable key (sb_publishable_…), never a secret or service_role key."
-          [ "$URL_AS_SECRET" = true ] && fail "VITE_SUPABASE_URL is in the Secrets tab: it must be in the Variables tab."
-          [ "$ANON_AS_SECRET" = true ] && fail "VITE_SUPABASE_ANON_KEY is in the Secrets tab: it must be in the Variables tab."
           [ "$REF_AS_SECRET" = true ] && fail "SUPABASE_PROJECT_REF is in the Secrets tab: it must be in the Variables tab."
           [ "$TOKEN_AS_VARIABLE" = true ] && fail "SUPABASE_ACCESS_TOKEN is in the Variables tab: delete it there, it must be a Secret."
           [ "$PASSWORD_AS_VARIABLE" = true ] && fail "SUPABASE_DB_PASSWORD is in the Variables tab: delete it there, it must be a Secret."
@@ -110,3 +102,45 @@ jobs:
 
       - name: Deploy the nutrition coach
         run: supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
+
+      # End-to-end check, like the app does it: anonymous sign-in, then the
+      # coach's usage status and one short real answer from Claude.
+      - name: Get the app's public settings
+        run: .github/scripts/supabase-env.sh
+
+      - name: Check that the AI coach answers
+        run: |
+          if [ -z "${VITE_SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::Could not read the project's anon key with SUPABASE_ACCESS_TOKEN."
+            exit 1
+          fi
+          url="$VITE_SUPABASE_URL"
+          key="$VITE_SUPABASE_ANON_KEY"
+          token=$(curl -sS -X POST "$url/auth/v1/signup" -H "apikey: $key" -H "Content-Type: application/json" -d '{"data":{}}' | jq -r '.access_token // empty')
+          if [ -z "$token" ]; then
+            echo "::error::Anonymous sign-in failed. Check Authentication → Sign In / Providers → Allow anonymous sign-ins."
+            exit 1
+          fi
+          call() {
+            curl -sS -o /tmp/answer.json -w "%{http_code}" -X POST "$url/functions/v1/nutrition-coach" \
+              -H "Authorization: Bearer $token" -H "apikey: $key" -H "Content-Type: application/json" -d "$1"
+          }
+          # A freshly deployed function can take a few seconds to start.
+          for attempt in 1 2 3 4 5 6; do
+            status=$(call '{"action":"status"}')
+            [ "$status" = 200 ] && break
+            sleep 5
+          done
+          if [ "$status" != 200 ]; then
+            echo "::error::The nutrition coach did not answer (HTTP $status)."
+            cat /tmp/answer.json
+            exit 1
+          fi
+          echo "Usage: $(jq -c .usage /tmp/answer.json)"
+          status=$(call '{"action":"chat","lang":"es","context":{"goal":"musculo","weightKg":80,"targets":null,"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false},"messages":[{"role":"user","text":"Responde solo con un saludo de una frase."}]}')
+          if [ "$status" != 200 ] || [ -z "$(jq -r '.text // empty' /tmp/answer.json)" ]; then
+            echo "::error::Claude did not answer (HTTP $status). Check ANTHROPIC_API_KEY and the Anthropic balance."
+            cat /tmp/answer.json
+            exit 1
+          fi
+          echo "The coach answered: $(jq -r .text /tmp/answer.json)"
