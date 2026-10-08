@@ -1,11 +1,17 @@
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import { useSyncExternalStore } from 'react';
 import { uid } from '../lib/id';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
 import type { ActiveWorkout, AppState, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
-// All data lives on the device (localStorage). No account, no network.
-// Export/import in Ajustes is the backup.
+// All data lives on the device. No account, no network. Export/import in
+// Ajustes is the user's backup.
+//
+// localStorage is the synchronous working copy. Inside the iOS/Android apps
+// it is mirrored to native storage (Preferences), because iOS may purge a web
+// view's localStorage when the device is low on space.
 
 const STORAGE_KEY = 'fitness-life:v1';
 
@@ -15,15 +21,35 @@ const EMPTY: AppState = {
 
 const unitOf = (s: AppState) => s.profile?.unit ?? 'kg';
 
+const parse = (raw: string | null): AppState | null => {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed?.version === 1 ? { ...EMPTY, ...parsed } : null;
+    } catch {
+        return null;
+    }
+};
+
 const load = (): AppState => {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return EMPTY;
-        const parsed = JSON.parse(raw);
-        return parsed?.version === 1 ? { ...EMPTY, ...parsed } : EMPTY;
+        return parse(localStorage.getItem(STORAGE_KEY)) ?? EMPTY;
     } catch {
         return EMPTY;
     }
+};
+
+const native = () => Capacitor.isNativePlatform();
+let mirrorTimer: number | undefined;
+const mirrorNow = () => {
+    window.clearTimeout(mirrorTimer);
+    mirrorTimer = undefined;
+    void Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(state) }).catch(() => {});
+};
+// Typing in a set changes state on every keystroke: batch native writes.
+const mirrorSoon = () => {
+    window.clearTimeout(mirrorTimer);
+    mirrorTimer = window.setTimeout(mirrorNow, 400);
 };
 
 let state: AppState = typeof localStorage === 'undefined' ? EMPTY : load();
@@ -36,6 +62,29 @@ const persist = () => {
         saveError = null;
     } catch (e) {
         saveError = e instanceof Error ? e.message : 'No se pudo guardar';
+    }
+    if (native()) mirrorSoon();
+};
+
+// Native apps: restore from the native copy if the web view lost its data,
+// and flush pending writes when the app goes to the background.
+export const hydrateFromNative = async () => {
+    if (!native()) return;
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && mirrorTimer !== undefined) mirrorNow();
+    });
+    try {
+        const saved = parse((await Preferences.get({ key: STORAGE_KEY })).value);
+        const local = parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && !local) {
+            state = saved;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            listeners.forEach(l => l());
+        } else if (local) {
+            mirrorNow();
+        }
+    } catch {
+        // Native storage unavailable: keep working from localStorage.
     }
 };
 
