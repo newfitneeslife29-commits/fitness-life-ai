@@ -11,6 +11,8 @@ import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
 import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
+import AuthScreen, { PasswordRecovery } from './pages/Auth';
+import { authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
 import Onboarding from './pages/Onboarding';
 import Progress from './pages/Progress';
@@ -20,7 +22,7 @@ import SessionDetail from './pages/SessionDetail';
 import Settings from './pages/Settings';
 import Today from './pages/Today';
 import Workout from './pages/Workout';
-import { useStore } from './store/store';
+import { actions, useStore } from './store/store';
 
 const TABS = [
     { to: '/', label: () => t('nav.today'), icon: House },
@@ -85,15 +87,24 @@ export default function App() {
     const hasProfile = useStore(s => s.profile !== null);
     const lang = useStore(s => s.lang); // remount everything when the language changes
     const navigate = useNavigate();
+    const askAccount = useStore(s => !s.account && !s.authPrompted) && authAvailable();
     useEffect(() => initNative(() => navigate(-1)), [navigate]);
-    if (!hasProfile) return <><Onboarding /><FeedbackHost />{splash}</>;
+    useEffect(initAuth, []);
+    if (!hasProfile) return <><Onboarding /><FeedbackHost /><PasswordRecovery />{splash}</>;
+    // People who used the app before accounts existed: offer one, once.
+    if (askAccount) {
+        const done = () => actions.setAuthPrompted();
+        return <><AuthScreen onDone={done} onSkip={done} /><FeedbackHost />{splash}</>;
+    }
     return (
         <>
             <ScrollToTop />
             <FeedbackHost />
+            <PasswordRecovery />
             {splash}
             <Routes key={lang}>
                 <Route path="/entreno" element={<Workout />} />
+                <Route path="/cuenta" element={<AuthScreen initialMode="signIn" onDone={() => navigate('/ajustes', { replace: true })} onBack={() => navigate(-1)} />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />
                 <Route path="/rutinas" element={<Shell><Routines /></Shell>} />
                 <Route path="/rutinas/:id" element={<Shell><RoutineEditor /></Shell>} />

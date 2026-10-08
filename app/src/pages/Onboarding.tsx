@@ -1,7 +1,9 @@
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chips, Choice } from '../components/ui';
 import { Welcome } from '../components/Welcome';
+import { authAvailable } from '../lib/auth';
+import AuthScreen from './Auth';
 import { exerciseName } from '../data/exercises';
 import { pickProgram, programDescription, programName } from '../data/programs';
 import { getLang, l10n, t } from '../i18n';
@@ -12,7 +14,13 @@ const STEPS = 5;
 
 export default function Onboarding() {
     useStore(s => s.lang); // re-render when the language changes
-    const [started, setStarted] = useState(false);
+    // Welcome → (create account or sign in) → plan questions.
+    const signedIn = useStore(s => s.account !== null && s.account !== undefined);
+    const [stage, setStage] = useState<'welcome' | 'signUp' | 'signIn' | 'plan'>(() => (signedIn ? 'plan' : 'welcome'));
+    // Back from Google/Apple on the web with an account but no plan yet: straight to the questions.
+    useEffect(() => {
+        if (signedIn && stage === 'welcome') setStage('plan');
+    }, [signedIn]);
     const [step, setStep] = useState(0);
     const [name, setName] = useState('');
     const [goal, setGoal] = useState<Goal>('musculo');
@@ -26,7 +34,18 @@ export default function Onboarding() {
 
     const finish = () => actions.completeOnboarding({ name: name.trim(), goal, level, daysPerWeek: days, setup, unit });
 
-    if (!started) return <Welcome onStart={() => { setUnit(getLang() === 'en' ? 'lbs' : 'kg'); setStarted(true); }} />;
+    if (stage === 'welcome') {
+        return (
+            <Welcome
+                onStart={() => { setUnit(getLang() === 'en' ? 'lbs' : 'kg'); setStage(authAvailable() ? 'signUp' : 'plan'); }}
+                onSignIn={authAvailable() ? () => setStage('signIn') : undefined} />
+        );
+    }
+    if (stage === 'signUp' || stage === 'signIn') {
+        // Signing in may bring a plan from the account; otherwise the questions follow.
+        const next = () => { actions.setAuthPrompted(); setUnit(getLang() === 'en' ? 'lbs' : 'kg'); setStage('plan'); };
+        return <AuthScreen key={stage} initialMode={stage} onDone={next} onSkip={next} onBack={() => setStage('welcome')} />;
+    }
 
     return (
         <main className="pt-safe mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
@@ -108,7 +127,7 @@ export default function Onboarding() {
             </div>
 
             <div className="flex gap-3">
-                <button className="btn-ghost" onClick={() => (step > 0 ? setStep(s => s - 1) : setStarted(false))} aria-label={t('common.back')}><ArrowLeft size={18} /></button>
+                <button className="btn-ghost" onClick={() => (step > 0 ? setStep(s => s - 1) : setStage('welcome'))} aria-label={t('common.back')}><ArrowLeft size={18} /></button>
                 {last ? (
                     <button className="btn-primary flex-1" onClick={finish}><Check size={18} /> {t('onboarding.start')}</button>
                 ) : (

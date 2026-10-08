@@ -4,3 +4,7 @@ project_id = "fitness-life"
 [functions.nutrition-coach]
 # The app calls it with the anonymous user's session.
 verify_jwt = true
+
+[functions.account]
+# Only for signed-in users (checked again inside).
+verify_jwt = true

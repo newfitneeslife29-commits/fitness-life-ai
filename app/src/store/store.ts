@@ -7,9 +7,10 @@ import { routineName } from '../lib/names';
 import { applyTheme, type Theme } from '../lib/theme';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
-// All data lives on the device. No account, no network. Export/import in
+// The device holds the working copy of everything. With an account, a copy
+// also lives in the cloud (lib/cloud.ts); without one, export/import in
 // Ajustes is the user's backup.
 //
 // localStorage is the synchronous working copy. Inside the iOS/Android apps
@@ -110,6 +111,7 @@ const subscribe = (listener: () => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
 };
+export const subscribeStore = subscribe;
 
 // Keep several open tabs in sync.
 if (typeof window !== 'undefined') {
@@ -342,11 +344,11 @@ export const actions = {
         set(s => ({ ...s, coachChat: [...s.coachChat, message].slice(-MAX_CHAT) }));
     },
 
-    setAiUsage(aiUsage: AiUsage) {
+    setAiUsage(aiUsage: AiUsage | null) {
         set(s => ({ ...s, aiUsage }));
     },
 
-    setPremium(premium: PremiumStatus) {
+    setPremium(premium: PremiumStatus | null) {
         set(s => ({ ...s, premium }));
     },
 
@@ -357,6 +359,27 @@ export const actions = {
     markAchievementsSeen(ids: string[]) {
         if (ids.every(id => state.seenAchievements.includes(id))) return;
         set(s => ({ ...s, seenAchievements: [...new Set([...s.seenAchievements, ...ids])] }));
+    },
+
+    setAccount(account: Account | null) {
+        set(s => ({ ...s, account, ...(account ? { authPrompted: true } : { cloudSyncedAt: null }) }));
+    },
+
+    setAuthPrompted() {
+        if (!state.authPrompted) set(s => ({ ...s, authPrompted: true }));
+    },
+
+    setCloudSyncedAt(at: string) {
+        set(s => ({ ...s, cloudSyncedAt: at }));
+    },
+
+    // Replaces the training data with the account's copy; keeps this device's settings.
+    restoreSnapshot(data: Partial<AppState>, syncedAt: string) {
+        set(s => ({
+            ...EMPTY, ...data, version: 1, active: s.active,
+            lang: s.lang, theme: s.theme, account: s.account, authPrompted: true, cloudSyncedAt: syncedAt,
+            aiUsage: s.aiUsage, premium: s.premium,
+        }));
     },
 
     exportData(): string {
@@ -370,11 +393,11 @@ export const actions = {
             throw new Error(t('backup.invalid'));
         }
         const { exportedAt: _ignored, ...rest } = data as AppState & { exportedAt?: string };
-        set(() => ({ ...EMPTY, ...rest, active: null }));
+        set(s => ({ ...EMPTY, ...rest, active: null, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt }));
     },
 
     resetAll() {
-        set(s => ({ ...EMPTY, lang: s.lang, theme: s.theme }));
+        set(s => ({ ...EMPTY, lang: s.lang, theme: s.theme, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt }));
     },
 };
 

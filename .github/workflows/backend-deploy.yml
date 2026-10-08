@@ -1,14 +1,18 @@
 name: Deploy backend
 
 # Run by hand (Actions → Deploy backend → Run workflow) after adding the
-# secrets and variables below. Turns on anonymous sign-ins, applies the
-# database migration, stores the function secrets in Supabase and deploys
-# the AI nutrition coach.
+# secrets and variables below. Sets up sign-in (anonymous, e-mail, Google),
+# applies the database migrations, stores the function secrets in Supabase
+# and deploys the AI nutrition coach and the account function.
 #
 # Secrets:   SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
 #            SUPABASE_DB_PASSWORD (optional fallback for the migration),
-#            REVENUECAT_SECRET_KEY (optional until Premium is set up)
-# Variables: SUPABASE_PROJECT_REF
+#            REVENUECAT_SECRET_KEY (optional until Premium is set up),
+#            GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (optional: "Continue with Google")
+# Variables: SUPABASE_PROJECT_REF,
+#            AUTH_CONFIRM_EMAIL=true (optional: ask new accounts to confirm their
+#            e-mail; needs your own SMTP in Supabase, the built-in one only
+#            sends to the project's team)
 on:
   workflow_dispatch:
 
@@ -24,6 +28,11 @@ jobs:
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       REVENUECAT_SECRET_KEY: ${{ secrets.REVENUECAT_SECRET_KEY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      AUTH_CONFIRM_EMAIL: ${{ vars.AUTH_CONFIRM_EMAIL }}
+      # The published web app (GitHub Pages): where sign-in comes back to.
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@v5
 
@@ -76,22 +85,42 @@ jobs:
       - name: Link the project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
-      # The app signs in anonymously (no email or password), so this must be on.
-      - name: Turn on anonymous sign-ins
+      # Without an account the app signs in anonymously; with one, by e-mail,
+      # Google or Apple. Sign-in comes back to the web app or, in the phone
+      # apps, to com.fitnesslife.app://auth-callback.
+      - name: Set up sign-in
         run: |
+          site=$(echo "$SITE_URL" | tr '[:upper:]' '[:lower:]')
+          confirm=false
+          if [ "$AUTH_CONFIRM_EMAIL" = "true" ]; then confirm=true; fi
+          body=$(jq -n --arg site "$site" --argjson confirm "$confirm" '{
+            external_anonymous_users_enabled: true,
+            external_email_enabled: true,
+            mailer_autoconfirm: ($confirm | not),
+            site_url: $site,
+            uri_allow_list: ($site + "**," + "com.fitnesslife.app://auth-callback," + "http://localhost:5173/**")
+          }')
+          if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+            body=$(echo "$body" | jq --arg id "$GOOGLE_CLIENT_ID" --arg secret "$GOOGLE_CLIENT_SECRET" \
+              '. + {external_google_enabled: true, external_google_client_id: $id, external_google_secret: $secret}')
+            google="on"
+          else
+            google="off (add the GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets to turn it on)"
+          fi
           status=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -X PATCH \
             "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"external_anonymous_users_enabled": true}')
+            -d "$body")
           if [ "$status" -ge 300 ]; then
             # Fine-grained tokens may lack auth_config_write. Not fatal: the
             # live check at the end tells whether sign-ins work.
-            echo "::warning::Could not turn on anonymous sign-ins automatically (HTTP $status). If the final check fails, turn it on by hand: Authentication → Sign In / Providers → Allow anonymous sign-ins."
+            echo "::warning::Could not set up sign-in automatically (HTTP $status). Give the access token permission to change auth settings, or set them by hand in Authentication → Sign In / Providers and URL Configuration."
             cat /tmp/auth.json
             exit 0
           fi
-          echo "Anonymous sign-ins are on."
+          echo "Sign-in is set up: anonymous and e-mail on, Google $google, site $site."
+          echo "New accounts confirm their e-mail: $confirm"
 
       # Through the Management API with the access token, so the database
       # password is only a fallback. Migrations must stay idempotent
@@ -129,8 +158,10 @@ jobs:
             supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
           fi
 
-      - name: Deploy the nutrition coach
-        run: supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Deploy the functions
+        run: |
+          supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy account --project-ref "$SUPABASE_PROJECT_REF"
 
       # End-to-end check, like the app does it: anonymous sign-in, the coach's
       # usage status, the paywall for free users, and one short real answer

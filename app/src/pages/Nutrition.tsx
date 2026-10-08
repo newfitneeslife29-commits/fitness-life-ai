@@ -20,7 +20,7 @@ const useAiErrorHandler = () => {
     const navigate = useNavigate();
     return (e: unknown) => {
         toast(aiErrorText(e), 4000);
-        if (e instanceof AiError && e.code === 'upgrade' && premiumAvailable()) navigate('/premium');
+        if (e instanceof AiError && e.code === 'upgrade') navigate('/premium');
     };
 };
 
@@ -37,14 +37,8 @@ const PremiumLock = ({ text, onOpen }: { text: string; onOpen?: () => void }) =>
     <div className="rounded-2xl border border-brand/30 bg-brand-soft p-4 text-center">
         <span className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand text-snow"><Lock size={18} /></span>
         <p className="text-sm text-white/80">{text}</p>
-        {premiumAvailable() ? (
-            <>
-                <Link to="/premium" onClick={onOpen} className="btn-primary mt-3 w-full"><Crown size={18} /> {t('ai.locked.cta')}</Link>
-                <p className="mt-2 text-xs text-white/55">{t('ai.locked.from', { price: fallbackPlan('annual').perMonth })}</p>
-            </>
-        ) : (
-            <p className="mt-2 text-xs text-white/55">{t('premium.unavailable')}</p>
-        )}
+        <Link to="/premium" onClick={onOpen} className="btn-primary mt-3 w-full"><Crown size={18} /> {t('ai.locked.cta')}</Link>
+        <p className="mt-2 text-xs text-white/55">{t('ai.locked.from', { price: fallbackPlan('annual').perMonth })}</p>
     </div>
 );
 

@@ -1,18 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { backendAvailable, getSupabase } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
 import type { AiUsage, ChatMessage, Goal, Macros } from '../store/types';
 
 // The nutrition coach runs in a Supabase Edge Function
-// (supabase/functions/nutrition-coach) that holds the Anthropic key. The app
-// signs in anonymously so the function can count uses per device; that id is
-// also the RevenueCat user id, so the function knows who has Premium. No
-// personal data is stored on the server.
+// (supabase/functions/nutrition-coach) that holds the Anthropic key. The
+// session (the user's account, or an anonymous one) identifies who asks; that
+// id is also the RevenueCat user id, so the function knows who has Premium.
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-export const aiAvailable = () => Boolean(SUPABASE_URL && ANON_KEY);
+export const aiAvailable = backendAvailable;
 
 // upgrade: the free uses of this month are spent → offer Premium.
 // quota: even Premium has a monthly ceiling.
@@ -42,23 +39,19 @@ export interface MealEstimate {
     note: string;
 }
 
-let client: Promise<SupabaseClient> | null = null;
-
-// Loaded on first use so the rest of the app does not pay for it.
-const getClient = () => {
-    client ??= import('@supabase/supabase-js').then(async ({ createClient }) => {
-        const supabase = createClient(SUPABASE_URL!, ANON_KEY!, { auth: { storageKey: 'fitness-life:auth' } });
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-            const { error } = await supabase.auth.signInAnonymously();
+// Without an account the app signs in anonymously, so the coach can count
+// uses per device. One sign-in at a time.
+let anonymous: Promise<void> | null = null;
+const getClient = async (): Promise<SupabaseClient> => {
+    const supabase = await getSupabase();
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+        anonymous ??= supabase.auth.signInAnonymously().then(({ error }) => {
             if (error) throw error;
-        }
-        return supabase;
-    });
-    return client.catch(e => {
-        client = null; // retry on the next call
-        throw e;
-    });
+        }).finally(() => { anonymous = null; });
+        await anonymous;
+    }
+    return supabase;
 };
 
 const call = async <T>(body: Record<string, unknown>): Promise<T> => {

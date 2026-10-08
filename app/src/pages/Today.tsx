@@ -1,4 +1,4 @@
-import { Apple, Check, ChevronRight, Clock, Dumbbell, Flame, Lightbulb, Play, Plus, Trophy, Weight } from 'lucide-react';
+import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, Lightbulb, Play, Plus, Trophy, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
@@ -10,6 +10,7 @@ import { planName, routineName, sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementTitle, unlockedAchievements } from '../lib/achievements';
 import { fmtDate, fmtNumber, fmtVolume, greeting } from '../lib/format';
 import { autoTargets, mealsOn, sumMacros } from '../lib/nutrition';
+import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -158,9 +159,22 @@ const NutritionToday = () => {
     );
 };
 
+// For free users: what Premium unlocks, one tap away.
+const PremiumBanner = () => (
+    <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-400 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><Crown size={22} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="block font-bold">Fitness Life Premium</span>
+            <span className="block text-sm text-snow/90">{t('home.premium', { price: fallbackPlan('annual').perMonth })}</span>
+        </span>
+        <ChevronRight className="shrink-0" />
+    </Link>
+);
+
 export default function Today() {
     const { profile, plan, routines, sessions, active, seenAchievements } = useStore();
     const navigate = useNavigate();
+    const premium = usePremiumActive();
     const unlocked = useMemo(() => unlockedAchievements(sessions, profile?.daysPerWeek ?? 3), [sessions, profile?.daysPerWeek]);
     const week = useMemo(() => sessionsThisWeek(sessions), [sessions]);
     if (!profile) return null;
@@ -212,6 +226,8 @@ export default function Today() {
                     <Plus size={18} /> {t('workout.free')}
                 </button>
             </Section>
+
+            {!premium && <Section><PremiumBanner /></Section>}
 
             <Section title={t('home.week')}>
                 <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>
