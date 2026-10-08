@@ -2,6 +2,22 @@
 // translate all of them (the Dict type enforces it).
 // Keys ending in _one/_other are plural pairs used with tp().
 export const es = {
+    // Welcome and appearance
+    'welcome.eyebrow': 'Fuerza + nutrición',
+    'welcome.title1': 'Entrena con un plan.',
+    'welcome.title2': 'Progresa cada semana.',
+    'welcome.subtitle': 'Te decimos qué entrenar, apuntas cada serie y la app te sugiere el peso de la próxima vez.',
+    'welcome.f1': 'Plan a tu medida y peso sugerido en cada serie',
+    'welcome.f2': 'Fotos de cómo se hace cada ejercicio',
+    'welcome.f3': 'Coach de nutrición con IA',
+    'welcome.start': 'Empezar gratis',
+    'welcome.restore': 'Restaurar una copia',
+    'welcome.legal': 'Al continuar aceptas los',
+    'settings.appearance': 'Apariencia',
+    'theme.system': 'Sistema',
+    'theme.light': 'Claro',
+    'theme.dark': 'Oscuro',
+
     // Navigation and shell
     'nav.today': 'Hoy',
     'nav.routines': 'Rutinas',

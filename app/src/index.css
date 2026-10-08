@@ -3,13 +3,27 @@
 @tailwind utilities;
 
 @layer base {
-  html { color-scheme: dark; -webkit-tap-highlight-color: transparent; }
+  /* Dark theme (default). Channels are "R G B" so Tailwind can add opacity. */
+  :root {
+    --ink: 11 13 16; --ink-2: 18 21 26; --ink-3: 26 30 37; --ink-4: 37 42 51;
+    --line: 42 48 58; --fg: 255 255 255;
+    --brand: 242 107 29; --brand-strong: 255 138 61; --good: 52 211 153;
+    color-scheme: dark;
+  }
+  /* Light theme: same layout, light surfaces and darker accents for contrast. */
+  :root.light {
+    --ink: 244 245 247; --ink-2: 255 255 255; --ink-3: 236 238 242; --ink-4: 222 226 232;
+    --line: 223 227 233; --fg: 17 19 24;
+    --brand: 234 92 12; --brand-strong: 194 65 12; --good: 5 150 105;
+    color-scheme: light;
+  }
+  html { -webkit-tap-highlight-color: transparent; }
   body { min-height: 100dvh; overscroll-behavior-y: none; }
   /* Number inputs: no spinners, big tap targets. */
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type='number'] { -moz-appearance: textfield; }
-  :focus-visible { outline: 2px solid #f26b1d; outline-offset: 2px; }
+  :focus-visible { outline: 2px solid rgb(var(--brand)); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
   }
@@ -27,3 +41,16 @@
   .pb-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .pt-safe { padding-top: env(safe-area-inset-top); }
 }
+
+/* Welcome screen and launch intro. Reduced motion shortens them (rule above). */
+@layer components {
+  .welcome-in { animation: enter-up 650ms cubic-bezier(.2, .8, .2, 1) both; }
+  .welcome-drift { animation: drift 45s linear infinite alternate; }
+  .launch-out { animation: fade-away 380ms ease-in 750ms both; }
+  .launch-logo { animation: pop-in 650ms cubic-bezier(.2, .8, .2, 1) both; }
+  .launch-word { animation: enter-up 500ms cubic-bezier(.2, .8, .2, 1) 150ms both; }
+}
+@keyframes enter-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes drift { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(-6deg) translateY(-22%); } }
+@keyframes fade-away { to { opacity: 0; visibility: hidden; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }

@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const onboard = async (page: Page, opts: { days?: string; setup?: RegExp } = {}) => {
     await page.goto('/');
+    await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByLabel('¿Cómo te llamas? (opcional)').fill('Sebas');
     await page.getByRole('radio', { name: /Ganar músculo/ }).click();
@@ -178,6 +179,7 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
 test('switch language in onboarding and settings', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('radio', { name: 'English' }).click();
+    await page.getByRole('button', { name: 'Start for free' }).click();
     await expect(page.getByRole('heading', { name: 'Your strength plan in 1 minute' })).toBeVisible();
     for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByRole('heading', { name: 'Full body A/B' })).toBeVisible();
@@ -193,6 +195,38 @@ test('switch language in onboarding and settings', async ({ page }) => {
     await expect(page.getByRole('heading', { name: '0 de 3 treinos nesta semana' })).toBeVisible();
     // Names of generated routines follow the language too.
     await expect(page.getByRole('heading', { name: 'Corpo inteiro A' })).toBeVisible();
+});
+
+test('welcome screen leads to onboarding and back', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Empezar gratis' }).click();
+    await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.getByRole('button', { name: 'Empezar gratis' })).toBeVisible();
+});
+
+test('light and dark mode follow the phone and can be chosen in settings', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    const html = page.locator('html');
+    await expect(html).toHaveClass(/light/);
+
+    await page.getByRole('link', { name: 'Ajustes' }).click();
+    await page.getByRole('radio', { name: 'Oscuro' }).click();
+    await expect(html).not.toHaveClass(/light/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0b0d10');
+    await page.reload();
+    await expect(html).not.toHaveClass(/light/);
+
+    await page.getByRole('radio', { name: 'Claro' }).click();
+    await expect(html).toHaveClass(/light/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f4f5f7');
+
+    await page.getByRole('radio', { name: 'Sistema' }).click();
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(html).not.toHaveClass(/light/);
 });
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.

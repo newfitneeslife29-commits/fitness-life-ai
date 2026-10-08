@@ -2,6 +2,22 @@ import type { Dict } from '.';
 
 // Brazilian Portuguese.
 export const pt: Dict = {
+    // Welcome and appearance
+    'welcome.eyebrow': 'Força + nutrição',
+    'welcome.title1': 'Treine com um plano.',
+    'welcome.title2': 'Evolua toda semana.',
+    'welcome.subtitle': 'Dizemos o que treinar, você anota cada série e o app sugere a carga da próxima vez.',
+    'welcome.f1': 'Plano sob medida e carga sugerida em cada série',
+    'welcome.f2': 'Fotos de como fazer cada exercício',
+    'welcome.f3': 'Coach de nutrição com IA',
+    'welcome.start': 'Começar grátis',
+    'welcome.restore': 'Restaurar uma cópia',
+    'welcome.legal': 'Ao continuar você aceita os',
+    'settings.appearance': 'Aparência',
+    'theme.system': 'Sistema',
+    'theme.light': 'Claro',
+    'theme.dark': 'Escuro',
+
     // Navigation and shell
     'nav.today': 'Hoje',
     'nav.routines': 'Rotinas',

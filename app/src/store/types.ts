@@ -1,4 +1,5 @@
 import type { Lang } from '../i18n';
+import type { Theme } from '../lib/theme';
 
 export type Goal = 'fuerza' | 'musculo' | 'salud';
 export type Level = 'principiante' | 'intermedio' | 'avanzado';
@@ -135,6 +136,7 @@ export interface PremiumStatus {
 export interface AppState {
     version: 1;
     lang?: Lang;
+    theme?: Theme; // default: follow the phone
     profile: Profile | null;
     routines: Routine[];
     plan: Plan | null;

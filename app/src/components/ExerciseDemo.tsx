@@ -22,7 +22,7 @@ export const ExerciseDemo = ({ id, name, variant = 'full', animate = variant ===
         <div
             role="img"
             aria-label={t('demo.alt', { name })}
-            className={`relative shrink-0 overflow-hidden bg-white ${thumb ? 'h-14 w-14 rounded-xl' : 'aspect-[3/2] w-full rounded-2xl'}`}
+            className={`relative shrink-0 overflow-hidden bg-snow ${thumb ? 'h-14 w-14 rounded-xl' : 'aspect-[3/2] w-full rounded-2xl'}`}
         >
             {photos.map((src, i) => (
                 <img
@@ -36,7 +36,7 @@ export const ExerciseDemo = ({ id, name, variant = 'full', animate = variant ===
                 />
             ))}
             {!thumb && (
-                <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
+                <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-snow">
                     {frame === 0 ? t('demo.start') : t('demo.end')}
                 </span>
             )}

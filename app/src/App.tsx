@@ -1,6 +1,7 @@
 import { Apple, CalendarDays, LineChart, ListChecks, Settings as SettingsIcon, Timer } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { FeedbackHost } from './components/feedback';
+import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
 import { sessionName } from './lib/names';
 import { initNative } from './lib/native';
@@ -78,15 +79,18 @@ const ScrollToTop = () => {
 };
 
 export default function App() {
+    const [intro, setIntro] = useState(true);
+    const splash = intro && <LaunchSplash onDone={() => setIntro(false)} />;
     const hasProfile = useStore(s => s.profile !== null);
     const lang = useStore(s => s.lang); // remount everything when the language changes
     const navigate = useNavigate();
     useEffect(() => initNative(() => navigate(-1)), [navigate]);
-    if (!hasProfile) return <><Onboarding /><FeedbackHost /></>;
+    if (!hasProfile) return <><Onboarding /><FeedbackHost />{splash}</>;
     return (
         <>
             <ScrollToTop />
             <FeedbackHost />
+            {splash}
             <Routes key={lang}>
                 <Route path="/entreno" element={<Workout />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />

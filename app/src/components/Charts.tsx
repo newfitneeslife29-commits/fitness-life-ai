@@ -30,19 +30,19 @@ export const LineChart = ({ points, unit, emptyText }: {
             aria-label={t('chart.trend', { from: fmtNumber(values[0]), to: fmtNumber(values[last]), unit })}>
             {ticks.map(t => (
                 <g key={t}>
-                    <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#2a303a" strokeWidth={1} />
-                    <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize={10} fill="#ffffff73">{fmtNumber(t)}</text>
+                    <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className="stroke-line" strokeWidth={1} />
+                    <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize={10} className="fill-white/45">{fmtNumber(t)}</text>
                 </g>
             ))}
-            <path d={path} fill="none" stroke="#f26b1d" strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={path} fill="none" className="stroke-brand" strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" />
             {values.map((v, i) => (
-                <circle key={i} cx={x(i)} cy={y(v)} r={i === last ? 4.5 : 3} fill={i === last ? '#f26b1d' : '#12151a'} stroke="#f26b1d" strokeWidth={1.75}>
+                <circle key={i} cx={x(i)} cy={y(v)} r={i === last ? 4.5 : 3} className={i === last ? 'fill-brand stroke-brand' : 'fill-ink-2 stroke-brand'} strokeWidth={1.75}>
                     <title>{`${fmtShortDate(points[i].date)}: ${fmtNumber(v)} ${unit}`}</title>
                 </circle>
             ))}
-            <text x={x(last)} y={y(values[last]) - 9} textAnchor="end" fontSize={11} fontWeight={600} fill="#fff">{fmtNumber(values[last])}</text>
-            <text x={padL} y={H - 6} fontSize={10} fill="#ffffff73">{fmtShortDate(points[0].date)}</text>
-            <text x={W - padR} y={H - 6} textAnchor="end" fontSize={10} fill="#ffffff73">{fmtShortDate(points[last].date)}</text>
+            <text x={x(last)} y={y(values[last]) - 9} textAnchor="end" fontSize={11} fontWeight={600} className="fill-white">{fmtNumber(values[last])}</text>
+            <text x={padL} y={H - 6} fontSize={10} className="fill-white/45">{fmtShortDate(points[0].date)}</text>
+            <text x={W - padR} y={H - 6} textAnchor="end" fontSize={10} className="fill-white/45">{fmtShortDate(points[last].date)}</text>
         </svg>
     );
 };
@@ -57,8 +57,8 @@ export const WeekBars = ({ weeks, target }: { weeks: { weekStart: Date; sessions
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img"
             aria-label={t('chart.weeks', { target })}>
-            <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="#34d399" strokeDasharray="4 4" strokeWidth={1} />
-            <text x={W} y={y(target) - 4} textAnchor="end" fontSize={10} fill="#34d399">{t('chart.target', { target })}</text>
+            <line x1={0} x2={W} y1={y(target)} y2={y(target)} className="stroke-good" strokeDasharray="4 4" strokeWidth={1} />
+            <text x={W} y={y(target) - 4} textAnchor="end" fontSize={10} className="fill-good">{t('chart.target', { target })}</text>
             {weeks.map((w, i) => {
                 const cx = slot * i + slot / 2;
                 const current = i === weeks.length - 1;
@@ -66,11 +66,11 @@ export const WeekBars = ({ weeks, target }: { weeks: { weekStart: Date; sessions
                 return (
                     <g key={i}>
                         <rect x={cx - barW / 2} y={y(w.sessions)} width={barW} height={Math.max(h, w.sessions ? 2 : 0)} rx={5}
-                            fill={current ? '#f26b1d' : '#3a414d'}>
+                            className={current ? 'fill-brand' : 'fill-white/20'}>
                             <title>{t('chart.weekOf', { date: fmtShortDate(w.weekStart), n: w.sessions })}</title>
                         </rect>
-                        {w.sessions > 0 && <text x={cx} y={y(w.sessions) - 4} textAnchor="middle" fontSize={10} fill="#ffffffb3">{w.sessions}</text>}
-                        <text x={cx} y={H - 6} textAnchor="middle" fontSize={9.5} fill={current ? '#fff' : '#ffffff66'}>
+                        {w.sessions > 0 && <text x={cx} y={y(w.sessions) - 4} textAnchor="middle" fontSize={10} className="fill-white/70">{w.sessions}</text>}
+                        <text x={cx} y={H - 6} textAnchor="middle" fontSize={9.5} className={current ? 'fill-white' : 'fill-white/40'}>
                             {current ? t('chart.thisWeek') : fmtShortDate(w.weekStart).replace('.', '')}
                         </text>
                     </g>
@@ -89,20 +89,19 @@ export const TrainingCalendar = ({ weeks }: { weeks: { date: Date; count: number
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('chart.calendar', { n: trained, weeks: weeks.length })}>
             {[t('chart.mon'), t('chart.wed'), t('chart.sun')].map((label, i) => (
-                <text key={label} x={0} y={top + [0, 2, 6][i] * (cell + gap) + 11} fontSize={9} fill="#ffffff59">{label}</text>
+                <text key={label} x={0} y={top + [0, 2, 6][i] * (cell + gap) + 11} fontSize={9} className="fill-white/35">{label}</text>
             ))}
             {weeks.map((week, w) => (
                 <g key={w}>
                     {week[0].date.getDate() <= 7 && (
-                        <text x={left + w * (cell + gap)} y={9} fontSize={9} fill="#ffffff59">
+                        <text x={left + w * (cell + gap)} y={9} fontSize={9} className="fill-white/35">
                             {fmtMonth(week[0].date)}
                         </text>
                     )}
                     {week.map((d, i) => (
                         <rect key={i} x={left + w * (cell + gap)} y={top + i * (cell + gap)} width={cell} height={cell} rx={3.5}
-                            fill={d.future ? 'transparent' : d.count ? '#f26b1d' : '#1f242c'}
-                            fillOpacity={d.count ? 0.45 + 0.55 * (d.volumeKg / maxVol) : 1}
-                            stroke={d.future ? '#1f242c' : 'none'}>
+                            className={d.future ? 'fill-transparent stroke-ink-3' : d.count ? 'fill-brand' : 'fill-ink-3'}
+                            fillOpacity={d.count ? 0.45 + 0.55 * (d.volumeKg / maxVol) : 1}>
                             <title>{`${fmtShortDate(d.date)}${d.count ? `: ${tp('common.workouts', d.count)}` : ''}`}</title>
                         </rect>
                     ))}

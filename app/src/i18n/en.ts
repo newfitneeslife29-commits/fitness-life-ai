@@ -1,6 +1,22 @@
 import type { Dict } from '.';
 
 export const en: Dict = {
+    // Welcome and appearance
+    'welcome.eyebrow': 'Strength + nutrition',
+    'welcome.title1': 'Train with a plan.',
+    'welcome.title2': 'Progress every week.',
+    'welcome.subtitle': 'We tell you what to train, you log every set and the app suggests the weight for next time.',
+    'welcome.f1': 'A plan made for you and a suggested weight for every set',
+    'welcome.f2': 'Photos of how to do every exercise',
+    'welcome.f3': 'AI nutrition coach',
+    'welcome.start': 'Start for free',
+    'welcome.restore': 'Restore a backup',
+    'welcome.legal': 'By continuing you accept the',
+    'settings.appearance': 'Appearance',
+    'theme.system': 'System',
+    'theme.light': 'Light',
+    'theme.dark': 'Dark',
+
     // Navigation and shell
     'nav.today': 'Today',
     'nav.routines': 'Routines',

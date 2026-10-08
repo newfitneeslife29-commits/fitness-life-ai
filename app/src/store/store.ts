@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { detectLang, setLang, t, type Lang } from '../i18n';
 import { uid } from '../lib/id';
 import { routineName } from '../lib/names';
+import { applyTheme, type Theme } from '../lib/theme';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
 import type { ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
@@ -56,8 +57,9 @@ const mirrorSoon = () => {
 };
 
 let state: AppState = typeof localStorage === 'undefined' ? EMPTY : load();
-// First run: follow the phone's language (es/pt, otherwise English).
+// First run: follow the phone's language (es/pt, otherwise English) and appearance.
 setLang(state.lang ?? detectLang());
+applyTheme(state.theme ?? 'system');
 const listeners = new Set<() => void>();
 let saveError: string | null = null;
 
@@ -84,6 +86,7 @@ export const hydrateFromNative = async () => {
         if (saved && !local) {
             state = saved;
             setLang(state.lang ?? detectLang());
+            applyTheme(state.theme ?? 'system');
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             listeners.forEach(l => l());
         } else if (local) {
@@ -95,8 +98,10 @@ export const hydrateFromNative = async () => {
 };
 
 const set = (updater: (s: AppState) => AppState) => {
+    const before = state.theme;
     state = updater(state);
     if (state.lang) setLang(state.lang);
+    if (state.theme !== before) applyTheme(state.theme ?? 'system');
     persist();
     listeners.forEach(l => l());
 };
@@ -112,6 +117,7 @@ if (typeof window !== 'undefined') {
         if (e.key !== STORAGE_KEY) return;
         state = load();
         setLang(state.lang ?? detectLang());
+        applyTheme(state.theme ?? 'system');
         listeners.forEach(l => l());
     });
 }
@@ -153,6 +159,10 @@ export const actions = {
             plan,
             routines: [...s.routines.filter(r => r.source === 'custom'), ...routines],
         }));
+    },
+
+    setTheme(theme: Theme) {
+        set(s => ({ ...s, theme }));
     },
 
     setLanguage(lang: Lang) {
@@ -364,7 +374,7 @@ export const actions = {
     },
 
     resetAll() {
-        set(s => ({ ...EMPTY, lang: s.lang }));
+        set(s => ({ ...EMPTY, lang: s.lang, theme: s.theme }));
     },
 };
 

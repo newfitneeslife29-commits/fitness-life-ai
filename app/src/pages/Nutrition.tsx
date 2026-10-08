@@ -55,9 +55,9 @@ const KcalRing = ({ eaten, target }: { eaten: number; target: number }) => {
     return (
         <div className="relative h-32 w-32 shrink-0">
             <svg viewBox="0 0 108 108" className="h-full w-full -rotate-90" aria-hidden>
-                <circle cx={54} cy={54} r={r} fill="none" stroke="#252a33" strokeWidth={10} />
-                <circle cx={54} cy={54} r={r} fill="none" stroke={over ? '#f87171' : '#f26b1d'} strokeWidth={10} strokeLinecap="round"
-                    strokeDasharray={`${pct * c} ${c}`} className="transition-[stroke-dasharray] duration-500" />
+                <circle cx={54} cy={54} r={r} fill="none" className="stroke-ink-4" strokeWidth={10} />
+                <circle cx={54} cy={54} r={r} fill="none" strokeWidth={10} strokeLinecap="round"
+                    strokeDasharray={`${pct * c} ${c}`} className={`transition-[stroke-dasharray] duration-500 ${over ? 'stroke-red-400' : 'stroke-brand'}`} />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold tabular-nums">{fmtNumber(Math.abs(target - eaten))}</span>

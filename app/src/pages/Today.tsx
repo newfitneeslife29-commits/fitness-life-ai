@@ -21,10 +21,10 @@ const WeekRing = ({ done, target }: { done: number; target: number }) => {
         <svg viewBox="0 0 84 84" className="h-24 w-24 shrink-0 -rotate-90" role="img" aria-label={t('today.title', { done, target })}>
             {Array.from({ length: target }, (_, i) => (
                 <circle key={i} cx={42} cy={42} r={r} fill="none" strokeWidth={9} strokeLinecap="round"
-                    stroke={i < done ? '#f26b1d' : '#252a33'}
+                    className={i < done ? 'stroke-brand' : 'stroke-ink-4'}
                     strokeDasharray={`${Math.max(seg, 0.1)} ${c}`} strokeDashoffset={-i * (seg + gap)} />
             ))}
-            <text x={42} y={-36} transform="rotate(90)" textAnchor="middle" fontSize={20} fontWeight={700} fill="#fff">
+            <text x={42} y={-36} transform="rotate(90)" textAnchor="middle" fontSize={20} fontWeight={700} className="fill-white">
                 {Math.min(done, target)}/{target}
             </text>
         </svg>
