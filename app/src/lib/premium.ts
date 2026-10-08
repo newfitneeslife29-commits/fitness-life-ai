@@ -1,21 +1,27 @@
 import { Capacitor } from '@capacitor/core';
-import { actions } from '../store/store';
+import { locale } from '../i18n';
+import { actions, useStore } from '../store/store';
 import type { PremiumStatus } from '../store/types';
 import { aiAvailable, getUserId } from './ai';
 
-// Fitness Life Premium: one monthly subscription (4.99 USD, priced in App
-// Store Connect, Google Play Console and RevenueCat Web Billing).
-// RevenueCat unifies the three stores behind one entitlement, `premium`.
-// The app user id is the anonymous Supabase id, so the AI function can
-// check the same subscription server-side.
+// Fitness Life Premium unlocks the AI nutrition coach. Two plans, priced in
+// App Store Connect, Google Play Console and RevenueCat Web Billing: monthly
+// (4.99 USD) and annual (39.99 USD). RevenueCat unifies the three stores
+// behind one entitlement, `premium`. The app user id is the anonymous
+// Supabase id, so the AI function can check the same subscription server-side.
 
 export const ENTITLEMENT = 'premium';
-// Shown until the store answers with the localized price.
-export const FALLBACK_PRICE = '4,99 US$';
-// AI uses per month; keep in sync with FREE_MONTHLY_LIMIT / PREMIUM_MONTHLY_LIMIT
-// in supabase/functions/nutrition-coach (the server is what enforces them).
-export const FREE_AI_USES = 5;
-export const PREMIUM_AI_USES = 100;
+export type PlanId = 'annual' | 'monthly';
+// USD prices, shown until the store answers with the localized ones.
+export const PRICES: Record<PlanId, number> = { annual: 39.99, monthly: 4.99 };
+export const ANNUAL_SAVING = Math.round((1 - PRICES.annual / (PRICES.monthly * 12)) * 100); // %
+// Fair-use ceiling per month; keep in sync with PREMIUM_MONTHLY_LIMIT in
+// supabase/functions/nutrition-coach (the server is what enforces it).
+// Free users get no AI.
+export const PREMIUM_AI_USES = 300;
+
+export const money = (amount: number, currency = 'USD') =>
+    new Intl.NumberFormat(locale(), { style: 'currency', currency }).format(amount);
 
 type Platform = 'ios' | 'android' | 'web';
 const platform = Capacitor.getPlatform() as Platform;
@@ -34,13 +40,24 @@ export const LEGAL_URL = import.meta.env.VITE_LEGAL_URL
 
 export const premiumAvailable = () => aiAvailable() && Boolean(KEYS[platform]);
 
-export interface Offer {
+// Premium according to the store (RevenueCat) or to the AI server.
+export const usePremiumActive = () => useStore(s => Boolean(s.premium?.active || s.aiUsage?.premium));
+
+export interface Plan {
+    id: PlanId;
     price: string;
+    perMonth: string; // annual plan: what it comes to per month
     buy: () => Promise<boolean>; // false: the user cancelled
 }
 
+// Plans the store offers, annual first.
+export type Offer = Plan[];
+
+export const fallbackPlan = (id: PlanId): Omit<Plan, 'buy'> =>
+    ({ id, price: money(PRICES[id]), perMonth: money(PRICES[id] / (id === 'annual' ? 12 : 1)) });
+
 interface Backend {
-    offer(): Promise<Offer | null>;
+    offer(): Promise<Offer>;
     status(): Promise<PremiumStatus>;
     restore(): Promise<PremiumStatus>;
 }
@@ -78,21 +95,28 @@ const nativeBackend = async (userId: string): Promise<Backend> => {
         },
         async offer() {
             const offering = (await Purchases.getOfferings()).current;
-            const pkg = offering?.monthly ?? offering?.availablePackages[0];
-            if (!pkg) return null;
-            return {
-                price: pkg.product.priceString,
-                async buy() {
-                    try {
-                        const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
-                        actions.setPremium(toStatus(customerInfo.entitlements.active, customerInfo.managementURL));
-                        return true;
-                    } catch (e) {
-                        if ((e as { userCancelled?: boolean | null }).userCancelled) return false;
-                        throw e;
-                    }
-                },
-            };
+            const plans: Plan[] = [];
+            for (const id of ['annual', 'monthly'] as const) {
+                const pkg = offering?.[id];
+                if (!pkg) continue;
+                const { price, priceString, currencyCode } = pkg.product;
+                plans.push({
+                    id,
+                    price: priceString,
+                    perMonth: id === 'annual' ? money(price / 12, currencyCode) : priceString,
+                    async buy() {
+                        try {
+                            const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+                            actions.setPremium(toStatus(customerInfo.entitlements.active, customerInfo.managementURL));
+                            return true;
+                        } catch (e) {
+                            if ((e as { userCancelled?: boolean | null }).userCancelled) return false;
+                            throw e;
+                        }
+                    },
+                });
+            }
+            return plans;
         },
     };
 };
@@ -112,21 +136,29 @@ const webBackend = async (userId: string): Promise<Backend> => {
         restore: status, // web purchases are tied to this account already
         async offer() {
             const offering = (await purchases.getOfferings()).current;
-            const pkg = offering?.monthly ?? offering?.availablePackages[0];
-            if (!pkg) return null;
-            return {
-                price: pkg.webBillingProduct.price?.formattedPrice ?? FALLBACK_PRICE,
-                async buy() {
-                    try {
-                        const { customerInfo } = await purchases.purchase({ rcPackage: pkg });
-                        actions.setPremium(toStatus(customerInfo.entitlements.active, customerInfo.managementURL));
-                        return true;
-                    } catch (e) {
-                        if (e instanceof PurchasesError && e.errorCode === ErrorCode.UserCancelledError) return false;
-                        throw e;
-                    }
-                },
-            };
+            const plans: Plan[] = [];
+            for (const id of ['annual', 'monthly'] as const) {
+                const pkg = offering?.[id];
+                const price = pkg?.webBillingProduct.price;
+                if (!pkg || !price) continue;
+                const amount = price.amountMicros / 1_000_000;
+                plans.push({
+                    id,
+                    price: money(amount, price.currency),
+                    perMonth: money(id === 'annual' ? amount / 12 : amount, price.currency),
+                    async buy() {
+                        try {
+                            const { customerInfo } = await purchases.purchase({ rcPackage: pkg });
+                            actions.setPremium(toStatus(customerInfo.entitlements.active, customerInfo.managementURL));
+                            return true;
+                        } catch (e) {
+                            if (e instanceof PurchasesError && e.errorCode === ErrorCode.UserCancelledError) return false;
+                            throw e;
+                        }
+                    },
+                });
+            }
+            return plans;
         },
     };
 };

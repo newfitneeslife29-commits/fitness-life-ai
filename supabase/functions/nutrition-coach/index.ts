@@ -2,7 +2,8 @@
 //
 // Deploy:  supabase functions deploy nutrition-coach
 // Secrets: supabase secrets set ANTHROPIC_API_KEY=... REVENUECAT_SECRET_KEY=...
-//          optional: FREE_MONTHLY_LIMIT=5 PREMIUM_MONTHLY_LIMIT=100 REVENUECAT_ENTITLEMENT=premium
+//          optional: FREE_MONTHLY_LIMIT=0 PREMIUM_MONTHLY_LIMIT=300 REVENUECAT_ENTITLEMENT=premium
+//          SMOKE_TEST_TOKEN (set by the deploy workflow, lets its check run as Premium)
 // Auth:    turn on anonymous sign-ins (Authentication → Sign In / Providers).
 //          The app signs in anonymously; the same id is the RevenueCat app user id,
 //          so the subscription (App Store, Google Play or web) is checked here.
@@ -11,7 +12,7 @@
 //   { action: 'status' }                                            → { usage }
 //   { action: 'chat', lang, context, messages: [{ role, text }] }  → { text, usage }
 //   { action: 'estimate', lang, text }                              → { name, items, note, usage }
-// Errors: 401 no session · 402 free uses spent (offer Premium) · 429 Premium limit
+// Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
@@ -19,21 +20,22 @@ import { corsHeaders, json } from '../_shared/cors.ts';
 import { chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, type CoachContext, type Lang, type Macros } from './prompt.ts';
 import { hasEntitlement } from './subscription.ts';
 
-const MODEL = 'claude-opus-5-5';
-// AI is what costs money, so it is what Premium (4.99/month) pays for.
-const FREE_MONTHLY_LIMIT = Number(Deno.env.get('FREE_MONTHLY_LIMIT') ?? 5);
-const PREMIUM_MONTHLY_LIMIT = Number(Deno.env.get('PREMIUM_MONTHLY_LIMIT') ?? 100);
+// Fast, low-cost model: a Premium user's whole month costs cents, so the
+// subscription (4.99/month or 39.99/year) stays profitable.
+const MODEL = 'claude-haiku-5-5';
+// AI is what costs money, so it is only for Premium. The ceiling is a fair-use
+// limit against abuse; normal use stays far below it.
+const FREE_MONTHLY_LIMIT = Number(Deno.env.get('FREE_MONTHLY_LIMIT') ?? 0);
+const PREMIUM_MONTHLY_LIMIT = Number(Deno.env.get('PREMIUM_MONTHLY_LIMIT') ?? 300);
 const REVENUECAT_SECRET_KEY = Deno.env.get('REVENUECAT_SECRET_KEY') ?? '';
 const ENTITLEMENT = Deno.env.get('REVENUECAT_ENTITLEMENT') ?? 'premium';
 const MAX_MESSAGES = 20;
 const MAX_CHARS = 2000;
+// Random per deploy; only the deploy workflow knows it.
+const SMOKE_TEST_TOKEN = Deno.env.get('SMOKE_TEST_TOKEN') ?? '';
 
 const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-
-// If a safety classifier declines a request, the API re-runs it on the
-// fallback model Anthropic recommends for that case instead of refusing.
-const FALLBACK = { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const };
 
 class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -67,7 +69,7 @@ const contextOf = (v: unknown): CoachContext => {
 };
 
 // The conversation must start with the user and end with a new question.
-const messagesOf = (v: unknown): Anthropic.Beta.BetaMessageParam[] => {
+const messagesOf = (v: unknown): Anthropic.MessageParam[] => {
   if (!Array.isArray(v)) throw new HttpError(400, 'messages must be an array');
   const list = v
     .slice(-MAX_MESSAGES)
@@ -80,16 +82,15 @@ const messagesOf = (v: unknown): Anthropic.Beta.BetaMessageParam[] => {
 
 // ---------- Claude calls ----------
 
-const textOf = (res: Anthropic.Beta.BetaMessage) => {
+const textOf = (res: Anthropic.Message) => {
   if (res.stop_reason === 'refusal') throw new HttpError(422, 'declined');
   return res.content.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('').trim();
 };
 
-async function chat(lang: Lang, context: CoachContext, messages: Anthropic.Beta.BetaMessageParam[]) {
-  const res = await anthropic.beta.messages.create({
+async function chat(lang: Lang, context: CoachContext, messages: Anthropic.MessageParam[]) {
+  const res = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 16000,
-    ...FALLBACK,
     // Quick, conversational answers: low effort keeps the chat snappy.
     output_config: { effort: 'low' },
     system: [
@@ -104,10 +105,9 @@ async function chat(lang: Lang, context: CoachContext, messages: Anthropic.Beta.
 }
 
 async function estimate(lang: Lang, description: string) {
-  const res = await anthropic.beta.messages.create({
+  const res = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 16000,
-    ...FALLBACK,
     output_config: { effort: 'medium', format: { type: 'json_schema', schema: ESTIMATE_SCHEMA } },
     system: estimateSystem(lang),
     messages: [{ role: 'user', content: description }],
@@ -148,11 +148,11 @@ interface Usage {
   premium: boolean;
 }
 
-async function usageOf(userId: string): Promise<Usage> {
+async function usageOf(userId: string, smokeTest: boolean): Promise<Usage> {
   const now = new Date();
   const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const [premium, { count, error }] = await Promise.all([
-    isPremium(userId),
+    smokeTest || isPremium(userId),
     admin
       .from('ai_usage')
       .select('id', { count: 'exact', head: true })
@@ -166,7 +166,7 @@ async function usageOf(userId: string): Promise<Usage> {
 
 const checkQuota = (usage: Usage) => {
   if (usage.used < usage.limit) return;
-  throw usage.premium ? new HttpError(429, 'monthly limit reached') : new HttpError(402, 'free uses spent');
+  throw usage.premium ? new HttpError(429, 'monthly limit reached') : new HttpError(402, 'premium required');
 };
 
 // ---------- Handler ----------
@@ -183,7 +183,8 @@ Deno.serve(async req => {
   try {
     const body = await req.json().catch(() => ({}));
     const lang = langOf(body.lang);
-    usage = await usageOf(user.id);
+    const smokeTest = SMOKE_TEST_TOKEN.length >= 32 && req.headers.get('x-smoke-test') === SMOKE_TEST_TOKEN;
+    usage = await usageOf(user.id, smokeTest);
     if (body.action === 'status') return json({ usage });
 
     let result: object;

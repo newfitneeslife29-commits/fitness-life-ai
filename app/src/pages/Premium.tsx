@@ -6,7 +6,7 @@ import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { refreshUsage } from '../lib/ai';
 import { fmtDate } from '../lib/format';
-import { FALLBACK_PRICE, FREE_AI_USES, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, type Offer } from '../lib/premium';
+import { ANNUAL_SAVING, fallbackPlan, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, type Offer, type PlanId } from '../lib/premium';
 import { useStore } from '../store/store';
 
 // Section anchors of public/legal.html in each language.
@@ -17,7 +17,10 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.training', true, true],
     ['premium.row.extras', true, true],
     ['premium.row.nutrition', true, true],
+    ['premium.row.coach', false, true],
+    ['premium.row.estimate', false, true],
 ];
+const PLAN_IDS: PlanId[] = ['annual', 'monthly'];
 
 const Mark = ({ value }: { value: Cell }) =>
     typeof value === 'string' ? <span className="font-semibold">{value}</span>
@@ -29,22 +32,28 @@ export default function Premium() {
     const premium = useStore(s => s.premium);
     const usage = useStore(s => s.aiUsage);
     const [offer, setOffer] = useState<Offer | null>(null);
+    const [planId, setPlanId] = useState<PlanId>('annual');
     const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
     const available = premiumAvailable();
     const active = premium?.active ?? false;
-    const price = offer?.price ?? FALLBACK_PRICE;
+    // Store prices once loaded; until then (or if a plan is missing there) the USD defaults.
+    const plans = offer?.length ? offer : PLAN_IDS.map(fallbackPlan);
+    const plan = plans.find(p => p.id === planId) ?? plans[0];
     const [termsAnchor, privacyAnchor] = LEGAL_ANCHORS[getLang()];
 
     useEffect(() => {
         if (!available) return;
-        getOffer().then(setOffer).catch(() => setOffer(null));
+        getOffer().then(o => {
+            setOffer(o);
+            if (o.length && !o.some(p => p.id === 'annual')) setPlanId(o[0].id);
+        }).catch(() => setOffer(null));
         refreshPremium().catch(() => {});
     }, [available]);
 
     const buy = async () => {
         setBusy('buy');
         try {
-            const current = offer ?? (await getOffer());
+            const current = (offer ?? (await getOffer())).find(p => p.id === plan.id);
             if (!current) throw new Error('no offer');
             if (await current.buy()) {
                 toast(t('premium.welcome'), 3500);
@@ -103,6 +112,44 @@ export default function Premium() {
                 </Section>
             )}
 
+            {!active && (
+                <Section>
+                    {available ? (
+                        <>
+                            <div role="radiogroup" aria-label={t('premium.plans')} className="space-y-2">
+                                {plans.map(p => {
+                                    const selected = p.id === plan.id;
+                                    return (
+                                        <button key={p.id} role="radio" aria-checked={selected} onClick={() => setPlanId(p.id)}
+                                            className={`card flex w-full items-center gap-3 p-4 text-left transition-colors ${selected ? 'border-brand bg-brand-soft' : 'hover:bg-ink-3'}`}>
+                                            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${selected ? 'border-brand' : 'border-white/30'}`}>
+                                                {selected && <span className="h-2.5 w-2.5 rounded-full bg-brand" />}
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-center gap-2 font-semibold">
+                                                    {t(`premium.${p.id}`)}
+                                                    {p.id === 'annual' && <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-snow">{t('premium.save', { n: ANNUAL_SAVING })}</span>}
+                                                </span>
+                                                {p.id === 'annual' && <span className="block text-sm text-white/60">{t('premium.equiv', { price: p.perMonth })}</span>}
+                                            </span>
+                                            <span className="shrink-0 text-right font-bold tabular-nums">
+                                                {p.price}<span className="text-sm font-medium text-white/50"> / {t(p.id === 'annual' ? 'premium.year' : 'premium.month')}</span>
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <p className="mb-3 mt-2 text-center text-sm text-white/50">{t('premium.cancelAnytime')}</p>
+                            <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
+                                <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : t('premium.subscribe')}
+                            </button>
+                        </>
+                    ) : (
+                        <p className="card p-4 text-center text-sm text-white/60">{t('premium.unavailable')}</p>
+                    )}
+                </Section>
+            )}
+
             <Section>
                 <table className="card w-full overflow-hidden text-sm">
                     <thead>
@@ -120,40 +167,17 @@ export default function Premium() {
                                 <td className="p-3 text-center"><Mark value={paid} /></td>
                             </tr>
                         ))}
-                        <tr>
-                            <td className="p-3 text-white/85">{t('premium.row.ai')}</td>
-                            <td className="whitespace-nowrap p-3 text-center text-white/70">{t('premium.perMonth', { n: FREE_AI_USES })}</td>
-                            <td className="whitespace-nowrap p-3 text-center font-semibold text-brand-strong">{t('premium.perMonth', { n: PREMIUM_AI_USES })}</td>
-                        </tr>
                     </tbody>
                 </table>
-                <p className="mt-2 text-xs text-white/40">{t('premium.why')}</p>
+                <p className="mt-2 text-xs text-white/40">{t('premium.why', { n: PREMIUM_AI_USES })}</p>
             </Section>
-
-            {!active && (
-                <Section>
-                    {available ? (
-                        <>
-                            <div className="mb-3 text-center">
-                                <p className="text-3xl font-bold tabular-nums">{price}<span className="text-base font-medium text-white/50"> / {t('premium.month')}</span></p>
-                                <p className="text-sm text-white/50">{t('premium.cancelAnytime')}</p>
-                            </div>
-                            <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
-                                <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : t('premium.subscribe')}
-                            </button>
-                        </>
-                    ) : (
-                        <p className="card p-4 text-center text-sm text-white/60">{t('premium.unavailable')}</p>
-                    )}
-                </Section>
-            )}
 
             {available && (
                 <Section>
                     <button className="btn-ghost w-full" disabled={busy !== null} onClick={restore}>
                         {busy === 'restore' ? t('premium.restoring') : t('premium.restore')}
                     </button>
-                    <p className="mt-4 text-[11px] leading-relaxed text-white/40">{t('premium.legal', { price })}</p>
+                    <p className="mt-4 text-[11px] leading-relaxed text-white/40">{t(`premium.legal.${plan.id}`, { price: plan.price })}</p>
                     <p className="mt-2 flex gap-4 text-xs">
                         <a href={`${LEGAL_URL}#${termsAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.terms')}</a>
                         <a href={`${LEGAL_URL}#${privacyAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.privacy')}</a>
