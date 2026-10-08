@@ -1,0 +1,51 @@
+# Publishes app/ to GitHub Pages on every push to main.
+# One-time setup: repo Settings → Pages → Source: "GitHub Actions".
+name: Deploy app
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/app-deploy.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        # Optional AI nutrition coach: repository variables (Settings → Secrets and variables → Actions → Variables).
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Premium subscription: RevenueCat public SDK keys (one per platform).
+          VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
+          VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
+          VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

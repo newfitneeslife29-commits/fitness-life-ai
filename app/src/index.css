@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { color-scheme: dark; -webkit-tap-highlight-color: transparent; }
+  body { min-height: 100dvh; overscroll-behavior-y: none; }
+  /* Number inputs: no spinners, big tap targets. */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type='number'] { -moz-appearance: textfield; }
+  :focus-visible { outline: 2px solid #f26b1d; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+}
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-ink-2; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none; }
+  .btn-primary { @apply btn bg-brand text-ink hover:bg-brand-strong; }
+  .btn-ghost { @apply btn bg-ink-3 text-white hover:bg-ink-4; }
+  .btn-danger { @apply btn bg-red-500/10 text-red-400 hover:bg-red-500/20; }
+  .chip { @apply rounded-full border border-line px-3 py-1.5 text-sm text-white/70 transition; }
+  .chip-on { @apply border-brand bg-brand-soft text-brand-strong; }
+  .label { @apply text-xs font-medium uppercase tracking-wider text-white/45; }
+  .pb-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+}

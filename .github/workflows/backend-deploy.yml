@@ -1,0 +1,59 @@
+name: Deploy backend
+
+# Run by hand (Actions → Deploy backend → Run workflow) after adding the
+# secrets and variables below. Applies the database migration, stores the
+# function secrets in Supabase and deploys the AI nutrition coach.
+#
+# Secrets:   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY,
+#            REVENUECAT_SECRET_KEY (optional until Premium is set up)
+# Variables: SUPABASE_PROJECT_REF
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      REVENUECAT_SECRET_KEY: ${{ secrets.REVENUECAT_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check that the secrets and variables exist
+        run: |
+          missing=""
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
+            [ -z "${!name}" ] && missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing in Settings → Secrets and variables → Actions:$missing"
+            exit 1
+          fi
+          [ -z "$REVENUECAT_SECRET_KEY" ] && echo "::notice::REVENUECAT_SECRET_KEY not set: everyone gets the free AI allowance until Premium is configured."
+          exit 0
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link the project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Apply database migrations
+        run: supabase db push
+
+      - name: Store the function secrets
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+          if [ -n "$REVENUECAT_SECRET_KEY" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
+          fi
+
+      - name: Deploy the nutrition coach
+        run: supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"

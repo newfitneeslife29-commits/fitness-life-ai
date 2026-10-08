@@ -1,20 +1,15 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Fitness Life
 
-# Run and deploy your AI Studio app
+App de entrenamiento de fuerza para iOS, Android y web: te da un plan, registras cada serie y te sugiere el peso de la próxima sesión.
 
-This contains everything you need to run your app locally.
+| Carpeta | Contenido |
+| --- | --- |
+| [`app/`](app/) | La app (React + TypeScript + Capacitor). Empieza por su [README](app/README.md). |
+| `.github/workflows/` | Tests en cada push, publicación web en GitHub Pages y compilación de las apps de Android e iOS. |
+| `supabase/` | Backend opcional: la función `nutrition-coach` (coach de nutrición con Claude, límites gratis/Premium) y la migración. Sin él, la app funciona entera salvo la IA. Ver el [README de la app](app/README.md#coach-de-nutrición-con-ia-opcional). |
 
-View your app in AI Studio: https://ai.studio/apps/drive/1csYVOJFEKPx8-Xiq56s-V8fB4p2kzxpd
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+cd app
+npm install
+npm run dev
+```
