@@ -1,4 +1,4 @@
-import { Apple, CalendarDays, LineChart, ListChecks, Settings as SettingsIcon, Timer } from 'lucide-react';
+import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { FeedbackHost } from './components/feedback';
 import { LaunchSplash } from './components/Welcome';
@@ -22,7 +22,7 @@ import Workout from './pages/Workout';
 import { useStore } from './store/store';
 
 const TABS = [
-    { to: '/', label: () => t('nav.today'), icon: CalendarDays },
+    { to: '/', label: () => t('nav.today'), icon: House },
     { to: '/rutinas', label: () => t('nav.routines'), icon: ListChecks },
     { to: '/progreso', label: () => t('nav.progress'), icon: LineChart },
     { to: '/nutricion', label: () => t('nav.nutrition'), icon: Apple },

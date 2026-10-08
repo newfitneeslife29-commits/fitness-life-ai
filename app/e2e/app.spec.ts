@@ -142,6 +142,8 @@ test('exercise library search and detail', async ({ page }) => {
 });
 
 test('plate calculator, achievements, notes and body weight', async ({ page }) => {
+    // Daytime, so the night-owl medal does not unlock too.
+    await page.clock.setFixedTime(new Date('2026-10-07T10:00:00'));
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
@@ -189,9 +191,9 @@ test('switch language in onboarding and settings', async ({ page }) => {
 
     await page.getByRole('link', { name: 'Settings' }).click();
     await page.getByRole('radio', { name: 'Português' }).click();
-    await expect(page.getByRole('link', { name: 'Hoje' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Início' })).toBeVisible();
     await page.reload();
-    await page.getByRole('link', { name: 'Hoje' }).click();
+    await page.getByRole('link', { name: 'Início' }).click();
     await expect(page.getByRole('heading', { name: '0 de 3 treinos nesta semana' })).toBeVisible();
     // Names of generated routines follow the language too.
     await expect(page.getByRole('heading', { name: 'Corpo inteiro A' })).toBeVisible();
