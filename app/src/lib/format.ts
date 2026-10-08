@@ -1,7 +1,8 @@
 import type { Unit } from '../store/types';
 import { kgToDisplay } from './progression';
 
-const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 });
+// Two decimals so 1,25 kg plates and 0,5 lb steps are shown exactly.
+const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 });
 
 export const fmtNumber = (n: number) => number.format(n);
 

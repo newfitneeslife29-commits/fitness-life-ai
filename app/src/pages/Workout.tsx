@@ -212,8 +212,9 @@ export default function Workout() {
     };
 
     return (
-        <div className="pt-safe mx-auto min-h-dvh max-w-lg pb-40">
-            <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-ink/95 px-2 py-2 backdrop-blur">
+        <div className="mx-auto min-h-dvh max-w-lg pb-40">
+            {/* The safe-area padding lives in the sticky header so it never slides under the notch. */}
+            <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-ink/95 px-2 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur">
                 <button onClick={() => navigate('/')} aria-label="Volver (el entreno sigue abierto)" className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white">
                     <ChevronLeft size={22} />
                 </button>

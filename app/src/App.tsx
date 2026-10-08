@@ -54,13 +54,18 @@ const ActiveBanner = () => {
     );
 };
 
-const Shell = ({ children }: { children: ReactNode }) => (
-    <div className="pt-safe pb-nav mx-auto min-h-dvh max-w-lg">
-        <div key={useLocation().pathname} className="animate-fade">{children}</div>
-        <ActiveBanner />
-        <BottomNav />
-    </div>
-);
+const Shell = ({ children }: { children: ReactNode }) => {
+    const { pathname } = useLocation();
+    const hasActive = useStore(s => s.active !== null);
+    return (
+        // Extra bottom room while the "workout in progress" banner is showing.
+        <div className={`pt-safe mx-auto min-h-dvh max-w-lg ${hasActive ? 'pb-[calc(9rem+env(safe-area-inset-bottom))]' : 'pb-nav'}`}>
+            <div key={pathname} className="animate-fade">{children}</div>
+            <ActiveBanner />
+            <BottomNav />
+        </div>
+    );
+};
 
 const ScrollToTop = () => {
     const { pathname } = useLocation();

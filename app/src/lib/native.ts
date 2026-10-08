@@ -13,6 +13,9 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 
 export const isNative = () => Capacitor.isNativePlatform();
 
+// Safety net: never leave the splash screen up if the app fails to start.
+if (isNative()) window.setTimeout(() => { void SplashScreen.hide().catch(() => {}); }, 5000);
+
 const quiet = async (fn: () => Promise<unknown>) => {
     try {
         await fn();

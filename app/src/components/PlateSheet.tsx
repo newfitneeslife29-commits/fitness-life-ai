@@ -15,7 +15,8 @@ const Bar = ({ perSide, unit }: { perSide: number[]; unit: Unit }) => {
     return (
         <div className="flex h-24 items-center" aria-hidden>
             <div className="h-2.5 w-8 rounded-l bg-white/40" />
-            {perSide.map((p, i) => {
+            {/* Drawn from the outer end of the sleeve: lightest plate outside. */}
+            {[...perSide].reverse().map((p, i) => {
                 const h = 36 + (p / max) * 60;
                 return <div key={i} className="mx-px rounded-sm" style={{ width: 12, height: h, background: COLOR[String(p)] ?? '#9ca3af' }} />;
             })}

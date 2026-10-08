@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // No sticky hover styles after a tap on phones.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {

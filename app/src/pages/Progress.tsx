@@ -78,6 +78,7 @@ export default function Progress() {
         return [...count].sort((a, b) => b[1] - a[1]).map(([id]) => id);
     }, [sessions]);
     const [picked, setPicked] = useState<string>('');
+    const [historyLimit, setHistoryLimit] = useState(10);
     const exerciseId = picked || exerciseIds[0] || '';
     const bodyweight = getExercise(exerciseId)?.stepKg === 0;
     const series = useMemo(
@@ -167,7 +168,7 @@ export default function Progress() {
 
             <Section title="Historial">
                 <div className="card divide-y divide-line">
-                    {sessions.slice(0, 30).map(s => (
+                    {sessions.slice(0, historyLimit).map(s => (
                         <Link key={s.id} to={`/sesion/${s.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-3">
                             <div className="min-w-0">
                                 <p className="truncate font-medium">{s.routineName}</p>
@@ -179,6 +180,11 @@ export default function Progress() {
                         </Link>
                     ))}
                 </div>
+                {sessions.length > historyLimit && (
+                    <button onClick={() => setHistoryLimit(n => n + 20)} className="btn-ghost mt-2 w-full">
+                        Ver más ({sessions.length - historyLimit})
+                    </button>
+                )}
             </Section>
         </div>
     );
