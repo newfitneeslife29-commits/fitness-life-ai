@@ -26,18 +26,25 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Check that the secrets and variables exist
+      - name: Check that the secrets and variables exist and look right
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
-          missing=""
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
-            [ -z "${!name}" ] && missing="$missing $name"
+          problems=0
+          fail() { echo "::error::$1"; problems=1; }
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+            [ -z "${!name}" ] && fail "$name is missing (Settings → Secrets and variables → Actions)."
+            value="${!name}"
+            [[ "$value" =~ ^[[:space:]] || "$value" =~ [[:space:]]$ ]] && fail "$name has spaces or line breaks at the start or end: paste it again."
           done
-          if [ -n "$missing" ]; then
-            echo "::error::Missing in Settings → Secrets and variables → Actions:$missing"
-            exit 1
-          fi
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] && [[ "$SUPABASE_ACCESS_TOKEN" != sbp_* ]] && fail "SUPABASE_ACCESS_TOKEN must start with sbp_ (Supabase → avatar → Account preferences → Access Tokens)."
+          [ -n "$ANTHROPIC_API_KEY" ] && [[ "$ANTHROPIC_API_KEY" != sk-ant-* ]] && fail "ANTHROPIC_API_KEY must start with sk-ant- (console.anthropic.com → API keys)."
+          [ -n "$SUPABASE_PROJECT_REF" ] && ! [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]] && fail "SUPABASE_PROJECT_REF must be the 20-letter Project ID (Project Settings → General), not the URL."
+          [ -n "$VITE_SUPABASE_URL" ] && [ "$VITE_SUPABASE_URL" != "https://$SUPABASE_PROJECT_REF.supabase.co" ] && fail "VITE_SUPABASE_URL must be https://<Project ID>.supabase.co and match SUPABASE_PROJECT_REF."
+          [ -n "$VITE_SUPABASE_ANON_KEY" ] && [[ "$VITE_SUPABASE_ANON_KEY" != eyJ* && "$VITE_SUPABASE_ANON_KEY" != sb_publishable_* ]] && fail "VITE_SUPABASE_ANON_KEY must be the anon public key (eyJ…) or the publishable key (sb_publishable_…), never a secret or service_role key."
           [ -z "$REVENUECAT_SECRET_KEY" ] && echo "::notice::REVENUECAT_SECRET_KEY not set: everyone gets the free AI allowance until Premium is configured."
-          exit 0
+          exit $problems
 
       - uses: supabase/setup-cli@v1
         with:
