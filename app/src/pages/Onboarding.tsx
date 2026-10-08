@@ -1,9 +1,10 @@
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Chips, Choice } from '../components/ui';
+import { Welcome } from '../components/Welcome';
 import { exerciseName } from '../data/exercises';
 import { pickProgram, programDescription, programName } from '../data/programs';
-import { getLang, l10n, LANGS, t, type Lang } from '../i18n';
+import { getLang, l10n, t } from '../i18n';
 import { actions, useStore } from '../store/store';
 import type { Goal, Level, Setup, Unit } from '../store/types';
 
@@ -11,6 +12,7 @@ const STEPS = 5;
 
 export default function Onboarding() {
     useStore(s => s.lang); // re-render when the language changes
+    const [started, setStarted] = useState(false);
     const [step, setStep] = useState(0);
     const [name, setName] = useState('');
     const [goal, setGoal] = useState<Goal>('musculo');
@@ -24,6 +26,8 @@ export default function Onboarding() {
 
     const finish = () => actions.completeOnboarding({ name: name.trim(), goal, level, daysPerWeek: days, setup, unit });
 
+    if (!started) return <Welcome onStart={() => { setUnit(getLang() === 'en' ? 'lbs' : 'kg'); setStarted(true); }} />;
+
     return (
         <main className="pt-safe mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-2 pt-6" aria-label={t('onboarding.step', { n: step + 1, total: STEPS })}>
@@ -35,10 +39,6 @@ export default function Onboarding() {
             <div className="flex-1 animate-fade py-8" key={step}>
                 {step === 0 && (
                     <>
-                        <div className="mb-6">
-                            <Chips<Lang> label={t('settings.language')} value={getLang()} onChange={lang => actions.setLanguage(lang)}
-                                options={LANGS.map(l => ({ value: l.code, label: l.label }))} />
-                        </div>
                         <p className="label mb-2">Fitness Life</p>
                         <h1 className="mb-1 text-3xl font-bold tracking-tight">{t('onboarding.title')}</h1>
                         <p className="mb-8 text-white/60">{t('onboarding.subtitle')}</p>
@@ -108,9 +108,7 @@ export default function Onboarding() {
             </div>
 
             <div className="flex gap-3">
-                {step > 0 && (
-                    <button className="btn-ghost" onClick={() => setStep(s => s - 1)} aria-label={t('common.back')}><ArrowLeft size={18} /></button>
-                )}
+                <button className="btn-ghost" onClick={() => (step > 0 ? setStep(s => s - 1) : setStarted(false))} aria-label={t('common.back')}><ArrowLeft size={18} /></button>
                 {last ? (
                     <button className="btn-primary flex-1" onClick={finish}><Check size={18} /> {t('onboarding.start')}</button>
                 ) : (

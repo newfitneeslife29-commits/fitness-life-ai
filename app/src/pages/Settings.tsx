@@ -1,4 +1,4 @@
-import { ChevronRight, Crown, Download, Languages, RotateCcw, Upload } from 'lucide-react';
+import { ChevronRight, Crown, Download, Languages, Monitor, Moon, RotateCcw, Sun, Upload } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -7,6 +7,7 @@ import { pickProgram, programName } from '../data/programs';
 import { getLang, LANGS, t, tp, type Lang } from '../i18n';
 import { fmtDate } from '../lib/format';
 import { planName } from '../lib/names';
+import type { Theme } from '../lib/theme';
 import { FALLBACK_PRICE, PREMIUM_AI_USES, premiumAvailable, refreshPremium } from '../lib/premium';
 import { saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
@@ -16,6 +17,7 @@ export default function Settings() {
     const profile = useStore(s => s.profile)!;
     const plan = useStore(s => s.plan);
     const sessionsCount = useStore(s => s.sessions.length);
+    const theme = useStore(s => s.theme ?? 'system');
     const fileRef = useRef<HTMLInputElement>(null);
 
     const proposed = pickProgram(profile.setup, profile.daysPerWeek);
@@ -65,6 +67,18 @@ export default function Settings() {
                     <Languages size={20} className="shrink-0 text-brand" />
                     <Chips<Lang> label={t('settings.language')} value={getLang()} onChange={lang => actions.setLanguage(lang)}
                         options={LANGS.map(l => ({ value: l.code, label: l.label }))} />
+                </div>
+            </Section>
+
+            <Section title={t('settings.appearance')}>
+                <div className="card grid grid-cols-3 gap-1 p-1" role="radiogroup" aria-label={t('settings.appearance')}>
+                    {([['system', Monitor], ['light', Sun], ['dark', Moon]] as const).map(([value, Icon]) => (
+                        <button key={value} role="radio" aria-checked={theme === value} onClick={() => actions.setTheme(value as Theme)}
+                            className={`flex flex-col items-center gap-1 rounded-xl py-3 text-sm font-medium transition ${theme === value ? 'bg-brand-soft text-brand-strong' : 'text-white/60 hover:text-white'}`}>
+                            <Icon size={20} />
+                            {t(`theme.${value}`)}
+                        </button>
+                    ))}
                 </div>
             </Section>
 

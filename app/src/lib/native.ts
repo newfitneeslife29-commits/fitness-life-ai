@@ -6,7 +6,6 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Share } from '@capacitor/share';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { t } from '../i18n';
 
 // One place for device features. Inside the iOS/Android apps they use the
@@ -121,8 +120,7 @@ export const initNative = (onBack: () => void) => {
     backHandler = onBack;
     if (!isNative() || initialized) return;
     initialized = true;
-    void quiet(() => StatusBar.setStyle({ style: Style.Dark }));
-    if (Capacitor.getPlatform() === 'android') void quiet(() => StatusBar.setBackgroundColor({ color: '#0b0d10' }));
+    // Status bar colors follow the theme (src/lib/theme.ts).
     void quiet(() => SplashScreen.hide());
     void quiet(() => App.addListener('backButton', ({ canGoBack }) => (canGoBack ? backHandler() : App.exitApp())));
 };

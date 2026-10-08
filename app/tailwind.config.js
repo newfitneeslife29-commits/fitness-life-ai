@@ -1,3 +1,6 @@
+/** A palette color read from a CSS variable of space-separated RGB channels. */
+const c = name => `rgb(var(--${name}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -5,11 +8,16 @@ export default {
   future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
+      // Every color comes from a CSS variable (src/index.css), so light and
+      // dark themes swap the whole palette. `white` is the text color: white
+      // in dark mode, near-black in light mode. `snow` is always white.
       colors: {
-        ink: { DEFAULT: '#0b0d10', 2: '#12151a', 3: '#1a1e25', 4: '#252a33' },
-        line: '#2a303a',
-        brand: { DEFAULT: '#f26b1d', soft: '#f26b1d1f', strong: '#ff8a3d' },
-        good: '#34d399',
+        ink: { DEFAULT: c('ink'), 2: c('ink-2'), 3: c('ink-3'), 4: c('ink-4') },
+        line: c('line'),
+        white: c('fg'),
+        snow: '#ffffff',
+        brand: { DEFAULT: c('brand'), soft: 'rgb(var(--brand) / 0.12)', strong: c('brand-strong') },
+        good: c('good'),
       },
       keyframes: {
         fade: { from: { opacity: '0' }, to: { opacity: '1' } },
