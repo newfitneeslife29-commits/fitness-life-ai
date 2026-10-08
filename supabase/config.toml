@@ -1,0 +1,6 @@
+# Minimal Supabase CLI config, used by .github/workflows/backend-deploy.yml.
+project_id = "fitness-life"
+
+[functions.nutrition-coach]
+# The app calls it with the anonymous user's session.
+verify_jwt = true

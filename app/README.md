@@ -44,18 +44,11 @@ App de entrenamiento de fuerza para **iOS, Android y web**. Te da un plan, regis
 
 La app nunca lleva la clave de la IA. Llama a una función de Supabase ([`supabase/functions/nutrition-coach`](../supabase/functions/nutrition-coach/index.ts)) que guarda la clave de Anthropic, usa Claude y limita las consultas por dispositivo (30 al día por defecto). La app entra con un usuario anónimo; no se guardan datos personales en el servidor.
 
-1. Crea un proyecto en [Supabase](https://supabase.com) y aplica la migración de `supabase/migrations` (crea la tabla `ai_usage`).
-2. En Authentication → Sign In / Providers, activa **Anonymous sign-ins**.
-3. Despliega la función y guarda la clave como secreto del servidor (nunca en la app ni en el repositorio):
-   ```bash
-   supabase functions deploy nutrition-coach
-   supabase secrets set ANTHROPIC_API_KEY=...        # opcional: NUTRITION_DAILY_LIMIT=30
-   ```
-4. Da a la app la URL y la clave pública *anon* del proyecto: en local, en `app/.env.local`; para las builds de GitHub, como **variables** del repositorio (Settings → Secrets and variables → Actions → Variables):
-   ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=...
-   ```
+1. Crea un proyecto en [Supabase](https://supabase.com) y, en Authentication → Sign In / Providers, activa **Anonymous sign-ins**.
+2. En GitHub → Settings → Secrets and variables → Actions, añade los **secretos** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` y `ANTHROPIC_API_KEY`, y las **variables** `SUPABASE_PROJECT_REF`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. Las claves secretas van solo ahí: nunca en la app, en el repositorio ni en un chat.
+3. Ejecuta Actions → **Deploy backend** → Run workflow. Crea la tabla `ai_usage` ([migración](../supabase/migrations)), guarda las claves como secretos de la función y despliega `nutrition-coach`.
+4. Vuelve a compilar la app (cualquier push, o ejecutar *Native apps* y *Deploy web app*) para que incluya la URL del backend. En local, pon las dos variables `VITE_` en `app/.env.local`.
+
 Sin estas variables, la app muestra que el asistente no está disponible y todo lo demás funciona.
 
 ## Suscripción Premium (4,99 US$ al mes)
@@ -66,7 +59,7 @@ Apple y Google obligan a cobrar las suscripciones digitales con sus propios pago
 
 1. **Tiendas:** crea la suscripción mensual (por ejemplo `premium_monthly`) a 4,99 US$ en App Store Connect (necesitas el Apple Developer Program) y en Google Play Console. En Xcode, añade la capacidad **In-App Purchase** (Signing & Capabilities). Si quieres una prueba gratis, se configura ahí, sin tocar el código.
 2. **RevenueCat:** crea el proyecto, añade las apps de iOS y Android y, si quieres vender en la web, **Web Billing** con tu cuenta de Stripe. Crea el entitlement `premium`, asígnale los productos y ponlos en la offering *current* como paquete mensual.
-3. **Servidor:** `supabase secrets set REVENUECAT_SECRET_KEY=...` (la clave secreta de RevenueCat, solo en el servidor) y vuelve a desplegar `nutrition-coach`.
+3. **Servidor:** añade el secreto `REVENUECAT_SECRET_KEY` en GitHub y vuelve a ejecutar **Deploy backend**.
 4. **App:** las claves públicas de SDK de RevenueCat van en `app/.env.local` o como variables del repositorio: `VITE_RC_IOS_KEY`, `VITE_RC_ANDROID_KEY` y `VITE_RC_WEB_KEY`.
 5. **Probar:** haz una compra de prueba en sandbox (TestFlight o una cuenta de prueba de Google Play) y comprueba en Ajustes → Premium que pasa a «Premium activo» y en Nutrición que el límite sube a 100.
 
