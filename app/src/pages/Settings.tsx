@@ -1,9 +1,11 @@
-import { Download, RotateCcw, Upload } from 'lucide-react';
+import { Download, Languages, RotateCcw, Upload } from 'lucide-react';
 import { useRef } from 'react';
 import { confirm, toast } from '../components/feedback';
 import { Chips, PageHeader, Section } from '../components/ui';
+import { pickProgram, programName } from '../data/programs';
+import { getLang, LANGS, t, tp, type Lang } from '../i18n';
+import { planName } from '../lib/names';
 import { saveFile } from '../lib/native';
-import { pickProgram } from '../data/programs';
 import { actions, getSaveError, useStore } from '../store/store';
 import type { Goal, Level, Setup } from '../store/types';
 
@@ -14,110 +16,120 @@ export default function Settings() {
     const fileRef = useRef<HTMLInputElement>(null);
 
     const proposed = pickProgram(profile.setup, profile.daysPerWeek);
+    const proposedName = programName(proposed);
     const planChanged = plan?.programId !== proposed.id;
 
     const download = async () => {
         try {
             await saveFile(`fitness-life-${new Date().toISOString().slice(0, 10)}.json`, actions.exportData());
-            toast('Copia lista');
+            toast(t('settings.exported'));
         } catch {
-            toast('No se pudo exportar');
+            toast(t('settings.exportFailed'));
         }
     };
 
     const restore = async (file: File) => {
-        const ok = await confirm({ title: '¿Restaurar esta copia?', message: 'Reemplaza todos tus datos actuales por los de la copia.', confirmLabel: 'Restaurar', danger: true });
+        const ok = await confirm({ title: t('settings.restore.title'), message: t('settings.restore.message'), confirmLabel: t('settings.restore.confirm'), danger: true });
         if (!ok) return;
         try {
             actions.importData(await file.text());
-            toast('Copia restaurada');
+            toast(t('settings.restored'));
         } catch (e) {
-            toast(e instanceof Error ? e.message : 'No se pudo leer el archivo');
+            toast(e instanceof Error ? e.message : t('backup.invalid'));
         }
     };
 
     const regenerate = async () => {
-        const ok = await confirm({ title: `¿Crear el plan «${proposed.name}»?`, message: 'Tus rutinas propias y tu historial se mantienen.', confirmLabel: 'Crear plan' });
+        const ok = await confirm({ title: t('settings.newPlan.title', { name: proposedName }), message: t('settings.newPlan.message'), confirmLabel: t('settings.newPlan.confirm') });
         if (!ok) return;
         actions.regeneratePlan();
-        toast(`Plan actualizado: ${proposed.name}`);
+        toast(t('settings.planUpdated', { name: proposedName }));
     };
 
     const reset = async () => {
-        const ok = await confirm({ title: '¿Borrar todos tus datos?', message: 'Se borran perfil, plan, rutinas e historial de este dispositivo. No se puede deshacer.', confirmLabel: 'Borrar todo', danger: true });
+        const ok = await confirm({ title: t('settings.reset.title'), message: t('settings.reset.message'), confirmLabel: t('settings.reset.confirm'), danger: true });
         if (ok) actions.resetAll();
     };
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Ajustes" />
+            <PageHeader title={t('nav.settings')} />
 
-            <Section title="Perfil">
+            <Section title={t('settings.language')}>
+                <div className="card flex items-center gap-3 p-4">
+                    <Languages size={20} className="shrink-0 text-brand" />
+                    <Chips<Lang> label={t('settings.language')} value={getLang()} onChange={lang => actions.setLanguage(lang)}
+                        options={LANGS.map(l => ({ value: l.code, label: l.label }))} />
+                </div>
+            </Section>
+
+            <Section title={t('settings.profile')}>
                 <div className="card space-y-5 p-4">
                     <label className="block">
-                        <span className="label mb-2 block">Nombre</span>
-                        <input value={profile.name} onChange={e => actions.updateProfile({ name: e.target.value })} placeholder="Tu nombre"
+                        <span className="label mb-2 block">{t('settings.name')}</span>
+                        <input value={profile.name} onChange={e => actions.updateProfile({ name: e.target.value })} placeholder={t('onboarding.namePlaceholder')}
                             className="w-full rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
                     </label>
                     <div>
-                        <p className="label mb-2">Objetivo</p>
-                        <Chips<Goal> label="Objetivo" value={profile.goal} onChange={goal => actions.updateProfile({ goal })}
-                            options={[{ value: 'musculo', label: 'Músculo' }, { value: 'fuerza', label: 'Fuerza' }, { value: 'salud', label: 'Forma física' }]} />
+                        <p className="label mb-2">{t('settings.goal')}</p>
+                        <Chips<Goal> label={t('settings.goal')} value={profile.goal} onChange={goal => actions.updateProfile({ goal })}
+                            options={[{ value: 'musculo', label: t('goal.musculo.short') }, { value: 'fuerza', label: t('goal.fuerza.short') }, { value: 'salud', label: t('goal.salud.short') }]} />
                     </div>
                     <div>
-                        <p className="label mb-2">Nivel</p>
-                        <Chips<Level> label="Nivel" value={profile.level} onChange={level => actions.updateProfile({ level })}
-                            options={[{ value: 'principiante', label: 'Principiante' }, { value: 'intermedio', label: 'Intermedio' }, { value: 'avanzado', label: 'Avanzado' }]} />
+                        <p className="label mb-2">{t('settings.level')}</p>
+                        <Chips<Level> label={t('settings.level')} value={profile.level} onChange={level => actions.updateProfile({ level })}
+                            options={[{ value: 'principiante', label: t('level.principiante') }, { value: 'intermedio', label: t('level.intermedio') }, { value: 'avanzado', label: t('level.avanzado') }]} />
                     </div>
                     <div>
-                        <p className="label mb-2">Días por semana</p>
-                        <Chips<number> label="Días por semana" value={profile.daysPerWeek} onChange={daysPerWeek => actions.updateProfile({ daysPerWeek })}
+                        <p className="label mb-2">{t('settings.days')}</p>
+                        <Chips<number> label={t('settings.days')} value={profile.daysPerWeek} onChange={daysPerWeek => actions.updateProfile({ daysPerWeek })}
                             options={[2, 3, 4, 5, 6].map(d => ({ value: d, label: String(d) }))} />
                     </div>
                     <div>
-                        <p className="label mb-2">Material</p>
-                        <Chips<Setup> label="Material" value={profile.setup} onChange={setup => actions.updateProfile({ setup })}
-                            options={[{ value: 'gimnasio', label: 'Gimnasio' }, { value: 'mancuernas', label: 'Mancuernas' }, { value: 'casa', label: 'Casa' }]} />
+                        <p className="label mb-2">{t('settings.setup')}</p>
+                        <Chips<Setup> label={t('settings.setup')} value={profile.setup} onChange={setup => actions.updateProfile({ setup })}
+                            options={[{ value: 'gimnasio', label: t('setup.gimnasio.short') }, { value: 'mancuernas', label: t('setup.mancuernas.short') }, { value: 'casa', label: t('setup.casa.short') }]} />
                     </div>
                     <div>
-                        <p className="label mb-2">Unidades</p>
-                        <Chips label="Unidades" value={profile.unit} onChange={unit => actions.updateProfile({ unit })}
+                        <p className="label mb-2">{t('settings.units')}</p>
+                        <Chips label={t('settings.units')} value={profile.unit} onChange={unit => actions.updateProfile({ unit })}
                             options={[{ value: 'kg', label: 'kg' }, { value: 'lbs', label: 'lb' }]} />
                     </div>
                 </div>
             </Section>
 
-            <Section title="Plan">
+            <Section title={t('settings.plan')}>
                 <div className="card p-4">
-                    <p className="font-semibold">{plan?.programName ?? 'Sin plan'}</p>
+                    <p className="font-semibold">{plan ? planName(plan) : t('settings.noPlan')}</p>
                     <p className="mb-3 text-sm text-white/55">
-                        {planChanged ? `Con tus ajustes actuales te encaja «${proposed.name}».` : 'Las series y repeticiones se ajustan a tu objetivo y nivel.'}
+                        {planChanged ? t('settings.planFits', { name: proposedName }) : t('settings.planAdjusts')}
                     </p>
                     <button onClick={regenerate} className={planChanged ? 'btn-primary w-full' : 'btn-ghost w-full'}>
-                        <RotateCcw size={16} /> {planChanged ? `Cambiar a ${proposed.name}` : 'Regenerar plan'}
+                        <RotateCcw size={16} /> {planChanged ? t('settings.switchTo', { name: proposedName }) : t('settings.regenerate')}
                     </button>
                 </div>
             </Section>
 
-            <Section title="Tus datos">
+            <Section title={t('settings.data')}>
                 <div className="card space-y-3 p-4">
-                    <p className="text-sm text-white/60">
-                        Todo se guarda en este dispositivo ({sessionsCount} entrenos). Descarga una copia de vez en cuando para no perder nada si cambias de móvil.
-                    </p>
+                    <p className="text-sm text-white/60">{tp('settings.dataInfo', sessionsCount)}</p>
                     <div className="grid grid-cols-2 gap-2">
-                        <button onClick={download} className="btn-ghost"><Download size={16} /> Exportar</button>
-                        <button onClick={() => fileRef.current?.click()} className="btn-ghost"><Upload size={16} /> Importar</button>
+                        <button onClick={download} className="btn-ghost"><Download size={16} /> {t('settings.export')}</button>
+                        <button onClick={() => fileRef.current?.click()} className="btn-ghost"><Upload size={16} /> {t('settings.import')}</button>
                     </div>
                     <input ref={fileRef} type="file" accept="application/json,.json" className="hidden"
                         onChange={e => { const f = e.target.files?.[0]; if (f) restore(f); e.target.value = ''; }} />
-                    <button onClick={reset} className="btn-danger w-full">Borrar todos los datos</button>
+                    <button onClick={reset} className="btn-danger w-full">{t('settings.reset')}</button>
                 </div>
                 {getSaveError() && (
-                    <p role="alert" className="mt-2 text-sm text-red-400">Error al guardar: {getSaveError()}</p>
+                    <p role="alert" className="mt-2 text-sm text-red-400">{t('settings.saveError', { error: getSaveError() ?? '' })}</p>
                 )}
             </Section>
 
-            <p className="px-4 pb-4 text-center text-xs text-white/30">Fitness Life · funciona sin conexión · instálala desde el menú del navegador</p>
+            <div className="space-y-1 px-4 pb-4 text-center text-xs text-white/30">
+                <p>{t('settings.footer')}</p>
+                <p>{t('settings.photoCredit')}</p>
+            </div>
         </div>
     );
 }

@@ -1,10 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { useSyncExternalStore } from 'react';
+import { detectLang, setLang, t, type Lang } from '../i18n';
 import { uid } from '../lib/id';
+import { routineName } from '../lib/names';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { ActiveWorkout, AppState, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { ActiveWorkout, AppState, ChatMessage, Macros, Meal, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // All data lives on the device. No account, no network. Export/import in
 // Ajustes is the user's backup.
@@ -17,6 +19,7 @@ const STORAGE_KEY = 'fitness-life:v1';
 
 const EMPTY: AppState = {
     version: 1, profile: null, routines: [], plan: null, sessions: [], active: null, bodyWeights: [], seenAchievements: [],
+    meals: [], nutritionTargets: null, coachChat: [],
 };
 
 const unitOf = (s: AppState) => s.profile?.unit ?? 'kg';
@@ -53,6 +56,8 @@ const mirrorSoon = () => {
 };
 
 let state: AppState = typeof localStorage === 'undefined' ? EMPTY : load();
+// First run: follow the phone's language (es/pt, otherwise English).
+setLang(state.lang ?? detectLang());
 const listeners = new Set<() => void>();
 let saveError: string | null = null;
 
@@ -61,7 +66,7 @@ const persist = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         saveError = null;
     } catch (e) {
-        saveError = e instanceof Error ? e.message : 'No se pudo guardar';
+        saveError = e instanceof Error ? e.message : t('common.saveFailed');
     }
     if (native()) mirrorSoon();
 };
@@ -78,6 +83,7 @@ export const hydrateFromNative = async () => {
         const local = parse(localStorage.getItem(STORAGE_KEY));
         if (saved && !local) {
             state = saved;
+            setLang(state.lang ?? detectLang());
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             listeners.forEach(l => l());
         } else if (local) {
@@ -90,6 +96,7 @@ export const hydrateFromNative = async () => {
 
 const set = (updater: (s: AppState) => AppState) => {
     state = updater(state);
+    if (state.lang) setLang(state.lang);
     persist();
     listeners.forEach(l => l());
 };
@@ -104,6 +111,7 @@ if (typeof window !== 'undefined') {
     window.addEventListener('storage', e => {
         if (e.key !== STORAGE_KEY) return;
         state = load();
+        setLang(state.lang ?? detectLang());
         listeners.forEach(l => l());
     });
 }
@@ -116,6 +124,14 @@ export function useStore<T>(selector: (s: AppState) => T): T;
 export function useStore<T>(selector?: (s: AppState) => T) {
     return useSyncExternalStore(subscribe, () => (selector ? selector(state) : state));
 }
+
+const MAX_CHAT = 40;
+const roundMacros = (m: Macros): Macros => ({
+    kcal: Math.max(0, Math.round(m.kcal)),
+    protein: Math.max(0, Math.round(m.protein)),
+    carbs: Math.max(0, Math.round(m.carbs)),
+    fat: Math.max(0, Math.round(m.fat)),
+});
 
 const updateActive = (fn: (a: ActiveWorkout) => ActiveWorkout) =>
     set(s => (s.active ? { ...s, active: fn(s.active) } : s));
@@ -137,6 +153,10 @@ export const actions = {
             plan,
             routines: [...s.routines.filter(r => r.source === 'custom'), ...routines],
         }));
+    },
+
+    setLanguage(lang: Lang) {
+        set(s => ({ ...s, lang }));
     },
 
     updateProfile(patch: Partial<Profile>) {
@@ -248,7 +268,10 @@ export const actions = {
         const id = routine.id ?? uid();
         set(s => {
             const existing = s.routines.find(r => r.id === id);
-            const next: Routine = { id, name: routine.name.trim() || 'Rutina', exercises: routine.exercises, source: existing?.source ?? 'custom' };
+            const name = routine.name.trim() || (existing ? routineName(existing) : 'Rutina');
+            // A plan day keeps its translatable name only if it was not renamed.
+            const dayKey = existing?.dayKey && name === routineName(existing) ? existing.dayKey : undefined;
+            const next: Routine = { id, name, dayKey, exercises: routine.exercises, source: existing?.source ?? 'custom' };
             return { ...s, routines: existing ? s.routines.map(r => r.id === id ? next : r) : [...s.routines, next] };
         });
         return id;
@@ -290,6 +313,29 @@ export const actions = {
         set(s => ({ ...s, bodyWeights: s.bodyWeights.filter(b => b.id !== id) }));
     },
 
+    addMeal(meal: Omit<Meal, 'id'>) {
+        const clean = { ...meal, name: meal.name.trim(), ...roundMacros(meal) };
+        set(s => ({ ...s, meals: [{ ...clean, id: uid() }, ...s.meals].sort((a, b) => b.date.localeCompare(a.date)) }));
+    },
+
+    deleteMeal(id: string) {
+        set(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
+    },
+
+    setNutritionTargets(targets: Macros | null) {
+        set(s => ({ ...s, nutritionTargets: targets && roundMacros(targets) }));
+    },
+
+    addChatMessage(role: ChatMessage['role'], text: string) {
+        const message: ChatMessage = { id: uid(), role, text, at: new Date().toISOString() };
+        // Keep the conversation short: it travels with every question.
+        set(s => ({ ...s, coachChat: [...s.coachChat, message].slice(-MAX_CHAT) }));
+    },
+
+    clearChat() {
+        set(s => ({ ...s, coachChat: [] }));
+    },
+
     markAchievementsSeen(ids: string[]) {
         if (ids.every(id => state.seenAchievements.includes(id))) return;
         set(s => ({ ...s, seenAchievements: [...new Set([...s.seenAchievements, ...ids])] }));
@@ -303,14 +349,14 @@ export const actions = {
     importData(json: string) {
         const data = JSON.parse(json);
         if (data?.version !== 1 || !Array.isArray(data.sessions) || !Array.isArray(data.routines)) {
-            throw new Error('El archivo no es una copia de seguridad de Fitness Life.');
+            throw new Error(t('backup.invalid'));
         }
         const { exportedAt: _ignored, ...rest } = data as AppState & { exportedAt?: string };
         set(() => ({ ...EMPTY, ...rest, active: null }));
     },
 
     resetAll() {
-        set(() => EMPTY);
+        set(s => ({ ...EMPTY, lang: s.lang }));
     },
 };
 

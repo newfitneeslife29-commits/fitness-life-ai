@@ -4,15 +4,17 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { confirm, toast } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { Section, Stat } from '../components/ui';
-import { getExercise } from '../data/exercises';
-import { ACHIEVEMENTS, unlockedAchievements } from '../lib/achievements';
+import { exerciseName, getExercise } from '../data/exercises';
+import { t, tp } from '../i18n';
+import { sessionName } from '../lib/names';
+import { ACHIEVEMENTS, achievementDescription, achievementTitle, unlockedAchievements } from '../lib/achievements';
 import { fmtDate, fmtNumber, fmtVolume, fmtWeight } from '../lib/format';
 import { shareText } from '../lib/native';
 import { kgToDisplay, newRecords, volume } from '../lib/progression';
 import { durationMin } from '../lib/stats';
 import { actions, useStore } from '../store/store';
 
-const KIND_LABEL = { e1rm: 'mejor 1RM estimado', peso: 'peso más alto', reps: 'más repeticiones' } as const;
+const kindLabel = (kind: 'e1rm' | 'peso' | 'reps') => t(`record.${kind}`);
 
 export default function SessionDetail() {
     const { id } = useParams();
@@ -46,7 +48,7 @@ export default function SessionDetail() {
     if (!session) {
         return (
             <div className="p-6 text-center text-white/60">
-                Este entreno no existe. <Link to="/progreso" className="text-brand underline">Ver historial</Link>
+                {t('session.missing')} <Link to="/progreso" className="text-brand underline">{t('session.seeHistory')}</Link>
             </div>
         );
     }
@@ -56,18 +58,18 @@ export default function SessionDetail() {
 
     const share = async () => {
         const lines = [
-            `${session.routineName} · ${fmtDate(session.startedAt)}`,
-            `${durationMin(session)} min · ${fmtVolume(volume(session.sets), unit)} · ${session.sets.length} series`,
-            ...records.map(r => `Récord: ${getExercise(r.exerciseId)?.name} (${KIND_LABEL[r.kind]})`),
-            'Registrado con Fitness Life',
+            `${sessionName(session)} · ${fmtDate(session.startedAt)}`,
+            `${durationMin(session)} min · ${fmtVolume(volume(session.sets), unit)} · ${tp('common.sets', session.sets.length)}`,
+            ...records.map(r => `${t('session.record')}: ${exerciseName(r.exerciseId)} (${kindLabel(r.kind)})`),
+            t('session.loggedWith'),
         ];
-        const result = await shareText('Mi entreno', lines.join('\n'));
-        if (result === 'copied') toast('Resumen copiado');
-        if (result === 'failed') toast('No se pudo compartir');
+        const result = await shareText(t('session.shareTitle'), lines.join('\n'));
+        if (result === 'copied') toast(t('session.copied'));
+        if (result === 'failed') toast(t('session.shareFailed'));
     };
 
     const remove = async () => {
-        if (!(await confirm({ title: '¿Borrar este entreno?', message: 'Se quitará del historial y de tus récords.', confirmLabel: 'Borrar', danger: true }))) return;
+        if (!(await confirm({ title: t('session.delete.title'), message: t('session.delete.message'), confirmLabel: t('common.delete'), danger: true }))) return;
         actions.deleteSession(session.id);
         navigate('/progreso', { replace: true });
     };
@@ -75,33 +77,33 @@ export default function SessionDetail() {
     return (
         <div className="space-y-5 pb-4">
             <header className="flex items-center gap-2 px-2 pt-4">
-                <button onClick={() => (isNew ? navigate('/') : navigate(-1))} aria-label="Volver" className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white">
+                <button onClick={() => (isNew ? navigate('/') : navigate(-1))} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white">
                     <ChevronLeft size={22} />
                 </button>
                 <div className="min-w-0 flex-1">
-                    {isNew && <p className="label text-good">Entreno guardado</p>}
-                    <h1 className="truncate text-xl font-bold">{session.routineName}</h1>
+                    {isNew && <p className="label text-good">{t('session.saved')}</p>}
+                    <h1 className="truncate text-xl font-bold">{sessionName(session)}</h1>
                     <p className="text-sm text-white/50">{fmtDate(session.startedAt)}</p>
                 </div>
             </header>
 
             <Section>
                 <div className="grid grid-cols-3 gap-2">
-                    <Stat value={`${durationMin(session)} min`} label="Duración" />
-                    <Stat value={fmtVolume(volume(session.sets), unit)} label="Volumen" />
-                    <Stat value={session.sets.length} label="Series" />
+                    <Stat value={`${durationMin(session)} min`} label={t('stat.duration')} />
+                    <Stat value={fmtVolume(volume(session.sets), unit)} label={t('stat.volume')} />
+                    <Stat value={session.sets.length} label={t('stat.sets')} />
                 </div>
             </Section>
 
             {medals.length > 0 && (
-                <Section title={medals.length === 1 ? 'Logro nuevo' : 'Logros nuevos'}>
+                <Section title={medals.length === 1 ? t('session.newMedal') : t('session.newMedals')}>
                     <ul className="space-y-2">
                         {medals.map(m => (
                             <li key={m.id} className="card flex animate-rise items-center gap-3 p-3">
                                 <Medal achievement={m} unlocked />
                                 <div>
-                                    <p className="font-semibold">{m.title}</p>
-                                    <p className="text-sm text-white/55">{m.description}</p>
+                                    <p className="font-semibold">{achievementTitle(m)}</p>
+                                    <p className="text-sm text-white/55">{achievementDescription(m)}</p>
                                 </div>
                             </li>
                         ))}
@@ -110,51 +112,51 @@ export default function SessionDetail() {
             )}
 
             {records.length > 0 && (
-                <Section title="Récords">
+                <Section title={t('section.records')}>
                     <ul className="space-y-2">
                         {records.map(r => (
                             <li key={r.exerciseId} className="card flex items-center gap-3 border-yellow-400/30 bg-yellow-400/5 p-3">
                                 <Trophy className="shrink-0 text-yellow-300" size={20} />
-                                <span className="text-sm"><b>{getExercise(r.exerciseId)?.name}</b>: {KIND_LABEL[r.kind]}</span>
+                                <span className="text-sm"><b>{exerciseName(r.exerciseId)}</b>: {kindLabel(r.kind)}</span>
                             </li>
                         ))}
                     </ul>
                 </Section>
             )}
 
-            <Section title="Ejercicios">
+            <Section title={t('section.exercises')}>
                 <div className="space-y-2">
                     {[...byExercise].map(([exerciseId, sets]) => (
                         <div key={exerciseId} className="card p-4">
-                            <Link to={`/ejercicios/${exerciseId}`} className="font-semibold hover:text-brand-strong">{getExercise(exerciseId)?.name ?? exerciseId}</Link>
+                            <Link to={`/ejercicios/${exerciseId}`} className="font-semibold hover:text-brand-strong">{exerciseName(exerciseId)}</Link>
                             <ol className="mt-2 flex flex-wrap gap-2 text-sm tabular-nums text-white/75">
                                 {sets.map(s => (
                                     <li key={s.id} className="rounded-lg bg-ink-3 px-2.5 py-1">
-                                        {s.weightKg > 0 ? `${fmtNumber(kgToDisplay(s.weightKg, unit))} × ${s.reps}` : `${s.reps}${getExercise(exerciseId)?.timed ? ' s' : ' reps'}`}
+                                        {s.weightKg > 0 ? `${fmtNumber(kgToDisplay(s.weightKg, unit))} × ${s.reps}` : `${s.reps}${getExercise(exerciseId)?.timed ? ' s' : ` ${t('unit.reps')}`}`}
                                     </li>
                                 ))}
                             </ol>
                             {sets.some(s => s.weightKg > 0) && (
-                                <p className="mt-2 text-xs text-white/45">Mejor serie: {fmtWeight(Math.max(...sets.map(s => s.weightKg)), unit)}</p>
+                                <p className="mt-2 text-xs text-white/45">{t('session.bestSet')}: {fmtWeight(Math.max(...sets.map(s => s.weightKg)), unit)}</p>
                             )}
                         </div>
                     ))}
                 </div>
             </Section>
 
-            <Section title="Notas">
+            <Section title={t('session.notes')}>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={() => actions.setSessionNotes(session.id, notes)}
-                    rows={3} placeholder="Cómo te has sentido, molestias, qué cambiar la próxima vez…" aria-label="Notas del entreno"
+                    rows={3} placeholder={t('session.notesPlaceholder')} aria-label={t('session.notesLabel')}
                     className="w-full resize-none rounded-2xl border border-line bg-ink-2 p-4 text-sm outline-none placeholder:text-white/35 focus:border-brand" />
             </Section>
 
             <Section>
                 <div className="space-y-2">
-                    <button onClick={share} className="btn-ghost w-full"><Share2 size={16} /> Compartir</button>
+                    <button onClick={share} className="btn-ghost w-full"><Share2 size={16} /> {t('common.share')}</button>
                     {isNew ? (
-                        <Link to="/" className="btn-primary w-full">Listo</Link>
+                        <Link to="/" className="btn-primary w-full">{t('common.done')}</Link>
                     ) : (
-                        <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> Borrar entreno</button>
+                        <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> {t('session.delete')}</button>
                     )}
                 </div>
             </Section>

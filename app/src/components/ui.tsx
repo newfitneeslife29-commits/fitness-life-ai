@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 export const PageHeader = ({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) => (
     <header className="flex items-end justify-between gap-4 px-4 pb-4 pt-6">
@@ -95,7 +96,7 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
             <div className="relative flex max-h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl border border-line bg-ink-2 sm:rounded-3xl">
                 <div className="flex items-center justify-between border-b border-line px-5 py-4">
                     <h2 className="text-lg font-semibold">{title}</h2>
-                    <button onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5 text-white/60 hover:bg-ink-3 hover:text-white"><X size={20} /></button>
+                    <button onClick={onClose} aria-label={t('common.close')} className="rounded-full p-1.5 text-white/60 hover:bg-ink-3 hover:text-white"><X size={20} /></button>
                 </div>
                 <div className="overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">{children}</div>
             </div>

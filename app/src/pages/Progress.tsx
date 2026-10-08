@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import { LineChart, TrainingCalendar, WeekBars } from '../components/Charts';
 import { toast } from '../components/feedback';
 import { Empty, PageHeader, Section, Stat } from '../components/ui';
-import { getExercise, MUSCLE_LABEL, type Muscle } from '../data/exercises';
-import { fmtDate, fmtNumber, fmtShortDate, fmtVolume } from '../lib/format';
+import { exerciseName, getExercise, muscleLabel, type Muscle } from '../data/exercises';
+import { t, tp } from '../i18n';
+import { sessionName } from '../lib/names';
+import { fmtDate, fmtNumber, fmtShortDate, fmtVolume, parseDecimal } from '../lib/format';
 import { displayToKg, kgToDisplay, personalRecords, volume } from '../lib/progression';
 import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, trainingCalendar, weeklySeries } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -20,14 +22,14 @@ const BodyWeightCard = ({ unit }: { unit: Unit }) => {
     const points = entries.slice(0, 60).map(e => ({ date: e.date, value: kgToDisplay(e.weightKg, unit) })).reverse();
 
     const save = () => {
-        const n = Number(value.replace(',', '.'));
+        const n = parseDecimal(value);
         if (!Number.isFinite(n) || n < 20 || n > 400) {
-            toast('Escribe un peso válido');
+            toast(t('bw.invalid'));
             return;
         }
         actions.logBodyWeight(displayToKg(n, unit));
         setValue('');
-        toast('Peso guardado');
+        toast(t('bw.saved'));
     };
 
     return (
@@ -36,16 +38,16 @@ const BodyWeightCard = ({ unit }: { unit: Unit }) => {
                 <div>
                     <p className="text-2xl font-bold tabular-nums">{latest ? `${fmtNumber(kgToDisplay(latest.weightKg, unit))} ${unit}` : '—'}</p>
                     <p className="text-xs text-white/50">
-                        {latest ? `Último registro: ${fmtShortDate(latest.date)}` : 'Aún sin registros'}
-                        {change !== null && ` · ${change > 0 ? '+' : ''}${fmtNumber(change)} ${unit} en 4 semanas`}
+                        {latest ? t('bw.last', { date: fmtShortDate(latest.date) }) : t('bw.none')}
+                        {change !== null && ` · ${t('bw.change', { change: `${change > 0 ? '+' : ''}${fmtNumber(change)} ${unit}` })}`}
                     </p>
                 </div>
                 <Scale className="text-brand" />
             </div>
             <form className="flex gap-2" onSubmit={e => { e.preventDefault(); save(); }}>
-                <input value={value} onChange={e => setValue(e.target.value)} inputMode="decimal" placeholder={`Peso de hoy (${unit})`} aria-label="Peso corporal de hoy"
+                <input value={value} onChange={e => setValue(e.target.value)} inputMode="decimal" placeholder={t('bw.placeholder', { unit })} aria-label={t('bw.label')}
                     className="min-w-0 flex-1 rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
-                <button className="btn-primary px-4 py-2" disabled={!value.trim()}>Guardar</button>
+                <button className="btn-primary px-4 py-2" disabled={!value.trim()}>{t('common.save')}</button>
             </form>
             {points.length >= 2 && <LineChart points={points} unit={unit} emptyText="" />}
             {entries.length > 0 && (
@@ -55,7 +57,7 @@ const BodyWeightCard = ({ unit }: { unit: Unit }) => {
                             <span className="text-white/60">{fmtDate(e.date)}</span>
                             <span className="flex items-center gap-2 tabular-nums">
                                 {fmtNumber(kgToDisplay(e.weightKg, unit))} {unit}
-                                <button onClick={() => actions.deleteBodyWeight(e.id)} aria-label={`Borrar el peso del ${fmtDate(e.date)}`} className="rounded p-1 text-white/35 hover:text-red-400"><Trash2 size={14} /></button>
+                                <button onClick={() => actions.deleteBodyWeight(e.id)} aria-label={t('bw.delete', { date: fmtDate(e.date) })} className="rounded p-1 text-white/35 hover:text-red-400"><Trash2 size={14} /></button>
                             </span>
                         </li>
                     ))}
@@ -94,14 +96,14 @@ export default function Progress() {
     if (sessions.length === 0) {
         return (
             <>
-                <PageHeader title="Progreso" />
+                <PageHeader title={t('nav.progress')} />
                 <div className="space-y-6">
                     <Section>
-                        <Empty icon={<ChartIcon size={32} />} title="Aún no hay entrenos">
-                            Termina tu primer entreno y aquí verás tu constancia, tus récords y cómo sube tu fuerza.
+                        <Empty icon={<ChartIcon size={32} />} title={t('progress.empty.title')}>
+                            {t('progress.empty.body')}
                         </Empty>
                     </Section>
-                    <Section title="Peso corporal"><BodyWeightCard unit={unit} /></Section>
+                    <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
                 </div>
             </>
         );
@@ -109,70 +111,70 @@ export default function Progress() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Progreso" subtitle={`${sessions.length} entrenos registrados`} />
+            <PageHeader title={t('nav.progress')} subtitle={tp('progress.count', sessions.length)} />
 
-            <Section title="Constancia">
+            <Section title={t('progress.consistency')}>
                 <div className="card space-y-4 p-4">
                     <WeekBars weeks={weeks} target={profile.daysPerWeek} />
                     <TrainingCalendar weeks={calendar} />
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                    <Stat value={thisWeek.length} label="entrenos esta semana" />
-                    <Stat value={fmtVolume(weeks[weeks.length - 1].volumeKg, unit)} label="volumen esta semana" />
+                    <Stat value={thisWeek.length} label={t('progress.thisWeek')} />
+                    <Stat value={fmtVolume(weeks[weeks.length - 1].volumeKg, unit)} label={t('progress.volumeWeek')} />
                 </div>
             </Section>
 
-            <Section title={bodyweight ? 'Mejores repeticiones' : `1RM estimado (${unit})`}>
+            <Section title={bodyweight ? t('progress.bestReps') : t('progress.e1rm', { unit })}>
                 <div className="card p-4">
-                    <select value={exerciseId} onChange={e => setPicked(e.target.value)} aria-label="Ejercicio"
+                    <select value={exerciseId} onChange={e => setPicked(e.target.value)} aria-label={t('progress.exercise')}
                         className="mb-3 w-full rounded-xl border border-line bg-ink-3 px-3 py-2.5 text-sm outline-none focus:border-brand">
-                        {exerciseIds.map(id => <option key={id} value={id}>{getExercise(id)?.name ?? id}</option>)}
+                        {exerciseIds.map(id => <option key={id} value={id}>{exerciseName(id)}</option>)}
                     </select>
-                    <LineChart points={series} unit={bodyweight ? 'reps' : unit} emptyText="Haz este ejercicio en dos entrenos para ver la tendencia." />
+                    <LineChart points={series} unit={bodyweight ? t('unit.reps') : unit} emptyText={t('progress.trendEmpty')} />
                 </div>
             </Section>
 
             {muscles.length > 0 && (
-                <Section title="Series por músculo esta semana">
+                <Section title={t('progress.setsPerMuscle')}>
                     <div className="card space-y-2 p-4">
                         {muscles.map(([m, n]) => (
                             <div key={m} className="flex items-center gap-3 text-sm">
-                                <span className="w-28 shrink-0 text-white/75">{MUSCLE_LABEL[m]}</span>
+                                <span className="w-28 shrink-0 text-white/75">{muscleLabel(m)}</span>
                                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink-4">
                                     <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (n / 20) * 100)}%` }} />
                                 </div>
                                 <span className="w-6 text-right tabular-nums text-white/60">{n}</span>
                             </div>
                         ))}
-                        <p className="pt-1 text-xs text-white/40">Referencia: 10 a 20 series semanales por músculo para ganar masa.</p>
+                        <p className="pt-1 text-xs text-white/40">{t('progress.setsReference')}</p>
                     </div>
                 </Section>
             )}
 
-            <Section title="Peso corporal"><BodyWeightCard unit={unit} /></Section>
+            <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
 
-            <Section title="Récords">
+            <Section title={t('section.records')}>
                 <div className="card divide-y divide-line">
                     {[...records].sort((a, b) => b.bestE1rm - a.bestE1rm || b.bestReps - a.bestReps).slice(0, 10).map(r => (
                         <Link key={r.exerciseId} to={`/ejercicios/${r.exerciseId}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-3">
-                            <span className="truncate">{getExercise(r.exerciseId)?.name ?? r.exerciseId}</span>
+                            <span className="truncate">{exerciseName(r.exerciseId)}</span>
                             <span className="shrink-0 text-sm tabular-nums text-white/60">
                                 {r.bestWeightKg > 0
                                     ? <>{fmtNumber(kgToDisplay(r.bestWeightKg, unit))} × {r.repsAtBestWeight} · <b className="text-white">{fmtNumber(kgToDisplay(r.bestE1rm, unit))}</b> 1RM</>
-                                    : <><b className="text-white">{r.bestReps}</b> {getExercise(r.exerciseId)?.timed ? 's' : 'reps'}</>}
+                                    : <><b className="text-white">{r.bestReps}</b> {getExercise(r.exerciseId)?.timed ? 's' : t('unit.reps')}</>}
                             </span>
                         </Link>
                     ))}
                 </div>
             </Section>
 
-            <Section title="Historial">
+            <Section title={t('section.history')}>
                 <div className="card divide-y divide-line">
                     {sessions.slice(0, historyLimit).map(s => (
                         <Link key={s.id} to={`/sesion/${s.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-3">
                             <div className="min-w-0">
-                                <p className="truncate font-medium">{s.routineName}</p>
-                                <p className="text-xs text-white/50">{fmtDate(s.startedAt)} · {durationMin(s)} min · {s.sets.length} series</p>
+                                <p className="truncate font-medium">{sessionName(s)}</p>
+                                <p className="text-xs text-white/50">{fmtDate(s.startedAt)} · {durationMin(s)} min · {tp('common.sets', s.sets.length)}</p>
                             </div>
                             <span className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-white/60">
                                 {fmtVolume(volume(s.sets), unit)} <ChevronRight size={16} />
@@ -182,7 +184,7 @@ export default function Progress() {
                 </div>
                 {sessions.length > historyLimit && (
                     <button onClick={() => setHistoryLimit(n => n + 20)} className="btn-ghost mt-2 w-full">
-                        Ver más ({sessions.length - historyLimit})
+                        {t('common.showMore', { n: sessions.length - historyLimit })}
                     </button>
                 )}
             </Section>

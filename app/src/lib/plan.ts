@@ -1,5 +1,6 @@
 import { getExercise } from '../data/exercises';
-import { pickProgram, prescribe } from '../data/programs';
+import { dayKeyOf, pickProgram, prescribe } from '../data/programs';
+import { l10n } from '../i18n';
 import type { Plan, Profile, Routine } from '../store/types';
 import { uid } from './id';
 
@@ -7,9 +8,10 @@ import { uid } from './id';
 // sets, reps and rest set by goal and level.
 export const buildPlan = (profile: Pick<Profile, 'goal' | 'level' | 'daysPerWeek' | 'setup'>): { plan: Plan; routines: Routine[] } => {
     const program = pickProgram(profile.setup, profile.daysPerWeek);
-    const routines: Routine[] = program.days.map(day => ({
+    const routines: Routine[] = program.days.map((day, i) => ({
         id: uid(),
-        name: day.name,
+        name: l10n(day.name),
+        dayKey: dayKeyOf(program.id, i),
         source: 'plan',
         exercises: day.slots.map(slot => {
             const p = prescribe(profile.goal, profile.level, slot.role, getExercise(slot.exerciseId)?.timed);
@@ -18,6 +20,6 @@ export const buildPlan = (profile: Pick<Profile, 'goal' | 'level' | 'daysPerWeek
     }));
     return {
         routines,
-        plan: { programId: program.id, programName: program.name, routineIds: routines.map(r => r.id), nextIndex: 0 },
+        plan: { programId: program.id, programName: l10n(program.name), routineIds: routines.map(r => r.id), nextIndex: 0 },
     };
 };

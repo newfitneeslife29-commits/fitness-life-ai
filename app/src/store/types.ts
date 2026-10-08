@@ -1,3 +1,5 @@
+import type { Lang } from '../i18n';
+
 export type Goal = 'fuerza' | 'musculo' | 'salud';
 export type Level = 'principiante' | 'intermedio' | 'avanzado';
 export type Setup = 'gimnasio' | 'mancuernas' | 'casa';
@@ -27,6 +29,8 @@ export interface Routine {
     exercises: RoutineExercise[];
     // Routines generated for the plan vs. created by the user.
     source: 'plan' | 'custom';
+    // "programId:index" for untouched plan days: the name follows the language.
+    dayKey?: string;
 }
 
 export interface Plan {
@@ -54,6 +58,7 @@ export interface Session {
     endedAt: string;
     sets: LoggedSet[];
     notes?: string;
+    dayKey?: string; // see Routine.dayKey; 'free' for a free workout
 }
 
 export interface BodyWeight {
@@ -82,6 +87,7 @@ export interface ActiveWorkout {
     id: string;
     routineId: string | null;
     routineName: string;
+    dayKey?: string;
     startedAt: string;
     exercises: ActiveExercise[];
     // Epoch ms when the current rest ends; null when not resting.
@@ -89,8 +95,30 @@ export interface ActiveWorkout {
     restTotalSec: number;
 }
 
+export interface Macros {
+    kcal: number;
+    protein: number; // grams
+    carbs: number;
+    fat: number;
+}
+
+export interface Meal extends Macros {
+    id: string;
+    date: string; // ISO
+    name: string;
+    source: 'manual' | 'ai';
+}
+
+export interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    text: string;
+    at: string; // ISO
+}
+
 export interface AppState {
     version: 1;
+    lang?: Lang;
     profile: Profile | null;
     routines: Routine[];
     plan: Plan | null;
@@ -99,4 +127,8 @@ export interface AppState {
     bodyWeights: BodyWeight[]; // newest first
     // Achievement ids the user has already been shown.
     seenAchievements: string[];
+    meals: Meal[]; // newest first
+    // null: targets are calculated from goal and body weight.
+    nutritionTargets: Macros | null;
+    coachChat: ChatMessage[]; // oldest first
 }

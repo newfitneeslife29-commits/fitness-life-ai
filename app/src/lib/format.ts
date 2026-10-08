@@ -1,22 +1,25 @@
+import { locale, t } from '../i18n';
 import type { Unit } from '../store/types';
 import { kgToDisplay } from './progression';
 
-// Two decimals so 1,25 kg plates and 0,5 lb steps are shown exactly.
-const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 });
+// Formatting follows the app language (decimal comma in es/pt, point in en).
 
-export const fmtNumber = (n: number) => number.format(n);
+// Two decimals so 1,25 kg plates and 0,5 lb steps are shown exactly.
+export const fmtNumber = (n: number) => new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }).format(n);
 
 export const fmtWeight = (kg: number, unit: Unit) => `${fmtNumber(kgToDisplay(kg, unit))} ${unit}`;
 
 // Big totals (volume) rounded to whole units.
 export const fmtVolume = (kg: number, unit: Unit) =>
-    `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(kgToDisplay(kg, unit))} ${unit}`;
+    `${new Intl.NumberFormat(locale(), { maximumFractionDigits: 0 }).format(kgToDisplay(kg, unit))} ${unit}`;
 
 export const fmtDate = (iso: string | Date) =>
-    new Date(iso).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    new Date(iso).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 
 export const fmtShortDate = (iso: string | Date) =>
-    new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
+
+export const fmtMonth = (d: Date) => d.toLocaleDateString(locale(), { month: 'short' }).replace('.', '');
 
 export const fmtClock = (totalSec: number) => {
     const s = Math.max(0, Math.round(totalSec));
@@ -30,7 +33,13 @@ export const fmtRest = (sec: number) => (sec % 60 === 0 ? `${sec / 60} min` : fm
 
 export const fmtRange = (min: number, max: number) => (min === max ? `${min}` : `${min}–${max}`);
 
+// Parses what people type, with a decimal comma or point.
+export const parseDecimal = (raw: string) => Number(raw.trim().replace(',', '.'));
+
+// Shows a number the way it is typed in the current language.
+export const typedNumber = (n: number) => (locale() === 'en-US' ? String(n) : String(n).replace('.', ','));
+
 export const greeting = (date = new Date()) => {
     const h = date.getHours();
-    return h < 6 ? 'Buenas noches' : h < 13 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches';
+    return h < 6 ? t('greet.night') : h < 13 ? t('greet.morning') : h < 21 ? t('greet.afternoon') : t('greet.night');
 };

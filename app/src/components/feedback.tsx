@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { t } from '../i18n';
 
 // App-wide confirm dialogs and toasts. Native `window.confirm` looks foreign
 // inside the iOS/Android shells, so everything goes through here instead.
@@ -74,9 +75,9 @@ export const FeedbackHost = () => {
                         <h2 className="text-lg font-semibold">{d.title}</h2>
                         {d.message && <p className="mt-1 text-sm text-white/65">{d.message}</p>}
                         <div className="mt-5 grid grid-cols-2 gap-2">
-                            <button className="btn-ghost" onClick={() => close(false)}>{d.cancelLabel ?? 'Cancelar'}</button>
+                            <button className="btn-ghost" onClick={() => close(false)}>{d.cancelLabel ?? t('common.cancel')}</button>
                             <button ref={confirmRef} className={d.danger ? 'btn bg-red-500 text-white hover:bg-red-400' : 'btn-primary'} onClick={() => close(true)}>
-                                {d.confirmLabel ?? 'Aceptar'}
+                                {d.confirmLabel ?? t('common.ok')}
                             </button>
                         </div>
                     </div>

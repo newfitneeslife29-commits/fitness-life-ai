@@ -1,4 +1,5 @@
-import { fmtNumber, fmtShortDate } from '../lib/format';
+import { t, tp } from '../i18n';
+import { fmtMonth, fmtNumber, fmtShortDate } from '../lib/format';
 
 // Small, dependency-free SVG charts sized to the phone column.
 
@@ -26,7 +27,7 @@ export const LineChart = ({ points, unit, emptyText }: {
     const last = values.length - 1;
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img"
-            aria-label={`De ${fmtNumber(values[0])} a ${fmtNumber(values[last])} ${unit}`}>
+            aria-label={t('chart.trend', { from: fmtNumber(values[0]), to: fmtNumber(values[last]), unit })}>
             {ticks.map(t => (
                 <g key={t}>
                     <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#2a303a" strokeWidth={1} />
@@ -55,9 +56,9 @@ export const WeekBars = ({ weeks, target }: { weeks: { weekStart: Date; sessions
     const y = (v: number) => padT + (1 - v / max) * (H - padT - padB);
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img"
-            aria-label={`Entrenos por semana; objetivo ${target}`}>
+            aria-label={t('chart.weeks', { target })}>
             <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="#34d399" strokeDasharray="4 4" strokeWidth={1} />
-            <text x={W} y={y(target) - 4} textAnchor="end" fontSize={10} fill="#34d399">objetivo {target}</text>
+            <text x={W} y={y(target) - 4} textAnchor="end" fontSize={10} fill="#34d399">{t('chart.target', { target })}</text>
             {weeks.map((w, i) => {
                 const cx = slot * i + slot / 2;
                 const current = i === weeks.length - 1;
@@ -66,11 +67,11 @@ export const WeekBars = ({ weeks, target }: { weeks: { weekStart: Date; sessions
                     <g key={i}>
                         <rect x={cx - barW / 2} y={y(w.sessions)} width={barW} height={Math.max(h, w.sessions ? 2 : 0)} rx={5}
                             fill={current ? '#f26b1d' : '#3a414d'}>
-                            <title>{`Semana del ${fmtShortDate(w.weekStart)}: ${w.sessions}`}</title>
+                            <title>{t('chart.weekOf', { date: fmtShortDate(w.weekStart), n: w.sessions })}</title>
                         </rect>
                         {w.sessions > 0 && <text x={cx} y={y(w.sessions) - 4} textAnchor="middle" fontSize={10} fill="#ffffffb3">{w.sessions}</text>}
                         <text x={cx} y={H - 6} textAnchor="middle" fontSize={9.5} fill={current ? '#fff' : '#ffffff66'}>
-                            {current ? 'Esta' : fmtShortDate(w.weekStart).replace('.', '')}
+                            {current ? t('chart.thisWeek') : fmtShortDate(w.weekStart).replace('.', '')}
                         </text>
                     </g>
                 );
@@ -86,15 +87,15 @@ export const TrainingCalendar = ({ weeks }: { weeks: { date: Date; count: number
     const maxVol = Math.max(1, ...weeks.flat().map(d => d.volumeKg));
     const trained = weeks.flat().filter(d => d.count > 0).length;
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${trained} días entrenados en las últimas ${weeks.length} semanas`}>
-            {['L', 'X', 'D'].map((label, i) => (
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('chart.calendar', { n: trained, weeks: weeks.length })}>
+            {[t('chart.mon'), t('chart.wed'), t('chart.sun')].map((label, i) => (
                 <text key={label} x={0} y={top + [0, 2, 6][i] * (cell + gap) + 11} fontSize={9} fill="#ffffff59">{label}</text>
             ))}
             {weeks.map((week, w) => (
                 <g key={w}>
                     {week[0].date.getDate() <= 7 && (
                         <text x={left + w * (cell + gap)} y={9} fontSize={9} fill="#ffffff59">
-                            {week[0].date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '')}
+                            {fmtMonth(week[0].date)}
                         </text>
                     )}
                     {week.map((d, i) => (
@@ -102,7 +103,7 @@ export const TrainingCalendar = ({ weeks }: { weeks: { date: Date; count: number
                             fill={d.future ? 'transparent' : d.count ? '#f26b1d' : '#1f242c'}
                             fillOpacity={d.count ? 0.45 + 0.55 * (d.volumeKg / maxVol) : 1}
                             stroke={d.future ? '#1f242c' : 'none'}>
-                            <title>{`${d.date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}${d.count ? `: ${d.count} entreno${d.count > 1 ? 's' : ''}` : ''}`}</title>
+                            <title>{`${fmtShortDate(d.date)}${d.count ? `: ${tp('common.workouts', d.count)}` : ''}`}</title>
                         </rect>
                     ))}
                 </g>

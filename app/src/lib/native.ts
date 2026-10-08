@@ -7,6 +7,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Share } from '@capacitor/share';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { t } from '../i18n';
 
 // One place for device features. Inside the iOS/Android apps they use the
 // native plugins; in the browser they fall back to web APIs or do nothing.
@@ -66,7 +67,7 @@ export const scheduleRestAlert = async (atMs: number) => {
         await LocalNotifications.cancel({ notifications: [{ id: REST_NOTIFICATION_ID }] });
         if (atMs <= Date.now() + 1000) return;
         await LocalNotifications.schedule({
-            notifications: [{ id: REST_NOTIFICATION_ID, title: 'Descanso terminado', body: 'A por la siguiente serie.', schedule: { at: new Date(atMs), allowWhileIdle: true } }],
+            notifications: [{ id: REST_NOTIFICATION_ID, title: t('notify.restTitle'), body: t('notify.restBody'), schedule: { at: new Date(atMs), allowWhileIdle: true } }],
         });
     });
 };
@@ -101,7 +102,7 @@ export const shareText = async (title: string, text: string): Promise<'shared' |
 export const saveFile = async (name: string, content: string) => {
     if (isNative()) {
         const written = await Filesystem.writeFile({ path: name, data: content, directory: Directory.Cache, encoding: Encoding.UTF8 });
-        await Share.share({ title: 'Copia de Fitness Life', url: written.uri, dialogTitle: 'Guardar copia' });
+        await Share.share({ title: t('backup.shareTitle'), url: written.uri, dialogTitle: t('backup.save') });
         return;
     }
     const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));

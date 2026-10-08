@@ -3,7 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Everything the app needs is bundled: no CDNs, no API keys, no backend.
+// Everything the app needs is bundled: no CDNs, no API keys. The only
+// backend is the optional AI nutrition coach (see src/lib/ai.ts).
 // `base: './'` lets the same build run from any folder (GitHub Pages, Netlify, a phone).
 export default defineConfig({
   base: './',
@@ -15,6 +16,8 @@ export default defineConfig({
       // iOS/Android apps a service worker would only serve stale files.
       injectRegister: false,
       includeAssets: ['icon.svg'],
+      // Exercise photos are precached too, so how-to images work offline.
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'] },
       manifest: {
         name: 'Fitness Life',
         short_name: 'Fitness Life',

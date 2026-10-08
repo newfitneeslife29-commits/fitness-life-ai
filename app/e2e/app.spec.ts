@@ -16,6 +16,13 @@ const onboard = async (page: Page, opts: { days?: string; setup?: RegExp } = {})
     await page.getByRole('button', { name: 'Siguiente' }).click();
 };
 
+// Every exercise demo shows real photos, not broken images.
+const expectPhotosLoaded = async (page: Page) => {
+    const demo = page.getByRole('img', { name: /^Cómo se hace/ }).first();
+    await expect(demo.locator('img').first()).toHaveJSProperty('complete', true);
+    expect(await demo.locator('img').first().evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(100);
+};
+
 test('onboarding builds a plan that matches the answers', async ({ page }) => {
     await onboard(page, { days: '4' });
     await expect(page.getByRole('heading', { name: 'Torso / Pierna' })).toBeVisible();
@@ -38,6 +45,11 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     // First exercise of "Cuerpo completo A" for an intermediate: squat 3 x 6-10.
     const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
     await expect(squat.getByText(/Primera vez/)).toBeVisible();
+    // How-to photos while training.
+    await squat.getByRole('button', { name: 'Cómo se hace' }).last().click();
+    await expect(squat.getByRole('img', { name: 'Cómo se hace: Sentadilla con barra' }).last()).toBeVisible();
+    await expectPhotosLoaded(page);
+    await squat.getByRole('button', { name: 'Ocultar' }).click();
     for (let i = 1; i <= 3; i++) {
         await squat.getByLabel(`Peso serie ${i}`).fill('80');
         await squat.getByLabel(`Repeticiones serie ${i}`).fill('10');
@@ -81,7 +93,7 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
 
     await page.reload();
     await page.getByRole('link', { name: 'Progreso' }).click();
-    await expect(page.getByText('1 entrenos registrados')).toBeVisible();
+    await expect(page.getByText('1 entreno registrado')).toBeVisible();
     await expect(page.getByRole('link', { name: /Sentadilla con barra/ }).first()).toBeVisible();
 });
 
@@ -116,10 +128,14 @@ test('export a backup from settings', async ({ page }) => {
 test('exercise library search and detail', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Ejercicios', exact: true }).click();
+    await page.getByRole('link', { name: 'Rutinas' }).click();
+    await page.getByRole('link', { name: /^Ejercicios/ }).click();
     await page.getByLabel('Buscar ejercicio').fill('dominada');
     await page.getByRole('link', { name: /Dominadas/ }).click();
     await expect(page.getByRole('heading', { name: 'Dominadas' })).toBeVisible();
+    // Start and end photos of the movement.
+    await expect(page.getByRole('img', { name: 'Cómo se hace: Dominadas' })).toBeVisible();
+    await expectPhotosLoaded(page);
     await expect(page.getByText('la app te sugerirá una repetición más')).toBeVisible();
     await expect(page.getByText('Todavía no has hecho este ejercicio.')).toBeVisible();
 });
@@ -157,4 +173,108 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.getByText('78,4 kg').first()).toBeVisible();
     await expect(page.getByRole('img', { name: /días entrenados/ })).toBeVisible();
+});
+
+test('switch language in onboarding and settings', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('radio', { name: 'English' }).click();
+    await expect(page.getByRole('heading', { name: 'Your strength plan in 1 minute' })).toBeVisible();
+    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('heading', { name: 'Full body A/B' })).toBeVisible();
+    await page.getByRole('button', { name: 'Start with this plan' }).click();
+    await expect(page.getByRole('heading', { name: '0 of 3 workouts this week' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Nutrition' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('radio', { name: 'Português' }).click();
+    await expect(page.getByRole('link', { name: 'Hoje' })).toBeVisible();
+    await page.reload();
+    await page.getByRole('link', { name: 'Hoje' }).click();
+    await expect(page.getByRole('heading', { name: '0 de 3 treinos nesta semana' })).toBeVisible();
+    // Names of generated routines follow the language too.
+    await expect(page.getByRole('heading', { name: 'Corpo inteiro A' })).toBeVisible();
+});
+
+// Fake Supabase: anonymous sign-in plus the nutrition-coach function.
+const mockAi = async (page: Page, calls: Record<string, unknown>[]) => {
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    await page.route('http://ai.test/**', async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (url.includes('/auth/v1/signup')) {
+            return route.fulfill({
+                headers: cors, json: {
+                    access_token: 'token', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600,
+                    refresh_token: 'refresh', user: { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', is_anonymous: true },
+                },
+            });
+        }
+        if (url.includes('/functions/v1/nutrition-coach')) {
+            const body = req.postDataJSON();
+            calls.push(body);
+            if (body.action === 'estimate') {
+                return route.fulfill({
+                    headers: cors, json: {
+                        name: 'Desayuno de huevos', note: 'Supuse huevos grandes.',
+                        items: [
+                            { name: 'Huevos revueltos', grams: 120, kcal: 180, protein: 13, carbs: 1, fat: 13 },
+                            { name: 'Tostada integral', grams: 40, kcal: 100, protein: 4, carbs: 18, fat: 1 },
+                        ],
+                    },
+                });
+            }
+            return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
+        }
+        return route.fulfill({ status: 404, headers: cors, body: '' });
+    });
+};
+
+test('nutrition: targets, meals by hand and with AI, and the AI coach', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición' }).click();
+
+    // Targets need a body weight: 80 kg and "Ganar músculo" → 2800 kcal, 160 g protein.
+    await page.getByLabel('Peso corporal de hoy').fill('80');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('0 de 2800 kcal')).toBeVisible();
+    await expect(page.getByText('0 / 160 g')).toBeVisible();
+
+    // By hand: calories worked out from the macros.
+    await page.getByRole('button', { name: 'Añadir comida' }).click();
+    await page.getByRole('tab', { name: 'Manual' }).click();
+    await page.getByLabel('Nombre').fill('Batido de proteína');
+    await page.getByLabel('Proteína (g)').fill('25');
+    await page.getByLabel('Carbohidratos (g)').fill('5');
+    await page.getByLabel('Grasa (g)').fill('2');
+    await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
+    await expect(page.getByText('Batido de proteína')).toBeVisible();
+    await expect(page.getByText('138 de 2800 kcal')).toBeVisible();
+
+    // With AI: describe it, review the estimate, add it.
+    await page.getByRole('button', { name: 'Añadir comida' }).click();
+    await page.getByLabel('Describe lo que comiste').fill('2 huevos revueltos y una tostada');
+    await page.getByRole('button', { name: 'Calcular con IA' }).click();
+    await expect(page.getByText('Desayuno de huevos')).toBeVisible();
+    await expect(page.getByText('280 kcal · P 17 g · C 19 g · G 14 g')).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
+    await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
+    expect(calls[0]).toMatchObject({ action: 'estimate', lang: 'es', text: '2 huevos revueltos y una tostada' });
+
+    // The coach gets the user's goal and what they ate today.
+    await page.getByRole('button', { name: '¿Qué ceno para llegar a mi proteína?' }).click();
+    await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
+    expect(calls[1]).toMatchObject({
+        action: 'chat', lang: 'es',
+        context: { goal: 'musculo', weightKg: 80, targets: { kcal: 2800, protein: 160 }, today: { kcal: 418, protein: 42 } },
+        messages: [{ role: 'user', text: '¿Qué ceno para llegar a mi proteína?' }],
+    });
+
+    // Everything stays after a reload.
+    await page.reload();
+    await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
+    await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
 });

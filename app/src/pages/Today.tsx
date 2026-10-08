@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { Empty, Section, Stat } from '../components/ui';
-import { getExercise } from '../data/exercises';
-import { ACHIEVEMENTS, unlockedAchievements } from '../lib/achievements';
+import { exerciseName, getExercise } from '../data/exercises';
+import { t, tp } from '../i18n';
+import { planName, routineName, sessionName } from '../lib/names';
+import { ACHIEVEMENTS, achievementTitle, unlockedAchievements } from '../lib/achievements';
 import { fmtDate, fmtRange, fmtVolume, greeting } from '../lib/format';
 import { volume } from '../lib/progression';
 import { durationMin, sessionsThisWeek, streakWeeks } from '../lib/stats';
@@ -16,7 +18,7 @@ const WeekRing = ({ done, target }: { done: number; target: number }) => {
     const r = 34, c = 2 * Math.PI * r, gap = target > 1 ? 6 : 0;
     const seg = c / target - gap;
     return (
-        <svg viewBox="0 0 84 84" className="h-24 w-24 shrink-0 -rotate-90" role="img" aria-label={`${done} de ${target} entrenos esta semana`}>
+        <svg viewBox="0 0 84 84" className="h-24 w-24 shrink-0 -rotate-90" role="img" aria-label={t('today.title', { done, target })}>
             {Array.from({ length: target }, (_, i) => (
                 <circle key={i} cx={42} cy={42} r={r} fill="none" strokeWidth={9} strokeLinecap="round"
                     stroke={i < done ? '#f26b1d' : '#252a33'}
@@ -43,7 +45,7 @@ export default function Today() {
     const unseen = [...unlocked.keys()].filter(id => !seenAchievements.includes(id)).length;
 
     const start = async (routineId: string | null) => {
-        if (active && (active.routineId === routineId || !(await confirm({ title: 'Ya tienes un entreno en curso', message: '¿Descartarlo y empezar otro?', confirmLabel: 'Empezar otro', danger: true })))) {
+        if (active && (active.routineId === routineId || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
             navigate('/entreno');
             return;
         }
@@ -57,25 +59,25 @@ export default function Today() {
                 <div className="min-w-0 flex-1">
                     <p className="text-sm text-white/55">{greeting()}{profile.name ? `, ${profile.name}` : ''}</p>
                     <h1 className="text-2xl font-bold leading-tight tracking-tight">
-                        {thisWeek >= profile.daysPerWeek ? 'Semana completada' : `${thisWeek} de ${profile.daysPerWeek} entrenos esta semana`}
+                        {thisWeek >= profile.daysPerWeek ? t('today.weekDone') : t('today.title', { done: thisWeek, target: profile.daysPerWeek })}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">
-                        {thisWeek >= profile.daysPerWeek ? 'Objetivo cumplido. Descansa o suma un extra.' : `Te ${profile.daysPerWeek - thisWeek === 1 ? 'queda 1 entreno' : `quedan ${profile.daysPerWeek - thisWeek} entrenos`} para tu objetivo.`}
+                        {thisWeek >= profile.daysPerWeek ? t('today.weekDoneHint') : tp('today.left', profile.daysPerWeek - thisWeek)}
                     </p>
                 </div>
                 <WeekRing done={thisWeek} target={profile.daysPerWeek} />
             </header>
 
-            <Section title="Siguiente entreno">
+            <Section title={t('today.next')}>
                 {next ? (
                     <div className="card overflow-hidden bg-gradient-to-br from-ink-3 to-ink-2">
                         <div className="p-4">
-                            <p className="text-xs text-white/50">{plan?.programName} · día {(plan?.nextIndex ?? 0) + 1} de {plan?.routineIds.length}</p>
-                            <h2 className="mb-3 text-xl font-bold">{next.name}</h2>
+                            <p className="text-xs text-white/50">{plan && planName(plan)} · {t('today.dayOf', { n: (plan?.nextIndex ?? 0) + 1, total: plan?.routineIds.length ?? 0 })}</p>
+                            <h2 className="mb-3 text-xl font-bold">{routineName(next)}</h2>
                             <ul className="space-y-1.5 text-sm">
                                 {next.exercises.map((e, i) => (
                                     <li key={i} className="flex justify-between gap-3">
-                                        <span className="truncate text-white/85">{getExercise(e.exerciseId)?.name ?? e.exerciseId}</span>
+                                        <span className="truncate text-white/85">{exerciseName(e.exerciseId)}</span>
                                         <span className="shrink-0 tabular-nums text-white/45">
                                             {e.sets} × {fmtRange(e.repMin, e.repMax)}{getExercise(e.exerciseId)?.timed ? ' s' : ''}
                                         </span>
@@ -84,47 +86,47 @@ export default function Today() {
                             </ul>
                         </div>
                         <button onClick={() => start(next.id)} className="flex w-full items-center justify-center gap-2 bg-brand py-4 font-semibold text-ink transition hover:bg-brand-strong active:scale-[0.99]">
-                            <Play size={18} fill="currentColor" /> {active?.routineId === next.id ? 'Continuar entreno' : 'Empezar entreno'}
+                            <Play size={18} fill="currentColor" /> {active?.routineId === next.id ? t('today.continue') : t('today.start')}
                         </button>
                     </div>
                 ) : (
-                    <Empty icon={<Plus />} title="No tienes plan activo">
-                        Crea uno en <Link className="text-brand underline" to="/ajustes">Ajustes</Link> o haz un entreno libre.
+                    <Empty icon={<Plus />} title={t('today.noPlan')}>
+                        {t('today.noPlanHint')} <Link className="text-brand underline" to="/ajustes">{t('nav.settings')}</Link>
                     </Empty>
                 )}
                 <button onClick={() => start(null)} className="btn-ghost mt-2 w-full">
-                    <Plus size={18} /> Entreno libre
+                    <Plus size={18} /> {t('workout.free')}
                 </button>
             </Section>
 
             <Section>
                 <div className="grid grid-cols-2 gap-2">
-                    <Stat value={<span className="flex items-center gap-1.5"><Flame size={18} className="text-brand" />{streak}</span>} label={streak === 1 ? 'semana seguida' : 'semanas seguidas'} />
-                    <Stat value={<span className="flex items-center gap-1.5"><Trophy size={18} className="text-brand" />{sessions.length}</span>} label="entrenos en total" />
+                    <Stat value={<span className="flex items-center gap-1.5"><Flame size={18} className="text-brand" />{streak}</span>} label={tp('today.streak', streak)} />
+                    <Stat value={<span className="flex items-center gap-1.5"><Trophy size={18} className="text-brand" />{sessions.length}</span>} label={t('today.total')} />
                 </div>
             </Section>
 
-            <Section title="Logros">
+            <Section title={t('nav.achievements')}>
                 <Link to="/logros" className="card flex items-center gap-3 p-3 hover:bg-ink-3">
                     {latestMedal
                         ? <Medal achievement={ACHIEVEMENTS.find(a => a.id === latestMedal.id)!} unlocked />
                         : <Medal achievement={ACHIEVEMENTS[0]} unlocked={false} />}
                     <div className="min-w-0 flex-1">
                         <p className="font-semibold">
-                            {latestMedal ? ACHIEVEMENTS.find(a => a.id === latestMedal.id)?.title : 'Tu primer logro te espera'}
+                            {latestMedal ? achievementTitle(ACHIEVEMENTS.find(a => a.id === latestMedal.id)!) : t('today.firstMedal')}
                         </p>
-                        <p className="text-sm text-white/50">{unlocked.size} de {ACHIEVEMENTS.length} conseguidos</p>
+                        <p className="text-sm text-white/50">{t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })}</p>
                     </div>
-                    {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">{unseen} nuevo{unseen > 1 ? 's' : ''}</span>}
+                    {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">{tp('today.newMedals', unseen)}</span>}
                     <ChevronRight className="shrink-0 text-white/40" />
                 </Link>
             </Section>
 
             {lastSession && (
-                <Section title="Último entreno">
+                <Section title={t('today.last')}>
                     <Link to={`/sesion/${lastSession.id}`} className="card flex items-center justify-between gap-3 p-4 hover:bg-ink-3">
                         <div className="min-w-0">
-                            <p className="truncate font-semibold">{lastSession.routineName}</p>
+                            <p className="truncate font-semibold">{sessionName(lastSession)}</p>
                             <p className="text-sm text-white/50">
                                 {fmtDate(lastSession.startedAt)} · {durationMin(lastSession)} min · {fmtVolume(volume(lastSession.sets), profile.unit)}
                             </p>

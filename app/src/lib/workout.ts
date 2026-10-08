@@ -2,6 +2,7 @@ import { getExercise } from '../data/exercises';
 import type { ActiveExercise, ActiveWorkout, Routine, RoutineExercise, Session, Unit, WorkingSet } from '../store/types';
 import { uid } from './id';
 import { stepForUnit, suggestNext, type Suggestion } from './progression';
+import { routineName } from './names';
 import { lastPerformance } from './stats';
 
 export interface ExercisePlan {
@@ -41,7 +42,8 @@ export const activeExerciseFrom = (sessions: Session[], target: RoutineExercise,
 export const createActiveWorkout = (routine: Routine | null, sessions: Session[], now = new Date(), unit: Unit = 'kg'): ActiveWorkout => ({
     id: uid(),
     routineId: routine?.id ?? null,
-    routineName: routine?.name ?? 'Entreno libre',
+    routineName: routine ? routineName(routine) : 'Entreno libre',
+    dayKey: routine ? routine.dayKey : 'free',
     startedAt: now.toISOString(),
     exercises: (routine?.exercises ?? []).map(target => activeExerciseFrom(sessions, target, unit)),
     restEndsAt: null,
@@ -67,6 +69,7 @@ export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session 
         id: active.id,
         routineId: active.routineId,
         routineName: active.routineName,
+        dayKey: active.dayKey,
         startedAt: active.startedAt,
         endedAt: now.toISOString(),
         sets,

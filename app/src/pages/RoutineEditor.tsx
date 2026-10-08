@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { confirm, toast } from '../components/feedback';
-import { getExercise } from '../data/exercises';
+import { exerciseName, getExercise } from '../data/exercises';
+import { t } from '../i18n';
+import { routineName } from '../lib/names';
 import { actions, useStore } from '../store/store';
 import type { RoutineExercise } from '../store/types';
 
@@ -24,12 +26,12 @@ export default function RoutineEditor() {
     const isNew = id === 'nueva';
     const routine = useStore(s => s.routines.find(r => r.id === id));
     const navigate = useNavigate();
-    const [name, setName] = useState(routine?.name ?? '');
+    const [name, setName] = useState(routine ? routineName(routine) : '');
     const [items, setItems] = useState<RoutineExercise[]>(routine?.exercises ?? []);
     const [picking, setPicking] = useState(false);
 
     if (!isNew && !routine) {
-        return <p className="p-6 text-center text-white/60">Esta rutina ya no existe.</p>;
+        return <p className="p-6 text-center text-white/60">{t('editor.missing')}</p>;
     }
 
     const update = (i: number, patch: Partial<RoutineExercise>) =>
@@ -46,15 +48,15 @@ export default function RoutineEditor() {
         // A reversed range (typed max below min) is fixed on save, not while typing.
         const exercises = items.map(it => ({ ...it, repMin: Math.min(it.repMin, it.repMax), repMax: Math.max(it.repMin, it.repMax) }));
         actions.saveRoutine({ id: isNew ? undefined : id, name, exercises });
-        toast('Rutina guardada');
+        toast(t('editor.saved'));
         navigate('/rutinas');
     };
 
     const remove = async () => {
         const ok = await confirm({
-            title: '¿Borrar esta rutina?',
-            message: routine?.source === 'plan' ? 'Es parte de tu plan: también se quitará de la rotación.' : 'Tu historial de entrenos no se borra.',
-            confirmLabel: 'Borrar',
+            title: t('editor.delete.title'),
+            message: routine?.source === 'plan' ? t('editor.delete.plan') : t('editor.delete.custom'),
+            confirmLabel: t('common.delete'),
             danger: true,
         });
         if (!ok) return;
@@ -65,14 +67,14 @@ export default function RoutineEditor() {
     return (
         <div className="space-y-4 pb-6">
             <header className="flex items-center gap-2 px-2 pt-4">
-                <button onClick={() => navigate(-1)} aria-label="Volver" className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
-                <h1 className="flex-1 text-xl font-bold">{isNew ? 'Nueva rutina' : 'Editar rutina'}</h1>
-                <button onClick={save} disabled={!name.trim() || items.length === 0} className="btn-primary px-4 py-2">Guardar</button>
+                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
+                <h1 className="flex-1 text-xl font-bold">{isNew ? t('editor.new') : t('editor.edit')}</h1>
+                <button onClick={save} disabled={!name.trim() || items.length === 0} className="btn-primary px-4 py-2">{t('common.save')}</button>
             </header>
 
             <div className="px-4">
-                <label className="label mb-2 block" htmlFor="routine-name">Nombre</label>
-                <input id="routine-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej.: Pierna y glúteo"
+                <label className="label mb-2 block" htmlFor="routine-name">{t('settings.name')}</label>
+                <input id="routine-name" value={name} onChange={e => setName(e.target.value)} placeholder={t('editor.namePlaceholder')}
                     className="w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand" />
             </div>
 
@@ -82,16 +84,16 @@ export default function RoutineEditor() {
                     return (
                         <li key={`${it.exerciseId}-${i}`} className="card p-3">
                             <div className="mb-2 flex items-center gap-1">
-                                <p className="min-w-0 flex-1 truncate font-semibold">{ex?.name ?? it.exerciseId}</p>
-                                <button onClick={() => move(i, -1)} disabled={i === 0} aria-label="Subir" className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 disabled:opacity-20"><ArrowUp size={16} /></button>
-                                <button onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label="Bajar" className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 disabled:opacity-20"><ArrowDown size={16} /></button>
-                                <button onClick={() => setItems(list => list.filter((_, j) => j !== i))} aria-label="Quitar" className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 hover:text-red-400"><Trash2 size={16} /></button>
+                                <p className="min-w-0 flex-1 truncate font-semibold">{exerciseName(it.exerciseId)}</p>
+                                <button onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('editor.up')} className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 disabled:opacity-20"><ArrowUp size={16} /></button>
+                                <button onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={t('editor.down')} className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 disabled:opacity-20"><ArrowDown size={16} /></button>
+                                <button onClick={() => setItems(list => list.filter((_, j) => j !== i))} aria-label={t('common.remove')} className="rounded-lg p-1.5 text-white/50 hover:bg-ink-3 hover:text-red-400"><Trash2 size={16} /></button>
                             </div>
                             <div className="grid grid-cols-4 gap-2">
-                                <Num label="Series" value={it.sets} min={1} max={10} onChange={n => update(i, { sets: n })} />
-                                <Num label={ex?.timed ? 'Seg mín' : 'Reps mín'} value={it.repMin} min={1} onChange={n => update(i, { repMin: n })} />
-                                <Num label={ex?.timed ? 'Seg máx' : 'Reps máx'} value={it.repMax} min={1} onChange={n => update(i, { repMax: n })} />
-                                <Num label="Descanso s" value={it.restSec} max={600} onChange={n => update(i, { restSec: n })} />
+                                <Num label={t('stat.sets')} value={it.sets} min={1} max={10} onChange={n => update(i, { sets: n })} />
+                                <Num label={ex?.timed ? t('editor.secMin') : t('editor.repsMin')} value={it.repMin} min={1} onChange={n => update(i, { repMin: n })} />
+                                <Num label={ex?.timed ? t('editor.secMax') : t('editor.repsMax')} value={it.repMax} min={1} onChange={n => update(i, { repMax: n })} />
+                                <Num label={t('editor.restSec')} value={it.restSec} max={600} onChange={n => update(i, { restSec: n })} />
                             </div>
                         </li>
                     );
@@ -99,8 +101,8 @@ export default function RoutineEditor() {
             </ol>
 
             <div className="space-y-2 px-4">
-                <button onClick={() => setPicking(true)} className="btn-ghost w-full"><Plus size={18} /> Añadir ejercicio</button>
-                {!isNew && <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> Borrar rutina</button>}
+                <button onClick={() => setPicking(true)} className="btn-ghost w-full"><Plus size={18} /> {t('picker.add')}</button>
+                {!isNew && <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> {t('editor.delete')}</button>}
             </div>
 
             <ExercisePicker open={picking} onClose={() => setPicking(false)}
