@@ -382,6 +382,35 @@ test('AI refused by the server opens Premium and keeps the question', async ({ p
     await expect(page.getByLabel('Escribe tu pregunta')).toHaveValue('¿Qué ceno para llegar a mi proteína?');
 });
 
+test('food table: search, filter, details and add to today', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('link', { name: /Ver los \d+ alimentos/ }).click();
+    await expect(page.getByRole('heading', { name: 'Tabla de alimentos' })).toBeVisible();
+
+    // Fish only.
+    await page.getByRole('radio', { name: /Pescados y mariscos/ }).click();
+    await expect(page.getByRole('button', { name: /Salmón cocido/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Huevo entero/ })).toHaveCount(0);
+    await page.getByRole('radio', { name: 'Todos' }).click();
+
+    // Accents and case don't matter.
+    await page.getByLabel('Buscar alimento (huevo, pollo, arroz…)').fill('HUEVO');
+    await page.getByRole('button', { name: /Huevo entero/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Huevo entero' });
+    await expect(sheet).toContainText('72 kcal');
+    await expect(sheet.getByText('6,3 g')).toBeVisible();
+    await expect(sheet.getByText('Bajo en carbohidratos')).toBeVisible();
+    await sheet.getByRole('radio', { name: '100 g' }).click();
+    await expect(sheet).toContainText('143 kcal');
+    await sheet.getByRole('button', { name: 'Añadir a mis comidas de hoy' }).click();
+
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.getByText('Huevo entero (100 g)')).toBeVisible();
+    await expect(page.getByText('143 kcal').first()).toBeVisible();
+});
+
 test('legal page has terms and privacy in three languages', async ({ page }) => {
     await page.goto('/legal.html#privacy');
     await expect(page.getByRole('heading', { name: 'Términos de uso' })).toBeVisible();
