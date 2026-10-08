@@ -196,7 +196,9 @@ test('switch language in onboarding and settings', async ({ page }) => {
 });
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.
-const mockAi = async (page: Page, calls: Record<string, unknown>[]) => {
+const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { freeUsesSpent?: boolean } = {}) => {
+    // RevenueCat is not reachable in tests: the paywall falls back to the default price.
+    await page.route('https://api.revenuecat.com/**', route => route.abort());
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
     await page.route('http://ai.test/**', async route => {
         const req = route.request();
@@ -212,7 +214,10 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[]) => {
         }
         if (url.includes('/functions/v1/nutrition-coach')) {
             const body = req.postDataJSON();
+            const usage = { used: opts.freeUsesSpent ? 5 : calls.length, limit: 5, premium: false };
+            if (body.action === 'status') return route.fulfill({ headers: cors, json: { usage } });
             calls.push(body);
+            if (opts.freeUsesSpent) return route.fulfill({ status: 402, headers: cors, json: { error: 'free uses spent', usage } });
             if (body.action === 'estimate') {
                 return route.fulfill({
                     headers: cors, json: {
@@ -277,4 +282,38 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach', async ({
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
+});
+
+test('free AI uses spent: the coach offers Premium at 4.99 a month', async ({ page }) => {
+    await mockAi(page, [], { freeUsesSpent: true });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await expect(page.getByText('Te quedan 0 de 5 consultas de IA gratis este mes').first()).toBeVisible();
+
+    await page.getByRole('button', { name: '¿Qué ceno para llegar a mi proteína?' }).click();
+    await expect(page.getByRole('heading', { name: 'Fitness Life Premium' })).toBeVisible();
+    await expect(page.getByText('4,99 US$ / mes')).toBeVisible();
+    await expect(page.getByRole('cell', { name: '100 al mes' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Términos de uso' })).toHaveAttribute('href', './legal.html#terminos');
+
+    // No store reachable in tests: the purchase fails gracefully.
+    await page.getByRole('button', { name: 'Suscribirme' }).click();
+    await expect(page.getByText('No se pudo completar. Inténtalo de nuevo.')).toBeVisible();
+
+    // The question is not lost.
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.getByLabel('Escribe tu pregunta')).toHaveValue('¿Qué ceno para llegar a mi proteína?');
+
+    // Settings links to Premium too.
+    await page.getByRole('link', { name: 'Ajustes' }).click();
+    await page.getByRole('link', { name: /Fitness Life Premium/ }).click();
+    await expect(page.getByRole('button', { name: 'Restaurar compras' })).toBeVisible();
+});
+
+test('legal page has terms and privacy in three languages', async ({ page }) => {
+    await page.goto('/legal.html#privacy');
+    await expect(page.getByRole('heading', { name: 'Términos de uso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Privacy policy' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Política de privacidade' })).toBeVisible();
 });

@@ -6,7 +6,7 @@ import { uid } from '../lib/id';
 import { routineName } from '../lib/names';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { ActiveWorkout, AppState, ChatMessage, Macros, Meal, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // All data lives on the device. No account, no network. Export/import in
 // Ajustes is the user's backup.
@@ -19,7 +19,7 @@ const STORAGE_KEY = 'fitness-life:v1';
 
 const EMPTY: AppState = {
     version: 1, profile: null, routines: [], plan: null, sessions: [], active: null, bodyWeights: [], seenAchievements: [],
-    meals: [], nutritionTargets: null, coachChat: [],
+    meals: [], nutritionTargets: null, coachChat: [], aiUsage: null, premium: null,
 };
 
 const unitOf = (s: AppState) => s.profile?.unit ?? 'kg';
@@ -330,6 +330,14 @@ export const actions = {
         const message: ChatMessage = { id: uid(), role, text, at: new Date().toISOString() };
         // Keep the conversation short: it travels with every question.
         set(s => ({ ...s, coachChat: [...s.coachChat, message].slice(-MAX_CHAT) }));
+    },
+
+    setAiUsage(aiUsage: AiUsage) {
+        set(s => ({ ...s, aiUsage }));
+    },
+
+    setPremium(premium: PremiumStatus) {
+        set(s => ({ ...s, premium }));
     },
 
     clearChat() {

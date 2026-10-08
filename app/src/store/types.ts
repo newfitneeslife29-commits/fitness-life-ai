@@ -116,6 +116,22 @@ export interface ChatMessage {
     at: string; // ISO
 }
 
+export interface AiUsage {
+    used: number; // AI uses this month
+    limit: number;
+    premium: boolean;
+}
+
+// Last known subscription state, for the UI. The server checks it again
+// on every AI request.
+export interface PremiumStatus {
+    active: boolean;
+    expiresAt: string | null; // null: no expiry known (or lifetime)
+    willRenew: boolean;
+    manageUrl: string | null;
+    checkedAt: string;
+}
+
 export interface AppState {
     version: 1;
     lang?: Lang;
@@ -131,4 +147,6 @@ export interface AppState {
     // null: targets are calculated from goal and body weight.
     nutritionTargets: Macros | null;
     coachChat: ChatMessage[]; // oldest first
+    aiUsage: AiUsage | null;
+    premium: PremiumStatus | null;
 }

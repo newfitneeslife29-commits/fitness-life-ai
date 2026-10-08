@@ -1,10 +1,13 @@
-import { Download, Languages, RotateCcw, Upload } from 'lucide-react';
-import { useRef } from 'react';
+import { ChevronRight, Crown, Download, Languages, RotateCcw, Upload } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Chips, PageHeader, Section } from '../components/ui';
 import { pickProgram, programName } from '../data/programs';
 import { getLang, LANGS, t, tp, type Lang } from '../i18n';
+import { fmtDate } from '../lib/format';
 import { planName } from '../lib/names';
+import { FALLBACK_PRICE, PREMIUM_AI_USES, premiumAvailable, refreshPremium } from '../lib/premium';
 import { saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
 import type { Goal, Level, Setup } from '../store/types';
@@ -54,6 +57,8 @@ export default function Settings() {
     return (
         <div className="space-y-6">
             <PageHeader title={t('nav.settings')} />
+
+            {premiumAvailable() && <PremiumCard />}
 
             <Section title={t('settings.language')}>
                 <div className="card flex items-center gap-3 p-4">
@@ -133,3 +138,26 @@ export default function Settings() {
         </div>
     );
 }
+
+const PremiumCard = () => {
+    const premium = useStore(s => s.premium);
+    useEffect(() => {
+        refreshPremium().catch(() => {});
+    }, []);
+    return (
+        <Section title="Premium">
+            <Link to="/premium" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-amber-300 text-ink"><Crown size={20} /></span>
+                <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{premium?.active ? t('premium.active') : 'Fitness Life Premium'}</p>
+                    <p className="text-sm text-white/55">
+                        {premium?.active
+                            ? premium.expiresAt ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) }) : t('premium.noExpiry')
+                            : t('settings.premiumPitch', { n: PREMIUM_AI_USES, price: FALLBACK_PRICE })}
+                    </p>
+                </div>
+                <ChevronRight className="shrink-0 text-white/40" />
+            </Link>
+        </Section>
+    );
+};

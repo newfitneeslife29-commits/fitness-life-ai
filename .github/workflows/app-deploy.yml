@@ -39,6 +39,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Premium subscription: RevenueCat public SDK keys (one per platform).
+          VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
+          VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
+          VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

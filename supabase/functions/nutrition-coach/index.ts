@@ -1,21 +1,30 @@
 // AI nutrition coach: the only place that holds the Anthropic API key.
 //
 // Deploy:  supabase functions deploy nutrition-coach
-// Secrets: supabase secrets set ANTHROPIC_API_KEY=... [NUTRITION_DAILY_LIMIT=30]
+// Secrets: supabase secrets set ANTHROPIC_API_KEY=... REVENUECAT_SECRET_KEY=...
+//          optional: FREE_MONTHLY_LIMIT=5 PREMIUM_MONTHLY_LIMIT=100 REVENUECAT_ENTITLEMENT=premium
 // Auth:    turn on anonymous sign-ins (Authentication → Sign In / Providers).
-//          The app signs in anonymously; the JWT is only used for the quota.
+//          The app signs in anonymously; the same id is the RevenueCat app user id,
+//          so the subscription (App Store, Google Play or web) is checked here.
 //
-// Request body (JSON):
-//   { action: 'chat', lang, context, messages: [{ role, text }] }  → { text }
-//   { action: 'estimate', lang, text }                              → { name, items, note }
-// Errors: 401 no session · 429 daily limit · 422 declined · 400 bad input · 502/503 model errors.
+// Request body (JSON), every answer carries `usage: { used, limit, premium }`:
+//   { action: 'status' }                                            → { usage }
+//   { action: 'chat', lang, context, messages: [{ role, text }] }  → { text, usage }
+//   { action: 'estimate', lang, text }                              → { name, items, note, usage }
+// Errors: 401 no session · 402 free uses spent (offer Premium) · 429 Premium limit
+//         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, type CoachContext, type Lang, type Macros } from './prompt.ts';
+import { hasEntitlement } from './subscription.ts';
 
 const MODEL = 'claude-opus-5-5';
-const DAILY_LIMIT = Number(Deno.env.get('NUTRITION_DAILY_LIMIT') ?? 30);
+// AI is what costs money, so it is what Premium (4.99/month) pays for.
+const FREE_MONTHLY_LIMIT = Number(Deno.env.get('FREE_MONTHLY_LIMIT') ?? 5);
+const PREMIUM_MONTHLY_LIMIT = Number(Deno.env.get('PREMIUM_MONTHLY_LIMIT') ?? 100);
+const REVENUECAT_SECRET_KEY = Deno.env.get('REVENUECAT_SECRET_KEY') ?? '';
+const ENTITLEMENT = Deno.env.get('REVENUECAT_ENTITLEMENT') ?? 'premium';
 const MAX_MESSAGES = 20;
 const MAX_CHARS = 2000;
 
@@ -115,20 +124,50 @@ async function estimate(lang: Lang, description: string) {
   };
 }
 
-// ---------- Quota ----------
+// ---------- Subscription and quota ----------
 
-async function checkQuota(userId: string) {
-  const now = new Date();
-  const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const { count, error } = await admin
-    .from('ai_usage')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .like('action', 'nutrition_%')
-    .gte('created_at', since.toISOString());
-  if (error) throw error;
-  if ((count ?? 0) >= DAILY_LIMIT) throw new HttpError(429, 'daily limit reached');
+// RevenueCat knows every store the user may have paid in. If it can't be
+// reached, the user gets the free allowance rather than an error.
+async function isPremium(userId: string) {
+  if (!REVENUECAT_SECRET_KEY) return false;
+  try {
+    const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
+      headers: { Authorization: `Bearer ${REVENUECAT_SECRET_KEY}` },
+    });
+    if (!res.ok) throw new Error(`RevenueCat ${res.status}`);
+    return hasEntitlement(await res.json(), ENTITLEMENT);
+  } catch (error) {
+    console.error('nutrition-coach: subscription check failed', error);
+    return false;
+  }
 }
+
+interface Usage {
+  used: number;
+  limit: number;
+  premium: boolean;
+}
+
+async function usageOf(userId: string): Promise<Usage> {
+  const now = new Date();
+  const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const [premium, { count, error }] = await Promise.all([
+    isPremium(userId),
+    admin
+      .from('ai_usage')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .like('action', 'nutrition_%')
+      .gte('created_at', since.toISOString()),
+  ]);
+  if (error) throw error;
+  return { used: count ?? 0, limit: premium ? PREMIUM_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT, premium };
+}
+
+const checkQuota = (usage: Usage) => {
+  if (usage.used < usage.limit) return;
+  throw usage.premium ? new HttpError(429, 'monthly limit reached') : new HttpError(402, 'free uses spent');
+};
 
 // ---------- Handler ----------
 
@@ -140,26 +179,30 @@ Deno.serve(async req => {
   const { data: { user } } = await admin.auth.getUser(jwt);
   if (!user) return json({ error: 'Unauthorized' }, 401);
 
+  let usage: Usage | undefined;
   try {
     const body = await req.json().catch(() => ({}));
     const lang = langOf(body.lang);
-    let result: unknown;
+    usage = await usageOf(user.id);
+    if (body.action === 'status') return json({ usage });
+
+    let result: object;
     if (body.action === 'chat') {
       const messages = messagesOf(body.messages);
-      await checkQuota(user.id);
+      checkQuota(usage);
       result = await chat(lang, contextOf(body.context), messages);
     } else if (body.action === 'estimate') {
       const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
       if (text.length < 3) throw new HttpError(400, 'describe the meal');
-      await checkQuota(user.id);
+      checkQuota(usage);
       result = await estimate(lang, text);
     } else {
       throw new HttpError(400, 'unknown action');
     }
     await admin.from('ai_usage').insert({ user_id: user.id, action: `nutrition_${body.action}` });
-    return json(result);
+    return json({ ...result, usage: { ...usage, used: usage.used + 1 } });
   } catch (error) {
-    if (error instanceof HttpError) return json({ error: error.message }, error.status);
+    if (error instanceof HttpError) return json({ error: error.message, usage }, error.status);
     if (error instanceof Anthropic.RateLimitError || error instanceof Anthropic.InternalServerError || error instanceof Anthropic.APIConnectionError) {
       console.error('nutrition-coach: model unavailable', error);
       return json({ error: 'busy' }, 503);

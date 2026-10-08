@@ -31,6 +31,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Premium subscription: RevenueCat public SDK keys (one per platform).
+          VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
+          VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
+          VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
       - name: Build debug APK
         working-directory: app/android
         run: ./gradlew assembleDebug --no-daemon
@@ -58,6 +62,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Premium subscription: RevenueCat public SDK keys (one per platform).
+          VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
+          VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
+          VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
       - name: Build for the iOS simulator (no signing)
         run: >
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug

@@ -15,6 +15,6 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     // Point the AI coach at a fake backend that the tests answer themselves.
-    env: { VITE_SUPABASE_URL: 'http://ai.test', VITE_SUPABASE_ANON_KEY: 'test-anon-key' },
+    env: { VITE_SUPABASE_URL: 'http://ai.test', VITE_SUPABASE_ANON_KEY: 'test-anon-key', VITE_RC_WEB_KEY: 'rcb_sb_test' },
   },
 });

@@ -1,10 +1,11 @@
 import { ChevronLeft, ChevronRight, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { PageHeader, Section, Sheet } from '../components/ui';
 import { getLang, t } from '../i18n';
-import { AiError, aiAvailable, askCoach, estimateMeal, type CoachContext, type MealEstimate } from '../lib/ai';
+import { AiError, aiAvailable, askCoach, estimateMeal, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
+import { premiumAvailable } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
 import { autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
@@ -12,6 +13,28 @@ import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal } from '../store/types';
 
 const aiErrorText = (e: unknown) => t(`ai.error.${e instanceof AiError ? e.code : 'failed'}`);
+
+// Free uses spent: explain and open the Premium page.
+const useAiErrorHandler = () => {
+    const navigate = useNavigate();
+    return (e: unknown) => {
+        toast(aiErrorText(e), 4000);
+        if (e instanceof AiError && e.code === 'upgrade' && premiumAvailable()) navigate('/premium');
+    };
+};
+
+// "3 of 5 free AI uses left this month · Go Premium"
+const AiUsageLine = () => {
+    const usage = useStore(s => s.aiUsage);
+    if (!usage) return null;
+    const left = Math.max(usage.limit - usage.used, 0);
+    return (
+        <p className="text-xs text-white/50">
+            {usage.premium ? t('ai.usage.premium', { left, limit: usage.limit }) : t('ai.usage.free', { left, limit: usage.limit })}
+            {!usage.premium && premiumAvailable() && <> · <Link to="/premium" className="font-semibold text-brand">{t('premium.cta')}</Link></>}
+        </p>
+    );
+};
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -180,6 +203,7 @@ const EstimateView = ({ estimate }: { estimate: MealEstimate }) => {
 
 const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => void; day: Date }) => {
     const ai = aiAvailable();
+    const onAiError = useAiErrorHandler();
     const [mode, setMode] = useState<'ai' | 'manual'>(ai ? 'ai' : 'manual');
     const [text, setText] = useState('');
     const [busy, setBusy] = useState(false);
@@ -198,7 +222,7 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
         try {
             setEstimate(await estimateMeal(getLang(), text.trim()));
         } catch (e) {
-            toast(aiErrorText(e), 4000);
+            onAiError(e);
         } finally {
             setBusy(false);
         }
@@ -260,6 +284,7 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
                             </>
                         )}
                         <p className="mt-3 text-xs text-white/40">{t('meal.aiDisclaimer')}</p>
+                        <div className="mt-1"><AiUsageLine /></div>
                     </>
                 ) : (
                     <p className="card p-4 text-sm text-white/60">{t('ai.error.unavailable')}</p>
@@ -282,12 +307,20 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
 
 const SUGGESTIONS = ['coach.s1', 'coach.s2', 'coach.s3'] as const;
 
+// Unsent question, kept while the app is open (e.g. across a trip to the Premium page).
+let draft = '';
+
 const Coach = ({ context }: { context: CoachContext }) => {
     const chat = useStore(s => s.coachChat);
-    const [input, setInput] = useState('');
+    const [input, setInputState] = useState(() => draft);
+    const setInput = (text: string) => {
+        draft = text;
+        setInputState(text);
+    };
     const [pending, setPending] = useState<string | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
     const ai = aiAvailable();
+    const onAiError = useAiErrorHandler();
 
     useEffect(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -305,7 +338,7 @@ const Coach = ({ context }: { context: CoachContext }) => {
             actions.addChatMessage('assistant', answer);
         } catch (e) {
             setInput(question); // nothing is lost: the question goes back in the box
-            toast(aiErrorText(e), 4000);
+            onAiError(e);
         } finally {
             setPending(null);
         }
@@ -359,6 +392,7 @@ const Coach = ({ context }: { context: CoachContext }) => {
             ) : (
                 <p className="border-t border-line p-4 text-sm text-white/55">{t('ai.error.unavailable')}</p>
             )}
+            {ai && <div className="px-4 pb-1"><AiUsageLine /></div>}
             <p className="px-4 pb-3 text-[11px] text-white/35">{t('coach.disclaimer')}</p>
         </div>
     );
@@ -383,6 +417,11 @@ export default function Nutrition() {
     const [day, setDay] = useState(() => startOfDay(new Date()));
     const [editTargets, setEditTargets] = useState(false);
     const [adding, setAdding] = useState(false);
+
+    // How many AI uses are left this month (free or Premium).
+    useEffect(() => {
+        if (aiAvailable()) refreshUsage().catch(() => {});
+    }, []);
 
     const auto = weightKg ? autoTargets(profile.goal, weightKg) : null;
     const targets = custom ?? auto;

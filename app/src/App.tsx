@@ -9,6 +9,7 @@ import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'reac
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
 import Nutrition from './pages/Nutrition';
+import Premium from './pages/Premium';
 import Onboarding from './pages/Onboarding';
 import Progress from './pages/Progress';
 import RoutineEditor from './pages/RoutineEditor';
@@ -96,6 +97,7 @@ export default function App() {
                 <Route path="/ejercicios" element={<Shell><Exercises /></Shell>} />
                 <Route path="/ejercicios/:id" element={<Shell><ExerciseDetail /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
+                <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
