@@ -7,6 +7,7 @@ import { getLang, t } from '../i18n';
 import { AiError, aiAvailable, askCoach, estimateMeal, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
+import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
 import { autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { actions, getState, useStore } from '../store/store';
@@ -423,6 +424,40 @@ const Bubble = ({ role, text }: { role: 'user' | 'assistant'; text: string }) =>
     </div>
 );
 
+// ---------- Food table preview ----------
+
+const PREVIEW = ['huevo', 'pechuga-pollo', 'salmon', 'arroz-blanco'];
+
+const FoodTablePreview = () => (
+    <Link to="/nutricion/alimentos" className="card block overflow-hidden hover:bg-ink-3">
+        <ul className="divide-y divide-line">
+            {PREVIEW.map(id => {
+                const f = getFood(id)!;
+                const m = foodMacros(f, f.portion.grams);
+                return (
+                    <li key={id} className="flex items-center gap-3 px-4 py-2.5">
+                        <span className="text-lg" aria-hidden>{FOOD_EMOJI[f.category]}</span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{foodName(f)}</span>
+                            <span className="block truncate text-[11px] text-white/45">{portionLabel(f)}</span>
+                        </span>
+                        <span className="shrink-0 text-right text-xs tabular-nums text-white/60">
+                            <b className="text-brand-strong">{t('foods.p')} {fmtNumber(m.protein)} g</b> · {t('foods.c')} {fmtNumber(m.carbs)} g
+                        </span>
+                    </li>
+                );
+            })}
+        </ul>
+        <div className="flex items-center justify-between gap-3 border-t border-line bg-brand-soft px-4 py-3">
+            <span className="min-w-0">
+                <span className="block font-semibold text-brand-strong">{t('foods.cta', { n: FOODS.length })}</span>
+                <span className="block text-xs text-white/55">{t('foods.ctaHint')}</span>
+            </span>
+            <ChevronRight className="shrink-0 text-brand" />
+        </div>
+    </Link>
+);
+
 // ---------- Page ----------
 
 export default function Nutrition() {
@@ -490,6 +525,10 @@ export default function Nutrition() {
                     <p className="card px-4 py-6 text-center text-sm text-white/50">{t('nutrition.noMeals')}</p>
                 )}
                 <button className="btn-primary mt-2 w-full" onClick={() => setAdding(true)}><Plus size={18} /> {t('meal.add')}</button>
+            </Section>
+
+            <Section title={t('foods.title')}>
+                <FoodTablePreview />
             </Section>
 
             <Section title={t('coach.section')}>
