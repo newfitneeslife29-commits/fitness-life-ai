@@ -51,6 +51,11 @@ export default function Premium() {
     }, [available]);
 
     const buy = async () => {
+        // Stores not connected yet in this build: the plans are shown, buying comes later.
+        if (!available) {
+            toast(t('premium.soon'), 4500);
+            return;
+        }
         setBusy('buy');
         try {
             const current = (offer ?? (await getOffer())).find(p => p.id === plan.id);
@@ -114,8 +119,7 @@ export default function Premium() {
 
             {!active && (
                 <Section>
-                    {available ? (
-                        <>
+                    <>
                             <div role="radiogroup" aria-label={t('premium.plans')} className="space-y-2">
                                 {plans.map(p => {
                                     const selected = p.id === plan.id;
@@ -143,10 +147,7 @@ export default function Premium() {
                             <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
                                 <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : t('premium.subscribe')}
                             </button>
-                        </>
-                    ) : (
-                        <p className="card p-4 text-center text-sm text-white/60">{t('premium.unavailable')}</p>
-                    )}
+                    </>
                 </Section>
             )}
 
@@ -172,18 +173,18 @@ export default function Premium() {
                 <p className="mt-2 text-xs text-white/40">{t('premium.why', { n: PREMIUM_AI_USES })}</p>
             </Section>
 
-            {available && (
-                <Section>
-                    <button className="btn-ghost w-full" disabled={busy !== null} onClick={restore}>
+            <Section>
+                {available && (
+                    <button className="btn-ghost mb-4 w-full" disabled={busy !== null} onClick={restore}>
                         {busy === 'restore' ? t('premium.restoring') : t('premium.restore')}
                     </button>
-                    <p className="mt-4 text-[11px] leading-relaxed text-white/40">{t(`premium.legal.${plan.id}`, { price: plan.price })}</p>
-                    <p className="mt-2 flex gap-4 text-xs">
-                        <a href={`${LEGAL_URL}#${termsAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.terms')}</a>
-                        <a href={`${LEGAL_URL}#${privacyAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.privacy')}</a>
-                    </p>
-                </Section>
-            )}
+                )}
+                <p className="text-[11px] leading-relaxed text-white/40">{t(`premium.legal.${plan.id}`, { price: plan.price })}</p>
+                <p className="mt-2 flex gap-4 text-xs">
+                    <a href={`${LEGAL_URL}#${termsAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.terms')}</a>
+                    <a href={`${LEGAL_URL}#${privacyAnchor}`} target="_blank" rel="noopener noreferrer" className="text-white/60 underline">{t('premium.privacy')}</a>
+                </p>
+            </Section>
         </div>
     );
 }

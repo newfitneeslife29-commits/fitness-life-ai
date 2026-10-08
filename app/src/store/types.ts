@@ -133,10 +133,20 @@ export interface PremiumStatus {
     checkedAt: string;
 }
 
+// A signed-in account (the anonymous session used without one is not stored).
+export interface Account {
+    id: string;
+    email: string | null;
+    provider: string; // email, google, apple
+}
+
 export interface AppState {
     version: 1;
     lang?: Lang;
     theme?: Theme; // default: follow the phone
+    account?: Account | null;
+    authPrompted?: boolean; // the sign-in screen was offered once
+    cloudSyncedAt?: string | null; // last copy to or from the account
     profile: Profile | null;
     routines: Routine[];
     plan: Plan | null;

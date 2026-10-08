@@ -1,10 +1,11 @@
-import { ChevronRight, Crown, Download, Languages, Monitor, Moon, RotateCcw, Sun, Upload } from 'lucide-react';
+import { ChevronRight, Cloud, Crown, Download, Languages, LogOut, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Chips, PageHeader, Section } from '../components/ui';
 import { pickProgram, programName } from '../data/programs';
-import { getLang, LANGS, t, tp, type Lang } from '../i18n';
+import { getLang, LANGS, locale, t, tp, type Lang } from '../i18n';
+import { authAvailable, deleteAccount, signOut } from '../lib/auth';
 import { fmtDate } from '../lib/format';
 import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
@@ -60,7 +61,8 @@ export default function Settings() {
         <div className="space-y-6">
             <PageHeader title={t('nav.settings')} />
 
-            {premiumAvailable() && <PremiumCard />}
+            {authAvailable() && <AccountCard />}
+            <PremiumCard />
 
             <Section title={t('settings.language')}>
                 <div className="card flex items-center gap-3 p-4">
@@ -153,10 +155,68 @@ export default function Settings() {
     );
 }
 
+const AccountCard = () => {
+    const account = useStore(s => s.account);
+    const syncedAt = useStore(s => s.cloudSyncedAt);
+    if (!account) {
+        return (
+            <Section title={t('account.section')}>
+                <Link to="/cuenta" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><UserRound size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('account.cta')}</p>
+                        <p className="text-sm text-white/55">{t('account.ctaHint')}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
+            </Section>
+        );
+    }
+    const out = async () => {
+        if (!(await confirm({ title: t('account.signOutTitle'), message: t('account.signOutMessage'), confirmLabel: t('account.signOut') }))) return;
+        await signOut().catch(() => {});
+        toast(t('account.signedOut'));
+    };
+    const remove = async () => {
+        if (!(await confirm({ title: t('account.deleteTitle'), message: t('account.deleteMessage'), confirmLabel: t('account.delete'), danger: true }))) return;
+        try {
+            await deleteAccount();
+            actions.resetAll();
+            toast(t('account.deleted'));
+        } catch {
+            toast(t('auth.err.failed'));
+        }
+    };
+    const provider = ['google', 'apple'].includes(account.provider) ? account.provider : 'email';
+    return (
+        <Section title={t('account.section')}>
+            <div className="card p-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-lg font-bold uppercase text-snow">
+                        {(account.email ?? '?').slice(0, 1)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{account.email}</p>
+                        <p className="text-sm text-white/55">{t('account.signedIn', { provider: t(`account.via.${provider}` as 'account.via.email') })}</p>
+                    </div>
+                </div>
+                <p className="mt-3 flex items-center gap-2 text-xs text-white/50">
+                    <Cloud size={14} className="text-good" />
+                    {syncedAt ? t('account.synced', { when: new Date(syncedAt).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' }) }) : t('account.syncPending')}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button className="btn-ghost" onClick={out}><LogOut size={16} /> {t('account.signOut')}</button>
+                    <button className="btn-ghost text-red-500" onClick={remove}><Trash2 size={16} /> {t('account.delete')}</button>
+                </div>
+            </div>
+        </Section>
+    );
+};
+
 const PremiumCard = () => {
     const premium = useStore(s => s.premium);
     useEffect(() => {
-        refreshPremium().catch(() => {});
+        if (premiumAvailable()) refreshPremium().catch(() => {});
     }, []);
     return (
         <Section title="Premium">

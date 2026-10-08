@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, Dumbbell, Sparkles, Upload } from 'lucide-react';
+import { ArrowRight, Camera, Dumbbell, LogIn, Sparkles, Upload } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import { exercisePhotos } from '../data/exercises';
 import { getLang, LANGS, t, type Lang } from '../i18n';
@@ -30,7 +30,7 @@ const Feature = ({ icon, children }: { icon: ReactNode; children: ReactNode }) =
 );
 
 // First screen of a new install: what the app does, in one look.
-export const Welcome = ({ onStart }: { onStart: () => void }) => {
+export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?: () => void }) => {
     useStore(s => s.lang); // re-render when the language changes
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -90,6 +90,11 @@ export const Welcome = ({ onStart }: { onStart: () => void }) => {
                     <button className="btn-primary w-full py-4 text-base shadow-lg shadow-brand/25" onClick={onStart}>
                         {t('welcome.start')} <ArrowRight size={18} />
                     </button>
+                    {onSignIn && (
+                        <button className="btn w-full font-semibold text-brand hover:text-brand-strong" onClick={onSignIn}>
+                            <LogIn size={16} /> {t('welcome.signIn')}
+                        </button>
+                    )}
                     <button className="btn w-full text-white/60 hover:text-white" onClick={() => fileRef.current?.click()}>
                         <Upload size={16} /> {t('welcome.restore')}
                     </button>

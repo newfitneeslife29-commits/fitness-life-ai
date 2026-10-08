@@ -5,6 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 const onboard = async (page: Page, opts: { days?: string; setup?: RegExp } = {}) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
+    await page.getByRole('button', { name: 'Continuar sin cuenta' }).click();
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByLabel('¿Cómo te llamas? (opcional)').fill('Sebas');
     await page.getByRole('radio', { name: /Ganar músculo/ }).click();
@@ -80,7 +81,7 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     await expect(page.getByRole('heading', { name: 'Cuerpo completo B' })).toBeVisible();
 
     // Repeat day A: every set hit the top of the range, so +5 kg and back to 6 reps.
-    await page.getByRole('link', { name: 'Rutinas' }).click();
+    await page.getByRole('link', { name: 'Rutinas', exact: true }).click();
     await page.getByRole('button', { name: 'Empezar Cuerpo completo A' }).click();
     const again = page.getByRole('region', { name: 'Sentadilla con barra' });
     await expect(again.getByText('Toca subir: 85 kg × 6 (+5 kg)')).toBeVisible();
@@ -93,7 +94,7 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     await expect(page.getByRole('heading', { name: '1 de 3 entrenos esta semana' })).toBeVisible();
 
     await page.reload();
-    await page.getByRole('link', { name: 'Progreso' }).click();
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await expect(page.getByText('1 entreno registrado')).toBeVisible();
     await expect(page.getByRole('link', { name: /Sentadilla con barra/ }).first()).toBeVisible();
 });
@@ -101,7 +102,7 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
 test('create a custom routine and train it', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Rutinas' }).click();
+    await page.getByRole('link', { name: 'Rutinas', exact: true }).click();
     await page.getByRole('link', { name: 'Nueva' }).click();
     await page.getByLabel('Nombre').fill('Brazos');
     await page.getByRole('button', { name: 'Añadir ejercicio' }).click();
@@ -119,7 +120,7 @@ test('create a custom routine and train it', async ({ page }) => {
 test('export a backup from settings', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Ajustes' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Exportar' }).click();
     const file = await download;
@@ -129,7 +130,7 @@ test('export a backup from settings', async ({ page }) => {
 test('exercise library search and detail', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Rutinas' }).click();
+    await page.getByRole('link', { name: 'Rutinas', exact: true }).click();
     await page.getByRole('link', { name: /^Ejercicios/ }).click();
     await page.getByLabel('Buscar ejercicio').fill('dominada');
     await page.getByRole('link', { name: /Dominadas/ }).click();
@@ -171,7 +172,7 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
     await page.getByRole('link', { name: 'Último entreno' }).or(page.getByRole('link', { name: /Cuerpo completo A/ })).first().click();
     await expect(page.getByLabel('Notas del entreno')).toHaveValue('Buenas sensaciones');
 
-    await page.getByRole('link', { name: 'Progreso' }).click();
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await page.getByLabel('Peso corporal de hoy').fill('78,4');
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.getByText('78,4 kg').first()).toBeVisible();
@@ -182,18 +183,19 @@ test('switch language in onboarding and settings', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('radio', { name: 'English' }).click();
     await page.getByRole('button', { name: 'Start for free' }).click();
+    await page.getByRole('button', { name: 'Continue without an account' }).click();
     await expect(page.getByRole('heading', { name: 'Your strength plan in 1 minute' })).toBeVisible();
     for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByRole('heading', { name: 'Full body A/B' })).toBeVisible();
     await page.getByRole('button', { name: 'Start with this plan' }).click();
     await expect(page.getByRole('heading', { name: '0 of 3 workouts this week' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Nutrition' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Nutrition', exact: true })).toBeVisible();
 
-    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('link', { name: 'Settings', exact: true }).click();
     await page.getByRole('radio', { name: 'Português' }).click();
-    await expect(page.getByRole('link', { name: 'Início' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Início', exact: true })).toBeVisible();
     await page.reload();
-    await page.getByRole('link', { name: 'Início' }).click();
+    await page.getByRole('link', { name: 'Início', exact: true }).click();
     await expect(page.getByRole('heading', { name: '0 de 3 treinos nesta semana' })).toBeVisible();
     // Names of generated routines follow the language too.
     await expect(page.getByRole('heading', { name: 'Corpo inteiro A' })).toBeVisible();
@@ -203,6 +205,8 @@ test('welcome screen leads to onboarding and back', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
+    await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar sin cuenta' }).click();
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByRole('button', { name: 'Volver' }).click();
     await expect(page.getByRole('button', { name: 'Empezar gratis' })).toBeVisible();
@@ -215,7 +219,7 @@ test('light and dark mode follow the phone and can be chosen in settings', async
     const html = page.locator('html');
     await expect(html).toHaveClass(/light/);
 
-    await page.getByRole('link', { name: 'Ajustes' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
     await page.getByRole('radio', { name: 'Oscuro' }).click();
     await expect(html).not.toHaveClass(/light/);
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0b0d10');
@@ -277,7 +281,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await mockAi(page, calls, { premium: true });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
 
     // Targets need a body weight: 80 kg and "Ganar músculo" → 2800 kcal, 160 g protein.
     await page.getByLabel('Peso corporal de hoy').fill('80');
@@ -326,7 +330,7 @@ test('free users: AI is Premium-only, with yearly and monthly plans', async ({ p
     await mockAi(page, calls);
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
 
     // The coach shows what Premium unlocks instead of the chat.
     await expect(page.getByText(/Pregúntale qué comer según tu objetivo/)).toBeVisible();
@@ -359,7 +363,7 @@ test('free users: AI is Premium-only, with yearly and monthly plans', async ({ p
     expect(calls).toHaveLength(0); // free users never reach the AI
 
     // Settings links to Premium too.
-    await page.getByRole('link', { name: 'Ajustes' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
     await page.getByRole('link', { name: /Fitness Life Premium/ }).click();
     await expect(page.getByRole('button', { name: 'Restaurar compras' })).toBeVisible();
 });
@@ -375,7 +379,7 @@ test('AI refused by the server opens Premium and keeps the question', async ({ p
         localStorage.setItem('fitness-life:v1', JSON.stringify(s));
     });
     await page.reload();
-    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
     await page.getByRole('button', { name: '¿Qué ceno para llegar a mi proteína?' }).click();
     await expect(page.getByRole('heading', { name: 'Fitness Life Premium' })).toBeVisible();
     await page.getByRole('button', { name: 'Volver' }).click();
@@ -385,7 +389,7 @@ test('AI refused by the server opens Premium and keeps the question', async ({ p
 test('food table: search, filter, details and add to today', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
     await page.getByRole('link', { name: /Ver los \d+ alimentos/ }).click();
     await expect(page.getByRole('heading', { name: 'Tabla de alimentos' })).toBeVisible();
 
@@ -409,6 +413,72 @@ test('food table: search, filter, details and add to today', async ({ page }) =>
     await page.getByRole('button', { name: 'Volver' }).click();
     await expect(page.getByText('Huevo entero (100 g)')).toBeVisible();
     await expect(page.getByText('143 kcal').first()).toBeVisible();
+});
+
+// Fake Supabase Auth and the cloud copy table.
+const mockAccount = async (page: Page, cloud: { row: Record<string, unknown> | null; pushed: Record<string, unknown>[] }) => {
+    await page.route('https://api.revenuecat.com/**', route => route.abort());
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const user = {
+        id: '00000000-0000-0000-0000-0000000000aa', aud: 'authenticated', role: 'authenticated', email: 'sebas@example.com', is_anonymous: false,
+        app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: {}, identities: [{ id: 'i1', provider: 'email' }],
+        created_at: '2026-10-08T10:00:00Z',
+    };
+    const session = () => ({ access_token: 'token', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'refresh', user });
+    await page.route('http://ai.test/**', async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, apple: false } } });
+        if (url.includes('/auth/v1/signup') || url.includes('/auth/v1/token')) return route.fulfill({ headers: cors, json: session() });
+        if (url.includes('/rest/v1/user_data')) {
+            if (req.method() === 'GET') return route.fulfill({ headers: cors, json: cloud.row ? [cloud.row] : [] });
+            cloud.pushed.push(req.postDataJSON());
+            return route.fulfill({ status: 201, headers: cors, body: '' });
+        }
+        if (url.includes('/functions/v1/nutrition-coach')) return route.fulfill({ headers: cors, json: { usage: { used: 0, limit: 0, premium: false } } });
+        return route.fulfill({ status: 404, headers: cors, body: '' });
+    });
+};
+
+test('account: sign up, cloud copy, and sign in on another phone', async ({ page, browser }) => {
+    const cloud: { row: Record<string, unknown> | null; pushed: Record<string, unknown>[] } = { row: null, pushed: [] };
+    await mockAccount(page, cloud);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Empezar gratis' }).click();
+    await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
+    await page.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
+
+    // A new account has nothing in the cloud yet: the plan questions follow.
+    await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
+    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await expect(page.getByText('sebas@example.com')).toBeVisible();
+    await expect(page.getByText('Sesión iniciada con correo')).toBeVisible();
+
+    // The data goes to the account a moment later.
+    await expect.poll(() => cloud.pushed.length, { timeout: 10_000 }).toBeGreaterThan(0);
+    const pushed = cloud.pushed.at(-1)! as { user_id: string; data: { profile: unknown; routines: unknown[] }; updated_at: string };
+    expect(pushed.user_id).toBe('00000000-0000-0000-0000-0000000000aa');
+    expect(pushed.data.profile).toBeTruthy();
+    expect(pushed.data.routines.length).toBeGreaterThan(0);
+
+    // Another phone: sign in and the plan comes back, no questions.
+    const other = await (await browser.newContext({ locale: 'es-ES' })).newPage();
+    const cloud2 = { row: { data: pushed.data, updated_at: pushed.updated_at }, pushed: [] };
+    await mockAccount(other, cloud2);
+    await other.goto('/');
+    await other.getByRole('button', { name: '¿Ya tienes cuenta? Inicia sesión' }).click();
+    await expect(other.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+    await other.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await other.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await other.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await expect(other.getByRole('heading', { name: '0 de 3 entrenos esta semana' })).toBeVisible();
+    await other.close();
 });
 
 test('legal page has terms and privacy in three languages', async ({ page }) => {

@@ -60,6 +60,7 @@ interface Backend {
     offer(): Promise<Offer>;
     status(): Promise<PremiumStatus>;
     restore(): Promise<PremiumStatus>;
+    switchUser(id: string): Promise<void>;
 }
 
 interface EntitlementLike {
@@ -89,6 +90,9 @@ const nativeBackend = async (userId: string): Promise<Backend> => {
     };
     return {
         status,
+        async switchUser(id) {
+            await Purchases.logIn({ appUserID: id });
+        },
         async restore() {
             const { customerInfo } = await Purchases.restorePurchases();
             return toStatus(customerInfo.entitlements.active, customerInfo.managementURL);
@@ -134,6 +138,9 @@ const webBackend = async (userId: string): Promise<Backend> => {
     return {
         status,
         restore: status, // web purchases are tied to this account already
+        async switchUser(id) {
+            await purchases.changeUser(id);
+        },
         async offer() {
             const offering = (await purchases.getOfferings()).current;
             const plans: Plan[] = [];
@@ -174,6 +181,18 @@ const getBackend = () => {
 };
 
 export const getOffer = async () => (await getBackend()).offer();
+
+// After signing in or out: purchases follow the new user id.
+export const switchPremiumUser = async () => {
+    if (!backend) return;
+    try {
+        const b = await backend;
+        await b.switchUser(await getUserId());
+        await refreshPremium();
+    } catch {
+        backend = null; // set up again on next use
+    }
+};
 
 // Updates the cached status shown in the UI.
 export const refreshPremium = async () => {
