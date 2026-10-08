@@ -5,7 +5,7 @@ App de entrenamiento de fuerza para **iOS, Android y web**. Te da un plan, regis
 - **Funciona sola:** sin cuenta y sin claves. Los datos se guardan en el dispositivo; en las apps nativas, también en el almacenamiento del sistema.
 - **Funciona sin conexión**, en **español, inglés o portugués** (sigue el idioma del móvil y se cambia en Bienvenida o Ajustes), en kg o en lb.
 - **Coach de nutrición con IA (Claude)**, opcional: solo necesita conexión y el backend de abajo. Sin él, la nutrición funciona igual a mano.
-- **Gratis, con Premium opcional a 4,99 US$ al mes:** todo el entrenamiento y la nutrición son gratis; Premium amplía la IA de 5 a 100 consultas al mes.
+- **Gratis, con Premium opcional (4,99 US$ al mes o 39,99 US$ al año):** todo el entrenamiento y el registro de comidas son gratis; Premium desbloquea la IA (coach y comidas calculadas), con hasta 300 consultas al mes.
 
 ## Funciones
 
@@ -51,17 +51,17 @@ La app nunca lleva la clave de la IA. Llama a una función de Supabase ([`supaba
 
 Sin estas variables, la app muestra que el asistente no está disponible y todo lo demás funciona.
 
-## Suscripción Premium (4,99 US$ al mes)
+## Suscripción Premium (4,99 US$ al mes o 39,99 US$ al año)
 
-La app es gratis. Premium sube las consultas de IA (coach y comidas calculadas) de 5 a 100 al mes: la IA es lo único que cuesta dinero mantener. Con Claude, cada consulta cuesta unos 0,02–0,05 US$, así que 100 consultas caben en lo que deja la suscripción después de la comisión de la tienda. Los límites se cambian con `FREE_MONTHLY_LIMIT` y `PREMIUM_MONTHLY_LIMIT` en la función (y `FREE_AI_USES` / `PREMIUM_AI_USES` en `src/lib/premium.ts`, solo para los textos).
+La app es gratis. La IA (coach y comidas calculadas) es solo para Premium, porque es lo único que cuesta dinero mantener. Usa Claude Haiku 5.5: cada consulta cuesta alrededor de 0,001 US$, así que incluso las 300 consultas al mes del límite de uso justo cuestan menos de 1 US$, muy por debajo de lo que deja la suscripción tras la comisión de la tienda. Los límites se cambian con `FREE_MONTHLY_LIMIT` (0) y `PREMIUM_MONTHLY_LIMIT` (300) en la función, y `PREMIUM_AI_USES` en `src/lib/premium.ts` (solo para los textos).
 
 Apple y Google obligan a cobrar las suscripciones digitales con sus propios pagos. [RevenueCat](https://www.revenuecat.com) une App Store, Google Play y la web (con Stripe) en una sola suscripción `premium`, y es gratis hasta 2.500 US$ de ingresos al mes. La app usa como identificador de RevenueCat el mismo usuario anónimo que la IA, así que la función comprueba en el servidor quién paga.
 
-1. **Tiendas:** crea la suscripción mensual (por ejemplo `premium_monthly`) a 4,99 US$ en App Store Connect (necesitas el Apple Developer Program) y en Google Play Console. En Xcode, añade la capacidad **In-App Purchase** (Signing & Capabilities). Si quieres una prueba gratis, se configura ahí, sin tocar el código.
-2. **RevenueCat:** crea el proyecto, añade las apps de iOS y Android y, si quieres vender en la web, **Web Billing** con tu cuenta de Stripe. Crea el entitlement `premium`, asígnale los productos y ponlos en la offering *current* como paquete mensual.
+1. **Tiendas:** crea dos suscripciones en el mismo grupo, la mensual (`premium_monthly`, 4,99 US$) y la anual (`premium_annual`, 39,99 US$), en App Store Connect (necesitas el Apple Developer Program) y en Google Play Console. En Xcode, añade la capacidad **In-App Purchase** (Signing & Capabilities). Si quieres una prueba gratis, se configura ahí, sin tocar el código.
+2. **RevenueCat:** crea el proyecto, añade las apps de iOS y Android y, si quieres vender en la web, **Web Billing** con tu cuenta de Stripe. Crea el entitlement `premium`, asígnale los dos productos y ponlos en la offering *current*: la mensual como paquete **Monthly** y la anual como **Annual**. La app muestra los dos planes con los precios de la tienda.
 3. **Servidor:** añade el secreto `REVENUECAT_SECRET_KEY` en GitHub y vuelve a ejecutar **Deploy backend**.
 4. **App:** las claves públicas de SDK de RevenueCat van en `app/.env.local` o como variables del repositorio: `VITE_RC_IOS_KEY`, `VITE_RC_ANDROID_KEY` y `VITE_RC_WEB_KEY`.
-5. **Probar:** haz una compra de prueba en sandbox (TestFlight o una cuenta de prueba de Google Play) y comprueba en Ajustes → Premium que pasa a «Premium activo» y en Nutrición que el límite sube a 100.
+5. **Probar:** haz una compra de prueba en sandbox (TestFlight o una cuenta de prueba de Google Play) y comprueba en Ajustes → Premium que pasa a «Premium activo» y en Nutrición que el coach se desbloquea.
 
 Sin las claves, la app no muestra la compra y todo lo gratis funciona igual. Antes de publicar, añade tu correo de soporte en la ficha de cada tienda: la política de privacidad remite a él.
 

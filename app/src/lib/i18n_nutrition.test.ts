@@ -21,7 +21,7 @@ describe('translations', () => {
 
     it('switches language and picks plural forms', () => {
         setLang('en');
-        expect(t('nav.today')).toBe('Today');
+        expect(t('nav.today')).toBe('Home');
         expect(tp('common.sets', 1)).toBe('1 set');
         expect(tp('common.sets', 3)).toBe('3 sets');
         expect(exerciseName('sentadilla')).toBe('Barbell squat');
