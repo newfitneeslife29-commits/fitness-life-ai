@@ -84,9 +84,11 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"external_anonymous_users_enabled": true}')
           if [ "$status" -ge 300 ]; then
-            echo "::error::Could not turn on anonymous sign-ins (HTTP $status). Turn it on by hand: Authentication → Sign In / Providers → Allow anonymous sign-ins."
+            # Fine-grained tokens may lack auth_config_write. Not fatal: the
+            # live check at the end tells whether sign-ins work.
+            echo "::warning::Could not turn on anonymous sign-ins automatically (HTTP $status). If the final check fails, turn it on by hand: Authentication → Sign In / Providers → Allow anonymous sign-ins."
             cat /tmp/auth.json
-            exit 1
+            exit 0
           fi
           echo "Anonymous sign-ins are on."
 
