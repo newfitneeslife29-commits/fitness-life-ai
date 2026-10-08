@@ -11,6 +11,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registered by hand in main.tsx, and only on the web: inside the
+      // iOS/Android apps a service worker would only serve stale files.
+      injectRegister: false,
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'Fitness Life',

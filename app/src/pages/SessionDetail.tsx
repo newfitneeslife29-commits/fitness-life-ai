@@ -1,9 +1,13 @@
-import { ChevronLeft, Trash2, Trophy } from 'lucide-react';
-import { useMemo } from 'react';
+import { ChevronLeft, Share2, Trash2, Trophy } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { confirm, toast } from '../components/feedback';
+import { Medal } from '../components/Medal';
 import { Section, Stat } from '../components/ui';
 import { getExercise } from '../data/exercises';
+import { ACHIEVEMENTS, unlockedAchievements } from '../lib/achievements';
 import { fmtDate, fmtNumber, fmtVolume, fmtWeight } from '../lib/format';
+import { shareText } from '../lib/native';
 import { kgToDisplay, newRecords, volume } from '../lib/progression';
 import { durationMin } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -16,9 +20,22 @@ export default function SessionDetail() {
     const isNew = params.get('nuevo') === '1';
     const sessions = useStore(s => s.sessions);
     const unit = useStore(s => s.profile?.unit ?? 'kg');
+    const days = useStore(s => s.profile?.daysPerWeek ?? 3);
     const navigate = useNavigate();
     const index = sessions.findIndex(s => s.id === id);
     const session = sessions[index];
+    const [notes, setNotes] = useState(session?.notes ?? '');
+
+    // Medals earned with this very session.
+    const medals = useMemo(() => {
+        if (!session) return [];
+        const unlocked = unlockedAchievements(sessions, days);
+        return ACHIEVEMENTS.filter(a => unlocked.get(a.id)?.sessionId === session.id);
+    }, [sessions, session, days]);
+
+    useEffect(() => {
+        if (isNew && medals.length) actions.markAchievementsSeen(medals.map(m => m.id));
+    }, [isNew, medals]);
 
     const records = useMemo(() => {
         if (!session) return [];
@@ -37,8 +54,20 @@ export default function SessionDetail() {
     const byExercise = new Map<string, typeof session.sets>();
     for (const set of session.sets) byExercise.set(set.exerciseId, [...(byExercise.get(set.exerciseId) ?? []), set]);
 
-    const remove = () => {
-        if (!window.confirm('¿Borrar este entreno del historial?')) return;
+    const share = async () => {
+        const lines = [
+            `${session.routineName} · ${fmtDate(session.startedAt)}`,
+            `${durationMin(session)} min · ${fmtVolume(volume(session.sets), unit)} · ${session.sets.length} series`,
+            ...records.map(r => `Récord: ${getExercise(r.exerciseId)?.name} (${KIND_LABEL[r.kind]})`),
+            'Registrado con Fitness Life',
+        ];
+        const result = await shareText('Mi entreno', lines.join('\n'));
+        if (result === 'copied') toast('Resumen copiado');
+        if (result === 'failed') toast('No se pudo compartir');
+    };
+
+    const remove = async () => {
+        if (!(await confirm({ title: '¿Borrar este entreno?', message: 'Se quitará del historial y de tus récords.', confirmLabel: 'Borrar', danger: true }))) return;
         actions.deleteSession(session.id);
         navigate('/progreso', { replace: true });
     };
@@ -63,6 +92,22 @@ export default function SessionDetail() {
                     <Stat value={session.sets.length} label="Series" />
                 </div>
             </Section>
+
+            {medals.length > 0 && (
+                <Section title={medals.length === 1 ? 'Logro nuevo' : 'Logros nuevos'}>
+                    <ul className="space-y-2">
+                        {medals.map(m => (
+                            <li key={m.id} className="card flex animate-rise items-center gap-3 p-3">
+                                <Medal achievement={m} unlocked />
+                                <div>
+                                    <p className="font-semibold">{m.title}</p>
+                                    <p className="text-sm text-white/55">{m.description}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
+            )}
 
             {records.length > 0 && (
                 <Section title="Récords">
@@ -97,12 +142,21 @@ export default function SessionDetail() {
                 </div>
             </Section>
 
+            <Section title="Notas">
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={() => actions.setSessionNotes(session.id, notes)}
+                    rows={3} placeholder="Cómo te has sentido, molestias, qué cambiar la próxima vez…" aria-label="Notas del entreno"
+                    className="w-full resize-none rounded-2xl border border-line bg-ink-2 p-4 text-sm outline-none placeholder:text-white/35 focus:border-brand" />
+            </Section>
+
             <Section>
-                {isNew ? (
-                    <Link to="/" className="btn-primary w-full">Listo</Link>
-                ) : (
-                    <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> Borrar entreno</button>
-                )}
+                <div className="space-y-2">
+                    <button onClick={share} className="btn-ghost w-full"><Share2 size={16} /> Compartir</button>
+                    {isNew ? (
+                        <Link to="/" className="btn-primary w-full">Listo</Link>
+                    ) : (
+                        <button onClick={remove} className="btn-danger w-full"><Trash2 size={16} /> Borrar entreno</button>
+                    )}
+                </div>
             </Section>
         </div>
     );

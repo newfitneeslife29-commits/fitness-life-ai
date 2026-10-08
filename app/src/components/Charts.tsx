@@ -78,3 +78,35 @@ export const WeekBars = ({ weeks, target }: { weeks: { weekStart: Date; sessions
         </svg>
     );
 };
+
+// GitHub-style grid: one column per week, one row per weekday.
+export const TrainingCalendar = ({ weeks }: { weeks: { date: Date; count: number; volumeKg: number; future: boolean }[][] }) => {
+    const cell = 15, gap = 3, left = 18, top = 14;
+    const W = left + weeks.length * (cell + gap), H = top + 7 * (cell + gap);
+    const maxVol = Math.max(1, ...weeks.flat().map(d => d.volumeKg));
+    const trained = weeks.flat().filter(d => d.count > 0).length;
+    return (
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${trained} días entrenados en las últimas ${weeks.length} semanas`}>
+            {['L', 'X', 'D'].map((label, i) => (
+                <text key={label} x={0} y={top + [0, 2, 6][i] * (cell + gap) + 11} fontSize={9} fill="#ffffff59">{label}</text>
+            ))}
+            {weeks.map((week, w) => (
+                <g key={w}>
+                    {week[0].date.getDate() <= 7 && (
+                        <text x={left + w * (cell + gap)} y={9} fontSize={9} fill="#ffffff59">
+                            {week[0].date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '')}
+                        </text>
+                    )}
+                    {week.map((d, i) => (
+                        <rect key={i} x={left + w * (cell + gap)} y={top + i * (cell + gap)} width={cell} height={cell} rx={3.5}
+                            fill={d.future ? 'transparent' : d.count ? '#f26b1d' : '#1f242c'}
+                            fillOpacity={d.count ? 0.45 + 0.55 * (d.volumeKg / maxVol) : 1}
+                            stroke={d.future ? '#1f242c' : 'none'}>
+                            <title>{`${d.date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}${d.count ? `: ${d.count} entreno${d.count > 1 ? 's' : ''}` : ''}`}</title>
+                        </rect>
+                    ))}
+                </g>
+            ))}
+        </svg>
+    );
+};

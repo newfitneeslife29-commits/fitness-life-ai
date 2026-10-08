@@ -53,6 +53,13 @@ export interface Session {
     startedAt: string;
     endedAt: string;
     sets: LoggedSet[];
+    notes?: string;
+}
+
+export interface BodyWeight {
+    id: string;
+    date: string; // ISO
+    weightKg: number;
 }
 
 export interface WorkingSet {
@@ -89,4 +96,7 @@ export interface AppState {
     plan: Plan | null;
     sessions: Session[]; // newest first
     active: ActiveWorkout | null;
+    bodyWeights: BodyWeight[]; // newest first
+    // Achievement ids the user has already been shown.
+    seenAchievements: string[];
 }

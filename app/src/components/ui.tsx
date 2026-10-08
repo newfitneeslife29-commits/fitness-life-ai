@@ -91,8 +91,8 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-            <button aria-label="Cerrar" className="absolute inset-0 bg-black/70" onClick={onClose} />
-            <div className="relative flex max-h-[85dvh] w-full max-w-lg flex-col rounded-t-3xl border border-line bg-ink-2 sm:rounded-3xl">
+            <div aria-hidden className="absolute inset-0 animate-fade bg-black/70" onClick={onClose} />
+            <div className="relative flex max-h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl border border-line bg-ink-2 sm:rounded-3xl">
                 <div className="flex items-center justify-between border-b border-line px-5 py-4">
                     <h2 className="text-lg font-semibold">{title}</h2>
                     <button onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5 text-white/60 hover:bg-ink-3 hover:text-white"><X size={20} /></button>
@@ -103,4 +103,3 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
     );
 };
 
-export const confirmAction = (message: string) => window.confirm(message);

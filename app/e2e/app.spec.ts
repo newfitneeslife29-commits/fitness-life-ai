@@ -55,8 +55,9 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     await page.getByRole('button', { name: /Entreno en curso/ }).click();
     await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByLabel('Peso serie 1')).toHaveValue('80');
 
-    page.once('dialog', d => d.accept()); // unmarked sets are not saved
     await page.getByRole('button', { name: 'Terminar' }).click();
+    // Unmarked sets are not saved: confirm in the app's own dialog.
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
     await expect(page.getByText('Entreno guardado')).toBeVisible();
     await expect(page.getByText('80 × 10').first()).toBeVisible();
     await page.getByRole('link', { name: 'Listo' }).click();
@@ -74,8 +75,9 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     await expect(again.getByLabel('Repeticiones serie 1')).toHaveValue('6');
     await expect(again.getByText('80 × 10').first()).toBeVisible(); // "Anterior" column
 
-    page.once('dialog', d => d.accept());
     await page.getByRole('button', { name: 'Descartar entreno' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Descartar' }).click();
+    await expect(page.getByRole('heading', { name: '1 de 3 entrenos esta semana' })).toBeVisible();
 
     await page.reload();
     await page.getByRole('link', { name: 'Progreso' }).click();
@@ -120,4 +122,39 @@ test('exercise library search and detail', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Dominadas' })).toBeVisible();
     await expect(page.getByText('la app te sugerirá una repetición más')).toBeVisible();
     await expect(page.getByText('Todavía no has hecho este ejercicio.')).toBeVisible();
+});
+
+test('plate calculator, achievements, notes and body weight', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await squat.getByLabel('Peso serie 1').fill('100');
+    await squat.getByRole('button', { name: 'Discos y calentamiento' }).click();
+    const sheet = page.getByRole('dialog', { name: /Discos/ });
+    await expect(sheet.getByText('25 + 15', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('85 kg × 1')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Cerrar' }).click();
+    await expect(sheet).toHaveCount(0);
+
+    await squat.getByLabel('Marcar serie 1 como hecha').click();
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+
+    // First workout unlocks the first medal.
+    await expect(page.getByText('Logro nuevo')).toBeVisible();
+    await expect(page.getByText('Primer paso')).toBeVisible();
+    await page.getByLabel('Notas del entreno').fill('Buenas sensaciones');
+    await page.getByRole('link', { name: 'Listo' }).click();
+    await expect(page.getByText('1 de 14 conseguidos')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Último entreno' }).or(page.getByRole('link', { name: /Cuerpo completo A/ })).first().click();
+    await expect(page.getByLabel('Notas del entreno')).toHaveValue('Buenas sensaciones');
+
+    await page.getByRole('link', { name: 'Progreso' }).click();
+    await page.getByLabel('Peso corporal de hoy').fill('78,4');
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('78,4 kg').first()).toBeVisible();
+    await expect(page.getByRole('img', { name: /días entrenados/ })).toBeVisible();
 });

@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExercisePicker } from '../components/ExercisePicker';
+import { confirm, toast } from '../components/feedback';
 import { getExercise } from '../data/exercises';
 import { actions, useStore } from '../store/store';
 import type { RoutineExercise } from '../store/types';
@@ -45,11 +46,18 @@ export default function RoutineEditor() {
         // A reversed range (typed max below min) is fixed on save, not while typing.
         const exercises = items.map(it => ({ ...it, repMin: Math.min(it.repMin, it.repMax), repMax: Math.max(it.repMin, it.repMax) }));
         actions.saveRoutine({ id: isNew ? undefined : id, name, exercises });
+        toast('Rutina guardada');
         navigate('/rutinas');
     };
 
-    const remove = () => {
-        if (!window.confirm(routine?.source === 'plan' ? 'Esta rutina es parte de tu plan. ¿Quitarla del plan y borrarla?' : '¿Borrar esta rutina?')) return;
+    const remove = async () => {
+        const ok = await confirm({
+            title: '¿Borrar esta rutina?',
+            message: routine?.source === 'plan' ? 'Es parte de tu plan: también se quitará de la rotación.' : 'Tu historial de entrenos no se borra.',
+            confirmLabel: 'Borrar',
+            danger: true,
+        });
+        if (!ok) return;
         actions.deleteRoutine(id!);
         navigate('/rutinas', { replace: true });
     };

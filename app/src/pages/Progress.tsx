@@ -1,13 +1,69 @@
-import { ChevronRight, LineChart as ChartIcon } from 'lucide-react';
+import { ChevronRight, LineChart as ChartIcon, Scale, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LineChart, WeekBars } from '../components/Charts';
+import { LineChart, TrainingCalendar, WeekBars } from '../components/Charts';
+import { toast } from '../components/feedback';
 import { Empty, PageHeader, Section, Stat } from '../components/ui';
 import { getExercise, MUSCLE_LABEL, type Muscle } from '../data/exercises';
-import { fmtDate, fmtNumber, fmtVolume } from '../lib/format';
-import { kgToDisplay, personalRecords, volume } from '../lib/progression';
-import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, weeklySeries } from '../lib/stats';
-import { useStore } from '../store/store';
+import { fmtDate, fmtNumber, fmtShortDate, fmtVolume } from '../lib/format';
+import { displayToKg, kgToDisplay, personalRecords, volume } from '../lib/progression';
+import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, trainingCalendar, weeklySeries } from '../lib/stats';
+import { actions, useStore } from '../store/store';
+import type { Unit } from '../store/types';
+
+const BodyWeightCard = ({ unit }: { unit: Unit }) => {
+    const entries = useStore(s => s.bodyWeights);
+    const [value, setValue] = useState('');
+    const latest = entries[0];
+    const monthAgo = entries.find(e => Date.parse(e.date) <= Date.now() - 28 * 86_400_000);
+    const change = latest && monthAgo ? kgToDisplay(latest.weightKg, unit) - kgToDisplay(monthAgo.weightKg, unit) : null;
+    const points = entries.slice(0, 60).map(e => ({ date: e.date, value: kgToDisplay(e.weightKg, unit) })).reverse();
+
+    const save = () => {
+        const n = Number(value.replace(',', '.'));
+        if (!Number.isFinite(n) || n < 20 || n > 400) {
+            toast('Escribe un peso válido');
+            return;
+        }
+        actions.logBodyWeight(displayToKg(n, unit));
+        setValue('');
+        toast('Peso guardado');
+    };
+
+    return (
+        <div className="card space-y-3 p-4">
+            <div className="flex items-end justify-between gap-3">
+                <div>
+                    <p className="text-2xl font-bold tabular-nums">{latest ? `${fmtNumber(kgToDisplay(latest.weightKg, unit))} ${unit}` : '—'}</p>
+                    <p className="text-xs text-white/50">
+                        {latest ? `Último registro: ${fmtShortDate(latest.date)}` : 'Aún sin registros'}
+                        {change !== null && ` · ${change > 0 ? '+' : ''}${fmtNumber(change)} ${unit} en 4 semanas`}
+                    </p>
+                </div>
+                <Scale className="text-brand" />
+            </div>
+            <form className="flex gap-2" onSubmit={e => { e.preventDefault(); save(); }}>
+                <input value={value} onChange={e => setValue(e.target.value)} inputMode="decimal" placeholder={`Peso de hoy (${unit})`} aria-label="Peso corporal de hoy"
+                    className="min-w-0 flex-1 rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
+                <button className="btn-primary px-4 py-2" disabled={!value.trim()}>Guardar</button>
+            </form>
+            {points.length >= 2 && <LineChart points={points} unit={unit} emptyText="" />}
+            {entries.length > 0 && (
+                <ul className="divide-y divide-line text-sm">
+                    {entries.slice(0, 4).map(e => (
+                        <li key={e.id} className="flex items-center justify-between py-2">
+                            <span className="text-white/60">{fmtDate(e.date)}</span>
+                            <span className="flex items-center gap-2 tabular-nums">
+                                {fmtNumber(kgToDisplay(e.weightKg, unit))} {unit}
+                                <button onClick={() => actions.deleteBodyWeight(e.id)} aria-label={`Borrar el peso del ${fmtDate(e.date)}`} className="rounded p-1 text-white/35 hover:text-red-400"><Trash2 size={14} /></button>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
 
 export default function Progress() {
     const sessions = useStore(s => s.sessions);
@@ -30,6 +86,7 @@ export default function Progress() {
     );
 
     const weeks = weeklySeries(sessions, 8);
+    const calendar = useMemo(() => trainingCalendar(sessions, 18), [sessions]);
     const thisWeek = sessionsThisWeek(sessions);
     const muscles = Object.entries(setsPerMuscle(thisWeek)).sort((a, b) => b[1] - a[1]) as [Muscle, number][];
 
@@ -37,11 +94,14 @@ export default function Progress() {
         return (
             <>
                 <PageHeader title="Progreso" />
-                <Section>
-                    <Empty icon={<ChartIcon size={32} />} title="Aún no hay entrenos">
-                        Termina tu primer entreno y aquí verás tu constancia, tus récords y cómo sube tu fuerza.
-                    </Empty>
-                </Section>
+                <div className="space-y-6">
+                    <Section>
+                        <Empty icon={<ChartIcon size={32} />} title="Aún no hay entrenos">
+                            Termina tu primer entreno y aquí verás tu constancia, tus récords y cómo sube tu fuerza.
+                        </Empty>
+                    </Section>
+                    <Section title="Peso corporal"><BodyWeightCard unit={unit} /></Section>
+                </div>
             </>
         );
     }
@@ -51,7 +111,10 @@ export default function Progress() {
             <PageHeader title="Progreso" subtitle={`${sessions.length} entrenos registrados`} />
 
             <Section title="Constancia">
-                <div className="card p-4"><WeekBars weeks={weeks} target={profile.daysPerWeek} /></div>
+                <div className="card space-y-4 p-4">
+                    <WeekBars weeks={weeks} target={profile.daysPerWeek} />
+                    <TrainingCalendar weeks={calendar} />
+                </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                     <Stat value={thisWeek.length} label="entrenos esta semana" />
                     <Stat value={fmtVolume(weeks[weeks.length - 1].volumeKg, unit)} label="volumen esta semana" />
@@ -84,6 +147,8 @@ export default function Progress() {
                     </div>
                 </Section>
             )}
+
+            <Section title="Peso corporal"><BodyWeightCard unit={unit} /></Section>
 
             <Section title="Récords">
                 <div className="card divide-y divide-line">

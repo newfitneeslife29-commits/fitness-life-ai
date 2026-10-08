@@ -1,5 +1,6 @@
 import { ChevronRight, Play, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { confirm } from '../components/feedback';
 import { Empty, PageHeader, Section } from '../components/ui';
 import { getExercise } from '../data/exercises';
 import { actions, useStore } from '../store/store';
@@ -28,8 +29,11 @@ export default function Routines() {
     const planRoutines = plan ? plan.routineIds.map(id => routines.find(r => r.id === id)).filter((r): r is Routine => !!r) : [];
     const custom = routines.filter(r => r.source === 'custom');
 
-    const start = (id: string) => {
-        if (active && !window.confirm('Ya tienes un entreno en curso. ¿Descartarlo y empezar este?')) return navigate('/entreno');
+    const start = async (id: string) => {
+        if (active && (active.routineId === id || !(await confirm({ title: 'Ya tienes un entreno en curso', message: '¿Descartarlo y empezar este?', confirmLabel: 'Empezar este', danger: true })))) {
+            navigate('/entreno');
+            return;
+        }
         actions.startWorkout(id);
         navigate('/entreno');
     };

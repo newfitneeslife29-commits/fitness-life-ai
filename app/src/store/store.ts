@@ -2,14 +2,18 @@ import { useSyncExternalStore } from 'react';
 import { uid } from '../lib/id';
 import { buildPlan } from '../lib/plan';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { ActiveWorkout, AppState, Profile, Routine, RoutineExercise, Session, WorkingSet } from './types';
+import type { ActiveWorkout, AppState, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // All data lives on the device (localStorage). No account, no network.
 // Export/import in Ajustes is the backup.
 
 const STORAGE_KEY = 'fitness-life:v1';
 
-const EMPTY: AppState = { version: 1, profile: null, routines: [], plan: null, sessions: [], active: null };
+const EMPTY: AppState = {
+    version: 1, profile: null, routines: [], plan: null, sessions: [], active: null, bodyWeights: [], seenAchievements: [],
+};
+
+const unitOf = (s: AppState) => s.profile?.unit ?? 'kg';
 
 const load = (): AppState => {
     try {
@@ -100,7 +104,7 @@ export const actions = {
 
     startWorkout(routineId: string | null) {
         const routine = state.routines.find(r => r.id === routineId) ?? null;
-        set(s => ({ ...s, active: createActiveWorkout(routine, s.sessions) }));
+        set(s => ({ ...s, active: createActiveWorkout(routine, s.sessions, new Date(), unitOf(s)) }));
     },
 
     discardWorkout() {
@@ -163,7 +167,7 @@ export const actions = {
     addExercise(exerciseId: string) {
         updateActive(a => ({
             ...a,
-            exercises: [...a.exercises, activeExerciseFrom(state.sessions, { exerciseId, sets: 3, repMin: 8, repMax: 12, restSec: 90 })],
+            exercises: [...a.exercises, activeExerciseFrom(state.sessions, { exerciseId, sets: 3, repMin: 8, repMax: 12, restSec: 90 }, unitOf(state))],
         }));
     },
 
@@ -173,7 +177,7 @@ export const actions = {
             ...a,
             exercises: a.exercises.map((ex, i) => i !== exIndex ? ex : activeExerciseFrom(state.sessions, {
                 exerciseId, sets: ex.sets.length || 3, repMin: ex.repMin, repMax: ex.repMax, restSec: ex.restSec,
-            })),
+            }, unitOf(state))),
         }));
     },
 
@@ -217,6 +221,31 @@ export const actions = {
         set(s => ({ ...s, sessions: s.sessions.filter(x => x.id !== id) }));
     },
 
+    setSessionNotes(id: string, notes: string) {
+        set(s => ({ ...s, sessions: s.sessions.map(x => (x.id === id ? { ...x, notes: notes.trim() || undefined } : x)) }));
+    },
+
+    // One entry per day: logging again the same day replaces it.
+    logBodyWeight(weightKg: number, date = new Date()) {
+        const day = date.toDateString();
+        set(s => ({
+            ...s,
+            bodyWeights: [
+                { id: uid(), date: date.toISOString(), weightKg: Math.round(weightKg * 100) / 100 },
+                ...s.bodyWeights.filter(b => new Date(b.date).toDateString() !== day),
+            ].sort((a, b) => b.date.localeCompare(a.date)),
+        }));
+    },
+
+    deleteBodyWeight(id: string) {
+        set(s => ({ ...s, bodyWeights: s.bodyWeights.filter(b => b.id !== id) }));
+    },
+
+    markAchievementsSeen(ids: string[]) {
+        if (ids.every(id => state.seenAchievements.includes(id))) return;
+        set(s => ({ ...s, seenAchievements: [...new Set([...s.seenAchievements, ...ids])] }));
+    },
+
     exportData(): string {
         return JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2);
     },
@@ -236,4 +265,3 @@ export const actions = {
     },
 };
 
-export type { Session };

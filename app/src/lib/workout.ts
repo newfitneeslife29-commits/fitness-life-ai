@@ -1,7 +1,7 @@
 import { getExercise } from '../data/exercises';
-import type { ActiveExercise, ActiveWorkout, Routine, RoutineExercise, Session, WorkingSet } from '../store/types';
+import type { ActiveExercise, ActiveWorkout, Routine, RoutineExercise, Session, Unit, WorkingSet } from '../store/types';
 import { uid } from './id';
-import { suggestNext, type Suggestion } from './progression';
+import { stepForUnit, suggestNext, type Suggestion } from './progression';
 import { lastPerformance } from './stats';
 
 export interface ExercisePlan {
@@ -10,36 +10,40 @@ export interface ExercisePlan {
 }
 
 // What to aim for in an exercise today, from the last time it was done.
-export const planExercise = (sessions: Session[], target: Pick<RoutineExercise, 'exerciseId' | 'repMin' | 'repMax'>): ExercisePlan => {
+export const planExercise = (
+    sessions: Session[],
+    target: Pick<RoutineExercise, 'exerciseId' | 'repMin' | 'repMax'>,
+    unit: Unit = 'kg',
+): ExercisePlan => {
     const last = lastPerformance(sessions, target.exerciseId).filter(s => !s.warmup);
-    const stepKg = getExercise(target.exerciseId)?.stepKg ?? 2.5;
+    const stepKg = stepForUnit(getExercise(target.exerciseId)?.stepKg ?? 2.5, unit);
     return {
         suggestion: suggestNext(target, last, stepKg),
         previous: last.map(s => ({ weightKg: s.weightKg, reps: s.reps })),
     };
 };
 
-const prefilledSets = (sessions: Session[], target: RoutineExercise): WorkingSet[] => {
-    const { suggestion, previous } = planExercise(sessions, target);
+const prefilledSets = (sessions: Session[], target: RoutineExercise, unit: Unit): WorkingSet[] => {
+    const { suggestion, previous } = planExercise(sessions, target, unit);
     const weightKg = suggestion?.weightKg ?? previous[0]?.weightKg ?? 0;
     const reps = suggestion?.reps ?? target.repMin;
     return Array.from({ length: target.sets }, () => ({ id: uid(), weightKg, reps, done: false }));
 };
 
-export const activeExerciseFrom = (sessions: Session[], target: RoutineExercise): ActiveExercise => ({
+export const activeExerciseFrom = (sessions: Session[], target: RoutineExercise, unit: Unit = 'kg'): ActiveExercise => ({
     exerciseId: target.exerciseId,
     repMin: target.repMin,
     repMax: target.repMax,
     restSec: target.restSec,
-    sets: prefilledSets(sessions, target),
+    sets: prefilledSets(sessions, target, unit),
 });
 
-export const createActiveWorkout = (routine: Routine | null, sessions: Session[], now = new Date()): ActiveWorkout => ({
+export const createActiveWorkout = (routine: Routine | null, sessions: Session[], now = new Date(), unit: Unit = 'kg'): ActiveWorkout => ({
     id: uid(),
     routineId: routine?.id ?? null,
     routineName: routine?.name ?? 'Entreno libre',
     startedAt: now.toISOString(),
-    exercises: (routine?.exercises ?? []).map(target => activeExerciseFrom(sessions, target)),
+    exercises: (routine?.exercises ?? []).map(target => activeExerciseFrom(sessions, target, unit)),
     restEndsAt: null,
     restTotalSec: 0,
 });

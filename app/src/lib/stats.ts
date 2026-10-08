@@ -92,3 +92,24 @@ export const lastPerformance = (sessions: Session[], exerciseId: string): Logged
 
 export const durationMin = (s: Pick<Session, 'startedAt' | 'endedAt'>) =>
     Math.max(1, Math.round((Date.parse(s.endedAt) - Date.parse(s.startedAt)) / 60_000));
+
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+// One cell per day for the last `weeks` weeks (Monday-first columns), with the
+// number of sessions and volume that day. Days after `now` are marked future.
+export const trainingCalendar = (sessions: Session[], weeks = 18, now = new Date()) => {
+    const byDay = new Map<string, { count: number; volumeKg: number }>();
+    for (const s of sessions) {
+        const k = dayKey(new Date(s.startedAt));
+        const cur = byDay.get(k) ?? { count: 0, volumeKg: 0 };
+        byDay.set(k, { count: cur.count + 1, volumeKg: cur.volumeKg + volume(s.sets) });
+    }
+    const first = weekStart(now);
+    first.setDate(first.getDate() - 7 * (weeks - 1));
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return Array.from({ length: weeks }, (_, w) => Array.from({ length: 7 }, (_, d) => {
+        const date = new Date(first.getFullYear(), first.getMonth(), first.getDate() + w * 7 + d);
+        const info = byDay.get(dayKey(date)) ?? { count: 0, volumeKg: 0 };
+        return { date, ...info, future: date.getTime() > today };
+    }));
+};

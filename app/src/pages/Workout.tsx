@@ -1,9 +1,12 @@
-import { Check, ChevronLeft, Info, Minus, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, Disc3, Info, Minus, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ExercisePicker } from '../components/ExercisePicker';
+import { confirm } from '../components/feedback';
+import { PlateSheet } from '../components/PlateSheet';
 import { getExercise } from '../data/exercises';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtWeight } from '../lib/format';
+import { cancelRestAlert, haptic, keepAwake, scheduleRestAlert } from '../lib/native';
 import { displayToKg, kgToDisplay } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { planExercise } from '../lib/workout';
@@ -39,7 +42,9 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
     const sessions = useStore(s => s.sessions);
     const info = getExercise(ex.exerciseId);
     const [showTip, setShowTip] = useState(false);
-    const { suggestion, previous } = planExercise(sessions, ex);
+    const [plates, setPlates] = useState(false);
+    const { suggestion, previous } = planExercise(sessions, ex, unit);
+    const nextSet = ex.sets.find(s => !s.done) ?? ex.sets[ex.sets.length - 1];
     const timed = info?.timed;
     const lastTop = previous.length ? Math.max(...previous.map(p => p.weightKg)) : 0;
 
@@ -53,11 +58,14 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                     </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
+                    {info?.equipment === 'barra' && (
+                        <button onClick={() => setPlates(true)} aria-label="Discos y calentamiento" className="rounded-lg p-2 text-white/50 hover:bg-ink-3 hover:text-white"><Disc3 size={18} /></button>
+                    )}
                     {info?.tip && (
                         <button onClick={() => setShowTip(v => !v)} aria-label="Consejo técnico" className="rounded-lg p-2 text-white/50 hover:bg-ink-3 hover:text-white"><Info size={18} /></button>
                     )}
                     <button onClick={onSwap} aria-label="Cambiar ejercicio" className="rounded-lg p-2 text-white/50 hover:bg-ink-3 hover:text-white"><RefreshCw size={18} /></button>
-                    <button onClick={() => window.confirm(`¿Quitar ${info?.name ?? 'este ejercicio'} del entreno?`) && actions.removeExercise(index)}
+                    <button onClick={async () => (await confirm({ title: `¿Quitar ${info?.name ?? 'este ejercicio'}?`, message: 'Las series de este ejercicio no se guardarán.', confirmLabel: 'Quitar', danger: true })) && actions.removeExercise(index)}
                         aria-label="Quitar ejercicio" className="rounded-lg p-2 text-white/50 hover:bg-ink-3 hover:text-red-400"><Trash2 size={18} /></button>
                 </div>
             </div>
@@ -102,8 +110,8 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                                         onCommit={n => actions.setValue(index, j, 'reps', Math.round(n))} />
                                 </td>
                                 <td className="py-1.5 pr-2 text-center">
-                                    <button onClick={() => actions.toggleSet(index, j)} aria-pressed={s.done} aria-label={`Marcar serie ${j + 1} como hecha`}
-                                        className={`inline-flex h-9 w-10 items-center justify-center rounded-lg transition ${s.done ? 'bg-good text-ink' : 'bg-ink-3 text-white/40 hover:text-white'}`}>
+                                    <button onClick={() => { if (!s.done) haptic('tap'); actions.toggleSet(index, j); }} aria-pressed={s.done} aria-label={`Marcar serie ${j + 1} como hecha`}
+                                        className={`inline-flex h-9 w-10 items-center justify-center rounded-lg transition ${s.done ? 'animate-pop bg-good text-ink' : 'bg-ink-3 text-white/40 hover:text-white'}`}>
                                         <Check size={18} strokeWidth={3} />
                                     </button>
                                 </td>
@@ -119,6 +127,7 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                     <button onClick={() => actions.removeSet(index, ex.sets.length - 1)} aria-label="Quitar la última serie" className="btn-ghost py-2"><Minus size={16} /></button>
                 )}
             </div>
+            {plates && <PlateSheet open onClose={() => setPlates(false)} weightKg={nextSet?.weightKg ?? 0} unit={unit} exerciseName={info?.name ?? ''} />}
         </section>
     );
 };
@@ -129,7 +138,7 @@ const RestBar = ({ endsAt, total }: { endsAt: number; total: number }) => {
     const finished = left <= 0;
     useEffect(() => {
         if (!finished) return;
-        navigator.vibrate?.([200, 100, 200]);
+        haptic('success');
         const t = window.setTimeout(() => actions.skipRest(), 4000);
         return () => window.clearTimeout(t);
     }, [finished]);
@@ -166,17 +175,37 @@ export default function Workout() {
     useEffect(() => {
         if (!active && !finishing.current) navigate('/', { replace: true });
     }, [active, navigate]);
+
+    // Screen stays on while this page is open (re-acquired when the app
+    // comes back to the foreground, since the browser drops the lock).
+    useEffect(() => {
+        void keepAwake(true);
+        const onVisible = () => document.visibilityState === 'visible' && keepAwake(true);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            void keepAwake(false);
+        };
+    }, []);
+
+    // Notification when the rest ends, even with the phone locked (apps only).
+    const restEndsAt = active?.restEndsAt ?? null;
+    useEffect(() => {
+        if (restEndsAt) void scheduleRestAlert(restEndsAt);
+        else void cancelRestAlert();
+    }, [restEndsAt]);
     if (!active) return null;
 
     const done = active.exercises.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
     const total = active.exercises.reduce((n, e) => n + e.sets.length, 0);
 
-    const finish = () => {
+    const finish = async () => {
         if (done === 0) {
-            if (window.confirm('No has marcado ninguna serie. ¿Descartar el entreno?')) actions.discardWorkout();
+            if (await confirm({ title: 'No has marcado ninguna serie', message: '¿Descartar el entreno?', confirmLabel: 'Descartar', danger: true })) actions.discardWorkout();
             return;
         }
-        if (done < total && !window.confirm(`Quedan ${total - done} series sin marcar y no se guardarán. ¿Terminar igualmente?`)) return;
+        if (done < total && !(await confirm({ title: '¿Terminar el entreno?', message: `Quedan ${total - done} series sin marcar y no se guardarán.`, confirmLabel: 'Terminar' }))) return;
+        haptic('success');
         finishing.current = true;
         const id = actions.finishWorkout();
         navigate(id ? `/sesion/${id}?nuevo=1` : '/', { replace: true });
@@ -203,7 +232,7 @@ export default function Workout() {
                     <p className="card p-6 text-center text-white/60">Entreno libre: añade el primer ejercicio.</p>
                 )}
                 <button onClick={() => setPicker({ mode: 'add' })} className="btn-ghost w-full"><Plus size={18} /> Añadir ejercicio</button>
-                <button onClick={() => window.confirm('¿Descartar este entreno? No se guardará nada.') && actions.discardWorkout()}
+                <button onClick={async () => (await confirm({ title: '¿Descartar este entreno?', message: 'No se guardará nada.', confirmLabel: 'Descartar', danger: true })) && actions.discardWorkout()}
                     className="btn w-full text-red-400 hover:bg-red-500/10">Descartar entreno</button>
             </div>
 

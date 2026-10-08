@@ -21,6 +21,14 @@ export const kgToDisplay = (kg: number, unit: 'kg' | 'lbs') =>
 export const displayToKg = (value: number, unit: 'kg' | 'lbs') =>
     unit === 'lbs' ? Math.round(value * KG_PER_LB * 100) / 100 : value;
 
+// Load jump in the user's unit: 2.5 kg becomes 5 lb (not 5.5), 1 kg becomes
+// 2.5 lb... so suggested weights land on real plates. Returned in kg.
+export const stepForUnit = (stepKg: number, unit: 'kg' | 'lbs') => {
+    if (unit === 'kg' || stepKg === 0) return stepKg;
+    const lb = Math.max(2.5, Math.round(stepKg / KG_PER_LB / 2.5) * 2.5);
+    return Math.round(lb * KG_PER_LB * 1000) / 1000;
+};
+
 // Estimated one-rep max (Epley). A single rep is its own max.
 export const estimate1RM = (weightKg: number, reps: number) => {
     if (weightKg <= 0 || reps <= 0) return 0;

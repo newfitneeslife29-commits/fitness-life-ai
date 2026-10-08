@@ -101,3 +101,16 @@ describe('stats', () => {
         expect(lastPerformance(sessions, 'dominadas')).toEqual([]);
     });
 });
+
+describe('trainingCalendar', () => {
+    it('lays out Monday-first weeks ending this week and marks trained days', async () => {
+        const { trainingCalendar } = await import('./stats');
+        const now = new Date(2026, 9, 7, 12); // Wednesday
+        const cal = trainingCalendar([session(new Date(2026, 9, 6, 18).toISOString(), [['press-banca', 60, 10]])], 2, now);
+        expect(cal).toHaveLength(2);
+        expect(cal[0][0].date.getDay()).toBe(1);
+        expect(cal[1][1]).toMatchObject({ count: 1, volumeKg: 600, future: false }); // Tue 6 Oct
+        expect(cal[1][2].future).toBe(false); // today
+        expect(cal[1][3].future).toBe(true);
+    });
+});

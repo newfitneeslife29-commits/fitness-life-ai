@@ -1,5 +1,8 @@
 import { CalendarDays, Dumbbell, LineChart, ListChecks, Settings as SettingsIcon, Timer } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { FeedbackHost } from './components/feedback';
+import { initNative } from './lib/native';
+import Achievements from './pages/Achievements';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
@@ -53,7 +56,7 @@ const ActiveBanner = () => {
 
 const Shell = ({ children }: { children: ReactNode }) => (
     <div className="pt-safe pb-nav mx-auto min-h-dvh max-w-lg">
-        {children}
+        <div key={useLocation().pathname} className="animate-fade">{children}</div>
         <ActiveBanner />
         <BottomNav />
     </div>
@@ -67,10 +70,13 @@ const ScrollToTop = () => {
 
 export default function App() {
     const hasProfile = useStore(s => s.profile !== null);
-    if (!hasProfile) return <Onboarding />;
+    const navigate = useNavigate();
+    useEffect(() => initNative(() => navigate(-1)), [navigate]);
+    if (!hasProfile) return <><Onboarding /><FeedbackHost /></>;
     return (
         <>
             <ScrollToTop />
+            <FeedbackHost />
             <Routes>
                 <Route path="/entreno" element={<Workout />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />
@@ -81,6 +87,7 @@ export default function App() {
                 <Route path="/ejercicios" element={<Shell><Exercises /></Shell>} />
                 <Route path="/ejercicios/:id" element={<Shell><ExerciseDetail /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
+                <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </>
