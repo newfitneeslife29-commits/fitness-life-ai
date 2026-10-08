@@ -1,11 +1,11 @@
-import { ChevronLeft, ChevronRight, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Crown, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { PageHeader, Section, Sheet } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { AiError, aiAvailable, askCoach, estimateMeal, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
-import { premiumAvailable } from '../lib/premium';
+import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
 import { autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
@@ -14,7 +14,7 @@ import type { Macros, Meal } from '../store/types';
 
 const aiErrorText = (e: unknown) => t(`ai.error.${e instanceof AiError ? e.code : 'failed'}`);
 
-// Free uses spent: explain and open the Premium page.
+// AI is Premium-only: explain and open the Premium page.
 const useAiErrorHandler = () => {
     const navigate = useNavigate();
     return (e: unknown) => {
@@ -23,18 +23,29 @@ const useAiErrorHandler = () => {
     };
 };
 
-// "3 of 5 free AI uses left this month · Go Premium"
+// "Premium: 297 of 300 AI uses left this month"
 const AiUsageLine = () => {
     const usage = useStore(s => s.aiUsage);
-    if (!usage) return null;
+    if (!usage?.premium) return null;
     const left = Math.max(usage.limit - usage.used, 0);
-    return (
-        <p className="text-xs text-white/50">
-            {usage.premium ? t('ai.usage.premium', { left, limit: usage.limit }) : t('ai.usage.free', { left, limit: usage.limit })}
-            {!usage.premium && premiumAvailable() && <> · <Link to="/premium" className="font-semibold text-brand">{t('premium.cta')}</Link></>}
-        </p>
-    );
+    return <p className="text-xs text-white/50">{t('ai.usage.premium', { left, limit: usage.limit })}</p>;
 };
+
+// What free users see where the AI would be: what it does and how to get it.
+const PremiumLock = ({ text, onOpen }: { text: string; onOpen?: () => void }) => (
+    <div className="rounded-2xl border border-brand/30 bg-brand-soft p-4 text-center">
+        <span className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand text-snow"><Lock size={18} /></span>
+        <p className="text-sm text-white/80">{text}</p>
+        {premiumAvailable() ? (
+            <>
+                <Link to="/premium" onClick={onOpen} className="btn-primary mt-3 w-full"><Crown size={18} /> {t('ai.locked.cta')}</Link>
+                <p className="mt-2 text-xs text-white/55">{t('ai.locked.from', { price: fallbackPlan('annual').perMonth })}</p>
+            </>
+        ) : (
+            <p className="mt-2 text-xs text-white/55">{t('premium.unavailable')}</p>
+        )}
+    </div>
+);
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -203,8 +214,9 @@ const EstimateView = ({ estimate }: { estimate: MealEstimate }) => {
 
 const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => void; day: Date }) => {
     const ai = aiAvailable();
+    const premium = usePremiumActive();
     const onAiError = useAiErrorHandler();
-    const [mode, setMode] = useState<'ai' | 'manual'>(ai ? 'ai' : 'manual');
+    const [mode, setMode] = useState<'ai' | 'manual'>(ai && premium ? 'ai' : 'manual');
     const [text, setText] = useState('');
     const [busy, setBusy] = useState(false);
     const [estimate, setEstimate] = useState<MealEstimate | null>(null);
@@ -213,9 +225,9 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
 
     useEffect(() => {
         if (!open) return;
-        setMode(ai ? 'ai' : 'manual');
+        setMode(ai && premium ? 'ai' : 'manual');
         setText(''); setEstimate(null); setName(''); setFields(toFields());
-    }, [open, ai]);
+    }, [open, ai, premium]);
 
     const runEstimate = async () => {
         setBusy(true);
@@ -258,13 +270,15 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
                 {(['ai', 'manual'] as const).map(m => (
                     <button key={m} role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
                         className={`rounded-lg py-2 text-sm font-medium ${mode === m ? 'bg-ink-3 text-white' : 'text-white/50'}`}>
-                        {m === 'ai' ? t('meal.withAi') : t('meal.manual')}
+                        {m === 'ai' ? <span className="inline-flex items-center gap-1.5">{t('meal.withAi')}{!premium && <Lock size={13} aria-hidden />}</span> : t('meal.manual')}
                     </button>
                 ))}
             </div>
 
             {mode === 'ai' ? (
-                ai ? (
+                ai && !premium ? (
+                    <PremiumLock text={t('meal.aiLocked')} onOpen={onClose} />
+                ) : ai ? (
                     <>
                         <label className="label mb-1 block" htmlFor="meal-text">{t('meal.describe')}</label>
                         <textarea id="meal-text" value={text} onChange={e => { setText(e.target.value); setEstimate(null); }} rows={3} maxLength={600}
@@ -320,6 +334,7 @@ const Coach = ({ context }: { context: CoachContext }) => {
     const [pending, setPending] = useState<string | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
     const ai = aiAvailable();
+    const premium = usePremiumActive();
     const onAiError = useAiErrorHandler();
 
     useEffect(() => {
@@ -374,7 +389,9 @@ const Coach = ({ context }: { context: CoachContext }) => {
                 )}
             </div>
 
-            {ai ? (
+            {ai && !premium ? (
+                <div className="border-t border-line p-4"><PremiumLock text={t('ai.locked.text')} /></div>
+            ) : ai ? (
                 <>
                     {chat.length === 0 && !pending && (
                         <div className="flex flex-wrap gap-2 px-4 pb-3">
@@ -418,9 +435,10 @@ export default function Nutrition() {
     const [editTargets, setEditTargets] = useState(false);
     const [adding, setAdding] = useState(false);
 
-    // How many AI uses are left this month (free or Premium).
+    // Whether this user has Premium (store and server) and how many AI uses are left.
     useEffect(() => {
         if (aiAvailable()) refreshUsage().catch(() => {});
+        if (premiumAvailable()) refreshPremium().catch(() => {});
     }, []);
 
     const auto = weightKg ? autoTargets(profile.goal, weightKg) : null;

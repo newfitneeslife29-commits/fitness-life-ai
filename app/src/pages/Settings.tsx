@@ -8,7 +8,7 @@ import { getLang, LANGS, t, tp, type Lang } from '../i18n';
 import { fmtDate } from '../lib/format';
 import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
-import { FALLBACK_PRICE, PREMIUM_AI_USES, premiumAvailable, refreshPremium } from '../lib/premium';
+import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
 import { saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
 import type { Goal, Level, Setup } from '../store/types';
@@ -167,7 +167,7 @@ const PremiumCard = () => {
                     <p className="text-sm text-white/55">
                         {premium?.active
                             ? premium.expiresAt ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) }) : t('premium.noExpiry')
-                            : t('settings.premiumPitch', { n: PREMIUM_AI_USES, price: FALLBACK_PRICE })}
+                            : t('settings.premiumPitch', { price: fallbackPlan('annual').perMonth })}
                     </p>
                 </div>
                 <ChevronRight className="shrink-0 text-white/40" />

@@ -230,7 +230,8 @@ test('light and dark mode follow the phone and can be chosen in settings', async
 });
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.
-const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { freeUsesSpent?: boolean } = {}) => {
+// Free users get no AI (the server answers 402); Premium users get 300 uses a month.
+const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { premium?: boolean } = {}) => {
     // RevenueCat is not reachable in tests: the paywall falls back to the default price.
     await page.route('https://api.revenuecat.com/**', route => route.abort());
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
@@ -248,10 +249,10 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { free
         }
         if (url.includes('/functions/v1/nutrition-coach')) {
             const body = req.postDataJSON();
-            const usage = { used: opts.freeUsesSpent ? 5 : calls.length, limit: 5, premium: false };
+            const usage = opts.premium ? { used: calls.length, limit: 300, premium: true } : { used: 0, limit: 0, premium: false };
             if (body.action === 'status') return route.fulfill({ headers: cors, json: { usage } });
             calls.push(body);
-            if (opts.freeUsesSpent) return route.fulfill({ status: 402, headers: cors, json: { error: 'free uses spent', usage } });
+            if (!opts.premium) return route.fulfill({ status: 402, headers: cors, json: { error: 'premium required', usage } });
             if (body.action === 'estimate') {
                 return route.fulfill({
                     headers: cors, json: {
@@ -269,9 +270,9 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { free
     });
 };
 
-test('nutrition: targets, meals by hand and with AI, and the AI coach', async ({ page }) => {
+test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
-    await mockAi(page, calls);
+    await mockAi(page, calls, { premium: true });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Nutrición' }).click();
@@ -318,31 +319,65 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach', async ({
     await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
 });
 
-test('free AI uses spent: the coach offers Premium at 4.99 a month', async ({ page }) => {
-    await mockAi(page, [], { freeUsesSpent: true });
+test('free users: AI is Premium-only, with yearly and monthly plans', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls);
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Nutrición' }).click();
-    await expect(page.getByText('Te quedan 0 de 5 consultas de IA gratis este mes').first()).toBeVisible();
 
-    await page.getByRole('button', { name: '¿Qué ceno para llegar a mi proteína?' }).click();
+    // The coach shows what Premium unlocks instead of the chat.
+    await expect(page.getByText(/Pregúntale qué comer según tu objetivo/)).toBeVisible();
+    await expect(page.getByText('Desde 3,33 US$/mes')).toBeVisible();
+    await expect(page.getByLabel('Escribe tu pregunta')).toHaveCount(0);
+
+    // Meals open by hand; the AI tab leads to Premium.
+    await page.getByRole('button', { name: 'Añadir comida' }).click();
+    await expect(page.getByRole('tab', { name: 'Manual' })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: 'Con IA' }).click();
+    await expect(page.getByText(/Es parte de Premium/)).toBeVisible();
+    await page.getByRole('dialog').getByRole('link', { name: 'Desbloquear con Premium' }).click();
+
     await expect(page.getByRole('heading', { name: 'Fitness Life Premium' })).toBeVisible();
-    await expect(page.getByText('4,99 US$ / mes')).toBeVisible();
-    await expect(page.getByRole('cell', { name: '100 al mes' })).toBeVisible();
+    const yearly = page.getByRole('radio', { name: /Anual/ });
+    await expect(yearly).toHaveAttribute('aria-checked', 'true');
+    await expect(yearly).toContainText('39,99 US$');
+    await expect(yearly).toContainText('Ahorra 33%');
+    await expect(yearly).toContainText('Solo 3,33 US$/mes');
+    await expect(page.getByText(/Suscripción anual de 39,99\sUS\$/)).toBeVisible();
+    await page.getByRole('radio', { name: /Mensual/ }).click();
+    await expect(page.getByText(/Suscripción mensual de 4,99\sUS\$/)).toBeVisible();
+    await expect(page.getByRole('row', { name: /Coach de nutrición con IA/ }).getByLabel('No incluido')).toBeVisible();
+    await expect(page.getByText(/hasta 300 consultas de IA al mes/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Términos de uso' })).toHaveAttribute('href', './legal.html#terminos');
 
     // No store reachable in tests: the purchase fails gracefully.
     await page.getByRole('button', { name: 'Suscribirme' }).click();
     await expect(page.getByText('No se pudo completar. Inténtalo de nuevo.')).toBeVisible();
-
-    // The question is not lost.
-    await page.getByRole('button', { name: 'Volver' }).click();
-    await expect(page.getByLabel('Escribe tu pregunta')).toHaveValue('¿Qué ceno para llegar a mi proteína?');
+    expect(calls).toHaveLength(0); // free users never reach the AI
 
     // Settings links to Premium too.
     await page.getByRole('link', { name: 'Ajustes' }).click();
     await page.getByRole('link', { name: /Fitness Life Premium/ }).click();
     await expect(page.getByRole('button', { name: 'Restaurar compras' })).toBeVisible();
+});
+
+// A Premium status the store no longer confirms: the server still says no.
+test('AI refused by the server opens Premium and keeps the question', async ({ page }) => {
+    await mockAi(page, []);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem('fitness-life:v1')!);
+        s.premium = { active: true, expiresAt: null, willRenew: false, manageUrl: null, checkedAt: new Date().toISOString() };
+        localStorage.setItem('fitness-life:v1', JSON.stringify(s));
+    });
+    await page.reload();
+    await page.getByRole('link', { name: 'Nutrición' }).click();
+    await page.getByRole('button', { name: '¿Qué ceno para llegar a mi proteína?' }).click();
+    await expect(page.getByRole('heading', { name: 'Fitness Life Premium' })).toBeVisible();
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.getByLabel('Escribe tu pregunta')).toHaveValue('¿Qué ceno para llegar a mi proteína?');
 });
 
 test('legal page has terms and privacy in three languages', async ({ page }) => {

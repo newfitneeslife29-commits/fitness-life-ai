@@ -119,6 +119,12 @@ jobs:
       - name: Store the function secrets
         run: |
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+          # New random value each deploy: lets the check below ask Claude as a
+          # Premium user. Nobody else knows it.
+          smoke=$(openssl rand -hex 24)
+          echo "::add-mask::$smoke"
+          echo "SMOKE_TEST_TOKEN=$smoke" >> "$GITHUB_ENV"
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" SMOKE_TEST_TOKEN="$smoke"
           if [ -n "$REVENUECAT_SECRET_KEY" ]; then
             supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
           fi
@@ -126,8 +132,9 @@ jobs:
       - name: Deploy the nutrition coach
         run: supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
 
-      # End-to-end check, like the app does it: anonymous sign-in, then the
-      # coach's usage status and one short real answer from Claude.
+      # End-to-end check, like the app does it: anonymous sign-in, the coach's
+      # usage status, the paywall for free users, and one short real answer
+      # from Claude as Premium.
       - name: Get the app's public settings
         run: .github/scripts/supabase-env.sh
 
@@ -146,7 +153,7 @@ jobs:
           fi
           call() {
             curl -sS -o /tmp/answer.json -w "%{http_code}" -X POST "$url/functions/v1/nutrition-coach" \
-              -H "Authorization: Bearer $token" -H "apikey: $key" -H "Content-Type: application/json" -d "$1"
+              -H "Authorization: Bearer $token" -H "apikey: $key" -H "Content-Type: application/json" "${@:2}" -d "$1"
           }
           # A freshly deployed function can take a few seconds to start.
           for attempt in 1 2 3 4 5 6; do
@@ -160,7 +167,15 @@ jobs:
             exit 1
           fi
           echo "Usage: $(jq -c .usage /tmp/answer.json)"
-          status=$(call '{"action":"chat","lang":"es","context":{"goal":"musculo","weightKg":80,"targets":null,"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false},"messages":[{"role":"user","text":"Responde solo con un saludo de una frase."}]}')
+          question='{"action":"chat","lang":"es","context":{"goal":"musculo","weightKg":80,"targets":null,"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false},"messages":[{"role":"user","text":"Responde solo con un saludo de una frase."}]}'
+          status=$(call "$question")
+          if [ "$status" != 402 ]; then
+            echo "::error::A free user should be offered Premium (HTTP 402), got HTTP $status."
+            cat /tmp/answer.json
+            exit 1
+          fi
+          echo "Free users are offered Premium."
+          status=$(call "$question" -H "x-smoke-test: $SMOKE_TEST_TOKEN")
           if [ "$status" != 200 ] || [ -z "$(jq -r '.text // empty' /tmp/answer.json)" ]; then
             echo "::error::Claude did not answer (HTTP $status). Check ANTHROPIC_API_KEY and the Anthropic balance."
             cat /tmp/answer.json
