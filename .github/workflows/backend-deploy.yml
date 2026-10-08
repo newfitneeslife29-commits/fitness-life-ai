@@ -30,7 +30,31 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Values pasted in the wrong tab (Secrets instead of Variables or the reverse).
+          URL_AS_SECRET: ${{ secrets.VITE_SUPABASE_URL != '' }}
+          ANON_AS_SECRET: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}
+          REF_AS_SECRET: ${{ secrets.SUPABASE_PROJECT_REF != '' }}
+          TOKEN_AS_VARIABLE: ${{ vars.SUPABASE_ACCESS_TOKEN != '' }}
+          PASSWORD_AS_VARIABLE: ${{ vars.SUPABASE_DB_PASSWORD != '' }}
+          ANTHROPIC_AS_VARIABLE: ${{ vars.ANTHROPIC_API_KEY != '' }}
         run: |
+          # What each value looks like, without ever printing it.
+          looks_like() {
+            local v="$1"
+            if [ -z "$v" ]; then echo "empty"
+            elif [[ "$v" == sbp_* ]]; then echo "a Supabase access token (sbp_…)"
+            elif [[ "$v" == sk-ant-* ]]; then echo "an Anthropic API key (sk-ant-…)"
+            elif [[ "$v" == eyJ* || "$v" == sb_publishable_* ]]; then echo "a Supabase anon/publishable key"
+            elif [[ "$v" == sb_secret_* ]]; then echo "a Supabase SECRET key (do not use it here)"
+            elif [[ "$v" == http* ]]; then echo "a URL"
+            elif [[ "$v" =~ ^[a-z]{20}$ ]]; then echo "a 20-letter Project ID"
+            else echo "something else"
+            fi
+          }
+          echo "What each value looks like:"
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+            echo "  $name → $(looks_like "${!name}")"
+          done
           problems=0
           fail() { echo "::error::$1"; problems=1; }
           for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
@@ -43,6 +67,12 @@ jobs:
           [ -n "$SUPABASE_PROJECT_REF" ] && ! [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]] && fail "SUPABASE_PROJECT_REF must be the 20-letter Project ID (Project Settings → General), not the URL."
           [ -n "$VITE_SUPABASE_URL" ] && [ "$VITE_SUPABASE_URL" != "https://$SUPABASE_PROJECT_REF.supabase.co" ] && fail "VITE_SUPABASE_URL must be https://<Project ID>.supabase.co and match SUPABASE_PROJECT_REF."
           [ -n "$VITE_SUPABASE_ANON_KEY" ] && [[ "$VITE_SUPABASE_ANON_KEY" != eyJ* && "$VITE_SUPABASE_ANON_KEY" != sb_publishable_* ]] && fail "VITE_SUPABASE_ANON_KEY must be the anon public key (eyJ…) or the publishable key (sb_publishable_…), never a secret or service_role key."
+          [ "$URL_AS_SECRET" = true ] && fail "VITE_SUPABASE_URL is in the Secrets tab: it must be in the Variables tab."
+          [ "$ANON_AS_SECRET" = true ] && fail "VITE_SUPABASE_ANON_KEY is in the Secrets tab: it must be in the Variables tab."
+          [ "$REF_AS_SECRET" = true ] && fail "SUPABASE_PROJECT_REF is in the Secrets tab: it must be in the Variables tab."
+          [ "$TOKEN_AS_VARIABLE" = true ] && fail "SUPABASE_ACCESS_TOKEN is in the Variables tab: delete it there, it must be a Secret."
+          [ "$PASSWORD_AS_VARIABLE" = true ] && fail "SUPABASE_DB_PASSWORD is in the Variables tab: delete it there, it must be a Secret."
+          [ "$ANTHROPIC_AS_VARIABLE" = true ] && fail "ANTHROPIC_API_KEY is in the Variables tab: delete it there, it must be a Secret."
           [ -z "$REVENUECAT_SECRET_KEY" ] && echo "::notice::REVENUECAT_SECRET_KEY not set: everyone gets the free AI allowance until Premium is configured."
           exit $problems
 
