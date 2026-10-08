@@ -44,10 +44,10 @@ App de entrenamiento de fuerza para **iOS, Android y web**. Te da un plan, regis
 
 La app nunca lleva la clave de la IA. Llama a una función de Supabase ([`supabase/functions/nutrition-coach`](../supabase/functions/nutrition-coach/index.ts)) que guarda la clave de Anthropic, usa Claude y limita las consultas por dispositivo (30 al día por defecto). La app entra con un usuario anónimo; no se guardan datos personales en el servidor.
 
-1. Crea un proyecto en [Supabase](https://supabase.com) y, en Authentication → Sign In / Providers, activa **Anonymous sign-ins**.
+1. Crea un proyecto en [Supabase](https://supabase.com). El inicio de sesión anónimo lo activa el workflow del paso 3.
 2. En GitHub → Settings → Secrets and variables → Actions, añade los **secretos** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` y `ANTHROPIC_API_KEY`, y las **variables** `SUPABASE_PROJECT_REF`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. Las claves secretas van solo ahí: nunca en la app, en el repositorio ni en un chat.
-3. Ejecuta Actions → **Deploy backend** → Run workflow. Crea la tabla `ai_usage` ([migración](../supabase/migrations)), guarda las claves como secretos de la función y despliega `nutrition-coach`.
-4. Vuelve a compilar la app (cualquier push, o ejecutar *Native apps* y *Deploy web app*) para que incluya la URL del backend. En local, pon las dos variables `VITE_` en `app/.env.local`.
+3. Ejecuta Actions → **Deploy backend** → Run workflow. Activa el inicio de sesión anónimo, crea la tabla `ai_usage` ([migración](../supabase/migrations)), guarda las claves como secretos de la función y despliega `nutrition-coach`.
+4. Vuelve a compilar la app (cualquier push, o ejecutar *Native apps* y *Deploy app*) para que incluya la URL del backend. En local, pon las dos variables `VITE_` en `app/.env.local`.
 
 Sin estas variables, la app muestra que el asistente no está disponible y todo lo demás funciona.
 

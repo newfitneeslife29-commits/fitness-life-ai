@@ -1,8 +1,9 @@
 name: Deploy backend
 
 # Run by hand (Actions → Deploy backend → Run workflow) after adding the
-# secrets and variables below. Applies the database migration, stores the
-# function secrets in Supabase and deploys the AI nutrition coach.
+# secrets and variables below. Turns on anonymous sign-ins, applies the
+# database migration, stores the function secrets in Supabase and deploys
+# the AI nutrition coach.
 #
 # Secrets:   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY,
 #            REVENUECAT_SECRET_KEY (optional until Premium is set up)
@@ -44,6 +45,21 @@ jobs:
 
       - name: Link the project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      # The app signs in anonymously (no email or password), so this must be on.
+      - name: Turn on anonymous sign-ins
+        run: |
+          status=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -X PATCH \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"external_anonymous_users_enabled": true}')
+          if [ "$status" -ge 300 ]; then
+            echo "::error::Could not turn on anonymous sign-ins (HTTP $status). Turn it on by hand: Authentication → Sign In / Providers → Allow anonymous sign-ins."
+            cat /tmp/auth.json
+            exit 1
+          fi
+          echo "Anonymous sign-ins are on."
 
       - name: Apply database migrations
         run: supabase db push
