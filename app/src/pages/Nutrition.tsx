@@ -2,9 +2,10 @@ import { Camera, ChevronLeft, ChevronRight, Crown, ImageIcon, Lock, Pencil, Plus
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
+import { ReportAiButton } from '../components/ReportAi';
 import { PageHeader, Section, Sheet } from '../components/ui';
 import { getLang, t } from '../i18n';
-import { AiError, aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
+import { AiError, aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type AiReport, type CoachContext, type MealEstimate } from '../lib/ai';
 import { pickImage, resizeImage } from '../lib/image';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
@@ -187,7 +188,11 @@ const TargetsSheet = ({ open, onClose, current, auto }: { open: boolean; onClose
 
 // ---------- Adding meals ----------
 
-const EstimateView = ({ estimate }: { estimate: MealEstimate }) => {
+// The estimate as plain text, for a report.
+const estimateText = (e: MealEstimate) =>
+    [e.name, ...e.items.map(i => `- ${i.name}, ${i.grams} g: ${i.kcal} kcal, P ${i.protein} g, C ${i.carbs} g, G ${i.fat} g`), e.note].filter(Boolean).join('\n');
+
+const EstimateView = ({ estimate, question }: { estimate: MealEstimate; question: string }) => {
     const total = sumMacros(estimate.items);
     return (
         <div className="card mt-4 p-4">
@@ -204,6 +209,7 @@ const EstimateView = ({ estimate }: { estimate: MealEstimate }) => {
                 {t('meal.macrosLine', { kcal: fmtNumber(total.kcal), p: fmtNumber(total.protein), c: fmtNumber(total.carbs), f: fmtNumber(total.fat) })}
             </p>
             {estimate.note && <p className="mt-2 text-xs text-white/50">{estimate.note}</p>}
+            <ReportAiButton report={{ kind: 'meal', content: estimateText(estimate), question }} className="mt-2" />
         </div>
     );
 };
@@ -320,7 +326,7 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
                             </button>
                         ) : (
                             <>
-                                <EstimateView estimate={estimate} />
+                                <EstimateView estimate={estimate} question={photo ? `[${t('meal.photo')}] ${text.trim()}` : text.trim()} />
                                 <div className="mt-3 flex gap-2">
                                     <button className="btn-ghost flex-1" onClick={editEstimate}><Pencil size={16} /> {t('common.edit')}</button>
                                     <button className="btn-primary flex-1" onClick={addEstimate}><Plus size={18} /> {t('meal.addThis')}</button>
@@ -408,7 +414,10 @@ const Coach = ({ context }: { context: CoachContext }) => {
 
             <div ref={listRef} className="max-h-[26rem] space-y-3 overflow-y-auto p-4" aria-live="polite">
                 <Bubble role="assistant" text={t('coach.welcome')} />
-                {chat.map(m => <Bubble key={m.id} role={m.role} text={m.text} />)}
+                {chat.map((m, i) => (
+                    <Bubble key={m.id} role={m.role} text={m.text}
+                        report={m.role === 'assistant' ? { kind: 'coach', content: m.text, question: chat[i - 1]?.role === 'user' ? chat[i - 1].text : '' } : undefined} />
+                ))}
                 {pending && (
                     <>
                         <Bubble role="user" text={pending} />
@@ -445,11 +454,13 @@ const Coach = ({ context }: { context: CoachContext }) => {
     );
 };
 
-const Bubble = ({ role, text }: { role: 'user' | 'assistant'; text: string }) => (
-    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}>
+// Answers from the AI can be reported (not the fixed welcome message).
+const Bubble = ({ role, text, report }: { role: 'user' | 'assistant'; text: string; report?: AiReport }) => (
+    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`}>
         <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${role === 'user' ? 'rounded-br-md bg-brand text-ink' : 'rounded-bl-md bg-ink-3 text-white/90'}`}>
             {text}
         </p>
+        {report && <ReportAiButton report={report} className="ml-1 mt-1" />}
     </div>
 );
 

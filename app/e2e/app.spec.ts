@@ -240,7 +240,7 @@ test('light and dark mode follow the phone and can be chosen in settings', async
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.
 // Free users get no AI (the server answers 402); Premium users get 300 uses a month.
-const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { premium?: boolean } = {}) => {
+const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { premium?: boolean; reports?: Record<string, unknown>[] } = {}) => {
     // RevenueCat is not reachable in tests: the paywall falls back to the default price.
     await page.route('https://api.revenuecat.com/**', route => route.abort());
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
@@ -275,13 +275,18 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
             }
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
+        if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
+            opts.reports?.push(req.postDataJSON());
+            return route.fulfill({ status: 201, headers: cors, body: '' });
+        }
         return route.fulfill({ status: 404, headers: cors, body: '' });
     });
 };
 
 test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
-    await mockAi(page, calls, { premium: true });
+    const reports: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true, reports });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
@@ -309,6 +314,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.getByRole('button', { name: 'Calcular con IA' }).click();
     await expect(page.getByText('Desayuno de huevos')).toBeVisible();
     await expect(page.getByText('280 kcal · P 17 g · C 19 g · G 14 g')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reportar este resultado' })).toBeVisible();
     await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
     await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
     expect(calls[0]).toMatchObject({ action: 'estimate', lang: 'es', text: '2 huevos revueltos y una tostada' });
@@ -321,6 +327,20 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
         context: { goal: 'musculo', weightKg: 80, targets: { kcal: 2800, protein: 160 }, today: { kcal: 418, protein: 42 } },
         messages: [{ role: 'user', text: '¿Qué ceno para llegar a mi proteína?' }],
     });
+
+    // Any AI answer can be reported, with a reason and optional details.
+    await page.getByRole('button', { name: 'Reportar esta respuesta' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Reportar respuesta de la IA' });
+    await expect(sheet.getByRole('button', { name: 'Enviar reporte' })).toBeDisabled();
+    await sheet.getByRole('radio', { name: 'Peligrosa para la salud' }).click();
+    await sheet.getByLabel('Detalles (opcional)').fill('No tiene en cuenta mi alergia');
+    await sheet.getByRole('button', { name: 'Enviar reporte' }).click();
+    await expect(page.getByText('Gracias, lo revisaremos')).toBeVisible();
+    await expect(sheet).toBeHidden();
+    expect(reports).toEqual([expect.objectContaining({
+        kind: 'coach', reason: 'harmful', note: 'No tiene en cuenta mi alergia',
+        question: '¿Qué ceno para llegar a mi proteína?', content: expect.stringContaining('pechuga de pollo'),
+    })]);
 
     // Everything stays after a reload.
     await page.reload();
