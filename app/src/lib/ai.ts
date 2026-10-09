@@ -103,3 +103,29 @@ export const getUserId = async () => {
     if (!data.session) throw new AiError('network');
     return data.session.user.id;
 };
+
+// ---------- Reports ----------
+// Anyone can flag an AI answer or meal estimate (Google Play asks AI apps for
+// this); the report keeps the answer and the question so it can be reviewed.
+
+export type AiReportReason = 'offensive' | 'harmful' | 'wrong' | 'other';
+export const AI_REPORT_REASONS: AiReportReason[] = ['offensive', 'harmful', 'wrong', 'other'];
+
+export interface AiReport {
+    kind: 'coach' | 'meal';
+    content: string;
+    question?: string;
+}
+
+export const reportAiAnswer = async (report: AiReport, reason: AiReportReason, note: string) => {
+    if (!aiAvailable()) throw new AiError('unavailable');
+    const supabase = await getClient();
+    const { error } = await supabase.from('ai_reports').insert({
+        kind: report.kind,
+        reason,
+        content: report.content.slice(0, 4000),
+        question: (report.question ?? '').slice(0, 1000),
+        note: note.trim().slice(0, 500),
+    });
+    if (error) throw new AiError('failed');
+};
