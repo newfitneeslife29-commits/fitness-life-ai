@@ -3,6 +3,7 @@ import type { AuthError, User } from '@supabase/supabase-js';
 import { actions, getState } from '../store/store';
 import type { Account } from '../store/types';
 import { forgetCloudState, startCloudSync, syncAccount } from './cloud';
+import { startCommunityProfileSync } from './community';
 import { switchPremiumUser } from './premium';
 import { AUTH_STORAGE_KEY, backendAvailable, getSupabase, SITE_URL } from './supabase';
 
@@ -68,6 +69,7 @@ export const startAuth = () => {
     listening ??= (async () => {
         const supabase = await getSupabase();
         startCloudSync();
+        startCommunityProfileSync();
         supabase.auth.onAuthStateChange((event, session) => {
             // Supabase asks not to await other auth calls inside this callback.
             window.setTimeout(() => {

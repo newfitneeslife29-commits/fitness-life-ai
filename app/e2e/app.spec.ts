@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import path from 'node:path';
+
+const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', name);
 
 // Full journey on a phone viewport against the production build.
 
@@ -259,7 +262,7 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
             if (body.action === 'status') return route.fulfill({ headers: cors, json: { usage } });
             calls.push(body);
             if (!opts.premium) return route.fulfill({ status: 402, headers: cors, json: { error: 'premium required', usage } });
-            if (body.action === 'estimate') {
+            if (body.action === 'estimate' || body.action === 'photo') {
                 return route.fulfill({
                     headers: cors, json: {
                         name: 'Desayuno de huevos', note: 'Supuse huevos grandes.',
@@ -457,7 +460,7 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
-    await expect(page.getByText('sebas@example.com')).toBeVisible();
+    await expect(page.getByText('sebas@example.com').first()).toBeVisible();
     await expect(page.getByText('Sesión iniciada con correo')).toBeVisible();
 
     // The data goes to the account a moment later.
@@ -479,6 +482,116 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await other.getByRole('button', { name: 'Iniciar sesión' }).click();
     await expect(other.getByRole('heading', { name: '0 de 3 entrenos esta semana' })).toBeVisible();
     await other.close();
+});
+
+test('meal from a photo (Premium) and a profile picture', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    await page.getByRole('button', { name: 'Añadir comida' }).click();
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('dialog').getByRole('button', { name: 'Galería' }).click();
+    await (await chooser).setFiles(fixture('meal.jpg'));
+    await expect(page.getByRole('img', { name: 'Foto de tu comida' })).toBeVisible();
+    await page.getByLabel('Detalles (opcional)').fill('con aceite');
+    await page.getByRole('button', { name: 'Calcular con IA' }).click();
+    await expect(page.getByText('Desayuno de huevos')).toBeVisible();
+    const photoCall = calls.at(-1) as { action: string; mediaType: string; image: string; text: string };
+    expect(photoCall).toMatchObject({ action: 'photo', mediaType: 'image/jpeg', text: 'con aceite' });
+    expect(photoCall.image.length).toBeGreaterThan(500);
+    await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
+    await expect(page.getByText('Desayuno de huevos')).toBeVisible();
+
+    // Profile picture: shown in Ajustes and on Inicio.
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('button', { name: 'Foto de perfil' }).click();
+    const chooser2 = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Elegir de la galería' }).click();
+    await (await chooser2).setFiles(fixture('face.jpg'));
+    await expect(page.getByText('Foto de perfil actualizada')).toBeVisible();
+    await expect(page.locator('img[src^="data:image/jpeg"]').first()).toBeVisible();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
+    await expect(page.locator('header img[src^="data:image/jpeg"]')).toBeVisible();
+});
+
+test('community: read, like, comment and post', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const posts = [{
+        id: 'p1', body: '¡Nuevo récord en sentadilla! 100 kg', image_path: null, created_at: new Date(Date.now() - 3600_000).toISOString(),
+        user_id: 'ana', author: { name: 'Ana', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' },
+        community_likes: [{ count: 2 }], community_comments: [{ count: 1 }],
+    }];
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (req.method() !== 'GET') {
+            sent.push({ url, method: req.method(), body: req.postData() ? (() => { try { return req.postDataJSON(); } catch { return null; } })() : null });
+            return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
+        }
+        if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: posts });
+        if (url.includes('community_likes')) return route.fulfill({ headers: cors, json: [] });
+        if (url.includes('community_comments')) {
+            return route.fulfill({ headers: cors, json: [{ id: 'c1', body: '¡Bestia!', created_at: new Date().toISOString(), user_id: 'leo', author: { name: 'Leo', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' } }] });
+        }
+        return route.fulfill({ headers: cors, json: [] });
+    });
+
+    // Without an account: read only.
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await expect(page.getByText('¡Nuevo récord en sentadilla! 100 kg')).toBeVisible();
+    await expect(page.getByText('Únete a la comunidad')).toBeVisible();
+
+    // Sign up from there.
+    await page.getByRole('link', { name: 'Crear cuenta o iniciar sesión' }).click();
+    await page.getByRole('button', { name: '¿No tienes cuenta? Créala gratis' }).click();
+    await page.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+
+    // Like.
+    const like = page.getByRole('button', { name: 'Me gusta' });
+    await expect(like).toContainText('2');
+    await like.click();
+    await expect(like).toContainText('3');
+    await expect.poll(() => sent.some(r => r.url.includes('community_likes') && r.method === 'POST')).toBe(true);
+
+    // Comment (the rules are accepted once).
+    await page.getByRole('button', { name: 'Comentarios' }).click();
+    await expect(page.getByText('¡Bestia!')).toBeVisible();
+    await page.getByLabel('Escribe un comentario…').fill('¡Vamos!');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+    await expect(page.getByRole('alertdialog', { name: 'Normas de la comunidad' })).toBeVisible();
+    await page.getByRole('button', { name: 'Acepto' }).click();
+    await expect.poll(() => sent.find(r => r.url.includes('community_comments'))?.body).toMatchObject({ post_id: 'p1', body: '¡Vamos!' });
+    await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click();
+
+    // A new post with a photo; the profile is published first.
+    await page.getByRole('button', { name: /Comparte tu progreso/ }).click();
+    await page.getByRole('textbox', { name: /Comparte tu progreso/ }).fill('Semana 1 completada 💪');
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('dialog').getByRole('button', { name: 'Galería' }).click();
+    await (await chooser).setFiles(fixture('meal.jpg'));
+    await page.getByRole('button', { name: 'Publicar' }).click();
+    await expect(page.getByText('¡Publicado!')).toBeVisible();
+    expect(sent.some(r => r.url.includes('community_profiles'))).toBe(true);
+    expect(sent.some(r => r.url.includes('/storage/v1/object/community/'))).toBe(true);
+    expect(sent.find(r => r.url.includes('community_posts'))?.body).toMatchObject({ body: 'Semana 1 completada 💪' });
+
+    // Report and block someone else's post.
+    await page.getByRole('button', { name: 'Opciones' }).first().click();
+    await page.getByRole('button', { name: /Bloquear a Ana/ }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Bloquear a' }).click();
+    await expect(page.getByText('¡Nuevo récord en sentadilla! 100 kg')).toHaveCount(0);
 });
 
 test('legal page has terms and privacy in three languages', async ({ page }) => {

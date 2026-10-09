@@ -48,6 +48,13 @@ Split the description into its foods. When an amount is missing, assume a typica
 
 Write "name" as a short title for the meal (2 to 5 words) and the item names in ${LANGUAGE[lang]}. Write "note" as one short sentence in ${LANGUAGE[lang]} stating the main assumption you made, or an empty string if there was nothing to assume. If the text does not describe food or drink, return no items and say so in the note.`;
 
+// Same output as estimateSystem, from a photo of the plate.
+export const photoSystem = (lang: Lang) => `You estimate the nutrition of a meal from a photo in a food-logging app.
+
+Identify each food and drink you can see. Estimate the portion from visual cues (plate and cutlery size, how much space each food takes, thickness), then its grams, kcal, protein, carbs and fat from standard food composition data, with kcal consistent with the macros. Count visible oil, sauces and dressings. If the user adds a note (for example what is inside or how it was cooked), trust it over the photo.
+
+Write "name" as a short title for the meal (2 to 5 words) and the item names in ${LANGUAGE[lang]}. Write "note" as one short sentence in ${LANGUAGE[lang]} stating the main assumption you made about portions or hidden ingredients. If the photo does not show food or drink, return no items and say so in the note.`;
+
 const NUMBER = { type: 'number' } as const;
 
 export const ESTIMATE_SCHEMA = {

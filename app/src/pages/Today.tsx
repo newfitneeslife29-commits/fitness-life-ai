@@ -1,6 +1,7 @@
 import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, Lightbulb, Play, Plus, Trophy, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Avatar } from '../components/Avatar';
 import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { Empty, Section } from '../components/ui';
@@ -204,6 +205,9 @@ export default function Today() {
     return (
         <div className="space-y-6">
             <header className="flex items-center gap-3 px-4 pt-6">
+                <Link to="/ajustes" aria-label={t('profile.changePhoto')} className="shrink-0 rounded-full ring-2 ring-brand/60 ring-offset-2 ring-offset-ink">
+                    <Avatar src={profile.avatar} name={profile.name} size={44} />
+                </Link>
                 <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase tracking-wider text-white/45">{now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                     <h1 className="truncate text-2xl font-bold tracking-tight">{greeting()}{profile.name ? `, ${profile.name}` : ''}</h1>

@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Fitness Life usa la cámara para fotografiar tus comidas y calcular sus calorías, y para tu foto de perfil y tus publicaciones.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fitness Life usa tus fotos para calcular las calorías de una comida, tu foto de perfil y tus publicaciones en la comunidad.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

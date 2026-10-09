@@ -14,6 +14,7 @@ export interface Profile {
     setup: Setup;
     unit: Unit;
     createdAt: string;
+    avatar?: string; // profile picture, a small JPEG data URL
 }
 
 export interface RoutineExercise {
@@ -147,6 +148,8 @@ export interface AppState {
     account?: Account | null;
     authPrompted?: boolean; // the sign-in screen was offered once
     cloudSyncedAt?: string | null; // last copy to or from the account
+    blockedUsers?: string[]; // community: people whose posts are hidden
+    communityRulesAccepted?: boolean;
     profile: Profile | null;
     routines: Routine[];
     plan: Plan | null;
