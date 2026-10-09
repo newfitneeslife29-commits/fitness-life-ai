@@ -1,5 +1,6 @@
 import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { FeedbackHost } from './components/feedback';
 import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
@@ -70,7 +71,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
     return (
         // Extra bottom room while the "workout in progress" banner is showing.
         <div className={`pt-safe mx-auto min-h-dvh max-w-lg ${hasActive ? 'pb-[calc(9rem+env(safe-area-inset-bottom))]' : 'pb-nav'}`}>
-            <div key={pathname} className="animate-fade">{children}</div>
+            <div key={pathname} className="animate-fade"><ErrorBoundary>{children}</ErrorBoundary></div>
             <ActiveBanner />
             <BottomNav />
         </div>
@@ -105,7 +106,7 @@ export default function App() {
             <PasswordRecovery />
             {splash}
             <Routes key={lang}>
-                <Route path="/entreno" element={<Workout />} />
+                <Route path="/entreno" element={<ErrorBoundary><Workout /></ErrorBoundary>} />
                 <Route path="/cuenta" element={<AuthScreen initialMode="signIn" onDone={() => navigate('/ajustes', { replace: true })} onBack={() => navigate(-1)} />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />
                 <Route path="/rutinas" element={<Shell><Routines /></Shell>} />

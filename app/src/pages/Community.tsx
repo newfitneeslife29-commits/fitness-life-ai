@@ -260,7 +260,7 @@ export default function Community() {
     }, [load, me, blocked?.length]);
 
     const loadMore = async () => {
-        const last = posts?.at(-1);
+        const last = posts?.[posts.length - 1];
         if (!last) return;
         try {
             const page = await fetchFeed(last.createdAt);
