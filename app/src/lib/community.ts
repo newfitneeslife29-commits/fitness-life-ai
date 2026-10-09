@@ -1,4 +1,5 @@
 import { getState, subscribeStore } from '../store/store';
+import { uid } from './id';
 import { getSupabase, SUPABASE_URL } from './supabase';
 
 // Community: posts with text and an optional photo, likes and comments.
@@ -95,7 +96,7 @@ const requireMember = async () => {
 
 export const createPost = async (body: string, photo: Blob | null) => {
     const { supabase, id } = await requireMember();
-    const postId = crypto.randomUUID();
+    const postId = uid();
     let imagePath: string | null = null;
     if (photo) {
         imagePath = `${id}/posts/${postId}.jpg`;
