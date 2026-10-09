@@ -37,7 +37,7 @@ App de entrenamiento de fuerza para **iOS, Android y web**. Te da un plan, regis
 
 | Tienda | Qué necesitas | Pasos |
 | --- | --- | --- |
-| Google Play | Cuenta de desarrollador de Google Play (pago único de 25 USD) y una clave de firma | `npm run android`, en Android Studio: Build → Generate Signed App Bundle, y súbelo a Play Console. |
+| Google Play | Cuenta de desarrollador de Google Play (pago único de 25 USD) | En GitHub: Actions → **Android for Google Play** → Run workflow. Descarga el `.aab` de la ejecución y súbelo a Play Console. La clave de subida se crea sola la primera vez y se guarda cifrada en el Vault de Supabase. |
 | App Store | Apple Developer Program (99 USD al año) y un Mac | `npm run ios`, en Xcode elige tu equipo de firma, Product → Archive y súbelo a App Store Connect / TestFlight. |
 
 ## Coach de nutrición con IA (opcional)
