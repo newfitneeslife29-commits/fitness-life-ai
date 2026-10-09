@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ExerciseDemo } from '../components/ExerciseDemo';
 import { ExercisePicker } from '../components/ExercisePicker';
+import { HoldTimer } from '../components/HoldTimer';
 import { confirm } from '../components/feedback';
 import { PlateSheet } from '../components/PlateSheet';
 import { exerciseName, exerciseTip, getExercise } from '../data/exercises';
@@ -43,13 +44,16 @@ const NumberField = ({ value, onCommit, label, decimals }: { value: number; onCo
 
 const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: number; unit: Unit; onSwap: () => void }) => {
     const sessions = useStore(s => s.sessions);
+    // Beginners see how each exercise is done without asking.
+    const beginner = useStore(s => s.profile?.level === 'principiante' && s.sessions.length < 6);
     const info = getExercise(ex.exerciseId);
     const name = exerciseName(ex.exerciseId);
-    const [howTo, setHowTo] = useState(false);
+    const [howTo, setHowTo] = useState(beginner && index === 0);
     const [plates, setPlates] = useState(false);
     const { suggestion, previous } = planExercise(sessions, ex, unit);
     const nextSet = ex.sets.find(s => !s.done) ?? ex.sets[ex.sets.length - 1];
     const timed = info?.timed;
+    const openSet = ex.sets.findIndex(s => !s.done);
     const lastTop = previous.length ? Math.max(...previous.map(p => p.weightKg)) : 0;
 
     const remove = async () => {
@@ -94,9 +98,16 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                         ? <span className="text-good">{t('workout.goUp', { weight: fmtWeight(suggestion.weightKg, unit), reps: suggestion.reps, diff: fmtWeight(suggestion.weightKg - lastTop, unit) })}</span>
                         : <span className="text-white/60">{t('workout.target')}: {suggestion.weightKg > 0 ? `${fmtWeight(suggestion.weightKg, unit)} × ` : ''}{suggestion.reps}{timed ? ' s' : ` ${t('unit.reps')}`}</span>
                 ) : (
-                    <span className="text-white/60">{t('workout.firstTime', { reps: ex.repMin })}</span>
+                    <span className="text-white/60">{timed ? t('workout.firstTimeTimed', { seconds: ex.repMin }) : t('workout.firstTime', { reps: ex.repMin })}</span>
                 )}
             </p>
+
+            {timed && openSet >= 0 && (
+                <HoldTimer target={ex.sets[openSet].reps || ex.repMin} onDone={sec => {
+                    actions.setValue(index, openSet, 'reps', sec);
+                    actions.toggleSet(index, openSet);
+                }} />
+            )}
 
             <table className="w-full text-sm">
                 <thead>

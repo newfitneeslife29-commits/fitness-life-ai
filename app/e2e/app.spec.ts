@@ -5,19 +5,41 @@ const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', nam
 
 // Full journey on a phone viewport against the production build.
 
-const onboard = async (page: Page, opts: { days?: string; setup?: RegExp } = {}) => {
+interface PlanAnswers { days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
+
+const onboard = async (page: Page, opts: PlanAnswers = {}) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await page.getByRole('button', { name: 'Continuar sin cuenta' }).click();
+    await answerPlanQuestions(page, opts);
+};
+
+const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByLabel('¿Cómo te llamas? (opcional)').fill('Sebas');
     await page.getByRole('radio', { name: /Ganar músculo/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.getByRole('radio', { name: /Intermedio/ }).click();
+    // About you: nothing goes on until it is filled in.
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await page.getByRole('radio', { name: 'Hombre' }).click();
+    await page.getByLabel('Edad').fill('30');
+    await page.getByLabel('Peso actual').fill('80');
+    await page.getByLabel('Altura').fill('180');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    for (const limit of opts.limits ?? []) await page.getByRole('checkbox', { name: limit }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('radio', { name: opts.level ?? /Intermedio/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('radio', { name: opts.days ?? '3', exact: true }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('radio', { name: opts.setup ?? /Gimnasio/ }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    if (opts.loseToKg) {
+        await page.getByRole('radio', { name: 'Bajar' }).click();
+        await page.getByLabel('Peso objetivo').fill(opts.loseToKg);
+    } else {
+        await page.getByRole('radio', { name: 'Mantener' }).click();
+    }
     await page.getByRole('button', { name: 'Siguiente' }).click();
 };
 
@@ -40,6 +62,52 @@ test('onboarding builds a plan that matches the answers', async ({ page }) => {
 test('home setup gets a bodyweight plan', async ({ page }) => {
     await onboard(page, { setup: /En casa sin material/ });
     await expect(page.getByRole('heading', { name: 'En casa sin material' })).toBeVisible();
+});
+
+test('beginner at home with sore knees: guided plan, guides, programs and the voice timer', async ({ page }) => {
+    // Record what the voice says instead of speaking.
+    await page.addInitScript(() => {
+        const spoken: string[] = [];
+        (window as unknown as { spoken: string[] }).spoken = spoken;
+        class Utterance { lang = ''; rate = 1; constructor(public text: string) {} }
+        Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: Utterance });
+        Object.defineProperty(window, 'speechSynthesis', { value: { speak: (u: Utterance) => spoken.push(u.text), cancel: () => {} } });
+    });
+    await onboard(page, { setup: /En casa sin material/, level: /Principiante/, limits: ['Rodillas'], loseToKg: '75' });
+    await expect(page.getByRole('heading', { name: 'Primeros pasos en casa' })).toBeVisible();
+    // Squats and lunges are swapped for knee-friendly moves.
+    await expect(page.getByText(/Sentadilla sin peso/)).toHaveCount(0);
+    await expect(page.getByText(/Puente de glúteo/).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+
+    // Home: the beginner guide and the weight goal.
+    await expect(page.getByText('Te faltan 5 kg')).toBeVisible();
+    await page.getByRole('link', { name: /¿Empiezas a entrenar\?/ }).click();
+    await expect(page.getByRole('heading', { name: 'Empieza desde cero' })).toBeVisible();
+    await page.getByRole('link', { name: /Cómo funciona un entreno/ }).click();
+    await expect(page.getByRole('heading', { name: 'Cómo funciona un entreno' })).toBeVisible();
+
+    // Programs: Premium ones are locked for free users.
+    await page.goto('/#/programas');
+    await page.getByRole('button', { name: /Quema grasa en casa/ }).click();
+    await expect(page.getByRole('link', { name: 'Desbloquear con Premium' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar' }).click();
+    await page.getByRole('button', { name: /^En casa sin material/ }).click();
+    await page.getByRole('button', { name: 'Usar este programa' }).click();
+    await page.getByRole('button', { name: 'Crear plan' }).click();
+    await expect(page.getByRole('heading', { name: 'Tu plan · En casa sin material' })).toBeVisible();
+
+    // Timed exercise: the voice counts in and the seconds go into the set.
+    await page.goto('/#/');
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    const plank = page.getByRole('region', { name: 'Plancha', exact: true });
+    await plank.getByRole('button', { name: 'Iniciar cronómetro' }).click();
+    await expect(plank.getByText('Prepárate')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { spoken: string[] }).spoken), { timeout: 8000 }).toEqual(['3', '2', '1', '¡Ya!']);
+    await page.waitForTimeout(1200);
+    await plank.getByRole('button', { name: 'Terminar serie' }).click();
+    await expect(plank.getByLabel('Marcar serie 1 como hecha')).toHaveAttribute('aria-pressed', 'true');
+    expect(Number(await plank.getByLabel('Repeticiones serie 1').inputValue())).toBeGreaterThanOrEqual(1);
 });
 
 test('log a workout, get a heavier suggestion next time, and keep data after reload', async ({ page }) => {
@@ -170,7 +238,8 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
     await expect(page.getByText('Primer paso')).toBeVisible();
     await page.getByLabel('Notas del entreno').fill('Buenas sensaciones');
     await page.getByRole('link', { name: 'Listo' }).click();
-    await expect(page.getByText('1 de 14 conseguidos')).toBeVisible();
+    // Plus the first weigh-in, logged at sign-up.
+    await expect(page.getByText(/^2 de \d+ conseguidos$/)).toBeVisible();
 
     await page.getByRole('link', { name: 'Último entreno' }).or(page.getByRole('link', { name: /Cuerpo completo A/ })).first().click();
     await expect(page.getByLabel('Notas del entreno')).toHaveValue('Buenas sensaciones');
@@ -188,8 +257,17 @@ test('switch language in onboarding and settings', async ({ page }) => {
     await page.getByRole('button', { name: 'Start for free' }).click();
     await page.getByRole('button', { name: 'Continue without an account' }).click();
     await expect(page.getByRole('heading', { name: 'Your strength plan in 1 minute' })).toBeVisible();
-    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Next' }).click();
-    await expect(page.getByRole('heading', { name: 'Full body A/B' })).toBeVisible();
+    await page.getByRole('button', { name: 'Next' }).click();
+    // In English, pounds and feet.
+    await page.getByRole('radio', { name: 'Female' }).click();
+    await page.getByLabel('Age').fill('28');
+    await page.getByLabel('Current weight').fill('150');
+    await page.getByLabel('Height').fill('5');
+    await page.locator('#about-in').fill('6');
+    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('radio', { name: 'Maintain' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('heading', { name: 'First steps at the gym' })).toBeVisible();
     await page.getByRole('button', { name: 'Start with this plan' }).click();
     await expect(page.getByRole('heading', { name: '0 of 3 workouts this week' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Nutrition', exact: true })).toBeVisible();
@@ -201,7 +279,7 @@ test('switch language in onboarding and settings', async ({ page }) => {
     await page.getByRole('link', { name: 'Início', exact: true }).click();
     await expect(page.getByRole('heading', { name: '0 de 3 treinos nesta semana' })).toBeVisible();
     // Names of generated routines follow the language too.
-    await expect(page.getByRole('heading', { name: 'Corpo inteiro A' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Início A' })).toBeVisible();
 });
 
 test('welcome screen leads to onboarding and back', async ({ page }) => {
@@ -291,10 +369,9 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
 
-    // Targets need a body weight: 80 kg and "Ganar músculo" → 2800 kcal, 160 g protein.
-    await page.getByLabel('Peso corporal de hoy').fill('80');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('0 de 2800 kcal')).toBeVisible();
+    // From the sign-up answers (man, 30, 180 cm, 80 kg, a bit active, "Ganar músculo"):
+    // Mifflin-St Jeor 1780 × 1.5 + 250 → 2900 kcal, 2 g/kg → 160 g protein.
+    await expect(page.getByText('0 de 2900 kcal')).toBeVisible();
     await expect(page.getByText('0 / 160 g')).toBeVisible();
 
     // By hand: calories worked out from the macros.
@@ -306,7 +383,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.getByLabel('Grasa (g)').fill('2');
     await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
     await expect(page.getByText('Batido de proteína')).toBeVisible();
-    await expect(page.getByText('138 de 2800 kcal')).toBeVisible();
+    await expect(page.getByText('138 de 2900 kcal')).toBeVisible();
 
     // With AI: describe it, review the estimate, add it.
     await page.getByRole('button', { name: 'Añadir comida' }).click();
@@ -316,7 +393,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await expect(page.getByText('280 kcal · P 17 g · C 19 g · G 14 g')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Reportar este resultado' })).toBeVisible();
     await page.getByRole('dialog').getByRole('button', { name: 'Añadir' }).click();
-    await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
+    await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
     expect(calls[0]).toMatchObject({ action: 'estimate', lang: 'es', text: '2 huevos revueltos y una tostada' });
 
     // The coach gets the user's goal and what they ate today.
@@ -324,7 +401,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     expect(calls[1]).toMatchObject({
         action: 'chat', lang: 'es',
-        context: { goal: 'musculo', weightKg: 80, targets: { kcal: 2800, protein: 160 }, today: { kcal: 418, protein: 42 } },
+        context: { goal: 'musculo', weightKg: 80, targets: { kcal: 2900, protein: 160 }, today: { kcal: 418, protein: 42 }, sex: 'hombre', age: 30, heightCm: 180, activity: 'ligero' },
         messages: [{ role: 'user', text: '¿Qué ceno para llegar a mi proteína?' }],
     });
 
@@ -345,7 +422,7 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     // Everything stays after a reload.
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
-    await expect(page.getByText('418 de 2800 kcal')).toBeVisible();
+    await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
 });
 
 test('free users: AI is Premium-only, with yearly and monthly plans', async ({ page }) => {
@@ -476,8 +553,7 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
     // A new account has nothing in the cloud yet: the plan questions follow.
-    await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
-    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Siguiente' }).click();
+    await answerPlanQuestions(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
     await expect(page.getByText('sebas@example.com').first()).toBeVisible();

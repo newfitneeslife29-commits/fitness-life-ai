@@ -1,5 +1,7 @@
 export type Lang = 'es' | 'en' | 'pt';
-export type Goal = 'musculo' | 'fuerza' | 'salud';
+export type Goal = 'musculo' | 'fuerza' | 'grasa' | 'salud';
+export type Sex = 'hombre' | 'mujer';
+export type Activity = 'sedentario' | 'ligero' | 'moderado' | 'alto';
 
 export interface Macros {
   kcal: number;
@@ -16,16 +18,24 @@ export interface CoachContext {
   targets: Macros | null;
   today: Macros;
   trainedToday: boolean;
+  sex: Sex | null;
+  age: number | null;
+  heightCm: number | null;
+  activity: Activity | null;
+  targetWeightKg: number | null;
 }
 
 const LANGUAGE: Record<Lang, string> = { es: 'Spanish', en: 'English', pt: 'Brazilian Portuguese' };
-const GOAL: Record<Goal, string> = { musculo: 'build muscle', fuerza: 'get stronger', salud: 'get fit and healthy' };
+const GOAL: Record<Goal, string> = { musculo: 'build muscle', fuerza: 'get stronger', grasa: 'lose fat', salud: 'get fit and healthy' };
+const ACTIVITY: Record<Activity, string> = {
+  sedentario: 'mostly sitting', ligero: 'lightly active', moderado: 'on their feet a lot', alto: 'physical job or daily sport',
+};
 
 export const chatSystem = (lang: Lang) => `You are the nutrition coach inside Fitness Life, a strength-training app. You help people eat in a way that supports their training: protein and calories, meal and snack ideas, what to eat around workouts, hydration, and practical shopping and cooking tips.
 
 Answer in ${LANGUAGE[lang]}. Write for a phone screen: short paragraphs or a few "-" bullet points, with no headings, tables or Markdown emphasis. Most answers fit in under 150 words. When it helps, name concrete foods with rough amounts and their protein or calories.
 
-Use the user's data below when it is relevant, for example to say how much protein is left for today. Their targets are estimates from body weight and goal, not a prescription.
+Use the user's data below when it is relevant, for example to say how much protein is left for today. Their targets are estimates from their body data, activity and goal, not a prescription.
 
 You give general guidance, not medical advice. If someone mentions a medical condition (such as diabetes, kidney disease, pregnancy or an eating disorder), medication, a serious allergy, or wants to eat very little or lose weight very fast, be supportive, keep the advice general and suggest they talk to a doctor or registered dietitian. Only mention well-established supplements (protein powder, creatine, caffeine) and never doses above the label.
 
@@ -36,7 +46,12 @@ const fmt = (m: Macros) => `${m.kcal} kcal, ${m.protein} g protein, ${m.carbs} g
 export const contextNote = (c: CoachContext) => [
   'About this user (from the app):',
   `- Goal: ${GOAL[c.goal]}`,
+  ...(c.sex ? [`- Sex: ${c.sex === 'hombre' ? 'male' : 'female'}`] : []),
+  ...(c.age ? [`- Age: ${c.age}`] : []),
+  ...(c.heightCm ? [`- Height: ${c.heightCm} cm`] : []),
+  ...(c.activity ? [`- Daily activity outside training: ${ACTIVITY[c.activity]}`] : []),
   `- Body weight: ${c.weightKg ? `${c.weightKg} kg` : 'not logged'}`,
+  ...(c.targetWeightKg ? [`- Target body weight: ${c.targetWeightKg} kg`] : []),
   `- Daily targets: ${c.targets ? fmt(c.targets) : 'not set (no body weight yet)'}`,
   `- Logged today so far: ${fmt(c.today)}`,
   `- Trained today: ${c.trainedToday ? 'yes' : 'no'}`,

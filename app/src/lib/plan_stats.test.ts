@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EXERCISES, getExercise } from '../data/exercises';
-import { PROGRAMS, pickProgram } from '../data/programs';
-import type { Session } from '../store/types';
+import { adaptDays, getProgram, PROGRAMS, pickProgram } from '../data/programs';
+import type { Level, Session, Setup } from '../store/types';
 import { buildPlan } from './plan';
 import { exerciseSeries, lastPerformance, sessionsThisWeek, setsPerMuscle, streakWeeks, weekStart, weeklySeries } from './stats';
 
@@ -29,18 +29,62 @@ describe('catalog integrity', () => {
 
 describe('pickProgram / buildPlan', () => {
     it('picks a program by setup and days per week', () => {
-        expect(pickProgram('gimnasio', 3).id).toBe('gym-full-body');
-        expect(pickProgram('gimnasio', 4).id).toBe('gym-upper-lower');
-        expect(pickProgram('gimnasio', 6).id).toBe('gym-ppl');
-        expect(pickProgram('mancuernas', 2).id).toBe('db-full-body');
-        expect(pickProgram('mancuernas', 4).id).toBe('db-upper-lower');
-        expect(pickProgram('casa', 5).id).toBe('home-bodyweight');
+        const pick = (setup: Setup, daysPerWeek: number, level: Level = 'intermedio') => pickProgram({ setup, daysPerWeek, level }).id;
+        expect(pick('gimnasio', 3)).toBe('gym-full-body');
+        expect(pick('gimnasio', 4)).toBe('gym-upper-lower');
+        expect(pick('gimnasio', 6)).toBe('gym-ppl');
+        expect(pick('mancuernas', 2)).toBe('db-full-body');
+        expect(pick('mancuernas', 4)).toBe('db-upper-lower');
+        expect(pick('casa', 5)).toBe('home-bodyweight');
+    });
+
+    it('starts beginners with the first-steps programs', () => {
+        expect(pickProgram({ setup: 'gimnasio', daysPerWeek: 3, level: 'principiante' }).id).toBe('gym-start');
+        expect(pickProgram({ setup: 'mancuernas', daysPerWeek: 2, level: 'principiante' }).id).toBe('db-start');
+        expect(pickProgram({ setup: 'casa', daysPerWeek: 4, level: 'principiante' }).id).toBe('home-start');
+        // Training 5+ days already: the regular split.
+        expect(pickProgram({ setup: 'gimnasio', daysPerWeek: 5, level: 'principiante' }).id).toBe('gym-ppl');
+    });
+
+    it('never picks a Premium program on its own', () => {
+        for (const setup of ['gimnasio', 'mancuernas', 'casa'] as const) {
+            for (const daysPerWeek of [2, 3, 4, 5, 6]) {
+                for (const level of ['principiante', 'intermedio', 'avanzado'] as const) {
+                    expect(getProgram(pickProgram({ setup, daysPerWeek, level }).id)?.premium).toBeFalsy();
+                }
+            }
+        }
+        expect(PROGRAMS.filter(p => p.premium).length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('swaps exercises that load a sore joint, within the setup', () => {
+        const home = adaptDays(getProgram('home-start')!, ['rodillas']);
+        const ids = home.flatMap(d => d.slots.map(s => s.exerciseId));
+        expect(ids).not.toContain('sentadilla-libre');
+        expect(ids).not.toContain('zancadas-libres');
+        for (const id of ids) expect(getExercise(id)!.equipment).toBe('peso corporal');
+        // No repeats inside a day.
+        for (const day of home) expect(new Set(day.slots.map(s => s.exerciseId)).size).toBe(day.slots.length);
+
+        const gym = adaptDays(getProgram('gym-full-body')!, ['espalda', 'hombros']);
+        const gymIds = gym.flatMap(d => d.slots.map(s => s.exerciseId));
+        expect(gymIds).not.toContain('peso-muerto-rumano');
+        expect(gymIds).not.toContain('press-militar');
+        expect(gymIds).not.toContain('remo-barra');
+
+        const plan = buildPlan({ goal: 'salud', level: 'principiante', daysPerWeek: 3, setup: 'casa', limitations: ['munecas'] });
+        expect(plan.routines.flatMap(r => r.exercises.map(e => e.exerciseId))).not.toContain('flexiones');
+    });
+
+    it('uses the program picked from the list', () => {
+        const { plan } = buildPlan({ goal: 'musculo', level: 'intermedio', daysPerWeek: 3, setup: 'gimnasio', programId: 'premium-glutes' });
+        expect(plan.programId).toBe('premium-glutes');
     });
 
     it('sets reps by goal and sets by level', () => {
         const strength = buildPlan({ goal: 'fuerza', level: 'principiante', daysPerWeek: 3, setup: 'gimnasio' });
         const squat = strength.routines[0].exercises[0];
-        expect(squat).toMatchObject({ exerciseId: 'sentadilla', sets: 3, repMin: 4, repMax: 6, restSec: 180 });
+        expect(squat).toMatchObject({ exerciseId: 'prensa', sets: 3, repMin: 4, repMax: 6, restSec: 180 });
 
         const muscle = buildPlan({ goal: 'musculo', level: 'avanzado', daysPerWeek: 3, setup: 'gimnasio' });
         expect(muscle.routines[0].exercises[0]).toMatchObject({ sets: 4, repMin: 6, repMax: 10 });

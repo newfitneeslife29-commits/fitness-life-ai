@@ -1,10 +1,22 @@
 import type { Lang } from '../i18n';
 import type { Theme } from '../lib/theme';
 
-export type Goal = 'fuerza' | 'musculo' | 'salud';
+export type Goal = 'fuerza' | 'musculo' | 'grasa' | 'salud';
 export type Level = 'principiante' | 'intermedio' | 'avanzado';
 export type Setup = 'gimnasio' | 'mancuernas' | 'casa';
 export type Unit = 'kg' | 'lbs';
+export type Sex = 'hombre' | 'mujer';
+// Daily activity outside training, for the calorie estimate.
+export type Activity = 'sedentario' | 'ligero' | 'moderado' | 'alto';
+// Joints that hurt or were injured: plans avoid what loads them most.
+export type Limitation = 'rodillas' | 'espalda' | 'hombros' | 'munecas';
+
+// "Lose 6 kg" / "gain 4 kg": where the user started and where they want to be.
+export interface WeightGoal {
+    startKg: number;
+    targetKg: number;
+    startedAt: string; // ISO
+}
 
 export interface Profile {
     name: string;
@@ -15,6 +27,18 @@ export interface Profile {
     unit: Unit;
     createdAt: string;
     avatar?: string; // profile picture, a small JPEG data URL
+    // About the person, asked at sign-up (missing for people who signed up
+    // before these questions existed: the app asks them later).
+    sex?: Sex;
+    birthYear?: number;
+    heightCm?: number;
+    activity?: Activity;
+    limitations?: Limitation[];
+    weightGoal?: WeightGoal | null;
+    // A program picked from the list; without one the app picks it.
+    programId?: string | null;
+    // The timer reads the seconds out loud in timed exercises (on by default).
+    voice?: boolean;
 }
 
 export interface RoutineExercise {

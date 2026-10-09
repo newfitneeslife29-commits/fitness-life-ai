@@ -1,14 +1,19 @@
-import { Camera, ChevronRight, Cloud, Crown, Download, ImageIcon, Languages, LogOut, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, ChevronRight, Cloud, Crown, Download, ImageIcon, Languages, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
+import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Chips, PageHeader, Section, Sheet } from '../components/ui';
-import { pickProgram, programName } from '../data/programs';
+import { programName } from '../data/programs';
+import { programFor } from '../lib/plan';
 import { getLang, LANGS, locale, t, tp, type Lang } from '../i18n';
 import { authAvailable, deleteAccount, signOut } from '../lib/auth';
-import { ACHIEVEMENTS, unlockedAchievements } from '../lib/achievements';
-import { fmtDate } from '../lib/format';
+import { ACHIEVEMENTS } from '../lib/achievements';
+import { useUnlocked } from '../lib/useAchievements';
+import { fmtDate, fmtWeight } from '../lib/format';
+import { ageOf } from '../lib/nutrition';
+import { speak, spokenTime, voiceAvailable } from '../lib/voice';
 import { blobToDataUrl, pickImage, resizeImage } from '../lib/image';
 import { streakWeeks } from '../lib/stats';
 import { planName } from '../lib/names';
@@ -25,7 +30,7 @@ export default function Settings() {
     const theme = useStore(s => s.theme ?? 'system');
     const fileRef = useRef<HTMLInputElement>(null);
 
-    const proposed = pickProgram(profile.setup, profile.daysPerWeek);
+    const proposed = programFor(profile);
     const proposedName = programName(proposed);
     const planChanged = plan?.programId !== proposed.id;
 
@@ -99,7 +104,7 @@ export default function Settings() {
                     <div>
                         <p className="label mb-2">{t('settings.goal')}</p>
                         <Chips<Goal> label={t('settings.goal')} value={profile.goal} onChange={goal => actions.updateProfile({ goal })}
-                            options={[{ value: 'musculo', label: t('goal.musculo.short') }, { value: 'fuerza', label: t('goal.fuerza.short') }, { value: 'salud', label: t('goal.salud.short') }]} />
+                            options={(['musculo', 'grasa', 'fuerza', 'salud'] as const).map(g => ({ value: g, label: t(`goal.${g}.short`) }))} />
                     </div>
                     <div>
                         <p className="label mb-2">{t('settings.level')}</p>
@@ -124,6 +129,10 @@ export default function Settings() {
                 </div>
             </Section>
 
+            <Section title={t('profileDetails.title')}>
+                <DetailsCard />
+            </Section>
+
             <Section title={t('settings.plan')}>
                 <div className="card p-4">
                     <p className="font-semibold">{plan ? planName(plan) : t('settings.noPlan')}</p>
@@ -133,8 +142,27 @@ export default function Settings() {
                     <button onClick={regenerate} className={planChanged ? 'btn-primary w-full' : 'btn-ghost w-full'}>
                         <RotateCcw size={16} /> {planChanged ? t('settings.switchTo', { name: proposedName }) : t('settings.regenerate')}
                     </button>
+                    <Link to="/programas" className="btn-ghost mt-2 w-full"><Layers size={16} /> {t('programs.seeAll')}</Link>
                 </div>
             </Section>
+
+            {voiceAvailable() && (
+                <Section title={t('settings.voice')}>
+                    <div className="card flex items-center gap-3 p-4">
+                        <Mic size={20} className="shrink-0 text-brand" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-medium">{t('settings.voice')}</p>
+                            <p className="text-sm text-white/55">{t('settings.voiceHint')}</p>
+                            <button onClick={() => void speak(spokenTime(30))} className="mt-1 text-sm font-semibold text-brand">{t('settings.voiceTest')}</button>
+                        </div>
+                        <button role="switch" aria-checked={profile.voice !== false} aria-label={t('settings.voice')}
+                            onClick={() => actions.updateProfile({ voice: profile.voice === false })}
+                            className={`relative h-7 w-12 shrink-0 rounded-full transition ${profile.voice !== false ? 'bg-brand' : 'bg-ink-4'}`}>
+                            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${profile.voice !== false ? 'left-6' : 'left-1'}`} />
+                        </button>
+                    </div>
+                </Section>
+            )}
 
             <Section title={t('settings.data')}>
                 <div className="card space-y-3 p-4">
@@ -161,12 +189,50 @@ export default function Settings() {
 }
 
 // Picture, name and the numbers that matter, at the top of Ajustes.
+// Sex, age, height, weight, activity, aches and weight goal.
+const DetailsCard = () => {
+    const profile = useStore(s => s.profile)!;
+    const weightKg = useStore(s => s.bodyWeights[0]?.weightKg);
+    const [open, setOpen] = useState(false);
+    const missing = detailsMissing(profile);
+    const height = profile.heightCm
+        ? profile.unit === 'lbs' ? `${Math.floor(profile.heightCm / 30.48)}′${Math.round((profile.heightCm % 30.48) / 2.54)}″` : `${profile.heightCm} cm`
+        : '';
+    const limits = profile.limitations ?? [];
+    return (
+        <>
+            <button onClick={() => setOpen(true)} className="card flex w-full items-center gap-3 p-4 text-left hover:bg-ink-3">
+                <UserRound size={20} className="shrink-0 text-brand" />
+                <span className="min-w-0 flex-1">
+                    {missing ? (
+                        <>
+                            <span className="block font-semibold">{t('profileDetails.incomplete')}</span>
+                            <span className="block text-sm text-white/55">{t('profileDetails.incompleteHint')}</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="block font-medium">{t('profileDetails.summary', { age: ageOf(profile.birthYear!), height, weight: weightKg ? fmtWeight(weightKg, profile.unit) : '—' })}</span>
+                            <span className="block text-sm text-white/55">
+                                {t(`activity.${profile.activity ?? 'ligero'}.hint`)}
+                                {limits.length > 0 && ` · ${limits.map(l => t(`limits.${l}`)).join(', ')}`}
+                                {profile.weightGoal && ` · ${t('weightGoal.title')}: ${fmtWeight(profile.weightGoal.targetKg, profile.unit)}`}
+                            </span>
+                        </>
+                    )}
+                </span>
+                <ChevronRight className="shrink-0 text-white/40" />
+            </button>
+            <ProfileDetailsSheet open={open} onClose={() => setOpen(false)} />
+        </>
+    );
+};
+
 const ProfileHero = () => {
     const profile = useStore(s => s.profile)!;
     const sessions = useStore(s => s.sessions);
     const email = useStore(s => s.account?.email);
     const [choosing, setChoosing] = useState(false);
-    const medals = useMemo(() => unlockedAchievements(sessions, profile.daysPerWeek).size, [sessions, profile.daysPerWeek]);
+    const medals = useUnlocked().size;
 
     const choose = async (camera: boolean) => {
         setChoosing(false);

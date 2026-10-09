@@ -1,4 +1,4 @@
-import { ChevronRight, Dumbbell, Play, Plus } from 'lucide-react';
+import { ChevronRight, Dumbbell, GraduationCap, Layers, Play, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
 import { Empty, PageHeader, Section } from '../components/ui';
@@ -72,15 +72,33 @@ export default function Routines() {
                 )}
             </Section>
 
-            <Section title={t('nav.exercises')}>
-                <Link to="/ejercicios" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
-                    <Dumbbell className="shrink-0 text-brand" />
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{t('routines.library')}</p>
-                        <p className="text-sm text-white/50">{t('routines.libraryHint')}</p>
-                    </div>
-                    <ChevronRight className="shrink-0 text-white/40" />
-                </Link>
+            <Section title={t('learn.title')}>
+                <div className="space-y-2">
+                    <Link to="/programas" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                        <Layers className="shrink-0 text-brand" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">{t('programs.title')}</p>
+                            <p className="text-sm text-white/50">{t('programs.hint')}</p>
+                        </div>
+                        <ChevronRight className="shrink-0 text-white/40" />
+                    </Link>
+                    <Link to="/aprende" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                        <GraduationCap className="shrink-0 text-brand" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">{t('learn.cardTitle')}</p>
+                            <p className="text-sm text-white/50">{t('learn.cardHint')}</p>
+                        </div>
+                        <ChevronRight className="shrink-0 text-white/40" />
+                    </Link>
+                    <Link to="/ejercicios" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                        <Dumbbell className="shrink-0 text-brand" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">{t('routines.library')}</p>
+                            <p className="text-sm text-white/50">{t('routines.libraryHint')}</p>
+                        </div>
+                        <ChevronRight className="shrink-0 text-white/40" />
+                    </Link>
+                </div>
             </Section>
         </div>
     );
