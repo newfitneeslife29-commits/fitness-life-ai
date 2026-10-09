@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { blobToBase64 } from './image';
 import { backendAvailable, getSupabase } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
@@ -86,6 +87,10 @@ export const askCoach = async (lang: Lang, context: CoachContext, history: ChatM
 
 export const estimateMeal = (lang: Lang, description: string) =>
     call<MealEstimate>({ action: 'estimate', lang, text: description });
+
+// A photo of the plate (already shrunk to a JPEG), plus an optional note.
+export const estimateMealPhoto = async (lang: Lang, photo: Blob, note: string) =>
+    call<MealEstimate>({ action: 'photo', lang, image: await blobToBase64(photo), mediaType: 'image/jpeg', text: note });
 
 // Remaining uses and Premium status, without spending a use.
 export const refreshUsage = () => call<{ usage: AiUsage }>({ action: 'status' }).then(r => r.usage);

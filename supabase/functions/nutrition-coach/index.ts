@@ -12,12 +12,13 @@
 //   { action: 'status' }                                            → { usage }
 //   { action: 'chat', lang, context, messages: [{ role, text }] }  → { text, usage }
 //   { action: 'estimate', lang, text }                              → { name, items, note, usage }
+//   { action: 'photo', lang, image: base64 JPEG/PNG/WebP, mediaType, text? } → same as estimate
 // Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, type CoachContext, type Lang, type Macros } from './prompt.ts';
+import { chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, photoSystem, type CoachContext, type Lang, type Macros } from './prompt.ts';
 import { hasEntitlement } from './subscription.ts';
 
 // Fast, low-cost model: a Premium user's whole month costs cents, so the
@@ -104,13 +105,23 @@ async function chat(lang: Lang, context: CoachContext, messages: Anthropic.Messa
   return { text };
 }
 
-async function estimate(lang: Lang, description: string) {
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+type ImageType = (typeof IMAGE_TYPES)[number];
+const MAX_IMAGE_BASE64 = 2_000_000; // about 1.5 MB; the app sends ~200 KB
+
+async function estimate(lang: Lang, description: string, photo?: { data: string; mediaType: ImageType }) {
+  const content: Anthropic.ContentBlockParam[] = photo
+    ? [
+      { type: 'image', source: { type: 'base64', media_type: photo.mediaType, data: photo.data } },
+      { type: 'text', text: description || 'Estimate this meal.' },
+    ]
+    : [{ type: 'text', text: description }];
   const res = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 16000,
     output_config: { effort: 'medium', format: { type: 'json_schema', schema: ESTIMATE_SCHEMA } },
-    system: estimateSystem(lang),
-    messages: [{ role: 'user', content: description }],
+    system: photo ? photoSystem(lang) : estimateSystem(lang),
+    messages: [{ role: 'user', content }],
   });
   if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
   const raw = JSON.parse(textOf(res)) as { name?: unknown; items?: unknown[]; note?: unknown };
@@ -197,6 +208,15 @@ Deno.serve(async req => {
       if (text.length < 3) throw new HttpError(400, 'describe the meal');
       checkQuota(usage);
       result = await estimate(lang, text);
+    } else if (body.action === 'photo') {
+      const data = typeof body.image === 'string' ? body.image : '';
+      const mediaType = IMAGE_TYPES.find(t => t === body.mediaType);
+      if (!mediaType || data.length < 100 || data.length > MAX_IMAGE_BASE64 || !/^[A-Za-z0-9+/=]+$/.test(data)) {
+        throw new HttpError(400, 'send a JPEG, PNG or WebP photo');
+      }
+      const note = typeof body.text === 'string' ? body.text.trim().slice(0, 300) : '';
+      checkQuota(usage);
+      result = await estimate(lang, note, { data, mediaType });
     } else {
       throw new HttpError(400, 'unknown action');
     }

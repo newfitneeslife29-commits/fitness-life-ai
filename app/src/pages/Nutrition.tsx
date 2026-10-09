@@ -1,10 +1,11 @@
-import { ChevronLeft, ChevronRight, Crown, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, Crown, ImageIcon, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { PageHeader, Section, Sheet } from '../components/ui';
 import { getLang, t } from '../i18n';
-import { AiError, aiAvailable, askCoach, estimateMeal, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
+import { AiError, aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
+import { pickImage, resizeImage } from '../lib/image';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
@@ -217,17 +218,36 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
     const [estimate, setEstimate] = useState<MealEstimate | null>(null);
     const [name, setName] = useState('');
     const [fields, setFields] = useState(toFields());
+    const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+
+    const setPhotoBlob = (blob: Blob | null) =>
+        setPhoto(prev => {
+            if (prev) URL.revokeObjectURL(prev.url);
+            return blob ? { blob, url: URL.createObjectURL(blob) } : null;
+        });
 
     useEffect(() => {
         if (!open) return;
         setMode(ai && premium ? 'ai' : 'manual');
-        setText(''); setEstimate(null); setName(''); setFields(toFields());
+        setText(''); setEstimate(null); setName(''); setFields(toFields()); setPhotoBlob(null);
     }, [open, ai, premium]);
+
+    // The AI sees a 1024 px JPEG: enough to tell foods and portions apart, and light to send.
+    const takePhoto = async (camera: boolean) => {
+        const file = await pickImage({ camera });
+        if (!file) return;
+        try {
+            setPhotoBlob(await resizeImage(file, 1024));
+            setEstimate(null);
+        } catch {
+            toast(t('meal.photoFailed'));
+        }
+    };
 
     const runEstimate = async () => {
         setBusy(true);
         try {
-            setEstimate(await estimateMeal(getLang(), text.trim()));
+            setEstimate(photo ? await estimateMealPhoto(getLang(), photo.blob, text.trim()) : await estimateMeal(getLang(), text.trim()));
         } catch (e) {
             onAiError(e);
         } finally {
@@ -275,12 +295,27 @@ const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => vo
                     <PremiumLock text={t('meal.aiLocked')} onOpen={onClose} />
                 ) : ai ? (
                     <>
-                        <label className="label mb-1 block" htmlFor="meal-text">{t('meal.describe')}</label>
-                        <textarea id="meal-text" value={text} onChange={e => { setText(e.target.value); setEstimate(null); }} rows={3} maxLength={600}
-                            placeholder={t('meal.describePlaceholder')}
+                        {photo ? (
+                            <div className="relative mb-3 overflow-hidden rounded-2xl bg-ink">
+                                <img src={photo.url} alt={t('meal.photoAlt')} className="max-h-56 w-full object-cover" />
+                                <button onClick={() => { setPhotoBlob(null); setEstimate(null); }} aria-label={t('meal.removePhoto')}
+                                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-snow"><X size={16} /></button>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="mb-2 text-sm text-white/60">{t('meal.photoHint')}</p>
+                                <div className="mb-4 grid grid-cols-2 gap-2">
+                                    <button className="btn-primary py-3" onClick={() => takePhoto(true)}><Camera size={18} /> {t('meal.photo')}</button>
+                                    <button className="btn-ghost py-3" onClick={() => takePhoto(false)}><ImageIcon size={18} /> {t('meal.gallery')}</button>
+                                </div>
+                            </>
+                        )}
+                        <label className="label mb-1 block" htmlFor="meal-text">{photo ? t('meal.photoNote') : t('meal.describe')}</label>
+                        <textarea id="meal-text" value={text} onChange={e => { setText(e.target.value); setEstimate(null); }} rows={photo ? 2 : 3} maxLength={600}
+                            placeholder={photo ? t('meal.photoNotePlaceholder') : t('meal.describePlaceholder')}
                             className="w-full resize-none rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
                         {!estimate ? (
-                            <button className="btn-primary mt-3 w-full" disabled={busy || text.trim().length < 3} onClick={runEstimate}>
+                            <button className="btn-primary mt-3 w-full" disabled={busy || (!photo && text.trim().length < 3)} onClick={runEstimate}>
                                 <Sparkles size={18} /> {busy ? t('meal.estimating') : t('meal.estimate')}
                             </button>
                         ) : (

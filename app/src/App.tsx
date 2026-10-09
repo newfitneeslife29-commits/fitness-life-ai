@@ -1,4 +1,4 @@
-import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer } from 'lucide-react';
+import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { FeedbackHost } from './components/feedback';
 import { LaunchSplash } from './components/Welcome';
@@ -11,6 +11,7 @@ import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
 import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
+import Community from './pages/Community';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
 import { authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
@@ -29,6 +30,7 @@ const TABS = [
     { to: '/rutinas', label: () => t('nav.routines'), icon: ListChecks },
     { to: '/progreso', label: () => t('nav.progress'), icon: LineChart },
     { to: '/nutricion', label: () => t('nav.nutrition'), icon: Apple },
+    { to: '/comunidad', label: () => t('nav.community'), icon: Users },
     { to: '/ajustes', label: () => t('nav.settings'), icon: SettingsIcon },
 ];
 
@@ -40,7 +42,7 @@ const BottomNav = () => (
                     <NavLink to={to} end={to === '/'}
                         className={({ isActive }) => `flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${isActive ? 'text-brand' : 'text-white/50 hover:text-white'}`}>
                         <Icon size={22} strokeWidth={1.75} />
-                        {label()}
+                        <span className="max-w-full truncate px-0.5">{label()}</span>
                     </NavLink>
                 </li>
             ))}
@@ -115,6 +117,7 @@ export default function App() {
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
+                <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

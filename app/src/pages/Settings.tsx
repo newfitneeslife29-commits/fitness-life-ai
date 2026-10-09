@@ -1,12 +1,16 @@
-import { ChevronRight, Cloud, Crown, Download, Languages, LogOut, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { Camera, ChevronRight, Cloud, Crown, Download, ImageIcon, Languages, LogOut, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
-import { Chips, PageHeader, Section } from '../components/ui';
+import { Avatar } from '../components/Avatar';
+import { Chips, PageHeader, Section, Sheet } from '../components/ui';
 import { pickProgram, programName } from '../data/programs';
 import { getLang, LANGS, locale, t, tp, type Lang } from '../i18n';
 import { authAvailable, deleteAccount, signOut } from '../lib/auth';
+import { ACHIEVEMENTS, unlockedAchievements } from '../lib/achievements';
 import { fmtDate } from '../lib/format';
+import { blobToDataUrl, pickImage, resizeImage } from '../lib/image';
+import { streakWeeks } from '../lib/stats';
 import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
 import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
@@ -61,6 +65,7 @@ export default function Settings() {
         <div className="space-y-6">
             <PageHeader title={t('nav.settings')} />
 
+            <ProfileHero />
             {authAvailable() && <AccountCard />}
             <PremiumCard />
 
@@ -154,6 +159,69 @@ export default function Settings() {
         </div>
     );
 }
+
+// Picture, name and the numbers that matter, at the top of Ajustes.
+const ProfileHero = () => {
+    const profile = useStore(s => s.profile)!;
+    const sessions = useStore(s => s.sessions);
+    const email = useStore(s => s.account?.email);
+    const [choosing, setChoosing] = useState(false);
+    const medals = useMemo(() => unlockedAchievements(sessions, profile.daysPerWeek).size, [sessions, profile.daysPerWeek]);
+
+    const choose = async (camera: boolean) => {
+        setChoosing(false);
+        const file = await pickImage({ camera });
+        if (!file) return;
+        try {
+            // 320 px square: sharp on any screen, light enough to keep on the phone.
+            actions.updateProfile({ avatar: await blobToDataUrl(await resizeImage(file, 320, { square: true, quality: 0.85 })) });
+            toast(t('profile.photoSaved'));
+        } catch {
+            toast(t('meal.photoFailed'));
+        }
+    };
+
+    const stats: [number, string][] = [
+        [sessions.length, t('profile.workouts')],
+        [streakWeeks(sessions), t('profile.streak')],
+        [medals, t('profile.medals', { total: ACHIEVEMENTS.length })],
+    ];
+    return (
+        <Section>
+            <div className="card relative overflow-hidden p-5">
+                <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(80%_100%_at_50%_0%,rgb(var(--brand)/0.28),transparent_75%)]" />
+                <div className="relative flex flex-col items-center text-center">
+                    <button onClick={() => setChoosing(true)} aria-label={t('profile.changePhoto')} className="relative rounded-full p-1 transition active:scale-95"
+                        style={{ background: 'linear-gradient(135deg, rgb(var(--brand)), #fbbf24)' }}>
+                        <Avatar src={profile.avatar} name={profile.name || email} size={96} className="border-4 border-ink-2" />
+                        <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink-2 bg-brand text-snow shadow-lg"><Camera size={15} /></span>
+                    </button>
+                    <p className="mt-3 text-xl font-bold tracking-tight">{profile.name || t('profile.noName')}</p>
+                    <p className="text-sm text-white/55">{email ?? `${t(`goal.${profile.goal}`)} · ${t(`level.${profile.level}`)}`}</p>
+                </div>
+                <dl className="relative mt-5 grid grid-cols-3 divide-x divide-line rounded-2xl bg-ink-3/60 py-3 text-center">
+                    {stats.map(([value, label]) => (
+                        <div key={label}>
+                            <dd className="text-xl font-bold tabular-nums">{value}</dd>
+                            <dt className="text-[11px] text-white/55">{label}</dt>
+                        </div>
+                    ))}
+                </dl>
+            </div>
+            <Sheet open={choosing} onClose={() => setChoosing(false)} title={t('profile.changePhoto')}>
+                <div className="space-y-2">
+                    <button className="btn-primary w-full" onClick={() => choose(true)}><Camera size={18} /> {t('meal.photo')}</button>
+                    <button className="btn-ghost w-full" onClick={() => choose(false)}><ImageIcon size={18} /> {t('profile.fromGallery')}</button>
+                    {profile.avatar && (
+                        <button className="btn-ghost w-full text-red-500" onClick={() => { actions.updateProfile({ avatar: undefined }); setChoosing(false); }}>
+                            <Trash2 size={18} /> {t('profile.removePhoto')}
+                        </button>
+                    )}
+                </div>
+            </Sheet>
+        </Section>
+    );
+};
 
 const AccountCard = () => {
     const account = useStore(s => s.account);

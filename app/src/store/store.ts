@@ -369,6 +369,14 @@ export const actions = {
         if (!state.authPrompted) set(s => ({ ...s, authPrompted: true }));
     },
 
+    blockUser(userId: string) {
+        set(s => ({ ...s, blockedUsers: [...new Set([...(s.blockedUsers ?? []), userId])] }));
+    },
+
+    acceptCommunityRules() {
+        set(s => ({ ...s, communityRulesAccepted: true }));
+    },
+
     setCloudSyncedAt(at: string) {
         set(s => ({ ...s, cloudSyncedAt: at }));
     },
