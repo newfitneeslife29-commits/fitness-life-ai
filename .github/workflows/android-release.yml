@@ -52,6 +52,8 @@ jobs:
           VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
           VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
           VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
+      - name: Check the app works on old Android phones
+        run: npm run check:old-browsers
       - name: Get the Google Play upload key
         working-directory: .
         run: .github/scripts/android-upload-key.sh

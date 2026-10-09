@@ -85,7 +85,7 @@ export const FeedbackHost = () => {
             )}
             <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[70] flex flex-col items-center gap-2 px-4">
                 {state.toasts.map(t => (
-                    <div key={t.id} role="status" className="flex animate-rise items-center gap-2 rounded-full border border-line bg-ink-3/95 px-4 py-2 text-sm shadow-lg shadow-black/40 backdrop-blur">
+                    <div key={t.id} role="status" className="flex animate-rise items-center gap-2 rounded-full border border-line bg-ink-3 px-4 py-2 text-sm shadow-lg shadow-black/40">
                         <CheckCircle2 size={16} className="text-good" /> {t.text}
                     </div>
                 ))}
