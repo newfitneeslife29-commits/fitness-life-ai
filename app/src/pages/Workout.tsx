@@ -159,7 +159,7 @@ const RestBar = ({ endsAt, total }: { endsAt: number; total: number }) => {
         return () => window.clearTimeout(timer);
     }, [finished]);
     return (
-        <div role="timer" aria-live="polite" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <div role="timer" aria-live="polite" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink-2 pb-[env(safe-area-inset-bottom)]">
             <div className="h-1 bg-ink-4">
                 <div className="h-full bg-brand transition-[width] duration-200" style={{ width: `${Math.max(0, Math.min(100, (left / total) * 100))}%` }} />
             </div>
@@ -235,7 +235,7 @@ export default function Workout() {
     return (
         <div className="mx-auto min-h-dvh max-w-lg pb-40">
             {/* The safe-area padding lives in the sticky header so it never slides under the notch. */}
-            <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-ink/95 px-2 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur">
+            <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-ink px-2 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
                 <button onClick={() => navigate('/')} aria-label={t('workout.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white">
                     <ChevronLeft size={22} />
                 </button>

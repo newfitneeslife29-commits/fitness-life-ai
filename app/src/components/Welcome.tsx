@@ -58,11 +58,11 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
             </div>
 
             <header className="pt-safe relative z-10 mx-auto flex w-full max-w-lg items-center justify-between px-5 pt-4">
-                <div className="flex items-center gap-2.5 rounded-full bg-ink/70 py-1.5 pl-1.5 pr-4 backdrop-blur">
+                <div className="flex items-center gap-2.5 rounded-full bg-ink/85 py-1.5 pl-1.5 pr-4">
                     <Logo size={32} />
                     <span className="font-bold tracking-tight">Fitness Life</span>
                 </div>
-                <div role="radiogroup" aria-label={t('settings.language')} className="flex rounded-full bg-ink/70 p-1 backdrop-blur">
+                <div role="radiogroup" aria-label={t('settings.language')} className="flex rounded-full bg-ink/85 p-1">
                     {LANGS.map(l => (
                         <button key={l.code} role="radio" aria-checked={getLang() === l.code} aria-label={l.label}
                             onClick={() => actions.setLanguage(l.code as Lang)}

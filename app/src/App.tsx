@@ -36,7 +36,7 @@ const TABS = [
 ];
 
 const BottomNav = () => (
-    <nav aria-label={t('nav.main')} className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav aria-label={t('nav.main')} className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink pb-[env(safe-area-inset-bottom)]">
         <ul className="mx-auto flex max-w-lg">
             {TABS.map(({ to, label, icon: Icon }) => (
                 <li key={to} className="flex-1">

@@ -12,7 +12,8 @@
     "e2e": "playwright test",
     "native": "npm run build && cap sync",
     "android": "npm run native && cap open android",
-    "ios": "npm run native && cap open ios"
+    "ios": "npm run native && cap open ios",
+    "check:old-browsers": "node scripts/check-old-browsers.mjs"
   },
   "dependencies": {
     "@capacitor-community/keep-awake": "^8.0.1",
@@ -45,6 +46,7 @@
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
+    "acorn": "^8.19.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",

@@ -17,7 +17,8 @@
     --brand: 234 92 12; --brand-strong: 194 65 12; --good: 5 150 105;
     color-scheme: light;
   }
-  html { -webkit-tap-highlight-color: transparent; }
+  /* Paint the page on html too: some old WebViews leave it white otherwise. */
+  html { -webkit-tap-highlight-color: transparent; background-color: rgb(var(--ink)); }
   body { min-height: 100dvh; overscroll-behavior-y: none; }
   /* Number inputs: no spinners, big tap targets. */
   input[type='number']::-webkit-inner-spin-button,

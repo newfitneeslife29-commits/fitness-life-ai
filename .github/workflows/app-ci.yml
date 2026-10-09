@@ -26,3 +26,5 @@ jobs:
       - run: npm run e2e
         env:
           CI: true
+      # The e2e run built dist/: check it still works on old Android phones.
+      - run: npm run check:old-browsers
