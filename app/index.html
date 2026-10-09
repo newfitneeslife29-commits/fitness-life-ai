@@ -8,6 +8,52 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
     <title>Fitness Life</title>
+    <script>
+      // Plain ES5 on purpose: it must run even where the app itself fails.
+      // Any error that escapes the app is written on screen instead of
+      // leaving it blank, so a screenshot tells us what went wrong.
+      (function () {
+        var shown = [];
+        function show(text) {
+          if (shown.length > 4 || shown.indexOf(text) >= 0) return;
+          shown.push(text);
+          var box = document.getElementById('boot-error');
+          if (!box) {
+            box = document.createElement('pre');
+            box.id = 'boot-error';
+            box.style.cssText = 'pointer-events:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;max-height:45vh;overflow:auto;margin:0;padding:10px;border-radius:12px;background:#2a1212;color:#ffd7d7;font:11px/1.4 monospace;white-space:pre-wrap;word-break:break-word';
+            (document.body || document.documentElement).appendChild(box);
+          }
+          box.textContent = 'Error: ' + shown.join('\n\n') + '\n\n' + navigator.userAgent;
+        }
+        var rejections = [];
+        function started() {
+          var root = document.getElementById('root');
+          return !!(root && root.firstChild);
+        }
+        window.addEventListener('error', function (e) {
+          var el = e.target;
+          if (el && el !== window && el.tagName) {
+            // Only the app's own code and styles matter, not a missing photo.
+            if (el.tagName === 'SCRIPT' || el.tagName === 'LINK') show('No se pudo cargar ' + (el.src || el.href));
+            return;
+          }
+          show((e.message || 'error') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno + ')' : ''));
+        }, true);
+        // A failed request (no internet...) is normal once the app runs;
+        // keep them and show them only if the app never started.
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          var text = 'Promesa: ' + (r && (r.stack || r.message) || String(r));
+          if (started()) rejections.push(text); else show(text);
+        });
+        setTimeout(function () {
+          if (started()) return;
+          for (var i = 0; i < rejections.length; i++) show(rejections[i]);
+          show('La app no arrancó');
+        }, 8000);
+      })();
+    </script>
   </head>
   <body class="bg-ink text-white antialiased">
     <div id="root"></div>
