@@ -614,6 +614,28 @@ test('community: read, like, comment and post', async ({ page }) => {
     await expect(page.getByText('¡Nuevo récord en sentadilla! 100 kg')).toHaveCount(0);
 });
 
+// Newer Chrome (Android, 2026) returns a Promise from window.scrollTo. An
+// effect that returned it broke every tab change with "is not a function".
+test('tabs work when scrollTo returns a Promise, like newer Chrome', async ({ page }) => {
+    await page.addInitScript(() => {
+        const scrollTo = window.scrollTo.bind(window) as (...args: unknown[]) => void;
+        window.scrollTo = ((...args: unknown[]) => {
+            scrollTo(...args);
+            return Promise.resolve();
+        }) as unknown as typeof window.scrollTo;
+    });
+    const errors: string[] = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    for (const tab of ['Rutinas', 'Progreso', 'Nutrición', 'Ajustes', 'Inicio']) {
+        await page.getByRole('link', { name: tab, exact: true }).click();
+        await expect(page.getByRole('navigation').getByRole('link', { name: tab, exact: true })).toHaveClass(/text-brand/);
+    }
+    await expect(page.getByText('Algo salió mal en esta pantalla')).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
 test('legal page has terms and privacy in three languages', async ({ page }) => {
     await page.goto('/legal.html#privacy');
     await expect(page.getByRole('heading', { name: 'Términos de uso' })).toBeVisible();

@@ -80,7 +80,11 @@ const Shell = ({ children }: { children: ReactNode }) => {
 
 const ScrollToTop = () => {
     const { pathname } = useLocation();
-    useEffect(() => window.scrollTo(0, 0), [pathname]);
+    // Braces matter: newer Chrome returns a Promise from scrollTo, and React
+    // would take any returned value as the effect's cleanup and call it.
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
     return null;
 };
 
@@ -91,7 +95,9 @@ export default function App() {
     const lang = useStore(s => s.lang); // remount everything when the language changes
     const navigate = useNavigate();
     const askAccount = useStore(s => !s.account && !s.authPrompted) && authAvailable();
-    useEffect(() => initNative(() => navigate(-1)), [navigate]);
+    useEffect(() => {
+        initNative(() => navigate(-1));
+    }, [navigate]);
     useEffect(initAuth, []);
     if (!hasProfile) return <><Onboarding /><FeedbackHost /><PasswordRecovery />{splash}</>;
     // People who used the app before accounts existed: offer one, once.
