@@ -5,6 +5,7 @@ import { registerSW } from 'virtual:pwa-register';
 import '@fontsource-variable/inter';
 import './index.css';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { isNative } from './lib/native';
 import { hydrateFromNative } from './store/store';
 
@@ -15,9 +16,11 @@ if (!isNative() && 'serviceWorker' in navigator) registerSW({ immediate: true })
 void hydrateFromNative().finally(() => {
     ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>
-            <HashRouter>
-                <App />
-            </HashRouter>
+            <ErrorBoundary>
+                <HashRouter>
+                    <App />
+                </HashRouter>
+            </ErrorBoundary>
         </React.StrictMode>,
     );
 });
