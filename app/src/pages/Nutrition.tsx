@@ -10,7 +10,7 @@ import { pickImage, resizeImage } from '../lib/image';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
-import { autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
+import { ageOf, autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal } from '../store/types';
@@ -516,7 +516,7 @@ export default function Nutrition() {
         if (premiumAvailable()) refreshPremium().catch(() => {});
     }, []);
 
-    const auto = weightKg ? autoTargets(profile.goal, weightKg) : null;
+    const auto = weightKg ? autoTargets(profile, weightKg) : null;
     const targets = custom ?? auto;
     const dayMeals = useMemo(() => mealsOn(meals, day), [meals, day]);
     const totals = useMemo(() => sumMacros(dayMeals), [dayMeals]);
@@ -529,6 +529,11 @@ export default function Nutrition() {
         targets,
         today: sumMacros(mealsOn(meals, today)),
         trainedToday: sessions.some(s => new Date(s.startedAt).toDateString() === today.toDateString()),
+        sex: profile.sex,
+        age: profile.birthYear ? ageOf(profile.birthYear) : undefined,
+        heightCm: profile.heightCm,
+        activity: profile.activity,
+        targetWeightKg: profile.weightGoal?.targetKg,
     };
 
     return (

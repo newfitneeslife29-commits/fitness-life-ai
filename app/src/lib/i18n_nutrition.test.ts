@@ -4,7 +4,7 @@ import { setLang, t, tp } from '../i18n';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
 import { pt } from '../i18n/pt';
-import { autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from './nutrition';
+import { autoTargets, bmr, goalProgress, kcalFromMacros, mealsOn, onDay, sumMacros, weeksToGoal } from './nutrition';
 import { existsSync } from 'node:fs';
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
@@ -49,13 +49,39 @@ describe('translations', () => {
 
 describe('nutrition', () => {
     it('calculates targets that add up', () => {
-        const m = autoTargets('musculo', 80);
+        const m = autoTargets({ goal: 'musculo' }, 80);
         expect(m.protein).toBe(160);
         expect(m.kcal).toBe(2800);
         expect(m.fat).toBe(72);
         // Carbs fill the remaining energy.
         expect(Math.abs(kcalFromMacros(m) - m.kcal)).toBeLessThan(5);
-        expect(autoTargets('salud', 80).kcal).toBeLessThan(m.kcal);
+        expect(autoTargets({ goal: 'salud' }, 80).kcal).toBeLessThan(m.kcal);
+        expect(autoTargets({ goal: 'grasa' }, 80).kcal).toBeLessThan(autoTargets({ goal: 'salud' }, 80).kcal);
+    });
+
+    it('uses sex, age, height and activity when it has them', () => {
+        const now = new Date(2026, 9, 9);
+        // Mifflin-St Jeor: 10·80 + 6.25·180 − 5·30 + 5 = 1780 kcal at rest.
+        expect(bmr('hombre', 80, 180, 30)).toBe(1780);
+        const man = { goal: 'musculo' as const, sex: 'hombre' as const, birthYear: 1996, heightCm: 180, activity: 'ligero' as const };
+        // 1780 × 1.5 + 250 surplus = 2920 → 2900.
+        expect(autoTargets(man, 80, now).kcal).toBe(2900);
+        // Wanting to reach 75 kg: a 450 kcal deficit and more protein.
+        const losing = autoTargets({ ...man, weightGoal: { startKg: 80, targetKg: 75, startedAt: now.toISOString() } }, 80, now);
+        expect(losing.kcal).toBe(2200);
+        expect(losing.protein).toBe(160);
+        // Never below a safe floor.
+        const small = autoTargets({ goal: 'grasa', sex: 'mujer', birthYear: 1950, heightCm: 150, activity: 'sedentario' }, 45, now);
+        expect(small.kcal).toBe(1200);
+    });
+
+    it('estimates time and progress towards a weight goal', () => {
+        expect(weeksToGoal(80, 75)).toBe(10); // 0.5 kg a week down
+        expect(weeksToGoal(60, 62)).toBe(8); // 0.25 kg a week up
+        expect(weeksToGoal(70, 70.2)).toBe(0);
+        expect(goalProgress({ startKg: 80, targetKg: 70 }, 75)).toBe(0.5);
+        expect(goalProgress({ startKg: 80, targetKg: 70 }, 82)).toBe(0);
+        expect(goalProgress({ startKg: 60, targetKg: 64 }, 65)).toBe(1);
     });
 
     it('sums meals of one day', () => {

@@ -58,14 +58,23 @@ const langOf = (v: unknown): Lang => (v === 'en' || v === 'pt' ? v : 'es');
 
 const contextOf = (v: unknown): CoachContext => {
   const c = (v ?? {}) as Record<string, unknown>;
-  const goal = c.goal === 'fuerza' || c.goal === 'salud' ? c.goal : 'musculo';
-  const weight = Number(c.weightKg);
+  const goal = c.goal === 'fuerza' || c.goal === 'salud' || c.goal === 'grasa' ? c.goal : 'musculo';
+  // A number inside [min, max], rounded to one decimal, or null.
+  const within = (x: unknown, min: number, max: number) => {
+    const n = Number(x);
+    return x !== null && x !== undefined && x !== '' && Number.isFinite(n) && n >= min && n <= max ? Math.round(n * 10) / 10 : null;
+  };
   return {
     goal,
-    weightKg: Number.isFinite(weight) && weight >= 20 && weight <= 400 ? Math.round(weight * 10) / 10 : null,
+    weightKg: within(c.weightKg, 20, 400),
     targets: c.targets ? macros(c.targets) : null,
     today: macros(c.today),
     trainedToday: c.trainedToday === true,
+    sex: c.sex === 'hombre' || c.sex === 'mujer' ? c.sex : null,
+    age: within(c.age, 13, 110),
+    heightCm: within(c.heightCm, 100, 250),
+    activity: c.activity === 'sedentario' || c.activity === 'ligero' || c.activity === 'moderado' || c.activity === 'alto' ? c.activity : null,
+    targetWeightKg: within(c.targetWeightKg, 20, 400),
   };
 };
 

@@ -153,13 +153,18 @@ const updateSet = (a: ActiveWorkout, exIndex: number, setIndex: number, fn: (w: 
 });
 
 export const actions = {
-    completeOnboarding(profile: Omit<Profile, 'createdAt'>) {
+    // `weightKg`: the weight given at sign-up, saved as the first weigh-in.
+    completeOnboarding(profile: Omit<Profile, 'createdAt'>, weightKg?: number) {
         const { plan, routines } = buildPlan(profile);
+        const now = new Date();
         set(s => ({
             ...s,
-            profile: { ...profile, createdAt: new Date().toISOString() },
+            profile: { ...profile, createdAt: now.toISOString() },
             plan,
             routines: [...s.routines.filter(r => r.source === 'custom'), ...routines],
+            bodyWeights: weightKg
+                ? [{ id: uid(), date: now.toISOString(), weightKg }, ...s.bodyWeights.filter(b => new Date(b.date).toDateString() !== now.toDateString())]
+                : s.bodyWeights,
         }));
     },
 
@@ -173,6 +178,15 @@ export const actions = {
 
     updateProfile(patch: Partial<Profile>) {
         set(s => (s.profile ? { ...s, profile: { ...s.profile, ...patch } } : s));
+    },
+
+    // Switch to a program from the list (null: let the app pick again).
+    chooseProgram(programId: string | null) {
+        const profile = state.profile;
+        if (!profile) return;
+        const next = { ...profile, programId };
+        const { plan, routines } = buildPlan(next);
+        set(s => ({ ...s, profile: next, plan, routines: [...s.routines.filter(r => r.source === 'custom'), ...routines] }));
     },
 
     // New plan from the current profile; custom routines are kept.

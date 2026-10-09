@@ -1,16 +1,18 @@
-import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, Lightbulb, Play, Plus, Trophy, Weight } from 'lucide-react';
+import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
+import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Empty, Section } from '../components/ui';
 import { exerciseName, exercisePhotos } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { planName, routineName, sessionName } from '../lib/names';
-import { ACHIEVEMENTS, achievementTitle, unlockedAchievements } from '../lib/achievements';
-import { fmtDate, fmtNumber, fmtVolume, greeting } from '../lib/format';
-import { autoTargets, mealsOn, sumMacros } from '../lib/nutrition';
+import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
+import { useUnlocked } from '../lib/useAchievements';
+import { fmtDate, fmtNumber, fmtVolume, fmtWeight, greeting } from '../lib/format';
+import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition';
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
@@ -127,7 +129,7 @@ const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onSta
 const NutritionToday = () => {
     const { profile, meals, nutritionTargets, bodyWeights } = useStore();
     const weightKg = bodyWeights[0]?.weightKg;
-    const targets = nutritionTargets ?? (weightKg && profile ? autoTargets(profile.goal, weightKg) : null);
+    const targets = nutritionTargets ?? (weightKg && profile ? autoTargets(profile, weightKg) : null);
     const eaten = sumMacros(mealsOn(meals, new Date()));
     if (!targets) {
         return (
@@ -160,6 +162,86 @@ const NutritionToday = () => {
     );
 };
 
+// The weight goal: how far along it is, or a nudge to set it (and the
+// details the calorie targets need).
+const WeightGoalCard = () => {
+    const { profile, bodyWeights } = useStore();
+    const [editing, setEditing] = useState(false);
+    if (!profile) return null;
+    const unit = profile.unit;
+    const current = bodyWeights[0]?.weightKg;
+    const goal = profile.weightGoal;
+    const sheet = <ProfileDetailsSheet open={editing} onClose={() => setEditing(false)} />;
+
+    const prompt = (title: string, hint: string, icon: ReactNode) => (
+        <>
+            <button onClick={() => setEditing(true)} className="card flex w-full items-center gap-3 p-4 text-left hover:bg-ink-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">{icon}</span>
+                <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{title}</span>
+                    <span className="block text-sm text-white/55">{hint}</span>
+                </span>
+                <ChevronRight className="shrink-0 text-white/40" />
+            </button>
+            {sheet}
+        </>
+    );
+    if (detailsMissing(profile)) return prompt(t('profileDetails.incomplete'), t('profileDetails.incompleteHint'), <UserRound size={20} />);
+    if (!goal) return prompt(t('weightGoal.set'), t('weightGoal.setHint'), <Target size={20} />);
+    if (current === undefined) {
+        return (
+            <Link to="/progreso" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><Weight size={20} /></span>
+                <p className="min-w-0 flex-1 text-sm text-white/70">{t('weightGoal.logWeight')}</p>
+                <ChevronRight className="shrink-0 text-white/40" />
+            </Link>
+        );
+    }
+
+    const keep = Math.abs(goal.targetKg - goal.startKg) < 0.1;
+    const progress = goalProgress(goal, current);
+    const left = Math.abs(goal.targetKg - current);
+    const reached = !keep && (progress >= 1 || left < 0.25);
+    return (
+        <>
+            <button onClick={() => setEditing(true)} className="card block w-full p-4 text-left hover:bg-ink-3">
+                <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-2xl font-bold tabular-nums">{fmtWeight(current, unit)}</p>
+                    <p className="flex items-center gap-1 text-sm text-white/55"><Target size={14} /> {fmtWeight(goal.targetKg, unit)}</p>
+                </div>
+                {keep ? (
+                    <p className="mt-1 text-sm text-white/55">{t('weightGoal.keep', { weight: fmtWeight(goal.targetKg, unit) })}</p>
+                ) : (
+                    <>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink-4">
+                            <div className={`h-full rounded-full transition-[width] duration-700 ${reached ? 'bg-good' : 'bg-brand'}`} style={{ width: `${Math.round(progress * 100)}%` }} />
+                        </div>
+                        <p className={`mt-2 text-sm ${reached ? 'font-semibold text-good' : 'text-white/55'}`}>
+                            {reached ? t('weightGoal.reached') : `${t('weightGoal.progress', {
+                                done: fmtWeight(progress * Math.abs(goal.targetKg - goal.startKg), unit),
+                                total: fmtWeight(Math.abs(goal.targetKg - goal.startKg), unit),
+                            })} · ${t('weightGoal.left', { n: fmtWeight(left, unit) })}`}
+                        </p>
+                    </>
+                )}
+            </button>
+            {sheet}
+        </>
+    );
+};
+
+// People starting out: the guide that explains how training works.
+const BeginnerCard = () => (
+    <Link to="/aprende/empezar" className="card flex items-center gap-3 border-brand/30 p-4 hover:bg-ink-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-snow"><GraduationCap size={22} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{t('home.beginnerTitle')}</span>
+            <span className="block text-sm text-white/55">{t('home.beginnerHint')}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
 // For free users: what Premium unlocks, one tap away.
 const PremiumBanner = () => (
     <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-400 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
@@ -176,7 +258,7 @@ export default function Today() {
     const { profile, plan, routines, sessions, active, seenAchievements } = useStore();
     const navigate = useNavigate();
     const premium = usePremiumActive();
-    const unlocked = useMemo(() => unlockedAchievements(sessions, profile?.daysPerWeek ?? 3), [sessions, profile?.daysPerWeek]);
+    const unlocked = useUnlocked();
     const week = useMemo(() => sessionsThisWeek(sessions), [sessions]);
     if (!profile) return null;
 
@@ -231,6 +313,8 @@ export default function Today() {
                 </button>
             </Section>
 
+            {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
+
             {!premium && <Section><PremiumBanner /></Section>}
 
             <Section title={t('home.week')}>
@@ -248,6 +332,10 @@ export default function Today() {
                     </div>
                     <WeekStrip trained={trainedDays} />
                 </div>
+            </Section>
+
+            <Section title={t('weightGoal.title')}>
+                <WeightGoalCard />
             </Section>
 
             <Section title={t('home.stats')}>

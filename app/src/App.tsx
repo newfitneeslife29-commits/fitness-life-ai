@@ -10,6 +10,9 @@ import Achievements from './pages/Achievements';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
+import GuideDetail from './pages/GuideDetail';
+import Learn from './pages/Learn';
+import Programs from './pages/Programs';
 import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
 import Community from './pages/Community';
@@ -121,6 +124,9 @@ export default function App() {
                 <Route path="/sesion/:id" element={<Shell><SessionDetail /></Shell>} />
                 <Route path="/ejercicios" element={<Shell><Exercises /></Shell>} />
                 <Route path="/ejercicios/:id" element={<Shell><ExerciseDetail /></Shell>} />
+                <Route path="/aprende" element={<Shell><Learn /></Shell>} />
+                <Route path="/aprende/:id" element={<Shell><GuideDetail /></Shell>} />
+                <Route path="/programas" element={<Shell><Programs /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />

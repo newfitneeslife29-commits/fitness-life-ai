@@ -1,16 +1,21 @@
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Chips, Choice } from '../components/ui';
+import { AboutFields, ActivityChoice, emptyAbout, GoalFields, LimitationChips, parseAbout, parseGoal, type GoalDraft } from '../components/ProfileForm';
+import { Choice } from '../components/ui';
 import { Welcome } from '../components/Welcome';
 import { authAvailable } from '../lib/auth';
+import { autoTargets } from '../lib/nutrition';
 import AuthScreen from './Auth';
 import { exerciseName } from '../data/exercises';
-import { pickProgram, programDescription, programName } from '../data/programs';
+import { adaptDays, pickProgram, programDescription, programName } from '../data/programs';
 import { getLang, l10n, t } from '../i18n';
+import { fmtNumber } from '../lib/format';
 import { actions, useStore } from '../store/store';
-import type { Goal, Level, Setup, Unit } from '../store/types';
+import type { Activity, Goal, Level, Limitation, Setup, Unit } from '../store/types';
 
-const STEPS = 5;
+// Name and goal → about you → day to day and injuries → experience → days →
+// where → weight goal → the plan.
+const STEPS = 8;
 
 export default function Onboarding() {
     useStore(s => s.lang); // re-render when the language changes
@@ -23,16 +28,37 @@ export default function Onboarding() {
     }, [signedIn]);
     const [step, setStep] = useState(0);
     const [name, setName] = useState('');
-    const [goal, setGoal] = useState<Goal>('musculo');
+    const [goal, setGoalState] = useState<Goal>('musculo');
+    const [unit, setUnit] = useState<Unit>(getLang() === 'en' ? 'lbs' : 'kg');
+    const [about, setAbout] = useState(emptyAbout);
+    const [activity, setActivity] = useState<Activity>('ligero');
+    const [limitations, setLimitations] = useState<Limitation[]>([]);
     const [level, setLevel] = useState<Level>('principiante');
     const [days, setDays] = useState(3);
     const [setup, setSetup] = useState<Setup>('gimnasio');
-    const [unit, setUnit] = useState<Unit>(getLang() === 'en' ? 'lbs' : 'kg');
+    const [weightGoal, setWeightGoal] = useState<GoalDraft>({ dir: 'subir', target: '' });
 
-    const program = pickProgram(setup, days);
+    // The weight goal starts from the training goal: losing fat → lose weight.
+    const setGoal = (g: Goal) => {
+        setGoalState(g);
+        setWeightGoal(w => ({ ...w, dir: g === 'grasa' ? 'bajar' : g === 'salud' ? 'mantener' : 'subir' }));
+    };
+
+    const parsed = parseAbout(about, unit);
+    const goalValue = parsed ? parseGoal(weightGoal, parsed.weightKg, unit) : undefined;
+    const program = pickProgram({ setup, daysPerWeek: days, level });
+    const programDays = adaptDays(program, limitations);
     const last = step === STEPS - 1;
+    // Steps that need an answer before going on.
+    const blocked = (step === 1 && !parsed) || (step === 6 && goalValue === undefined);
 
-    const finish = () => actions.completeOnboarding({ name: name.trim(), goal, level, daysPerWeek: days, setup, unit });
+    const profileDraft = {
+        name: name.trim(), goal, level, daysPerWeek: days, setup, unit, activity, limitations,
+        sex: parsed?.sex, birthYear: parsed?.birthYear, heightCm: parsed?.heightCm, weightGoal: goalValue ?? null,
+    };
+    const targets = parsed ? autoTargets(profileDraft, parsed.weightKg) : null;
+
+    const finish = () => actions.completeOnboarding(profileDraft, parsed?.weightKg);
 
     if (stage === 'welcome') {
         return (
@@ -49,7 +75,7 @@ export default function Onboarding() {
 
     return (
         <main className="pt-safe mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <div className="flex items-center gap-2 pt-6" aria-label={t('onboarding.step', { n: step + 1, total: STEPS })}>
+            <div className="flex items-center gap-1.5 pt-6" aria-label={t('onboarding.step', { n: step + 1, total: STEPS })}>
                 {Array.from({ length: STEPS }, (_, i) => (
                     <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-brand' : 'bg-ink-4'}`} />
                 ))}
@@ -65,14 +91,30 @@ export default function Onboarding() {
                         <input id="name" value={name} onChange={e => setName(e.target.value)} placeholder={t('onboarding.namePlaceholder')}
                             className="mb-8 w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand" />
                         <p className="label mb-2">{t('onboarding.goalQuestion')}</p>
-                        <Choice label={t('settings.goal')} value={goal} onChange={setGoal} options={[
-                            { value: 'musculo', label: t('goal.musculo'), hint: t('goal.musculo.hint') },
-                            { value: 'fuerza', label: t('goal.fuerza'), hint: t('goal.fuerza.hint') },
-                            { value: 'salud', label: t('goal.salud'), hint: t('goal.salud.hint') },
-                        ]} />
+                        <Choice label={t('settings.goal')} value={goal} onChange={setGoal} options={(['musculo', 'grasa', 'fuerza', 'salud'] as const).map(g => ({
+                            value: g, label: t(`goal.${g}`), hint: t(`goal.${g}.hint`),
+                        }))} />
                     </>
                 )}
                 {step === 1 && (
+                    <>
+                        <h1 className="mb-2 text-2xl font-bold">{t('onboarding.aboutQuestion')}</h1>
+                        <p className="mb-6 text-white/60">{t('about.subtitle')}</p>
+                        <AboutFields value={about} onChange={setAbout} unit={unit} onUnit={setUnit} />
+                    </>
+                )}
+                {step === 2 && (
+                    <>
+                        <h1 className="mb-6 text-2xl font-bold">{t('onboarding.activityTitle')}</h1>
+                        <p className="label mb-2">{t('activity.question')}</p>
+                        <ActivityChoice value={activity} onChange={setActivity} />
+                        <p className="label mb-2 mt-8">{t('limits.question')}</p>
+                        <p className="mb-3 text-sm text-white/55">{t('limits.hint')}</p>
+                        <LimitationChips value={limitations} onChange={setLimitations} />
+                        {limitations.length > 0 && <p className="mt-4 text-sm text-white/50">{t('limits.doctor')}</p>}
+                    </>
+                )}
+                {step === 3 && (
                     <>
                         <h1 className="mb-6 text-2xl font-bold">{t('onboarding.levelQuestion')}</h1>
                         <Choice label={t('settings.level')} value={level} onChange={setLevel} options={[
@@ -82,7 +124,7 @@ export default function Onboarding() {
                         ]} />
                     </>
                 )}
-                {step === 2 && (
+                {step === 4 && (
                     <>
                         <h1 className="mb-2 text-2xl font-bold">{t('onboarding.daysQuestion')}</h1>
                         <p className="mb-6 text-white/60">{t('onboarding.daysHint')}</p>
@@ -96,7 +138,7 @@ export default function Onboarding() {
                         </div>
                     </>
                 )}
-                {step === 3 && (
+                {step === 5 && (
                     <>
                         <h1 className="mb-6 text-2xl font-bold">{t('onboarding.setupQuestion')}</h1>
                         <Choice label={t('settings.setup')} value={setup} onChange={setSetup} options={[
@@ -104,8 +146,12 @@ export default function Onboarding() {
                             { value: 'mancuernas', label: t('setup.mancuernas'), hint: t('setup.mancuernas.hint') },
                             { value: 'casa', label: t('setup.casa'), hint: t('setup.casa.hint') },
                         ]} />
-                        <p className="label mb-2 mt-8">{t('settings.units')}</p>
-                        <Chips label={t('settings.units')} value={unit} onChange={setUnit} options={[{ value: 'kg', label: t('unit.kgLong') }, { value: 'lbs', label: t('unit.lbLong') }]} />
+                    </>
+                )}
+                {step === 6 && (
+                    <>
+                        <h1 className="mb-6 text-2xl font-bold">{t('weightGoal.question')}</h1>
+                        <GoalFields value={weightGoal} onChange={setWeightGoal} currentKg={parsed?.weightKg ?? null} unit={unit} />
                     </>
                 )}
                 {last && (
@@ -114,7 +160,7 @@ export default function Onboarding() {
                         <h1 className="mb-1 text-2xl font-bold">{programName(program)}</h1>
                         <p className="mb-6 text-white/60">{programDescription(program)}</p>
                         <ol className="space-y-3">
-                            {program.days.map((day, i) => (
+                            {programDays.map((day, i) => (
                                 <li key={i} className="card p-4">
                                     <p className="mb-1 font-semibold"><span className="text-brand">{t('onboarding.day', { n: i + 1 })}</span> · {l10n(day.name)}</p>
                                     <p className="text-sm text-white/55">{day.slots.map(s => exerciseName(s.exerciseId)).join(' · ')}</p>
@@ -122,6 +168,11 @@ export default function Onboarding() {
                             ))}
                         </ol>
                         <p className="mt-4 text-sm text-white/50">{t('onboarding.rotationHint')}</p>
+                        {targets && (
+                            <p className="card mt-4 border-brand/30 bg-brand-soft p-4 text-sm font-medium">
+                                {t('onboarding.targets', { kcal: fmtNumber(targets.kcal), protein: targets.protein })}
+                            </p>
+                        )}
                     </>
                 )}
             </div>
@@ -131,7 +182,7 @@ export default function Onboarding() {
                 {last ? (
                     <button className="btn-primary flex-1" onClick={finish}><Check size={18} /> {t('onboarding.start')}</button>
                 ) : (
-                    <button className="btn-primary flex-1" onClick={() => setStep(s => s + 1)}>{t('common.next')} <ArrowRight size={18} /></button>
+                    <button className="btn-primary flex-1" disabled={blocked} onClick={() => setStep(s => s + 1)}>{t('common.next')} <ArrowRight size={18} /></button>
                 )}
             </div>
         </main>

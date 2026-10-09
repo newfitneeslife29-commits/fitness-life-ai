@@ -283,6 +283,85 @@ export const EXERCISES: Exercise[] = [
         'Side-on to the cable; press out without letting it rotate you.',
         'De lado para a polia; empurre à frente sem deixar girar.',
     ]),
+    // Beginner-friendly machines: the path is guided, so technique is easy.
+    x('press-pecho-maquina', 'Press de pecho en máquina', 'Machine chest press', 'Supino na máquina', 'pecho', 'maquina', 5, [
+        'Ajusta el asiento para que las asas queden a la altura del pecho; empuja sin bloquear los codos.',
+        'Set the seat so the handles are at chest height; press without locking your elbows.',
+        'Ajuste o banco para as pegadas ficarem na altura do peito; empurre sem travar os cotovelos.',
+    ], { secondary: ['triceps', 'hombros'] }),
+    x('remo-maquina', 'Remo en máquina', 'Machine row', 'Remada na máquina', 'espalda', 'maquina', 5, [
+        'Pecho apoyado; tira llevando los codos atrás y junta las escápulas.',
+        'Chest on the pad; pull your elbows back and squeeze your shoulder blades.',
+        'Peito apoiado; puxe levando os cotovelos para trás e junte as escápulas.',
+    ], { secondary: ['biceps'] }),
+    x('press-hombro-maquina', 'Press de hombro en máquina', 'Machine shoulder press', 'Desenvolvimento na máquina', 'hombros', 'maquina', 5, [
+        'Espalda pegada al respaldo; sube sin arquear la zona lumbar.',
+        'Back against the pad; press up without arching your lower back.',
+        'Costas no encosto; suba sem arquear a lombar.',
+    ], { secondary: ['triceps'] }),
+    x('abductores-maquina', 'Abductores en máquina', 'Hip abduction machine', 'Abdução na máquina', 'gluteos', 'maquina', 5, [
+        'Abre las piernas despacio, aguanta un segundo y vuelve sin dejar caer el peso.',
+        'Push your knees out slowly, hold for a second and return without letting the weight drop.',
+        'Abra as pernas devagar, segure um segundo e volte sem deixar o peso cair.',
+    ]),
+
+    // At home, no equipment.
+    x('flexiones-inclinadas', 'Flexiones inclinadas', 'Incline push-up', 'Flexão inclinada', 'pecho', 'peso corporal', 0, [
+        'Manos en una mesa o sofá firme: cuanto más alto, más fácil. Cuerpo recto de la cabeza a los pies.',
+        'Hands on a sturdy table or sofa: the higher, the easier. Body straight from head to heels.',
+        'Mãos numa mesa ou sofá firme: quanto mais alto, mais fácil. Corpo reto da cabeça aos pés.',
+    ], { secondary: ['triceps', 'hombros'] }),
+    x('puente-gluteo-una-pierna', 'Puente de glúteo a una pierna', 'Single-leg glute bridge', 'Elevação pélvica unilateral', 'gluteos', 'peso corporal', 0, [
+        'Una pierna estirada; sube la cadera con la otra sin girar la pelvis.',
+        'One leg straight; lift your hips with the other without twisting your pelvis.',
+        'Uma perna esticada; suba o quadril com a outra sem girar a pelve.',
+    ], { secondary: ['isquios'] }),
+    x('patada-gluteo', 'Patada de glúteo', 'Glute kickback', 'Coice de glúteo', 'gluteos', 'peso corporal', 0, [
+        'A cuatro patas, lleva el talón hacia el techo sin arquear la espalda.',
+        'On all fours, drive your heel towards the ceiling without arching your back.',
+        'De quatro apoios, leve o calcanhar em direção ao teto sem arquear as costas.',
+    ], { secondary: ['isquios'] }),
+    x('gusano', 'Gusano (inchworm)', 'Inchworm', 'Minhoca (inchworm)', 'isquios', 'peso corporal', 0, [
+        'Desde de pie, camina con las manos hasta la plancha y vuelve. Buen calentamiento.',
+        'From standing, walk your hands out to a plank and back. A good warm-up.',
+        'Em pé, caminhe com as mãos até a prancha e volte. Bom aquecimento.',
+    ], { secondary: ['core', 'hombros'] }),
+    x('crunch', 'Abdominal crunch', 'Crunch', 'Abdominal crunch', 'core', 'peso corporal', 0, [
+        'Sube solo los hombros del suelo apretando el abdomen; no tires del cuello.',
+        'Lift just your shoulders off the floor by squeezing your abs; don’t pull on your neck.',
+        'Tire só os ombros do chão contraindo o abdômen; não puxe o pescoço.',
+    ]),
+    x('dead-bug', 'Dead bug', 'Dead bug', 'Dead bug', 'core', 'peso corporal', 0, [
+        'Espalda baja pegada al suelo; estira brazo y pierna contrarios despacio.',
+        'Lower back pressed to the floor; slowly extend the opposite arm and leg.',
+        'Lombar colada no chão; estique devagar braço e perna opostos.',
+    ]),
+    x('giro-ruso', 'Giro ruso', 'Russian twist', 'Giro russo', 'core', 'peso corporal', 0, [
+        'Sentado e inclinado atrás, gira el tronco a cada lado; cada lado cuenta como una.',
+        'Sitting and leaning back, rotate your torso to each side; each side counts as one.',
+        'Sentado e inclinado para trás, gire o tronco para cada lado; cada lado conta uma.',
+    ]),
+    // Timed: the timer counts out loud.
+    x('plancha-lateral', 'Plancha lateral', 'Side plank', 'Prancha lateral', 'core', 'peso corporal', 0, [
+        'Codo bajo el hombro y cadera alta, en línea recta. Haz los dos lados.',
+        'Elbow under your shoulder and hips up, in a straight line. Do both sides.',
+        'Cotovelo abaixo do ombro e quadril alto, em linha reta. Faça os dois lados.',
+    ], { timed: true }),
+    x('escaladores', 'Escaladores', 'Mountain climbers', 'Escalador', 'core', 'peso corporal', 0, [
+        'En plancha, lleva las rodillas al pecho alternando, a un ritmo que puedas mantener.',
+        'In a plank, drive your knees to your chest in turn, at a pace you can keep up.',
+        'Em prancha, leve os joelhos ao peito alternando, num ritmo que você consiga manter.',
+    ], { timed: true, secondary: ['cuadriceps', 'hombros'] }),
+    x('superman', 'Superman', 'Superman hold', 'Super-homem', 'espalda', 'peso corporal', 0, [
+        'Boca abajo, levanta brazos y piernas a la vez y aguanta mirando al suelo.',
+        'Face down, lift your arms and legs together and hold, looking at the floor.',
+        'De bruços, levante braços e pernas juntos e segure olhando para o chão.',
+    ], { timed: true, secondary: ['gluteos'] }),
+    x('subida-banco', 'Subida al banco con mancuernas', 'Dumbbell step-up', 'Subida no banco com halteres', 'cuadriceps', 'mancuernas', 2, [
+        'Sube empujando con el talón de la pierna de arriba; baja controlando.',
+        'Step up by pushing through the heel of your top leg; lower with control.',
+        'Suba empurrando com o calcanhar da perna de cima; desça controlando.',
+    ], { secondary: ['gluteos'] }),
     x('swing-kettlebell', 'Swing con kettlebell', 'Kettlebell swing', 'Swing com kettlebell', 'gluteos', 'kettlebell', 4, [
         'Es un empuje de cadera, no una sentadilla; brazos relajados.',
         'It’s a hip hinge, not a squat; arms relaxed.',

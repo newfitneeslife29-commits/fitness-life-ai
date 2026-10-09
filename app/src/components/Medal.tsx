@@ -1,8 +1,8 @@
-import { Dumbbell, Flame, Moon, Star, Sunrise, Target, Trophy, Weight, type LucideIcon } from 'lucide-react';
+import { Dumbbell, Flame, Layers, Moon, Scale, Star, Sunrise, Target, Timer, Trophy, Weight, type LucideIcon } from 'lucide-react';
 import type { Achievement } from '../lib/achievements';
 
 const ICONS: Record<Achievement['icon'], LucideIcon> = {
-    dumbbell: Dumbbell, flame: Flame, trophy: Trophy, weight: Weight, sunrise: Sunrise, moon: Moon, target: Target, star: Star,
+    dumbbell: Dumbbell, flame: Flame, trophy: Trophy, weight: Weight, sunrise: Sunrise, moon: Moon, target: Target, star: Star, timer: Timer, layers: Layers, scale: Scale,
 };
 
 export const Medal = ({ achievement, unlocked, size = 'md' }: { achievement: Achievement; unlocked: boolean; size?: 'md' | 'lg' }) => {

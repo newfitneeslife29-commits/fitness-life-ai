@@ -3,7 +3,7 @@ import { blobToBase64 } from './image';
 import { backendAvailable, getSupabase } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
-import type { AiUsage, ChatMessage, Goal, Macros } from '../store/types';
+import type { Activity, AiUsage, ChatMessage, Goal, Macros, Sex } from '../store/types';
 
 // The nutrition coach runs in a Supabase Edge Function
 // (supabase/functions/nutrition-coach) that holds the Anthropic key. The
@@ -27,6 +27,12 @@ export interface CoachContext {
     targets: Macros | null;
     today: Macros;
     trainedToday: boolean;
+    // From the profile, when the user gave them.
+    sex?: Sex;
+    age?: number;
+    heightCm?: number;
+    activity?: Activity;
+    targetWeightKg?: number;
 }
 
 export interface MealItem extends Macros {
