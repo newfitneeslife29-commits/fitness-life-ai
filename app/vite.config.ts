@@ -35,6 +35,9 @@ export default defineConfig({
       },
     }),
   ],
+  // Android phones that never updated "Android System WebView" run an old
+  // Chrome (Android 11 ships with 83): build for it, not just for new browsers.
+  build: { target: ['es2019', 'chrome70', 'edge88', 'firefox78', 'safari14'] },
   server: { port: 5173, host: '0.0.0.0' },
   test: {
     environment: 'node',
