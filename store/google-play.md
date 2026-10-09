@@ -1,6 +1,9 @@
 # Fitness Life en Google Play: textos y respuestas
 
-Todo lo que pide Play Console, listo para copiar. Las imágenes (8 capturas, gráfico de funciones e icono) van aparte, en el zip de la tienda.
+Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`google-play/`](google-play/):
+- **Icono de la app:** `icon-512.png` (512×512).
+- **Gráfico de funciones:** `feature-graphic.png` (1024×500).
+- **Capturas de pantalla del teléfono:** de `01-inicio.png` a `08-premium.png` (1080×1920), en ese orden.
 
 ## Ficha de Play Store principal
 
