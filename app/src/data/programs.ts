@@ -24,6 +24,8 @@ export interface Program {
     beginner?: boolean;
     // Part of Fitness Life Premium.
     premium?: boolean;
+    // Women's section: made to lose weight or to keep it while toning.
+    women?: 'bajar' | 'mantener';
 }
 
 const m = (exerciseId: string): ProgramSlot => ({ exerciseId, role: 'main' });
@@ -130,6 +132,82 @@ export const PROGRAMS: Program[] = [
         ],
     },
 
+    // Women's section: lower body and glutes first, full-body circuits to burn
+    // more, and upper body and core for posture.
+    {
+        id: 'women-home-lose',
+        name: { es: 'Mujer: quema en casa', en: 'Women: burn at home', pt: 'Mulher: queima em casa' },
+        description: { es: 'Sin material. Glúteos y piernas, tren superior y un circuito de cuerpo completo para bajar de peso.', en: 'No equipment. Glutes and legs, upper body and a full-body circuit to lose weight.', pt: 'Sem equipamento. Glúteos e pernas, superiores e um circuito de corpo inteiro para emagrecer.' },
+        setup: 'casa',
+        women: 'bajar',
+        days: [
+            { name: { es: 'Glúteos y piernas', en: 'Glutes and legs', pt: 'Glúteos e pernas' }, slots: [m('sentadilla-libre'), m('puente-gluteo'), a('zancadas-libres'), a('patada-gluteo'), a('elevacion-gemelos-libre'), a('escaladores')] },
+            { name: { es: 'Tren superior y abdomen', en: 'Upper body and abs', pt: 'Superiores e abdômen' }, slots: [m('flexiones-inclinadas'), a('fondos-banco'), a('superman'), a('plancha'), a('crunch'), a('giro-ruso')] },
+            { name: { es: 'Circuito cuerpo completo', en: 'Full-body circuit', pt: 'Circuito corpo inteiro' }, slots: [m('sentadilla-libre'), m('puente-gluteo-una-pierna'), a('flexiones-inclinadas'), a('escaladores'), a('dead-bug'), a('plancha-lateral')] },
+        ],
+    },
+    {
+        id: 'women-home-tone',
+        name: { es: 'Mujer: tonifica en casa', en: 'Women: tone at home', pt: 'Mulher: tonifique em casa' },
+        description: { es: 'Sin material, para mantener tu peso y ganar firmeza en glúteos, piernas, brazos y abdomen.', en: 'No equipment, to keep your weight and firm up glutes, legs, arms and abs.', pt: 'Sem equipamento, para manter o peso e firmar glúteos, pernas, braços e abdômen.' },
+        setup: 'casa',
+        women: 'mantener',
+        days: [
+            { name: { es: 'Glúteos', en: 'Glutes', pt: 'Glúteos' }, slots: [m('puente-gluteo-una-pierna'), m('zancadas-libres'), a('patada-gluteo'), a('puente-gluteo'), a('plancha-lateral')] },
+            { name: { es: 'Brazos, espalda y core', en: 'Arms, back and core', pt: 'Braços, costas e core' }, slots: [m('flexiones-inclinadas'), a('superman'), a('fondos-banco'), a('dead-bug'), a('plancha')] },
+            { name: { es: 'Piernas y abdomen', en: 'Legs and abs', pt: 'Pernas e abdômen' }, slots: [m('sentadilla-libre'), a('gusano'), a('elevacion-gemelos-libre'), a('elevacion-piernas'), a('crunch')] },
+        ],
+    },
+    {
+        id: 'women-db-lose',
+        name: { es: 'Mujer: quema con mancuernas', en: 'Women: burn with dumbbells', pt: 'Mulher: queima com halteres' },
+        description: { es: 'Mancuernas en casa o en el gimnasio: fuerza y circuitos para bajar de peso sin perder músculo.', en: 'Dumbbells at home or at the gym: strength and circuits to lose weight without losing muscle.', pt: 'Halteres em casa ou na academia: força e circuitos para emagrecer sem perder músculo.' },
+        setup: 'mancuernas',
+        women: 'bajar',
+        days: [
+            { name: { es: 'Pierna y glúteo', en: 'Legs and glutes', pt: 'Pernas e glúteos' }, slots: [m('sentadilla-goblet'), m('peso-muerto-rumano-mancuernas'), a('zancadas'), a('puente-gluteo-una-pierna'), a('escaladores')] },
+            { name: { es: 'Tren superior', en: 'Upper body', pt: 'Superiores' }, slots: [m('press-hombro-mancuernas'), m('remo-mancuerna'), a('press-banca-mancuernas'), a('elevaciones-laterales'), a('plancha')] },
+            { name: { es: 'Circuito total', en: 'Total circuit', pt: 'Circuito total' }, slots: [m('subida-banco'), a('sentadilla-dividida'), a('remo-mancuerna'), a('extension-triceps-mancuerna'), a('giro-ruso'), a('escaladores')] },
+        ],
+    },
+    {
+        id: 'women-db-tone',
+        name: { es: 'Mujer: tonifica con mancuernas', en: 'Women: tone with dumbbells', pt: 'Mulher: tonifique com halteres' },
+        description: { es: 'Para mantener tu peso: glúteos y femorales, brazos y espalda, y pierna con abdomen.', en: 'To keep your weight: glutes and hamstrings, arms and back, and legs with abs.', pt: 'Para manter o peso: glúteos e posteriores, braços e costas, e pernas com abdômen.' },
+        setup: 'mancuernas',
+        women: 'mantener',
+        days: [
+            { name: { es: 'Glúteo y femoral', en: 'Glutes and hamstrings', pt: 'Glúteos e posteriores' }, slots: [m('peso-muerto-rumano-mancuernas'), m('sentadilla-dividida'), a('puente-gluteo'), a('patada-gluteo'), a('dead-bug')] },
+            { name: { es: 'Brazos y espalda', en: 'Arms and back', pt: 'Braços e costas' }, slots: [m('remo-mancuerna'), m('press-hombro-mancuernas'), a('curl-mancuernas'), a('extension-triceps-mancuerna'), a('elevaciones-laterales')] },
+            { name: { es: 'Pierna y abdomen', en: 'Legs and abs', pt: 'Pernas e abdômen' }, slots: [m('sentadilla-goblet'), a('zancadas'), a('subida-banco'), a('plancha-lateral'), a('crunch')] },
+        ],
+    },
+    {
+        id: 'women-gym-lose',
+        name: { es: 'Mujer: quema en el gimnasio', en: 'Women: burn at the gym', pt: 'Mulher: queima na academia' },
+        description: { es: 'Cuatro días con máquinas guiadas, glúteos dos veces por semana y un circuito para quemar más.', en: 'Four days with guided machines, glutes twice a week and a circuit to burn more.', pt: 'Quatro dias com máquinas guiadas, glúteos duas vezes por semana e um circuito para queimar mais.' },
+        setup: 'gimnasio',
+        women: 'bajar',
+        days: [
+            { name: { es: 'Glúteos', en: 'Glutes', pt: 'Glúteos' }, slots: [m('hip-thrust'), m('prensa'), a('abductores-maquina'), a('curl-femoral'), a('escaladores')] },
+            { name: { es: 'Tren superior', en: 'Upper body', pt: 'Superiores' }, slots: [m('jalon-pecho'), m('press-pecho-maquina'), a('remo-polea'), a('elevaciones-laterales'), a('plancha')] },
+            { name: { es: 'Pierna', en: 'Legs', pt: 'Pernas' }, slots: [m('sentadilla-goblet'), m('peso-muerto-rumano-mancuernas'), a('extension-cuadriceps'), a('zancadas'), a('elevacion-gemelos')] },
+            { name: { es: 'Circuito quema', en: 'Burn circuit', pt: 'Circuito queima' }, slots: [m('swing-kettlebell'), a('subida-banco'), a('remo-maquina'), a('press-hombro-maquina'), a('giro-ruso'), a('escaladores')] },
+        ],
+    },
+    {
+        id: 'women-gym-tone',
+        name: { es: 'Mujer: tonifica en el gimnasio', en: 'Women: tone at the gym', pt: 'Mulher: tonifique na academia' },
+        description: { es: 'Para mantener tu peso y moldear: glúteos y femorales, tren superior y pierna con core.', en: 'To keep your weight and shape up: glutes and hamstrings, upper body and legs with core.', pt: 'Para manter o peso e modelar: glúteos e posteriores, superiores e pernas com core.' },
+        setup: 'gimnasio',
+        women: 'mantener',
+        days: [
+            { name: { es: 'Glúteos y femoral', en: 'Glutes and hamstrings', pt: 'Glúteos e posteriores' }, slots: [m('hip-thrust'), m('peso-muerto-rumano'), a('curl-femoral'), a('abductores-maquina'), a('puente-gluteo-una-pierna')] },
+            { name: { es: 'Tren superior', en: 'Upper body', pt: 'Superiores' }, slots: [m('jalon-pecho'), m('press-hombro-mancuernas'), a('remo-polea'), a('face-pull'), a('extension-triceps-polea')] },
+            { name: { es: 'Pierna y core', en: 'Legs and core', pt: 'Pernas e core' }, slots: [m('sentadilla-goblet'), m('prensa'), a('zancadas'), a('elevacion-gemelos'), a('dead-bug'), a('pallof')] },
+        ],
+    },
+
     // Fitness Life Premium.
     {
         id: 'premium-glutes',
@@ -208,6 +286,10 @@ export const PROGRAMS: Program[] = [
 ];
 
 export const getProgram = (id: string) => PROGRAMS.find(p => p.id === id);
+
+// Women's section: the plan for losing or keeping weight where she trains.
+export const womenProgram = (aim: 'bajar' | 'mantener', setup: Setup): Program =>
+    PROGRAMS.find(p => p.women === aim && p.setup === setup)!;
 export const programName = (p: Program) => l10n(p.name);
 export const programDescription = (p: Program) => l10n(p.description);
 

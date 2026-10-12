@@ -92,3 +92,13 @@ export const onDay = (day: Date, now = new Date()) => {
     d.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
     return d;
 };
+
+// Body mass index (WHO adult bands). A rough guide: it can't tell muscle from fat.
+export type BmiBand = 'under' | 'normal' | 'over' | 'obese';
+export const bmiOf = (weightKg: number, heightCm: number) => weightKg / (heightCm / 100) ** 2;
+export const bmiBand = (bmi: number): BmiBand => (bmi < 18.5 ? 'under' : bmi < 25 ? 'normal' : bmi < 30 ? 'over' : 'obese');
+// Weights with a BMI from 18.5 to 24.9 at this height.
+export const healthyWeightRange = (heightCm: number) => {
+    const m2 = (heightCm / 100) ** 2;
+    return { minKg: Math.round(18.5 * m2 * 10) / 10, maxKg: Math.round(24.9 * m2 * 10) / 10 };
+};

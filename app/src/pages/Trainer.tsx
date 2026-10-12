@@ -1,10 +1,10 @@
-import { ChevronLeft, Crown, Dumbbell, RotateCcw, Save, Send, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronLeft, Crown, Dumbbell, House, RotateCcw, Save, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AiUsageLine, ChatBubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { confirm, toast } from '../components/feedback';
 import { ReportAiButton } from '../components/ReportAi';
-import { Section, Sheet } from '../components/ui';
+import { Chips, Section, Sheet } from '../components/ui';
 import { exerciseName, getExercise } from '../data/exercises';
 import { getLang, t } from '../i18n';
 import { aiAvailable, askTrainer, designRoutine, refreshUsage, type AiRoutine } from '../lib/ai';
@@ -12,18 +12,23 @@ import { fmtRange, fmtRest } from '../lib/format';
 import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { routineCatalog, trainerContext } from '../lib/trainer';
 import { actions, getState, useStore } from '../store/store';
+import type { Setup } from '../store/types';
 
 // Premium: a personal trainer that knows the user's plan and recent workouts,
 // answers questions and designs routines from the app's exercises.
 
 const SUGGESTIONS = ['trainer.s1', 'trainer.s2', 'trainer.s3', 'trainer.s4'] as const;
 const IDEAS = ['trainer.idea1', 'trainer.idea2', 'trainer.idea3'] as const;
+// Training at home gets its own ideas: no equipment, short and effective.
+const HOME_IDEAS = ['trainer.home1', 'trainer.home2', 'trainer.home3', 'trainer.home4'] as const;
 
 // Unsent question, kept while the app is open (e.g. across a trip to the Premium page).
 let draft = '';
 
-const RoutineSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const RoutineSheet = ({ open, onClose, place: initialPlace }: { open: boolean; onClose: () => void; place: Setup }) => {
     const premium = usePremiumActive();
+    const [place, setPlace] = useState<Setup>(initialPlace);
+    useEffect(() => { if (open) setPlace(initialPlace); }, [open, initialPlace]);
     const navigate = useNavigate();
     const onAiError = useAiErrorHandler();
     const [request, setRequest] = useState('');
@@ -35,7 +40,7 @@ const RoutineSheet = ({ open, onClose }: { open: boolean; onClose: () => void })
         setBusy(true);
         try {
             const state = getState();
-            const routine = await designRoutine(getLang(), trainerContext(state), request.trim(), routineCatalog(state));
+            const routine = await designRoutine(getLang(), { ...trainerContext(state), setup: place }, request.trim(), routineCatalog(state, place));
             if (!routine.exercises.length) toast(routine.note || t('trainer.routineEmpty'), 4000);
             setResult(routine.exercises.length ? routine : null);
         } catch (e) {
@@ -59,12 +64,20 @@ const RoutineSheet = ({ open, onClose }: { open: boolean; onClose: () => void })
                 <PremiumLock text={t('trainer.locked')} onOpen={onClose} />
             ) : !result ? (
                 <>
+                    <p className="label mb-2">{t('trainer.where')}</p>
+                    <div className="mb-4">
+                        <Chips<Setup> label={t('trainer.where')} value={place} onChange={setPlace} options={[
+                            { value: 'casa', label: t('trainer.whereHome') },
+                            { value: 'mancuernas', label: t('setup.mancuernas.short') },
+                            { value: 'gimnasio', label: t('setup.gimnasio.short') },
+                        ]} />
+                    </div>
                     <label className="label mb-1 block" htmlFor="routine-request">{t('trainer.routineAsk')}</label>
                     <textarea id="routine-request" value={request} onChange={e => setRequest(e.target.value)} rows={3} maxLength={500}
                         placeholder={t('trainer.routinePlaceholder')}
                         className="w-full resize-none rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
                     <div className="mt-2 flex flex-wrap gap-2">
-                        {IDEAS.map(k => <button key={k} onClick={() => setRequest(t(k))} className="chip text-left hover:text-white">{t(k)}</button>)}
+                        {(place === 'casa' ? HOME_IDEAS : IDEAS).map(k => <button key={k} onClick={() => setRequest(t(k))} className="chip text-left hover:text-white">{t(k)}</button>)}
                     </div>
                     <button className="btn-primary mt-4 w-full" disabled={busy || request.trim().length < 3} onClick={generate}>
                         <Sparkles size={18} /> {busy ? t('trainer.routineBusy') : t('trainer.routineCreate')}
@@ -110,7 +123,8 @@ export default function Trainer() {
         setInputState(text);
     };
     const [pending, setPending] = useState<string | null>(null);
-    const [routineOpen, setRoutineOpen] = useState(false);
+    const [routineOpen, setRoutineOpen] = useState<Setup | null>(null);
+    const setup = useStore(s => s.profile?.setup ?? 'gimnasio');
     const listRef = useRef<HTMLDivElement>(null);
     const ai = aiAvailable();
     const premium = usePremiumActive();
@@ -162,8 +176,16 @@ export default function Trainer() {
                 </div>
             </header>
 
-            <Section>
-                <button onClick={() => setRoutineOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-brand to-amber-500 p-4 text-left text-snow shadow-lg shadow-brand/25 active:scale-[0.99]">
+            <Section className="space-y-2">
+                <button onClick={() => setRoutineOpen('casa')} className="flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 p-4 text-left text-snow shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><House size={22} /></span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-bold">{t('trainer.homeTitle')}</span>
+                        <span className="block text-sm text-snow/90">{t('trainer.homeCard')}</span>
+                    </span>
+                    <Sparkles className="shrink-0" />
+                </button>
+                <button onClick={() => setRoutineOpen(setup === 'casa' ? 'gimnasio' : setup)} className="flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-brand to-amber-500 p-4 text-left text-snow shadow-lg shadow-brand/25 active:scale-[0.99]">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><Dumbbell size={22} /></span>
                     <span className="min-w-0 flex-1">
                         <span className="block font-bold">{t('trainer.routineTitle')}</span>
@@ -208,7 +230,7 @@ export default function Trainer() {
                         <>
                             {chat.length === 0 && !pending && (
                                 <div className="flex flex-wrap gap-2 px-4 pb-3">
-                                    {SUGGESTIONS.map(k => (
+                                    {(setup === 'casa' ? ['trainer.sHome', ...SUGGESTIONS.slice(0, 3)] as const : SUGGESTIONS).map(k => (
                                         <button key={k} onClick={() => send(t(k))} className="chip text-left hover:text-white">{t(k)}</button>
                                     ))}
                                 </div>
@@ -227,7 +249,7 @@ export default function Trainer() {
                 </div>
             </Section>
 
-            <RoutineSheet open={routineOpen} onClose={() => setRoutineOpen(false)} />
+            <RoutineSheet open={routineOpen !== null} place={routineOpen ?? setup} onClose={() => setRoutineOpen(null)} />
         </div>
     );
 }

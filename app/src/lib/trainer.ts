@@ -4,7 +4,7 @@ import type { CatalogExercise, TrainerContext } from './ai';
 import { planName, routineName, sessionName } from './names';
 import { ageOf } from './nutrition';
 import { sessionsThisWeek, streakWeeks } from './stats';
-import type { AppState, LoggedSet, Session } from '../store/types';
+import type { AppState, LoggedSet, Session, Setup } from '../store/types';
 
 // What the personal trainer knows: the profile, the current plan and the
 // last workouts, as short text the model can read. Weights in kg.
@@ -54,9 +54,10 @@ export const trainerContext = (state: AppState): TrainerContext => {
     };
 };
 
-// Exercises the AI may use for a new routine: what the user's equipment allows.
-export const routineCatalog = (state: AppState): CatalogExercise[] => {
-    const allowed = ALLOWED[state.profile?.setup ?? 'gimnasio'];
+// Exercises the AI may use for a new routine: what the equipment allows
+// where the user is training this time (home, dumbbells or gym).
+export const routineCatalog = (state: AppState, setup: Setup = state.profile?.setup ?? 'gimnasio'): CatalogExercise[] => {
+    const allowed = ALLOWED[setup];
     return EXERCISES.filter(e => allowed.includes(e.equipment)).map(e => ({
         id: e.id, name: exerciseName(e.id), muscle: muscleLabel(e.muscle), equipment: equipmentLabel(e.equipment), timed: Boolean(e.timed),
     }));

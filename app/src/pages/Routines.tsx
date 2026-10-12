@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, Dumbbell, GraduationCap, Layers, Play, Plus } from 'lucide-react';
+import { Bot, ChevronRight, Dumbbell, GraduationCap, Layers, Play, Plus, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
 import { Empty, PageHeader, Section } from '../components/ui';
@@ -79,6 +79,14 @@ export default function Routines() {
                         <div className="min-w-0 flex-1">
                             <p className="font-semibold">{t('trainer.title')}</p>
                             <p className="text-sm text-white/50">{t('trainer.routinesHint')}</p>
+                        </div>
+                        <ChevronRight className="shrink-0 text-white/40" />
+                    </Link>
+                    <Link to="/mujeres" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+                        <Sparkles className="shrink-0 text-pink-400" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">{t('women.card')}</p>
+                            <p className="text-sm text-white/50">{t('women.cardHint')}</p>
                         </div>
                         <ChevronRight className="shrink-0 text-white/40" />
                     </Link>

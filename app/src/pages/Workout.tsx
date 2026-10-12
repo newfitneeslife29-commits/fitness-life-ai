@@ -1,15 +1,17 @@
-import { Check, ChevronLeft, Disc3, Minus, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Check, ChevronLeft, Copy, Disc3, Minus, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ExerciseDemo } from '../components/ExerciseDemo';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { HoldTimer } from '../components/HoldTimer';
-import { confirm } from '../components/feedback';
+import { OfflineNotice } from '../components/OfflineNotice';
+import { confirm, toast } from '../components/feedback';
 import { PlateSheet } from '../components/PlateSheet';
-import { exerciseName, exerciseTip, getExercise } from '../data/exercises';
+import { Sheet } from '../components/ui';
+import { busyAlternatives, equipmentLabel, exerciseName, exerciseTip, getExercise, muscleLabel } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
-import { cancelRestAlert, haptic, keepAwake, scheduleRestAlert } from '../lib/native';
+import { cancelRestAlert, haptic, keepAwake, primeSound, restOver, restTick, scheduleRestAlert } from '../lib/native';
 import { sessionName } from '../lib/names';
 import { displayToKg, kgToDisplay } from '../lib/progression';
 import { useNow } from '../lib/useNow';
@@ -42,7 +44,33 @@ const NumberField = ({ value, onCommit, label, decimals }: { value: number; onCo
     );
 };
 
-const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: number; unit: Unit; onSwap: () => void }) => {
+// "Machine taken": swap to the same muscle with dumbbells, cables or bodyweight.
+const BusySheet = ({ exerciseId, exclude, onClose, onPick }: { exerciseId: string; exclude: string[]; onClose: () => void; onPick: (id: string) => void }) => {
+    const options = busyAlternatives(exerciseId, exclude);
+    const muscle = getExercise(exerciseId)?.muscle;
+    return (
+        <Sheet open onClose={onClose} title={t('workout.busy.title')}>
+            <p className="mb-3 text-sm text-white/60">{muscle ? t('workout.busy.hint', { muscle: muscleLabel(muscle).toLowerCase() }) : ''}</p>
+            <ul className="space-y-2">
+                {options.map(e => (
+                    <li key={e.id}>
+                        <button onClick={() => onPick(e.id)} className="flex w-full items-center gap-3 rounded-xl bg-ink-3 p-2 text-left hover:bg-ink-4">
+                            <ExerciseDemo id={e.id} name={exerciseName(e.id)} variant="thumb" />
+                            <span className="min-w-0 flex-1">
+                                <span className="block font-medium">{exerciseName(e.id)}</span>
+                                <span className="text-xs text-white/50">{muscleLabel(e.muscle)} · {equipmentLabel(e.equipment)}</span>
+                            </span>
+                            <span className="shrink-0 text-sm font-semibold text-brand">{t('workout.busy.use')}</span>
+                        </button>
+                    </li>
+                ))}
+                {options.length === 0 && <li className="py-4 text-center text-sm text-white/50">{t('workout.busy.none')}</li>}
+            </ul>
+        </Sheet>
+    );
+};
+
+const ExerciseCard = ({ ex, index, unit, onSwap, others }: { ex: ActiveExercise; index: number; unit: Unit; onSwap: () => void; others: string[] }) => {
     const sessions = useStore(s => s.sessions);
     // Beginners see how each exercise is done without asking.
     const beginner = useStore(s => s.profile?.level === 'principiante' && s.sessions.length < 6);
@@ -50,6 +78,9 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
     const name = exerciseName(ex.exerciseId);
     const [howTo, setHowTo] = useState(beginner && index === 0);
     const [plates, setPlates] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const canBeBusy = !!info && info.equipment !== 'peso corporal' && info.equipment !== 'mancuernas';
+    const lastDone = [...ex.sets].reverse().find(s => s.done);
     const { suggestion, previous } = planExercise(sessions, ex, unit);
     const nextSet = ex.sets.find(s => !s.done) ?? ex.sets[ex.sets.length - 1];
     const timed = info?.timed;
@@ -102,6 +133,12 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                 )}
             </p>
 
+            {canBeBusy && (
+                <div className="px-4 pb-3">
+                    <button onClick={() => setBusy(true)} className="chip inline-flex items-center gap-1.5 text-xs"><ArrowLeftRight size={14} /> {t('workout.busy')}</button>
+                </div>
+            )}
+
             {timed && openSet >= 0 && (
                 <HoldTimer target={ex.sets[openSet].reps || ex.repMin} onDone={sec => {
                     actions.setValue(index, openSet, 'reps', sec);
@@ -137,7 +174,7 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
                                         onCommit={n => actions.setValue(index, j, 'reps', Math.round(n))} />
                                 </td>
                                 <td className="py-1.5 pr-2 text-center">
-                                    <button onClick={() => { if (!s.done) haptic('tap'); actions.toggleSet(index, j); }} aria-pressed={s.done} aria-label={t('workout.markDone', { n: j + 1 })}
+                                    <button onClick={() => { if (!s.done) { haptic('tap'); primeSound(); } actions.toggleSet(index, j); }} aria-pressed={s.done} aria-label={t('workout.markDone', { n: j + 1 })}
                                         className={`inline-flex h-9 w-10 items-center justify-center rounded-lg transition ${s.done ? 'animate-pop bg-good text-ink' : 'bg-ink-3 text-white/40 hover:text-white'}`}>
                                         <Check size={18} strokeWidth={3} />
                                     </button>
@@ -149,23 +186,45 @@ const ExerciseCard = ({ ex, index, unit, onSwap }: { ex: ActiveExercise; index: 
             </table>
 
             <div className="flex gap-2 p-3">
+                {lastDone && (
+                    <button onClick={() => { haptic('tap'); primeSound(); actions.repeatLastSet(index); }} className="btn-ghost flex-1 py-2"
+                        aria-label={t('workout.repeatSet.label')}>
+                        <Copy size={16} /> {t('workout.repeatSet', { value: `${lastDone.weightKg > 0 ? `${fmtNumber(kgToDisplay(lastDone.weightKg, unit))} × ` : ''}${lastDone.reps}` })}
+                    </button>
+                )}
                 <button onClick={() => actions.addSet(index)} className="btn-ghost flex-1 py-2"><Plus size={16} /> {t('workout.addSet')}</button>
                 {ex.sets.length > 1 && (
                     <button onClick={() => actions.removeSet(index, ex.sets.length - 1)} aria-label={t('workout.removeLastSet')} className="btn-ghost py-2"><Minus size={16} /></button>
                 )}
             </div>
+            {busy && (
+                <BusySheet exerciseId={ex.exerciseId} exclude={others} onClose={() => setBusy(false)} onPick={id => {
+                    actions.swapExercise(index, id);
+                    setBusy(false);
+                    toast(t('workout.busy.swapped', { name: exerciseName(id) }));
+                }} />
+            )}
             {plates && <PlateSheet open onClose={() => setPlates(false)} weightKg={nextSet?.weightKg ?? 0} unit={unit} exerciseName={name} />}
         </section>
     );
 };
 
 const RestBar = ({ endsAt, total }: { endsAt: number; total: number }) => {
+    const sound = useStore(s => s.profile?.restSound !== false);
     const now = useNow(true, 250);
     const left = Math.ceil((endsAt - now) / 1000);
     const finished = left <= 0;
+    // 3, 2, 1: a tick each second, then the "go" alert.
+    const ticked = useRef<number | null>(null);
+    useEffect(() => {
+        if (left > 0 && left <= 3 && ticked.current !== left) {
+            ticked.current = left;
+            restTick(sound);
+        }
+    }, [left, sound]);
     useEffect(() => {
         if (!finished) return;
-        haptic('success');
+        restOver(sound);
         const timer = window.setTimeout(() => actions.skipRest(), 4000);
         return () => window.clearTimeout(timer);
     }, [finished]);
@@ -258,8 +317,10 @@ export default function Workout() {
             </header>
 
             <div className="space-y-3 p-3">
+                <OfflineNotice />
                 {active.exercises.map((ex, i) => (
-                    <ExerciseCard key={`${ex.exerciseId}-${i}`} ex={ex} index={i} unit={unit} onSwap={() => setPicker({ mode: 'swap', index: i })} />
+                    <ExerciseCard key={`${ex.exerciseId}-${i}`} ex={ex} index={i} unit={unit} onSwap={() => setPicker({ mode: 'swap', index: i })}
+                        others={active.exercises.map(e => e.exerciseId)} />
                 ))}
                 {active.exercises.length === 0 && (
                     <p className="card p-6 text-center text-white/60">{t('workout.emptyFree')}</p>

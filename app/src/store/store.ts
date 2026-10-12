@@ -241,6 +241,27 @@ export const actions = {
         });
     },
 
+    // One tap logs another set like the last one done: same weight and reps
+    // go into the next open set (or a new one) and the rest timer starts.
+    repeatLastSet(exIndex: number) {
+        updateActive(a => {
+            const ex = a.exercises[exIndex];
+            const last = ex ? [...ex.sets].reverse().find(w => w.done) : undefined;
+            if (!ex || !last) return a;
+            const open = ex.sets.findIndex(w => !w.done);
+            const copy = { weightKg: last.weightKg, reps: last.reps, done: true, completedAt: new Date().toISOString() };
+            const sets = open >= 0
+                ? ex.sets.map((w, j) => (j === open ? { ...w, ...copy } : w))
+                : [...ex.sets, { id: uid(), ...copy }];
+            return {
+                ...a,
+                exercises: a.exercises.map((e, i) => (i === exIndex ? { ...e, sets } : e)),
+                restEndsAt: Date.now() + ex.restSec * 1000,
+                restTotalSec: ex.restSec,
+            };
+        });
+    },
+
     addSet(exIndex: number) {
         updateActive(a => ({
             ...a,
@@ -377,6 +398,12 @@ export const actions = {
 
     clearTrainerChat() {
         set(s => ({ ...s, trainerChat: [] }));
+    },
+
+    // Called when the app opens or comes back: one entry per day.
+    markActiveToday(day: string) {
+        if (state.activeDays?.[state.activeDays.length - 1] === day || state.activeDays?.includes(day)) return;
+        set(s => ({ ...s, activeDays: [...(s.activeDays ?? []), day].slice(-800) }));
     },
 
     markAchievementsSeen(ids: string[]) {

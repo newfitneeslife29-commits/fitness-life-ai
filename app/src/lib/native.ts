@@ -34,6 +34,46 @@ export const haptic = (kind: 'tap' | 'success' | 'warning' = 'tap') => {
     }
 };
 
+// Beeps for the rest timer, made with Web Audio (no sound files). Browsers
+// only allow sound after a tap, so a tap on "done" primes it.
+let audio: AudioContext | null = null;
+export const primeSound = () => {
+    try {
+        audio ??= new AudioContext();
+        if (audio.state === 'suspended') void audio.resume();
+    } catch {
+        audio = null;
+    }
+};
+
+const beep = (freq: number, ms: number, delayMs = 0) => {
+    if (!audio) return;
+    const at = audio.currentTime + delayMs / 1000;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(0.4, at + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + ms / 1000);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(at);
+    osc.stop(at + ms / 1000 + 0.02);
+};
+
+// Last seconds of a rest: a short tick. Rest over: two beeps and a long vibration.
+export const restTick = (sound: boolean) => {
+    if (sound) beep(880, 90);
+    haptic('tap');
+};
+export const restOver = (sound: boolean) => {
+    if (sound) {
+        beep(1320, 160);
+        beep(1320, 260, 220);
+    }
+    if (isNative()) void quiet(() => Haptics.vibrate({ duration: 700 }));
+    else navigator.vibrate?.([300, 120, 300]);
+};
+
 // Keep the screen on during a workout.
 let wakeLock: { release: () => Promise<void> } | null = null;
 export const keepAwake = async (on: boolean) => {
@@ -56,13 +96,17 @@ export const keepAwake = async (on: boolean) => {
 const REST_NOTIFICATION_ID = 4711;
 let notificationsAllowed: boolean | null = null;
 
+const notificationsOk = async () => {
+    if (notificationsAllowed === null) {
+        notificationsAllowed = (await LocalNotifications.requestPermissions()).display === 'granted';
+    }
+    return notificationsAllowed;
+};
+
 export const scheduleRestAlert = async (atMs: number) => {
     if (!isNative()) return;
     await quiet(async () => {
-        if (notificationsAllowed === null) {
-            notificationsAllowed = (await LocalNotifications.requestPermissions()).display === 'granted';
-        }
-        if (!notificationsAllowed) return;
+        if (!(await notificationsOk())) return;
         await LocalNotifications.cancel({ notifications: [{ id: REST_NOTIFICATION_ID }] });
         if (atMs <= Date.now() + 1000) return;
         await LocalNotifications.schedule({
@@ -74,6 +118,21 @@ export const scheduleRestAlert = async (atMs: number) => {
 export const cancelRestAlert = async () => {
     if (!isNative()) return;
     await quiet(() => LocalNotifications.cancel({ notifications: [{ id: REST_NOTIFICATION_ID }] }));
+};
+
+// "Your legs have rested 48 h": reminders based on recovery (lib/recovery.ts).
+// Each call replaces the previous ones.
+const RECOVERY_IDS = [5101, 5102, 5103, 5104];
+export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; body: string }[]) => {
+    if (!isNative()) return;
+    await quiet(async () => {
+        await LocalNotifications.cancel({ notifications: RECOVERY_IDS.map(id => ({ id })) });
+        const due = alerts.filter(a => a.at.getTime() > Date.now() + 60_000).slice(0, RECOVERY_IDS.length);
+        if (!due.length || !(await notificationsOk())) return;
+        await LocalNotifications.schedule({
+            notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true } })),
+        });
+    });
 };
 
 // Share sheet; falls back to the clipboard. Returns what happened.
@@ -91,6 +150,40 @@ export const shareText = async (title: string, text: string): Promise<'shared' |
         return 'copied';
     } catch (e) {
         // Closing the share sheet is not an error worth reporting.
+        if (e instanceof Error && /cancel|abort/i.test(e.message + e.name)) return 'shared';
+        return 'failed';
+    }
+};
+
+// Shares an image (a share card, a before/after) to Instagram, TikTok,
+// WhatsApp... In the browser it uses the share sheet when it can take files,
+// otherwise it downloads the image.
+export const shareImage = async (blob: Blob, name: string, title: string): Promise<'shared' | 'saved' | 'failed'> => {
+    try {
+        if (isNative()) {
+            const data = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(blob);
+            });
+            const written = await Filesystem.writeFile({ path: name, data, directory: Directory.Cache });
+            await Share.share({ title, files: [written.uri], dialogTitle: title });
+            return 'shared';
+        }
+        const file = new File([blob], name, { type: blob.type });
+        if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title });
+            return 'shared';
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return 'saved';
+    } catch (e) {
         if (e instanceof Error && /cancel|abort/i.test(e.message + e.name)) return 'shared';
         return 'failed';
     }

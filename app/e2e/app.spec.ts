@@ -812,3 +812,96 @@ test('legal page has terms and privacy in three languages', async ({ page }) => 
     await expect(page.getByRole('heading', { name: 'Privacy policy' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Política de privacidade' })).toBeVisible();
 });
+
+test('workout extras: repeat the last set, machine taken, then recovery, activity, BMI and share cards', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await squat.getByLabel('Peso serie 1').fill('80');
+    await squat.getByLabel('Repeticiones serie 1').fill('8');
+    await squat.getByLabel('Marcar serie 1 como hecha').click();
+    // One tap logs the same set again and starts the rest.
+    await squat.getByRole('button', { name: 'Repetir la serie anterior' }).click();
+    await expect(squat.getByLabel('Marcar serie 2 como hecha')).toHaveAttribute('aria-pressed', 'true');
+    await expect(squat.getByLabel('Peso serie 2')).toHaveValue('80');
+    await expect(squat.getByLabel('Repeticiones serie 2')).toHaveValue('8');
+    await expect(page.getByRole('timer')).toBeVisible();
+    await page.getByRole('button', { name: 'Saltar' }).click();
+
+    // The bench is taken: same muscle with dumbbells instead.
+    const bench = page.getByRole('region', { name: 'Press de banca', exact: true });
+    await bench.getByRole('button', { name: 'Máquina ocupada' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Máquina ocupada' });
+    await expect(sheet.getByText('Press de banca con mancuernas')).toBeVisible();
+    await sheet.getByRole('button', { name: /Press de banca con mancuernas/ }).click();
+    await expect(page.getByText('Cambiado por Press de banca con mancuernas')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Press de banca con mancuernas' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('link', { name: 'Listo' }).click();
+
+    // Legs were trained hard: they are recovering.
+    await expect(page.getByRole('heading', { name: 'Recuperación muscular' })).toBeVisible();
+    await expect(page.getByText(/piernas/i).first()).toBeVisible();
+
+    await page.getByRole('link', { name: /Tu actividad/ }).click();
+    await expect(page.getByRole('heading', { name: 'Tu actividad' })).toBeVisible();
+    await expect(page.getByText(/Este mes: entrenaste 1 día/)).toBeVisible();
+
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+    await expect(page.getByText('24,7')).toBeVisible();
+    await expect(page.getByText('Peso saludable', { exact: true })).toBeVisible();
+
+    await page.goto('/#/wrapped');
+    await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Récords' }).click();
+    await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir' })).toBeEnabled();
+});
+
+test('women\'s section builds her own plan to lose or keep weight', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Rutinas', exact: true }).click();
+    await page.getByRole('link', { name: /Entrenamiento para mujeres/ }).click();
+    await page.getByRole('radio', { name: 'Mantener y tonificar' }).click();
+    await page.getByRole('radio', { name: 'Casa' }).click();
+    await expect(page.getByText('Mujer: tonifica en casa')).toBeVisible();
+    await page.getByRole('button', { name: 'Empezar este plan' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Empezar' }).click();
+    await expect(page.getByRole('heading', { name: 'Glúteos', exact: true })).toBeVisible();
+});
+
+test('before and after: two photos together with the watermark', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/antes-despues');
+    for (const which of ['Antes', 'Después']) {
+        const chooser = page.waitForEvent('filechooser');
+        await page.getByRole('button', { name: which, exact: true }).click();
+        await (await chooser).setFiles(fixture('face.jpg'));
+    }
+    await expect(page.getByRole('img', { name: 'Vista previa del antes y después' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Superpuestas' }).click();
+    await expect(page.getByRole('slider', { name: 'Mover la división' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir' })).toBeVisible();
+});
+
+test('offline: says nothing is lost, and the rest sound can be turned off', async ({ page, context }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await context.setOffline(true);
+    await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toBeVisible();
+    await context.setOffline(false);
+    await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toHaveCount(0);
+
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    const sound = page.getByRole('switch', { name: 'Sonido al terminar el descanso' });
+    await expect(sound).toHaveAttribute('aria-checked', 'true');
+    await sound.click();
+    await expect(sound).toHaveAttribute('aria-checked', 'false');
+    await expect(page.getByRole('switch', { name: 'Alertas de recuperación' })).toHaveAttribute('aria-checked', 'true');
+});
