@@ -293,7 +293,7 @@ const AVOID: Record<Limitation, Record<string, string[]>> = {
     },
 };
 
-const ALLOWED: Record<Setup, Equipment[]> = {
+export const ALLOWED: Record<Setup, Equipment[]> = {
     gimnasio: ['barra', 'mancuernas', 'maquina', 'polea', 'peso corporal', 'kettlebell'],
     mancuernas: ['mancuernas', 'peso corporal'],
     casa: ['peso corporal'],

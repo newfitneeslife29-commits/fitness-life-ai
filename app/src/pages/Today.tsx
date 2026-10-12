@@ -1,4 +1,4 @@
-import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Target, Trophy, UserRound, Weight } from 'lucide-react';
+import { Apple, Bot, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -242,6 +242,21 @@ const BeginnerCard = () => (
     </Link>
 );
 
+// The Premium personal trainer: shown to everyone, unlocked with Premium.
+const TrainerCard = ({ premium }: { premium: boolean }) => (
+    <Link to="/entrenador" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Bot size={22} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 font-semibold">
+                {t('trainer.title')}
+                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={11} /> Premium</span>}
+            </span>
+            <span className="block text-sm text-white/55">{t('trainer.homeHint')}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
 // For free users: what Premium unlocks, one tap away.
 const PremiumBanner = () => (
     <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-400 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
@@ -314,6 +329,8 @@ export default function Today() {
             </Section>
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
+
+            <Section><TrainerCard premium={premium} /></Section>
 
             {!premium && <Section><PremiumBanner /></Section>}
 

@@ -26,6 +26,7 @@ import Routines from './pages/Routines';
 import SessionDetail from './pages/SessionDetail';
 import Settings from './pages/Settings';
 import Today from './pages/Today';
+import Trainer from './pages/Trainer';
 import Workout from './pages/Workout';
 import { actions, useStore } from './store/store';
 
@@ -127,6 +128,7 @@ export default function App() {
                 <Route path="/aprende" element={<Shell><Learn /></Shell>} />
                 <Route path="/aprende/:id" element={<Shell><GuideDetail /></Shell>} />
                 <Route path="/programas" element={<Shell><Programs /></Shell>} />
+                <Route path="/entrenador" element={<Shell><Trainer /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />

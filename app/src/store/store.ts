@@ -21,7 +21,7 @@ const STORAGE_KEY = 'fitness-life:v1';
 
 const EMPTY: AppState = {
     version: 1, profile: null, routines: [], plan: null, sessions: [], active: null, bodyWeights: [], seenAchievements: [],
-    meals: [], nutritionTargets: null, coachChat: [], aiUsage: null, premium: null,
+    meals: [], nutritionTargets: null, coachChat: [], trainerChat: [], aiUsage: null, premium: null,
 };
 
 const unitOf = (s: AppState) => s.profile?.unit ?? 'kg';
@@ -368,6 +368,15 @@ export const actions = {
 
     clearChat() {
         set(s => ({ ...s, coachChat: [] }));
+    },
+
+    addTrainerMessage(role: ChatMessage['role'], text: string) {
+        const message: ChatMessage = { id: uid(), role, text, at: new Date().toISOString() };
+        set(s => ({ ...s, trainerChat: [...(s.trainerChat ?? []), message].slice(-MAX_CHAT) }));
+    },
+
+    clearTrainerChat() {
+        set(s => ({ ...s, trainerChat: [] }));
     },
 
     markAchievementsSeen(ids: string[]) {

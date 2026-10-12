@@ -186,6 +186,7 @@ export interface AppState {
     // null: targets are calculated from goal and body weight.
     nutritionTargets: Macros | null;
     coachChat: ChatMessage[]; // oldest first
+    trainerChat: ChatMessage[]; // the personal trainer's, oldest first
     aiUsage: AiUsage | null;
     premium: PremiumStatus | null;
 }

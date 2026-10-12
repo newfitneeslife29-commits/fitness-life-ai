@@ -351,6 +351,20 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                     },
                 });
             }
+            if (body.action === 'routine') {
+                return route.fulfill({
+                    headers: cors, json: {
+                        name: 'Pierna express', note: 'Pierna y glúteo en 30 minutos.',
+                        exercises: [
+                            { exerciseId: 'prensa', sets: 3, repMin: 10, repMax: 12, restSec: 90 },
+                            { exerciseId: 'hip-thrust', sets: 3, repMin: 8, repMax: 12, restSec: 90 },
+                            { exerciseId: 'curl-femoral', sets: 3, repMin: 10, repMax: 15, restSec: 60 },
+                            { exerciseId: 'plancha', sets: 3, repMin: 30, repMax: 45, restSec: 45 },
+                        ],
+                    },
+                });
+            }
+            if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
         if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
@@ -423,6 +437,56 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
+});
+
+test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    const reports: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true, reports });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Entrenador IA/ }).click();
+    await expect(page.getByRole('heading', { name: /Entrenador IA/ })).toBeVisible();
+
+    await page.getByRole('button', { name: '¿Qué entreno hoy y con cuánto peso?' }).click();
+    await expect(page.getByText('Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.')).toBeVisible();
+    const chat = calls.find(c => c.action === 'trainer') as { context: { goal: string; level: string; setup: string; plan: string; history: string }; messages: unknown[] };
+    expect(chat.context).toMatchObject({ goal: 'musculo', level: 'intermedio', setup: 'gimnasio' });
+    expect(chat.context.plan).toContain('Cuerpo completo A');
+    expect(chat.context.history).toContain('Workouts logged: 0');
+    expect(chat.messages).toEqual([{ role: 'user', text: '¿Qué entreno hoy y con cuánto peso?' }]);
+
+    // Answers can be reported.
+    await page.getByRole('button', { name: 'Reportar esta respuesta' }).click();
+    const report = page.getByRole('dialog', { name: 'Reportar respuesta de la IA' });
+    await report.getByRole('radio', { name: /Incorrecta/ }).click();
+    await report.getByRole('button', { name: 'Enviar reporte' }).click();
+    await expect.poll(() => reports.length).toBe(1);
+    expect(reports[0]).toMatchObject({ kind: 'trainer' });
+
+    // A routine from AI, saved to "my routines".
+    await page.getByRole('button', { name: /Crear rutina con IA/ }).click();
+    await page.getByLabel('¿Qué rutina quieres?').fill('30 minutos de pierna');
+    await page.getByRole('button', { name: 'Crear rutina', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Pierna express')).toBeVisible();
+    await expect(dialog.getByText('Hip thrust')).toBeVisible();
+    const routine = calls.find(c => c.action === 'routine') as { text: string; exercises: { id: string }[] };
+    expect(routine.text).toBe('30 minutos de pierna');
+    expect(routine.exercises.map(e => e.id)).toContain('prensa');
+    await dialog.getByRole('button', { name: 'Guardar en mis rutinas' }).click();
+    await expect(page.getByText('Rutina guardada: Pierna express')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Pierna express/ })).toBeVisible();
+});
+
+test('the AI trainer is Premium-only', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Entrenador IA/ }).click();
+    await expect(page.getByText(/Tu entrenador personal con IA es parte de Premium/)).toBeVisible();
+    await expect(page.getByLabel('Pregúntale a tu entrenador…')).toHaveCount(0);
 });
 
 test('free users: AI is Premium-only, with yearly and monthly plans', async ({ page }) => {
