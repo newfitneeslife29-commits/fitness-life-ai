@@ -897,7 +897,7 @@ export const es = {
 
     // Share cards (Gym Wrapped) and before/after
     'wrapped.title': "Gym Wrapped",
-    'wrapped.subtitle': "Tu mes en tarjetas para Instagram y TikTok",
+    'wrapped.subtitle': "Tu mes en tarjetas para Instagram, Facebook y TikTok",
     'wrapped.card': "Tarjeta",
     'wrapped.card.volume': "Peso levantado",
     'wrapped.card.records': "Récords",
@@ -1010,4 +1010,12 @@ export const es = {
     'plan.updated.more_other': "y {n} cambios más",
     'plan.updated.see': "Ver mis rutinas",
     'plan.updated.ok': "Entendido",
+
+    // Share card backgrounds
+    'wrapped.background': "Fondo",
+    'wrapped.bg.gym': "Gym",
+    'wrapped.bg.photo': "Tu foto",
+    'wrapped.bg.plain': "Liso",
+    'wrapped.takePhoto': "Tomar foto",
+    'wrapped.fromGallery': "De la galería",
 };

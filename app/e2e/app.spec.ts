@@ -926,3 +926,17 @@ test('completing the week refreshes the plan\'s routines', async ({ page }) => {
     await page.getByRole('link', { name: 'Inicio', exact: true }).click();
     await expect(page.getByText('¡Semana completada!')).toHaveCount(0);
 });
+
+test('Gym Wrapped: gym background by default, or the user\'s own photo', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/wrapped');
+    await expect(page.getByRole('radio', { name: 'Gym' })).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
+    const before = await page.getByRole('img', { name: 'Vista previa de la tarjeta' }).getAttribute('src');
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('radio', { name: 'Tu foto' }).click();
+    await (await chooser).setFiles(fixture('face.jpg'));
+    await expect(page.getByRole('button', { name: 'Tomar foto' })).toBeVisible();
+    await expect.poll(() => page.getByRole('img', { name: 'Vista previa de la tarjeta' }).getAttribute('src')).not.toBe(before);
+});
