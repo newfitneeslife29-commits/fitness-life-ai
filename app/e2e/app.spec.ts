@@ -587,7 +587,8 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     // Signing out keeps the data in the account and leaves this phone clean.
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Cerrar sesión' }).click();
-    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
+    await expect(page.getByText('Sesión cerrada')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible({ timeout: 10_000 });
 
     // Another phone: sign in and the plan comes back, no questions.
     const other = await (await browser.newContext({ locale: 'es-ES' })).newPage();
