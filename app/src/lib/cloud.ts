@@ -51,7 +51,17 @@ const reconcile = async (account: Account, fresh: boolean) => {
     const row = await pull(account.id);
     const local = getState();
     if (!row?.data?.profile) {
-        if (local.profile) await push(account.id);
+        if (!local.profile) return;
+        // A brand-new account while this phone already has a plan: keep it in
+        // the account, or start over with the questions. Closing the dialog keeps it.
+        const startOver = fresh && await confirm({
+            title: t('account.newTitle'),
+            message: t('account.newMessage'),
+            confirmLabel: t('account.startFresh'),
+            cancelLabel: t('account.keepData'),
+        });
+        if (startOver) actions.resetAll();
+        else await push(account.id);
         return;
     }
     const same = JSON.stringify(snapshot({ ...local, ...row.data } as AppState)) === JSON.stringify(snapshot(local));
@@ -105,6 +115,13 @@ export const startCloudSync = () => {
             void current.then(() => push(account.id)).catch(e => console.warn('cloud push failed', e));
         }, PUSH_DELAY_MS);
     });
+};
+
+// Sends anything not sent yet (before signing out).
+export const flushCloud = async (userId: string) => {
+    window.clearTimeout(timer);
+    await current.catch(() => {});
+    await push(userId);
 };
 
 export const forgetCloudState = () => {

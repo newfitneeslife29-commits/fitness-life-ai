@@ -541,6 +541,24 @@ const mockAccount = async (page: Page, cloud: { row: Record<string, unknown> | n
     });
 };
 
+test('a new account can start from scratch instead of keeping this phone\'s data', async ({ page }) => {
+    const cloud: { row: Record<string, unknown> | null; pushed: Record<string, unknown>[] } = { row: null, pushed: [] };
+    await mockAccount(page, cloud);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('link', { name: /Crear cuenta o iniciar sesión/ }).click();
+    await page.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+
+    // The account is new and the phone has a plan: the user chooses.
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog.getByText('Tu cuenta es nueva')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Empezar de cero' }).click();
+    await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
+});
+
 test('account: sign up, cloud copy, and sign in on another phone', async ({ page, browser }) => {
     const cloud: { row: Record<string, unknown> | null; pushed: Record<string, unknown>[] } = { row: null, pushed: [] };
     await mockAccount(page, cloud);
@@ -565,6 +583,11 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     expect(pushed.user_id).toBe('00000000-0000-0000-0000-0000000000aa');
     expect(pushed.data.profile).toBeTruthy();
     expect(pushed.data.routines.length).toBeGreaterThan(0);
+
+    // Signing out keeps the data in the account and leaves this phone clean.
+    await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Cerrar sesión' }).click();
+    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
 
     // Another phone: sign in and the plan comes back, no questions.
     const other = await (await browser.newContext({ locale: 'es-ES' })).newPage();
@@ -652,6 +675,8 @@ test('community: read, like, comment and post', async ({ page }) => {
     await page.getByLabel('Correo electrónico').fill('sebas@example.com');
     await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
+    // The new account keeps the plan this phone already has.
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Guardar mis datos' }).click();
     await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
 
     // Like.
