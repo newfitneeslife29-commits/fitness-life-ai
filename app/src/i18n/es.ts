@@ -960,4 +960,33 @@ export const es = {
     'compare.empty': "Elige la foto de antes y la de después para ver el resultado.",
     'compare.badPhoto': "No se pudo abrir esa foto.",
     'compare.previewAlt': "Vista previa del antes y después",
+
+    // Facebook sign-in
+    'auth.facebook': "Continuar con Facebook",
+    'account.via.facebook': "Facebook",
+
+    // Premium free trial
+    'premium.trialBadge': "{n} días gratis",
+    'premium.startTrial': "Empezar mis {n} días gratis",
+    'premium.trialTerms': "{store} te pide un método de pago para empezar, pero no te cobra nada durante los {n} días. Si cancelas antes de que terminen, no pagas nada. Después: {price} / {period}.",
+
+    // Health Connect / Apple Health
+    'health.title': "Conecta tu reloj",
+    'health.today': "Hoy en tu reloj",
+    'health.apple': "Salud de Apple",
+    'health.connect': "Health Connect",
+    'health.pitch': "Trae tus pasos, calorías activas y ritmo cardíaco desde {source}: los de tu teléfono y los de tu Apple Watch, Garmin o Samsung.",
+    'health.connectButton': "Conectar con {source}",
+    'health.install': "Instalar Health Connect",
+    'health.privacy': "Solo lectura. Tus datos de salud se quedan en el teléfono.",
+    'health.connected': "Conectado con {source}",
+    'health.denied': "Sin permiso no podemos leer {source}. Puedes darlo en sus ajustes.",
+    'health.failed': "No se pudo conectar. Inténtalo de nuevo.",
+    'health.steps': "pasos",
+    'health.kcal': "kcal activas",
+    'health.bpm': "lpm medio",
+    'health.heartRange': "Ritmo cardíaco hoy: mín. {min}, máx. {max}, último {last} lpm",
+    'health.from': "Desde {source}",
+    'health.disconnect': "Desconectar",
+    'health.settings': "Permisos de salud",
 };

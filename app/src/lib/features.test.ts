@@ -4,6 +4,7 @@ import { womenProgram } from '../data/programs';
 import type { Session } from '../store/types';
 import { activitySummary, localDay, monthGrid } from './activity';
 import { bmiBand, bmiOf, healthyWeightRange } from './nutrition';
+import { summarizeHeart } from './health';
 import { recoveryAlerts, recoveryStatus } from './recovery';
 import { equivalent, monthWrap } from './wrapped';
 
@@ -120,5 +121,17 @@ describe('wrapped', () => {
         expect(wrap.minutes).toBe(60);
         expect(wrap.trainedDays.size).toBe(1);
         expect(wrap.records).toEqual([{ exerciseId: 'press-banca', weightKg: 80, reps: 5, isNew: true }]);
+    });
+});
+
+describe('summarizeHeart', () => {
+    it('averages the day and keeps the latest reading', () => {
+        expect(summarizeHeart([
+            { value: 60, startDate: '2026-10-12T08:00:00Z' },
+            { value: 150, startDate: '2026-10-12T18:00:00Z' },
+            { value: 90, startDate: '2026-10-12T12:00:00Z' },
+            { value: 0, startDate: '2026-10-12T13:00:00Z' },
+        ])).toEqual({ avg: 100, min: 60, max: 150, last: 150 });
+        expect(summarizeHeart([])).toBeNull();
     });
 });

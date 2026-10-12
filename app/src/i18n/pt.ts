@@ -960,4 +960,33 @@ export const pt: Dict = {
     'compare.empty': "Escolha a foto de antes e a de depois para ver o resultado.",
     'compare.badPhoto': "Não foi possível abrir essa foto.",
     'compare.previewAlt': "Prévia do antes e depois",
+
+    // Facebook sign-in
+    'auth.facebook': "Continuar com Facebook",
+    'account.via.facebook': "Facebook",
+
+    // Premium free trial
+    'premium.trialBadge': "{n} dias grátis",
+    'premium.startTrial': "Começar meus {n} dias grátis",
+    'premium.trialTerms': "A {store} pede uma forma de pagamento para começar, mas não cobra nada durante os {n} dias. Se cancelar antes do fim, não paga nada. Depois: {price} / {period}.",
+
+    // Health Connect / Apple Health
+    'health.title': "Conecte seu relógio",
+    'health.today': "Hoje no seu relógio",
+    'health.apple': "Saúde da Apple",
+    'health.connect': "Health Connect",
+    'health.pitch': "Traga seus passos, calorias ativas e frequência cardíaca do {source}: do celular e do seu Apple Watch, Garmin ou Samsung.",
+    'health.connectButton': "Conectar com {source}",
+    'health.install': "Instalar Health Connect",
+    'health.privacy': "Somente leitura. Seus dados de saúde ficam no celular.",
+    'health.connected': "Conectado com {source}",
+    'health.denied': "Sem permissão não conseguimos ler o {source}. Você pode permitir nos ajustes dele.",
+    'health.failed': "Não foi possível conectar. Tente de novo.",
+    'health.steps': "passos",
+    'health.kcal': "kcal ativas",
+    'health.bpm': "bpm médio",
+    'health.heartRange': "Frequência cardíaca hoje: mín. {min}, máx. {max}, última {last} bpm",
+    'health.from': "Do {source}",
+    'health.disconnect': "Desconectar",
+    'health.settings': "Permissões de saúde",
 };

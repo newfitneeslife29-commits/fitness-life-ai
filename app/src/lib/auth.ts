@@ -17,7 +17,7 @@ import { AUTH_STORAGE_KEY, backendAvailable, getSupabase, SITE_URL } from './sup
 
 export const authAvailable = backendAvailable;
 
-export type OAuthProvider = 'google' | 'apple';
+export type OAuthProvider = 'google' | 'apple' | 'facebook';
 const NATIVE_CALLBACK = 'com.fitnesslife.app://auth-callback';
 const native = Capacitor.isNativePlatform();
 
@@ -190,6 +190,7 @@ export const deleteAccount = async () => {
 export interface Providers {
     google: boolean;
     apple: boolean;
+    facebook: boolean;
 }
 
 let providers: Promise<Providers> | null = null;
@@ -198,10 +199,10 @@ let providers: Promise<Providers> | null = null;
 export const enabledProviders = () => {
     providers ??= fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '' } })
         .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((s: { external?: Record<string, boolean> }) => ({ google: Boolean(s.external?.google), apple: Boolean(s.external?.apple) }))
+        .then((s: { external?: Record<string, boolean> }) => ({ google: Boolean(s.external?.google), apple: Boolean(s.external?.apple), facebook: Boolean(s.external?.facebook) }))
         .catch(() => {
             providers = null; // try again next time
-            return { google: false, apple: false };
+            return { google: false, apple: false, facebook: false };
         });
     return providers;
 };

@@ -593,7 +593,7 @@ const mockAccount = async (page: Page, cloud: { row: Record<string, unknown> | n
         const req = route.request();
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
-        if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, apple: false } } });
+        if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, facebook: true, apple: false } } });
         // Anonymous sign-in (a sign-up without e-mail) gets an anonymous user, like Supabase.
         if (url.includes('/auth/v1/signup') && !(req.postDataJSON() as { email?: string } | null)?.email) {
             return route.fulfill({ headers: cors, json: { ...session(), user: { ...user, id: '00000000-0000-0000-0000-0000000000bb', email: null, is_anonymous: true, app_metadata: { provider: 'anonymous' }, identities: [] } } });
@@ -634,6 +634,7 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar con Facebook' })).toBeVisible();
     await page.getByLabel('Correo electrónico').fill('sebas@example.com');
     await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();

@@ -959,4 +959,33 @@ export const en: Dict = {
     'compare.empty': "Pick the before and after photos to see the result.",
     'compare.badPhoto': "Couldn't open that photo.",
     'compare.previewAlt': "Before and after preview",
+
+    // Facebook sign-in
+    'auth.facebook': "Continue with Facebook",
+    'account.via.facebook': "Facebook",
+
+    // Premium free trial
+    'premium.trialBadge': "{n} days free",
+    'premium.startTrial': "Start my {n} free days",
+    'premium.trialTerms': "{store} asks for a payment method to start but charges nothing during the {n} days. Cancel before they end and you pay nothing. Then: {price} / {period}.",
+
+    // Health Connect / Apple Health
+    'health.title': "Connect your watch",
+    'health.today': "Today on your watch",
+    'health.apple': "Apple Health",
+    'health.connect': "Health Connect",
+    'health.pitch': "Bring in your steps, active calories and heart rate from {source}: from your phone and your Apple Watch, Garmin or Samsung.",
+    'health.connectButton': "Connect {source}",
+    'health.install': "Install Health Connect",
+    'health.privacy': "Read-only. Your health data stays on the phone.",
+    'health.connected': "Connected to {source}",
+    'health.denied': "Without permission we can't read {source}. You can allow it in its settings.",
+    'health.failed': "Couldn't connect. Please try again.",
+    'health.steps': "steps",
+    'health.kcal': "active kcal",
+    'health.bpm': "avg bpm",
+    'health.heartRange': "Heart rate today: min {min}, max {max}, latest {last} bpm",
+    'health.from': "From {source}",
+    'health.disconnect': "Disconnect",
+    'health.settings': "Health permissions",
 };
