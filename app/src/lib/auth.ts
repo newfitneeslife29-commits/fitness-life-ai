@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import type { AuthError, User } from '@supabase/supabase-js';
 import { actions, getState } from '../store/store';
 import type { Account } from '../store/types';
-import { forgetCloudState, startCloudSync, syncAccount } from './cloud';
+import { flushCloud, forgetCloudState, startCloudSync, syncAccount } from './cloud';
 import { startCommunityProfileSync } from './community';
 import { switchPremiumUser } from './premium';
 import { AUTH_STORAGE_KEY, backendAvailable, getSupabase, SITE_URL } from './supabase';
@@ -167,10 +167,15 @@ export const updatePassword = async (password: string) => {
     if (error) throw failure(error);
 };
 
+// The data stays in the account; this phone goes back to a clean start, so
+// the next account (or someone else) doesn't get it.
 export const signOut = async () => {
     const supabase = await ready();
+    const account = getState().account;
+    if (account) await flushCloud(account.id).catch(() => {});
     await supabase.auth.signOut({ scope: 'local' });
     onAccount(null);
+    actions.resetAll();
 };
 
 // Deletes the account, its cloud copy and its AI usage records (server side).
