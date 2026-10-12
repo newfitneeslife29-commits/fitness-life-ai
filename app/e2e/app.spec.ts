@@ -530,6 +530,10 @@ const mockAccount = async (page: Page, cloud: { row: Record<string, unknown> | n
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
         if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, apple: false } } });
+        // Anonymous sign-in (a sign-up without e-mail) gets an anonymous user, like Supabase.
+        if (url.includes('/auth/v1/signup') && !(req.postDataJSON() as { email?: string } | null)?.email) {
+            return route.fulfill({ headers: cors, json: { ...session(), user: { ...user, id: '00000000-0000-0000-0000-0000000000bb', email: null, is_anonymous: true, app_metadata: { provider: 'anonymous' }, identities: [] } } });
+        }
         if (url.includes('/auth/v1/signup') || url.includes('/auth/v1/token')) return route.fulfill({ headers: cors, json: session() });
         if (url.includes('/rest/v1/user_data')) {
             if (req.method() === 'GET') return route.fulfill({ headers: cors, json: cloud.row ? [cloud.row] : [] });
@@ -588,12 +592,7 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page.getByText('Sesión cerrada')).toBeVisible({ timeout: 15_000 });
-    const welcome = page.getByRole('heading', { name: /Entrena con un plan/ });
-    await welcome.waitFor({ timeout: 10_000 }).catch(async () => {
-        console.log('After sign-out the page shows:', page.url(), (await page.locator('body').innerText()).slice(0, 600));
-        console.log('Stored state:', await page.evaluate(() => (localStorage.getItem('fitness-life:v1') ?? '').slice(0, 300)));
-    });
-    await expect(welcome).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
 
     // Another phone: sign in and the plan comes back, no questions.
     const other = await (await browser.newContext({ locale: 'es-ES' })).newPage();
