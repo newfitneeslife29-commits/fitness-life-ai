@@ -61,6 +61,15 @@ export interface Routine {
     source: 'plan' | 'custom';
     // "programId:index" for untouched plan days: the name follows the language.
     dayKey?: string;
+    // A plan day the user changed by hand: the weekly update leaves it alone.
+    edited?: boolean;
+}
+
+// What changed when a completed week moved the plan on (shown once).
+export interface PlanUpdate {
+    week: number;
+    swaps: { from: string; to: string }[]; // exercise ids
+    seen: boolean;
 }
 
 export interface Plan {
@@ -68,6 +77,11 @@ export interface Plan {
     programName: string;
     routineIds: string[];
     nextIndex: number;
+    // Week of the plan (1 when it is made). It moves on each time the user
+    // completes the days of a week; the routines change with it.
+    week?: number;
+    advancedFor?: string; // local day of the Monday of the week that moved it on
+    update?: PlanUpdate | null;
 }
 
 export interface LoggedSet {

@@ -1,4 +1,4 @@
-import { Apple, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
+import { Apple, ArrowRight, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, PartyPopper, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -20,7 +20,8 @@ import { HealthCard } from '../components/HealthCard';
 import { groupLabel, recoveryStatus } from '../lib/recovery';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
-import type { Routine, Session } from '../store/types';
+import type { PlanUpdate, Routine, Session } from '../store/types';
+import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
@@ -297,6 +298,29 @@ const ShareLinks = () => (
     </div>
 );
 
+// Shown once after a completed week moved the plan on.
+const PlanUpdateCard = ({ update }: { update: PlanUpdate }) => (
+    <div className="welcome-in rounded-2xl border border-good/30 bg-gradient-to-br from-good/15 to-transparent p-4">
+        <p className="flex items-center gap-2 font-bold"><PartyPopper size={18} className="text-good" /> {t('plan.updated.title')}</p>
+        <p className="mt-1 text-sm text-white/75">{t('plan.updated.body', { week: update.week, phase: t(`plan.phase.${weekPhase(update.week)}`) })}</p>
+        <p className="mt-1 text-sm text-white/60">{t(`plan.phaseHint.${weekPhase(update.week)}`)}</p>
+        {update.swaps.length > 0 && (
+            <ul className="mt-2 space-y-1 text-sm">
+                {update.swaps.slice(0, 4).map((sw, i) => (
+                    <li key={i} className="flex items-center gap-2 text-white/80">
+                        <ArrowRight size={14} className="shrink-0 text-good" /> <span className="truncate">{exerciseName(sw.from)} → <b>{exerciseName(sw.to)}</b></span>
+                    </li>
+                ))}
+                {update.swaps.length > 4 && <li className="text-xs text-white/50">{tp('plan.updated.more', update.swaps.length - 4)}</li>}
+            </ul>
+        )}
+        <div className="mt-3 flex gap-2">
+            <Link to="/rutinas" onClick={() => actions.dismissPlanUpdate()} className="btn-primary flex-1 py-2">{t('plan.updated.see')}</Link>
+            <button onClick={() => actions.dismissPlanUpdate()} className="btn-ghost py-2">{t('plan.updated.ok')}</button>
+        </div>
+    </div>
+);
+
 // Women's section, on the home screen for women.
 const WomenCard = () => (
     <Link to="/mujeres" className="flex items-center gap-3 rounded-2xl border border-pink-400/25 bg-gradient-to-br from-pink-500/15 to-transparent p-4 hover:bg-ink-3">
@@ -381,6 +405,8 @@ export default function Today() {
                     <Plus size={18} /> {t('workout.free')}
                 </button>
             </Section>
+
+            {plan?.update && !plan.update.seen && <Section><PlanUpdateCard update={plan.update} /></Section>}
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 

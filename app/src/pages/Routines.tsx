@@ -1,10 +1,11 @@
-import { Bot, ChevronRight, Dumbbell, GraduationCap, Layers, Play, Plus, Sparkles } from 'lucide-react';
+import { Bot, CalendarSync, ChevronRight, Dumbbell, GraduationCap, Layers, Play, Plus, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
 import { Empty, PageHeader, Section } from '../components/ui';
 import { exerciseName } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { planName, routineName } from '../lib/names';
+import { weekPhase } from '../lib/plan';
 import { actions, useStore } from '../store/store';
 import type { Routine } from '../store/types';
 
@@ -56,7 +57,8 @@ export default function Routines() {
                             <RoutineRow key={r.id} routine={r} badge={i === plan.nextIndex ? t('routines.next') : undefined} onStart={() => start(r.id)} />
                         ))}
                     </div>
-                    <p className="mt-2 text-xs text-white/40">{t('routines.tapToEdit')}</p>
+                    <p className="mt-2 flex items-start gap-1.5 text-xs text-white/55"><CalendarSync size={14} className="mt-px shrink-0 text-brand" /> {t('plan.weekLine', { week: plan.week ?? 1, phase: t(`plan.phase.${weekPhase(plan.week ?? 1)}`) })}</p>
+                    <p className="mt-1 text-xs text-white/40">{t('routines.tapToEdit')}</p>
                 </Section>
             )}
 

@@ -934,7 +934,7 @@ export const en: Dict = {
     'wrapped.heatmapTitle': "My consistency",
     'wrapped.footer': "I train with Fitness Life",
     'wrapped.share': "Share",
-    'wrapped.hint': "Story format (9:16) for Instagram Stories or TikTok.",
+    'wrapped.hint': "Story format (9:16) for Instagram, Facebook or TikTok.",
     'wrapped.saved': "Image saved to downloads",
     'wrapped.failed': "Couldn't share. Please try again.",
     'wrapped.previewAlt': "Card preview",
@@ -988,4 +988,25 @@ export const en: Dict = {
     'health.from': "From {source}",
     'health.disconnect': "Disconnect",
     'health.settings': "Health permissions",
+
+    // Share to apps
+    'share.more': "More",
+    'share.to': "Share to {app}",
+
+    // Weekly plan updates
+    'plan.weekLine': "Week {week} of your plan · {phase}. When you complete your days of the week, your routines refresh.",
+    'plan.phase.base': "base",
+    'plan.phase.volumen': "more volume",
+    'plan.phase.intensidad': "more intensity",
+    'plan.phase.descarga': "recovery week",
+    'plan.phaseHint.base': "Back to the base with new accessory exercises.",
+    'plan.phaseHint.volumen': "One more set on accessory exercises and more seconds on timed ones.",
+    'plan.phaseHint.intensidad': "Fewer reps and more rest on the main lifts: time to go heavier.",
+    'plan.phaseHint.descarga': "One set fewer on everything so you recover and come back stronger.",
+    'plan.updated.title': "Week complete!",
+    'plan.updated.body': "Your routines have been refreshed: you're now on week {week} ({phase}).",
+    'plan.updated.more_one': "and {n} more change",
+    'plan.updated.more_other': "and {n} more changes",
+    'plan.updated.see': "See my routines",
+    'plan.updated.ok': "Got it",
 };

@@ -1,13 +1,12 @@
-import { ChevronLeft, Share2 } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from '../components/feedback';
+import { ShareBar } from '../components/ShareBar';
 import { Chips, Section } from '../components/ui';
 import { exerciseName } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { localDay, monthGrid } from '../lib/activity';
 import { fmtNumber } from '../lib/format';
-import { shareImage } from '../lib/native';
 import { kgToDisplay } from '../lib/progression';
 import { canvasBlob, ensureFonts, heatmapStory, recordsStory, volumeStory } from '../lib/shareCards';
 import { equivalent, monthWrap } from '../lib/wrapped';
@@ -27,7 +26,6 @@ export default function Wrapped() {
     const [card, setCard] = useState<Card>('volume');
     const [preview, setPreview] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [sharing, setSharing] = useState(false);
     const first = new Date(now.getFullYear(), now.getMonth() - ago, 1);
     const year = first.getFullYear(), month = first.getMonth();
     const wrap = useMemo(() => monthWrap(sessions, year, month), [sessions, year, month]);
@@ -79,17 +77,7 @@ export default function Wrapped() {
         return () => { cancelled = true; };
     }, [card, wrap, unit, name, monthLabel, sessions, year, month]);
 
-    const share = async () => {
-        if (!canvasRef.current || sharing) return;
-        setSharing(true);
-        try {
-            const result = await shareImage(await canvasBlob(canvasRef.current), `fitness-life-${card}-${localDay(first).slice(0, 7)}.png`, t('wrapped.title'));
-            if (result === 'saved') toast(t('wrapped.saved'));
-            if (result === 'failed') toast(t('wrapped.failed'));
-        } finally {
-            setSharing(false);
-        }
-    };
+    const blob = async () => (canvasRef.current ? canvasBlob(canvasRef.current) : null);
 
     return (
         <div className="space-y-5 pb-4">
@@ -112,7 +100,9 @@ export default function Wrapped() {
                 <div className="mx-auto aspect-[9/16] w-full max-w-[19rem] overflow-hidden rounded-3xl bg-ink-2 shadow-2xl shadow-black/50">
                     {preview && <img src={preview} alt={t('wrapped.previewAlt')} className="h-full w-full object-cover" />}
                 </div>
-                <button onClick={share} disabled={!preview || sharing} className="btn-primary mx-auto mt-4 flex w-full max-w-[19rem]"><Share2 size={18} /> {t('wrapped.share')}</button>
+                <div className="mx-auto mt-4 w-full max-w-[19rem]">
+                    <ShareBar getBlob={blob} story name={`fitness-life-${card}-${localDay(first).slice(0, 7)}.png`} title={t('wrapped.title')} />
+                </div>
                 <p className="mt-2 text-center text-xs text-white/45">{t('wrapped.hint')}</p>
             </Section>
             <Section>

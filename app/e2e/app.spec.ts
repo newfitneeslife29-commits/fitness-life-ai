@@ -860,7 +860,9 @@ test('workout extras: repeat the last set, machine taken, then recovery, activit
     await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
     await page.getByRole('radio', { name: 'Récords' }).click();
     await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Compartir' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Compartir en Instagram' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Compartir en Facebook' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Compartir en TikTok' })).toBeEnabled();
 });
 
 test('women\'s section builds her own plan to lose or keep weight', async ({ page }) => {
@@ -888,7 +890,7 @@ test('before and after: two photos together with the watermark', async ({ page }
     await expect(page.getByRole('img', { name: 'Vista previa del antes y después' })).toBeVisible();
     await page.getByRole('radio', { name: 'Superpuestas' }).click();
     await expect(page.getByRole('slider', { name: 'Mover la división' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Compartir' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir en Facebook' })).toBeVisible();
 });
 
 test('offline: says nothing is lost, and the rest sound can be turned off', async ({ page, context }) => {
@@ -905,4 +907,22 @@ test('offline: says nothing is lost, and the rest sound can be turned off', asyn
     await sound.click();
     await expect(sound).toHaveAttribute('aria-checked', 'false');
     await expect(page.getByRole('switch', { name: 'Alertas de recuperación' })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('completing the week refreshes the plan\'s routines', async ({ page }) => {
+    await onboard(page, { days: '2' });
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    for (let i = 0; i < 2; i++) {
+        await page.getByRole('button', { name: 'Empezar entreno' }).click();
+        await page.getByLabel('Marcar serie 1 como hecha').first().click();
+        await page.getByRole('button', { name: 'Terminar' }).click();
+        await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+        await page.getByRole('link', { name: 'Listo' }).click();
+    }
+    await expect(page.getByText('¡Semana completada!')).toBeVisible();
+    await expect(page.getByText(/semana 2 \(más volumen\)/)).toBeVisible();
+    await page.getByRole('link', { name: 'Ver mis rutinas' }).click();
+    await expect(page.getByText(/Semana 2 de tu plan · más volumen/)).toBeVisible();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
+    await expect(page.getByText('¡Semana completada!')).toHaveCount(0);
 });
