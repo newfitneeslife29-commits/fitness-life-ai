@@ -1,48 +1,21 @@
-import { Camera, ChevronLeft, ChevronRight, Crown, ImageIcon, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
+import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { ReportAiButton } from '../components/ReportAi';
+import { ProfileDetailsSheet } from '../components/ProfileForm';
 import { PageHeader, Section, Sheet } from '../components/ui';
-import { getLang, t } from '../i18n';
-import { AiError, aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type AiReport, type CoachContext, type MealEstimate } from '../lib/ai';
+import { getLang, locale, t } from '../i18n';
+import { aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
 import { pickImage, resizeImage } from '../lib/image';
-import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
-import { fmtDate, fmtNumber, parseDecimal } from '../lib/format';
+import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
+import { fmtDate, fmtNumber, fmtWeight, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
-import { ageOf, autoTargets, kcalFromMacros, mealsOn, onDay, sumMacros } from '../lib/nutrition';
+import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { actions, getState, useStore } from '../store/store';
-import type { Macros, Meal } from '../store/types';
-
-const aiErrorText = (e: unknown) => t(`ai.error.${e instanceof AiError ? e.code : 'failed'}`);
-
-// AI is Premium-only: explain and open the Premium page.
-const useAiErrorHandler = () => {
-    const navigate = useNavigate();
-    return (e: unknown) => {
-        toast(aiErrorText(e), 4000);
-        if (e instanceof AiError && e.code === 'upgrade') navigate('/premium');
-    };
-};
-
-// "Premium: 297 of 300 AI uses left this month"
-const AiUsageLine = () => {
-    const usage = useStore(s => s.aiUsage);
-    if (!usage?.premium) return null;
-    const left = Math.max(usage.limit - usage.used, 0);
-    return <p className="text-xs text-white/50">{t('ai.usage.premium', { left, limit: usage.limit })}</p>;
-};
-
-// What free users see where the AI would be: what it does and how to get it.
-const PremiumLock = ({ text, onOpen }: { text: string; onOpen?: () => void }) => (
-    <div className="rounded-2xl border border-brand/30 bg-brand-soft p-4 text-center">
-        <span className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand text-snow"><Lock size={18} /></span>
-        <p className="text-sm text-white/80">{text}</p>
-        <Link to="/premium" onClick={onOpen} className="btn-primary mt-3 w-full"><Crown size={18} /> {t('ai.locked.cta')}</Link>
-        <p className="mt-2 text-xs text-white/55">{t('ai.locked.from', { price: fallbackPlan('annual').perMonth })}</p>
-    </div>
-);
+import type { Macros, Meal, Unit } from '../store/types';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -454,19 +427,54 @@ const Coach = ({ context }: { context: CoachContext }) => {
     );
 };
 
-// Answers from the AI can be reported (not the fixed welcome message).
-const Bubble = ({ role, text, report }: { role: 'user' | 'assistant'; text: string; report?: AiReport }) => (
-    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`}>
-        <p className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${role === 'user' ? 'rounded-br-md bg-brand text-ink' : 'rounded-bl-md bg-ink-3 text-white/90'}`}>
-            {text}
-        </p>
-        {report && <ReportAiButton report={report} className="ml-1 mt-1" />}
-    </div>
-);
-
 // ---------- Food table preview ----------
 
 const PREVIEW = ['huevo', 'pechuga-pollo', 'salmon', 'arroz-blanco'];
+
+// BMI with a scale from 15 to 40 and the healthy weight range for the height.
+const BMI_BANDS: { band: BmiBand; from: number; color: string }[] = [
+    { band: 'under', from: 15, color: 'bg-sky-400' },
+    { band: 'normal', from: 18.5, color: 'bg-good' },
+    { band: 'over', from: 25, color: 'bg-amber-400' },
+    { band: 'obese', from: 30, color: 'bg-red-400' },
+];
+const BmiCard = ({ weightKg, heightCm, unit }: { weightKg: number; heightCm: number | undefined; unit: Unit }) => {
+    const [edit, setEdit] = useState(false);
+    if (!heightCm) {
+        return (
+            <div className="card flex items-center justify-between gap-3 p-4">
+                <p className="text-sm text-white/65">{t('bmi.needHeight')}</p>
+                <button className="btn-ghost shrink-0 px-3 py-2 text-sm" onClick={() => setEdit(true)}>{t('bmi.addHeight')}</button>
+                <ProfileDetailsSheet open={edit} onClose={() => setEdit(false)} />
+            </div>
+        );
+    }
+    // Rounded first, so the band always matches the number shown.
+    const bmi = Math.round(bmiOf(weightKg, heightCm) * 10) / 10;
+    const band = bmiBand(bmi);
+    const range = healthyWeightRange(heightCm);
+    const pos = Math.max(0, Math.min(100, ((bmi - 15) / 25) * 100));
+    return (
+        <div className="card p-4">
+            <div className="flex items-end justify-between gap-3">
+                <p className="text-3xl font-bold tabular-nums" aria-label={`${t('bmi.title')}: ${bmi.toFixed(1)}`}>{bmi.toLocaleString(locale(), { maximumFractionDigits: 1, minimumFractionDigits: 1 })}</p>
+                <span className={`rounded-full px-3 py-1 text-sm font-semibold text-ink ${BMI_BANDS.find(b => b.band === band)!.color}`}>{t(`bmi.${band}`)}</span>
+            </div>
+            <div className="relative mt-3">
+                <div className="flex h-2.5 overflow-hidden rounded-full">
+                    {BMI_BANDS.map((b, i) => {
+                        const to = BMI_BANDS[i + 1]?.from ?? 40;
+                        return <span key={b.band} className={`${b.color} opacity-80`} style={{ width: `${((to - b.from) / 25) * 100}%` }} />;
+                    })}
+                </div>
+                <span className="absolute -top-1 w-1.5 -translate-x-1/2 rounded-full bg-white shadow ring-2 ring-ink" style={{ left: `${pos}%`, height: '1.1rem' }} aria-hidden />
+            </div>
+            <div className="mt-1 flex justify-between text-[10px] tabular-nums text-white/40"><span>15</span><span>18,5</span><span>25</span><span>30</span><span>40</span></div>
+            <p className="mt-3 text-sm text-white/75">{t('bmi.range', { height: heightCm, min: fmtWeight(range.minKg, unit), max: fmtWeight(range.maxKg, unit) })}</p>
+            <p className="mt-2 text-xs text-white/45">{t('bmi.note')}</p>
+        </div>
+    );
+};
 
 const FoodTablePreview = () => (
     <Link to="/nutricion/alimentos" className="card block overflow-hidden hover:bg-ink-3">
@@ -548,6 +556,12 @@ export default function Nutrition() {
                 </div>
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
             </Section>
+
+            {weightKg && (
+                <Section title={t('bmi.title')}>
+                    <BmiCard weightKg={weightKg} heightCm={profile.heightCm} unit={profile.unit} />
+                </Section>
+            )}
 
             <Section title={t('nutrition.meals')} action={<span className="text-xs tabular-nums text-white/45">{fmtNumber(totals.kcal)} kcal</span>}>
                 {dayMeals.length > 0 ? (

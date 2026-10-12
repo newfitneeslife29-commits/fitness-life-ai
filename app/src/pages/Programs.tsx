@@ -82,7 +82,8 @@ export default function Programs() {
     const shown = PROGRAMS.filter(p => filter === 'todos' || p.setup === filter);
     const groups: [string, Program[]][] = [
         [t('programs.beginner'), shown.filter(p => p.beginner)],
-        [t('programs.free'), shown.filter(p => !p.beginner && !p.premium)],
+        [t('programs.free'), shown.filter(p => !p.beginner && !p.premium && !p.women)],
+        [t('programs.women'), shown.filter(p => p.women)],
         [t('programs.premium'), shown.filter(p => p.premium)],
     ];
 

@@ -48,6 +48,9 @@ export interface Plan {
     price: string;
     perMonth: string; // annual plan: what it comes to per month
     buy: () => Promise<boolean>; // false: the user cancelled
+    // Free trial this user can get. The store takes the payment method first
+    // and charges nothing until the trial ends.
+    trialDays?: number;
 }
 
 // Plans the store offers, annual first.
@@ -80,6 +83,25 @@ const toStatus = (active: Record<string, EntitlementLike>, manageUrl: string | n
     };
 };
 
+const DAYS_PER: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+
+interface TrialProduct {
+    identifier: string;
+    defaultOption?: { freePhase: { billingPeriod: { unit: string; value: number } } | null } | null;
+    introPrice?: { price: number; periodUnit: string; periodNumberOfUnits: number; cycles: number } | null;
+}
+
+// Google Play only offers the trials the user can still get (the default
+// option is the one with the longest free phase). The App Store lists the
+// intro offer for everyone, so eligibility is checked there.
+export const trialDaysOf = (product: TrialProduct, eligible = true): number | undefined => {
+    const free = product.defaultOption?.freePhase;
+    if (free) return free.billingPeriod.value * (DAYS_PER[free.billingPeriod.unit] ?? 0) || undefined;
+    const intro = product.introPrice;
+    if (intro && intro.price === 0 && eligible) return intro.periodNumberOfUnits * Math.max(1, intro.cycles) * (DAYS_PER[intro.periodUnit] ?? 0) || undefined;
+    return undefined;
+};
+
 // iOS and Android: App Store / Google Play through the Capacitor plugin.
 const nativeBackend = async (userId: string): Promise<Backend> => {
     const { Purchases } = await import('@revenuecat/purchases-capacitor');
@@ -100,6 +122,11 @@ const nativeBackend = async (userId: string): Promise<Backend> => {
         async offer() {
             const offering = (await Purchases.getOfferings()).current;
             const plans: Plan[] = [];
+            const eligibility = platform === 'ios' && offering
+                ? await Purchases.checkTrialOrIntroductoryPriceEligibility({
+                    productIdentifiers: [offering.annual, offering.monthly].flatMap(p => (p ? [p.product.identifier] : [])),
+                }).catch(() => ({} as Record<string, { status: number }>))
+                : {};
             for (const id of ['annual', 'monthly'] as const) {
                 const pkg = offering?.[id];
                 if (!pkg) continue;
@@ -108,6 +135,7 @@ const nativeBackend = async (userId: string): Promise<Backend> => {
                     id,
                     price: priceString,
                     perMonth: id === 'annual' ? money(price / 12, currencyCode) : priceString,
+                    trialDays: trialDaysOf(pkg.product, platform !== 'ios' || eligibility[pkg.product.identifier]?.status === 2),
                     async buy() {
                         try {
                             const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });

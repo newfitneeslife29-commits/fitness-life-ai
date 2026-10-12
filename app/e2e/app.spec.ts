@@ -351,6 +351,20 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                     },
                 });
             }
+            if (body.action === 'routine') {
+                return route.fulfill({
+                    headers: cors, json: {
+                        name: 'Pierna express', note: 'Pierna y glúteo en 30 minutos.',
+                        exercises: [
+                            { exerciseId: 'prensa', sets: 3, repMin: 10, repMax: 12, restSec: 90 },
+                            { exerciseId: 'hip-thrust', sets: 3, repMin: 8, repMax: 12, restSec: 90 },
+                            { exerciseId: 'curl-femoral', sets: 3, repMin: 10, repMax: 15, restSec: 60 },
+                            { exerciseId: 'plancha', sets: 3, repMin: 30, repMax: 45, restSec: 45 },
+                        ],
+                    },
+                });
+            }
+            if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
         if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
@@ -423,6 +437,56 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
+});
+
+test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    const reports: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true, reports });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Entrenador IA/ }).click();
+    await expect(page.getByRole('heading', { name: /Entrenador IA/ })).toBeVisible();
+
+    await page.getByRole('button', { name: '¿Qué entreno hoy y con cuánto peso?' }).click();
+    await expect(page.getByText('Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.')).toBeVisible();
+    const chat = calls.find(c => c.action === 'trainer') as { context: { goal: string; level: string; setup: string; plan: string; history: string }; messages: unknown[] };
+    expect(chat.context).toMatchObject({ goal: 'musculo', level: 'intermedio', setup: 'gimnasio' });
+    expect(chat.context.plan).toContain('Cuerpo completo A');
+    expect(chat.context.history).toContain('Workouts logged: 0');
+    expect(chat.messages).toEqual([{ role: 'user', text: '¿Qué entreno hoy y con cuánto peso?' }]);
+
+    // Answers can be reported.
+    await page.getByRole('button', { name: 'Reportar esta respuesta' }).click();
+    const report = page.getByRole('dialog', { name: 'Reportar respuesta de la IA' });
+    await report.getByRole('radio', { name: /Incorrecta/ }).click();
+    await report.getByRole('button', { name: 'Enviar reporte' }).click();
+    await expect.poll(() => reports.length).toBe(1);
+    expect(reports[0]).toMatchObject({ kind: 'trainer' });
+
+    // A routine from AI, saved to "my routines".
+    await page.getByRole('button', { name: /Crear rutina con IA/ }).click();
+    await page.getByLabel('¿Qué rutina quieres?').fill('30 minutos de pierna');
+    await page.getByRole('button', { name: 'Crear rutina', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Pierna express')).toBeVisible();
+    await expect(dialog.getByText('Hip thrust')).toBeVisible();
+    const routine = calls.find(c => c.action === 'routine') as { text: string; exercises: { id: string }[] };
+    expect(routine.text).toBe('30 minutos de pierna');
+    expect(routine.exercises.map(e => e.id)).toContain('prensa');
+    await dialog.getByRole('button', { name: 'Guardar en mis rutinas' }).click();
+    await expect(page.getByText('Rutina guardada: Pierna express')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Pierna express/ })).toBeVisible();
+});
+
+test('the AI trainer is Premium-only', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Entrenador IA/ }).click();
+    await expect(page.getByText(/Tu entrenador personal con IA es parte de Premium/)).toBeVisible();
+    await expect(page.getByLabel('Pregúntale a tu entrenador…')).toHaveCount(0);
 });
 
 test('free users: AI is Premium-only, with yearly and monthly plans', async ({ page }) => {
@@ -529,7 +593,7 @@ const mockAccount = async (page: Page, cloud: { row: Record<string, unknown> | n
         const req = route.request();
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
-        if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, apple: false } } });
+        if (url.includes('/auth/v1/settings')) return route.fulfill({ headers: cors, json: { external: { email: true, google: true, facebook: true, apple: false } } });
         // Anonymous sign-in (a sign-up without e-mail) gets an anonymous user, like Supabase.
         if (url.includes('/auth/v1/signup') && !(req.postDataJSON() as { email?: string } | null)?.email) {
             return route.fulfill({ headers: cors, json: { ...session(), user: { ...user, id: '00000000-0000-0000-0000-0000000000bb', email: null, is_anonymous: true, app_metadata: { provider: 'anonymous' }, identities: [] } } });
@@ -570,6 +634,7 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar con Facebook' })).toBeVisible();
     await page.getByLabel('Correo electrónico').fill('sebas@example.com');
     await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
@@ -747,4 +812,97 @@ test('legal page has terms and privacy in three languages', async ({ page }) => 
     await expect(page.getByRole('heading', { name: 'Términos de uso' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Privacy policy' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Política de privacidade' })).toBeVisible();
+});
+
+test('workout extras: repeat the last set, machine taken, then recovery, activity, BMI and share cards', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await squat.getByLabel('Peso serie 1').fill('80');
+    await squat.getByLabel('Repeticiones serie 1').fill('8');
+    await squat.getByLabel('Marcar serie 1 como hecha').click();
+    // One tap logs the same set again and starts the rest.
+    await squat.getByRole('button', { name: 'Repetir la serie anterior' }).click();
+    await expect(squat.getByLabel('Marcar serie 2 como hecha')).toHaveAttribute('aria-pressed', 'true');
+    await expect(squat.getByLabel('Peso serie 2')).toHaveValue('80');
+    await expect(squat.getByLabel('Repeticiones serie 2')).toHaveValue('8');
+    await expect(page.getByRole('timer')).toBeVisible();
+    await page.getByRole('button', { name: 'Saltar' }).click();
+
+    // The bench is taken: same muscle with dumbbells instead.
+    const bench = page.getByRole('region', { name: 'Press de banca', exact: true });
+    await bench.getByRole('button', { name: 'Máquina ocupada' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Máquina ocupada' });
+    await expect(sheet.getByText('Press de banca con mancuernas')).toBeVisible();
+    await sheet.getByRole('button', { name: /Press de banca con mancuernas/ }).click();
+    await expect(page.getByText('Cambiado por Press de banca con mancuernas')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Press de banca con mancuernas' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('link', { name: 'Listo' }).click();
+
+    // Legs were trained hard: they are recovering.
+    await expect(page.getByRole('heading', { name: 'Recuperación muscular' })).toBeVisible();
+    await expect(page.getByText(/piernas/i).first()).toBeVisible();
+
+    await page.getByRole('link', { name: /Tu actividad/ }).click();
+    await expect(page.getByRole('heading', { name: 'Tu actividad' })).toBeVisible();
+    await expect(page.getByText(/Este mes: entrenaste 1 día/)).toBeVisible();
+
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+    await expect(page.getByText('24,7')).toBeVisible();
+    await expect(page.getByText('Peso saludable', { exact: true })).toBeVisible();
+
+    await page.goto('/#/wrapped');
+    await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Récords' }).click();
+    await expect(page.getByRole('img', { name: 'Vista previa de la tarjeta' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir' })).toBeEnabled();
+});
+
+test('women\'s section builds her own plan to lose or keep weight', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Rutinas', exact: true }).click();
+    await page.getByRole('link', { name: /Entrenamiento para mujeres/ }).click();
+    await page.getByRole('radio', { name: 'Mantener y tonificar' }).click();
+    await page.getByRole('radio', { name: 'Casa' }).click();
+    await expect(page.getByText('Mujer: tonifica en casa')).toBeVisible();
+    await page.getByRole('button', { name: 'Empezar este plan' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Empezar' }).click();
+    await expect(page.getByRole('heading', { name: 'Glúteos', exact: true })).toBeVisible();
+});
+
+test('before and after: two photos together with the watermark', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/antes-despues');
+    for (const which of ['Antes', 'Después']) {
+        const chooser = page.waitForEvent('filechooser');
+        await page.getByRole('button', { name: which, exact: true }).click();
+        await (await chooser).setFiles(fixture('face.jpg'));
+    }
+    await expect(page.getByRole('img', { name: 'Vista previa del antes y después' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Superpuestas' }).click();
+    await expect(page.getByRole('slider', { name: 'Mover la división' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir' })).toBeVisible();
+});
+
+test('offline: says nothing is lost, and the rest sound can be turned off', async ({ page, context }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await context.setOffline(true);
+    await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toBeVisible();
+    await context.setOffline(false);
+    await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toHaveCount(0);
+
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    const sound = page.getByRole('switch', { name: 'Sonido al terminar el descanso' });
+    await expect(sound).toHaveAttribute('aria-checked', 'true');
+    await sound.click();
+    await expect(sound).toHaveAttribute('aria-checked', 'false');
+    await expect(page.getByRole('switch', { name: 'Alertas de recuperación' })).toHaveAttribute('aria-checked', 'true');
 });

@@ -1,5 +1,5 @@
-import { Camera, ChevronRight, Cloud, Crown, Download, ImageIcon, Languages, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Camera, ChevronRight, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Languages, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
@@ -14,14 +14,32 @@ import { useUnlocked } from '../lib/useAchievements';
 import { fmtDate, fmtWeight } from '../lib/format';
 import { ageOf } from '../lib/nutrition';
 import { speak, spokenTime, voiceAvailable } from '../lib/voice';
+import { useCloudStatus } from '../lib/useOnline';
 import { blobToDataUrl, pickImage, resizeImage } from '../lib/image';
 import { streakWeeks } from '../lib/stats';
 import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
 import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
-import { saveFile } from '../lib/native';
+import { primeSound, restOver, saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
 import type { Goal, Level, Setup } from '../store/types';
+
+const ToggleRow = ({ icon, title, hint, on, onChange, test }: {
+    icon: ReactNode; title: string; hint: string; on: boolean; onChange: (on: boolean) => void; test?: { label: string; run: () => void };
+}) => (
+    <div className="flex items-center gap-3 p-4">
+        <span className="shrink-0 text-brand">{icon}</span>
+        <div className="min-w-0 flex-1">
+            <p className="font-medium">{title}</p>
+            <p className="text-sm text-white/55">{hint}</p>
+            {test && <button onClick={test.run} className="mt-1 text-sm font-semibold text-brand">{test.label}</button>}
+        </div>
+        <button role="switch" aria-checked={on} aria-label={title} onClick={() => onChange(!on)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition ${on ? 'bg-brand' : 'bg-ink-4'}`}>
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-6' : 'left-1'}`} />
+        </button>
+    </div>
+);
 
 export default function Settings() {
     const profile = useStore(s => s.profile)!;
@@ -146,23 +164,20 @@ export default function Settings() {
                 </div>
             </Section>
 
-            {voiceAvailable() && (
-                <Section title={t('settings.voice')}>
-                    <div className="card flex items-center gap-3 p-4">
-                        <Mic size={20} className="shrink-0 text-brand" />
-                        <div className="min-w-0 flex-1">
-                            <p className="font-medium">{t('settings.voice')}</p>
-                            <p className="text-sm text-white/55">{t('settings.voiceHint')}</p>
-                            <button onClick={() => void speak(spokenTime(30))} className="mt-1 text-sm font-semibold text-brand">{t('settings.voiceTest')}</button>
-                        </div>
-                        <button role="switch" aria-checked={profile.voice !== false} aria-label={t('settings.voice')}
-                            onClick={() => actions.updateProfile({ voice: profile.voice === false })}
-                            className={`relative h-7 w-12 shrink-0 rounded-full transition ${profile.voice !== false ? 'bg-brand' : 'bg-ink-4'}`}>
-                            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${profile.voice !== false ? 'left-6' : 'left-1'}`} />
-                        </button>
-                    </div>
-                </Section>
-            )}
+            <Section title={t('settings.workout')}>
+                <div className="card divide-y divide-line">
+                    <ToggleRow icon={<BellRing size={20} />} title={t('settings.restSound')} hint={t('settings.restSoundHint')}
+                        on={profile.restSound !== false} onChange={on => actions.updateProfile({ restSound: on })}
+                        test={{ label: t('settings.restSoundTest'), run: () => { primeSound(); restOver(true); } }} />
+                    <ToggleRow icon={<BatteryCharging size={20} />} title={t('settings.recoveryAlerts')} hint={t('settings.recoveryAlertsHint')}
+                        on={profile.recoveryAlerts !== false} onChange={on => actions.updateProfile({ recoveryAlerts: on })} />
+                    {voiceAvailable() && (
+                        <ToggleRow icon={<Mic size={20} />} title={t('settings.voice')} hint={t('settings.voiceHint')}
+                            on={profile.voice !== false} onChange={on => actions.updateProfile({ voice: on })}
+                            test={{ label: t('settings.voiceTest'), run: () => void speak(spokenTime(30)) }} />
+                    )}
+                </div>
+            </Section>
 
             <Section title={t('settings.data')}>
                 <div className="card space-y-3 p-4">
@@ -292,6 +307,7 @@ const ProfileHero = () => {
 const AccountCard = () => {
     const account = useStore(s => s.account);
     const syncedAt = useStore(s => s.cloudSyncedAt);
+    const cloud = useCloudStatus();
     if (!account) {
         return (
             <Section title={t('account.section')}>
@@ -334,10 +350,16 @@ const AccountCard = () => {
                         <p className="text-sm text-white/55">{t('account.signedIn', { provider: t(`account.via.${provider}` as 'account.via.email') })}</p>
                     </div>
                 </div>
-                <p className="mt-3 flex items-center gap-2 text-xs text-white/50">
-                    <Cloud size={14} className="text-good" />
-                    {syncedAt ? t('account.synced', { when: new Date(syncedAt).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' }) }) : t('account.syncPending')}
-                </p>
+                {cloud === 'synced' ? (
+                    <p className="mt-3 flex items-center gap-2 text-xs text-white/50">
+                        <Cloud size={14} className="text-good" />
+                        {syncedAt ? t('account.synced', { when: new Date(syncedAt).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' }) }) : t('account.syncPending')}
+                    </p>
+                ) : (
+                    <p className="mt-3 flex items-center gap-2 text-xs text-white/60">
+                        <CloudOff size={14} className="shrink-0 text-brand" /> {t(cloud === 'offline' ? 'account.syncOffline' : 'account.syncWaiting')}
+                    </p>
+                )}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                     <button className="btn-ghost" onClick={out}><LogOut size={16} /> {t('account.signOut')}</button>
                     <button className="btn-ghost text-red-500" onClick={remove}><Trash2 size={16} /> {t('account.delete')}</button>

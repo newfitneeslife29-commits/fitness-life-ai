@@ -90,3 +90,88 @@ export const ESTIMATE_SCHEMA = {
   required: ['name', 'items', 'note'],
   additionalProperties: false,
 };
+
+// ---------- Personal trainer ----------
+
+// What the app knows about the user's training. The plan and history are
+// summaries the app writes from the user's own data.
+export interface TrainerContext {
+  goal: Goal;
+  level: 'principiante' | 'intermedio' | 'avanzado';
+  daysPerWeek: number;
+  setup: 'gimnasio' | 'mancuernas' | 'casa';
+  limitations: string[];
+  sex: Sex | null;
+  age: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  targetWeightKg: number | null;
+  plan: string;
+  history: string;
+}
+
+const ROUTINE_BUTTON: Record<Lang, string> = { es: 'Crear rutina con IA', en: 'Create routine with AI', pt: 'Criar rotina com IA' };
+const LEVEL = { principiante: 'beginner', intermedio: 'intermediate', avanzado: 'advanced' } as const;
+const SETUP = { gimnasio: 'a full gym', mancuernas: 'dumbbells and a bench', casa: 'bodyweight only, at home' } as const;
+
+export const trainerSystem = (lang: Lang) => `You are the personal trainer inside Fitness Life, a strength-training app. You coach the user on their training: what to do today, how to perform an exercise, how much weight or how many reps to aim for, how to progress or break a plateau, how to adapt a session to the time, equipment or energy they have, and how to train around minor aches.
+
+Answer in ${LANGUAGE[lang]}. Write for a phone screen: short paragraphs or a few "-" bullet points, with no headings, tables or Markdown emphasis. Most answers fit in under 150 words. Be encouraging and concrete: name exercises, sets, reps, rest and weights when it helps, based on the user's plan and recent workouts below.
+
+The app already gives the user a plan and suggests weights with double progression (add reps up to the top of the range, then add weight). Build on that instead of contradicting it. When the user asks for a full new routine, give it briefly and mention they can tap "${ROUTINE_BUTTON[lang]}" on this screen to save one in the app.
+
+Many users train at home with no equipment: give them the same priority and care as gym users. Make home training effective: progress with more reps, a slower tempo (3 seconds down), pauses, one-leg or one-arm versions and shorter rests, and use circuits when they want to burn fat. Household items (a backpack with books, water bottles, a sturdy chair or step) are optional extras, never required.
+
+You give general fitness guidance, not medical advice. If someone describes sharp or worsening pain, an injury, dizziness, chest pain, pregnancy or a medical condition, tell them to stop the exercise that hurts and see a doctor or physiotherapist, and only suggest gentle alternatives. Never encourage training through pain, extreme dieting or unsafe loads.
+
+If a question has nothing to do with training, exercise, recovery or healthy habits, say briefly that you can only help with their training.`;
+
+export const trainerNote = (c: TrainerContext) => [
+  'About this user (from the app):',
+  `- Goal: ${GOAL[c.goal]}; level: ${LEVEL[c.level]}; trains ${c.daysPerWeek} days a week with ${SETUP[c.setup]}`,
+  ...(c.limitations.length ? [`- Sensitive areas: ${c.limitations.join(', ')}`] : []),
+  ...(c.sex ? [`- Sex: ${c.sex === 'hombre' ? 'male' : 'female'}`] : []),
+  ...(c.age ? [`- Age: ${c.age}`] : []),
+  ...(c.heightCm ? [`- Height: ${c.heightCm} cm`] : []),
+  `- Body weight: ${c.weightKg ? `${c.weightKg} kg` : 'not logged'}`,
+  ...(c.targetWeightKg ? [`- Target body weight: ${c.targetWeightKg} kg`] : []),
+  '',
+  'Current plan:',
+  c.plan || '(none)',
+  '',
+  'Recent workouts (newest first):',
+  c.history || '(none yet)',
+].join('\n');
+
+export const routineSystem = (lang: Lang) => `You design one workout routine for a user of a strength-training app, from their request and their profile below.
+
+Use only exercises from the catalog in the schema (their ids). Pick 4 to 8 exercises that fit the request, the user's equipment and level, and avoid loading their sensitive areas. Order them big compound lifts first, then accessories, then core. For each, give sets (2 to 5), a rep range (repMin and repMax; for timed exercises these are seconds) and rest in seconds (30 to 240). Keep the whole routine within the time the user asks for, if they say one.
+
+When the user trains at home with no equipment (the catalog is then bodyweight only), make the routine just as effective: balance lower and upper body, add core, and add a cardio-style move such as jump squats or mountain climbers when they want to burn fat. Use higher reps (10 to 20) or 30 to 45 second timed work with short rests (30 to 60 seconds), and say in the note how to make it harder (slower tempo, more reps, a backpack for load).
+
+Write "name" as a short routine name (2 to 5 words) and "note" as one or two short sentences in ${LANGUAGE[lang]} explaining the idea of the routine. If the request has nothing to do with training, return no exercises and say so in the note.`;
+
+export const routineSchema = (exerciseIds: string[]) => ({
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    note: { type: 'string' },
+    exercises: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          exerciseId: { type: 'string', enum: exerciseIds },
+          sets: { type: 'integer' },
+          repMin: { type: 'integer' },
+          repMax: { type: 'integer' },
+          restSec: { type: 'integer' },
+        },
+        required: ['exerciseId', 'sets', 'repMin', 'repMax', 'restSec'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['name', 'note', 'exercises'],
+  additionalProperties: false,
+});

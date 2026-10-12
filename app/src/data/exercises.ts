@@ -367,6 +367,47 @@ export const EXERCISES: Exercise[] = [
         'It’s a hip hinge, not a squat; arms relaxed.',
         'É um impulso de quadril, não um agachamento; braços relaxados.',
     ], { secondary: ['isquios', 'core'] }),
+    // More to do at home with no equipment.
+    x('flexiones-abiertas', 'Flexiones abiertas', 'Wide push-ups', 'Flexões abertas', 'pecho', 'peso corporal', 0, [
+        'Manos más abiertas que los hombros; cuerpo recto de cabeza a talones.',
+        'Hands wider than your shoulders; body straight from head to heels.',
+        'Mãos mais abertas que os ombros; corpo reto da cabeça aos calcanhares.',
+    ], { secondary: ['hombros', 'triceps'] }),
+    x('flexiones-diamante', 'Flexiones diamante', 'Diamond push-ups', 'Flexões diamante', 'triceps', 'peso corporal', 0, [
+        'Manos juntas bajo el pecho y codos pegados al cuerpo. Si cuesta, apoya las rodillas.',
+        'Hands together under your chest, elbows close to your body. If it’s hard, drop to your knees.',
+        'Mãos juntas sob o peito e cotovelos colados ao corpo. Se ficar difícil, apoie os joelhos.',
+    ], { secondary: ['pecho'] }),
+    x('sentadilla-salto', 'Sentadilla con salto', 'Jump squat', 'Agachamento com salto', 'cuadriceps', 'peso corporal', 0, [
+        'Baja a sentadilla y salta; cae suave con las rodillas flexionadas.',
+        'Squat down and jump; land softly with your knees bent.',
+        'Desça no agachamento e salte; aterrisse suave com os joelhos flexionados.',
+    ], { secondary: ['gluteos', 'gemelos'] }),
+    x('zancada-salto', 'Zancadas con salto', 'Jumping lunges', 'Afundo com salto', 'cuadriceps', 'peso corporal', 0, [
+        'Desde zancada, salta y cambia de pierna en el aire. Empieza despacio.',
+        'From a lunge, jump and switch legs in the air. Start slowly.',
+        'A partir do afundo, salte e troque de perna no ar. Comece devagar.',
+    ], { secondary: ['gluteos'] }),
+    x('subida-rodilla', 'Subida a silla con rodilla', 'Step-up with knee raise', 'Subida na cadeira com joelho', 'gluteos', 'peso corporal', 0, [
+        'Sube a un escalón o silla firme y eleva la otra rodilla arriba. Alterna piernas.',
+        'Step onto a sturdy step or chair and drive the other knee up. Alternate legs.',
+        'Suba num degrau ou cadeira firme e eleve o outro joelho. Alterne as pernas.',
+    ], { secondary: ['cuadriceps'] }),
+    x('crunch-inverso', 'Crunch inverso', 'Reverse crunch', 'Abdominal invertido', 'core', 'peso corporal', 0, [
+        'Rodillas al pecho despegando un poco la cadera del suelo; baja sin arquear la espalda.',
+        'Bring your knees to your chest lifting your hips slightly; lower without arching your back.',
+        'Leve os joelhos ao peito tirando um pouco o quadril do chão; desça sem arquear as costas.',
+    ]),
+    x('bicicleta-abdominal', 'Bicicleta abdominal', 'Bicycle crunch', 'Abdominal bicicleta', 'core', 'peso corporal', 0, [
+        'Lleva el codo a la rodilla contraria mientras estiras la otra pierna, sin tirar del cuello.',
+        'Bring your elbow to the opposite knee as the other leg extends, without pulling on your neck.',
+        'Leve o cotovelo ao joelho oposto enquanto estica a outra perna, sem puxar o pescoço.',
+    ]),
+    x('patadas-alternas', 'Patadas alternas', 'Flutter kicks', 'Batidas de pernas', 'core', 'peso corporal', 0, [
+        'Boca arriba, piernas estiradas y algo elevadas; patea arriba y abajo con la zona lumbar pegada al suelo.',
+        'On your back, legs straight and slightly raised; kick up and down keeping your lower back on the floor.',
+        'Deitado de costas, pernas esticadas e um pouco elevadas; bata para cima e para baixo com a lombar no chão.',
+    ], { timed: true }),
 ];
 
 const BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
@@ -388,4 +429,19 @@ export const alternativesFor = (id: string): Exercise[] => {
     if (!ex) return [];
     return EXERCISES.filter(e => e.id !== id && (e.muscle === ex.muscle || e.secondary?.includes(ex.muscle)))
         .sort((a, b) => Number(b.muscle === ex.muscle) - Number(a.muscle === ex.muscle));
+};
+
+// "Machine taken": the same main muscle with dumbbells or cables first, then
+// kettlebell or bodyweight. Closest match (most shared helper muscles) first.
+const FREE_WEIGHTS: Equipment[] = ['mancuernas', 'polea', 'kettlebell', 'peso corporal'];
+export const busyAlternatives = (id: string, exclude: string[] = [], limit = 4): Exercise[] => {
+    const ex = getExercise(id);
+    if (!ex) return [];
+    const shared = (e: Exercise) => (e.secondary ?? []).filter(m => ex.secondary?.includes(m)).length;
+    const rank = (e: Exercise) => FREE_WEIGHTS.indexOf(e.equipment) * 10 - shared(e);
+    return EXERCISES
+        .filter(e => e.id !== id && !exclude.includes(e.id) && e.muscle === ex.muscle && e.equipment !== ex.equipment
+            && FREE_WEIGHTS.includes(e.equipment) && !!e.timed === !!ex.timed)
+        .sort((a, b) => rank(a) - rank(b))
+        .slice(0, limit);
 };

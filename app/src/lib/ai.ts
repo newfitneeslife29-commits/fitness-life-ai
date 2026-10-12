@@ -3,7 +3,7 @@ import { blobToBase64 } from './image';
 import { backendAvailable, getSupabase } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
-import type { Activity, AiUsage, ChatMessage, Goal, Macros, Sex } from '../store/types';
+import type { Activity, AiUsage, ChatMessage, Goal, Level, Limitation, Macros, Setup, Sex } from '../store/types';
 
 // The nutrition coach runs in a Supabase Edge Function
 // (supabase/functions/nutrition-coach) that holds the Anthropic key. The
@@ -91,6 +91,46 @@ export const askCoach = async (lang: Lang, context: CoachContext, history: ChatM
     return text;
 };
 
+// ---------- Personal trainer (Premium) ----------
+
+export interface TrainerContext {
+    goal: Goal;
+    level: Level;
+    daysPerWeek: number;
+    setup: Setup;
+    limitations: Limitation[];
+    sex?: Sex;
+    age?: number;
+    heightCm?: number;
+    weightKg: number | null;
+    targetWeightKg?: number;
+    plan: string; // the current plan, summarised
+    history: string; // recent workouts, newest first
+}
+
+export interface CatalogExercise {
+    id: string;
+    name: string;
+    muscle: string;
+    equipment: string;
+    timed: boolean;
+}
+
+export interface AiRoutine {
+    name: string;
+    note: string;
+    exercises: { exerciseId: string; sets: number; repMin: number; repMax: number; restSec: number }[];
+}
+
+export const askTrainer = async (lang: Lang, context: TrainerContext, history: ChatMessage[]) => {
+    const messages = history.map(m => ({ role: m.role, text: m.text }));
+    const { text } = await call<{ text: string }>({ action: 'trainer', lang, context, messages });
+    return text;
+};
+
+export const designRoutine = (lang: Lang, context: TrainerContext, request: string, exercises: CatalogExercise[]) =>
+    call<AiRoutine>({ action: 'routine', lang, context, text: request, exercises });
+
 export const estimateMeal = (lang: Lang, description: string) =>
     call<MealEstimate>({ action: 'estimate', lang, text: description });
 
@@ -118,7 +158,7 @@ export type AiReportReason = 'offensive' | 'harmful' | 'wrong' | 'other';
 export const AI_REPORT_REASONS: AiReportReason[] = ['offensive', 'harmful', 'wrong', 'other'];
 
 export interface AiReport {
-    kind: 'coach' | 'meal';
+    kind: 'coach' | 'meal' | 'trainer' | 'routine';
     content: string;
     question?: string;
 }

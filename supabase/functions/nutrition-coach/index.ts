@@ -13,12 +13,18 @@
 //   { action: 'chat', lang, context, messages: [{ role, text }] }  → { text, usage }
 //   { action: 'estimate', lang, text }                              → { name, items, note, usage }
 //   { action: 'photo', lang, image: base64 JPEG/PNG/WebP, mediaType, text? } → same as estimate
+//   { action: 'trainer', lang, context, messages: [{ role, text }] } → { text, usage }  (personal trainer)
+//   { action: 'routine', lang, context, text, exercises: [{ id, name, muscle, equipment, timed }] }
+//       → { name, note, exercises: [{ exerciseId, sets, repMin, repMax, restSec }], usage }
 // Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, photoSystem, type CoachContext, type Lang, type Macros } from './prompt.ts';
+import {
+  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, photoSystem, routineSchema, routineSystem, trainerNote, trainerSystem,
+  type CoachContext, type Lang, type Macros, type TrainerContext,
+} from './prompt.ts';
 import { hasEntitlement } from './subscription.ts';
 
 // Fast, low-cost model: a Premium user's whole month costs cents, so the
@@ -78,6 +84,46 @@ const contextOf = (v: unknown): CoachContext => {
   };
 };
 
+const oneOf = <T extends string>(v: unknown, options: readonly T[], fallback: T): T => (options.includes(v as T) ? v as T : fallback);
+const clip = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '');
+
+const trainerContextOf = (v: unknown): TrainerContext => {
+  const c = (v ?? {}) as Record<string, unknown>;
+  const base = contextOf(c);
+  const days = Number(c.daysPerWeek);
+  return {
+    goal: base.goal,
+    level: oneOf(c.level, ['principiante', 'intermedio', 'avanzado'] as const, 'principiante'),
+    daysPerWeek: Number.isFinite(days) ? Math.min(7, Math.max(1, Math.round(days))) : 3,
+    setup: oneOf(c.setup, ['gimnasio', 'mancuernas', 'casa'] as const, 'gimnasio'),
+    limitations: Array.isArray(c.limitations)
+      ? c.limitations.filter((l): l is string => ['rodillas', 'espalda', 'hombros', 'munecas'].includes(l as string))
+        .map(l => ({ rodillas: 'knees', espalda: 'lower back', hombros: 'shoulders', munecas: 'wrists' })[l as 'rodillas'])
+      : [],
+    sex: base.sex,
+    age: base.age,
+    heightCm: base.heightCm,
+    weightKg: base.weightKg,
+    targetWeightKg: base.targetWeightKg,
+    plan: clip(c.plan, 2500),
+    history: clip(c.history, 3500),
+  };
+};
+
+interface CatalogEntry { id: string; name: string; muscle: string; equipment: string; timed: boolean }
+
+// The exercises the routine may use: the app's catalog, filtered to the user's equipment.
+const catalogOf = (v: unknown): CatalogEntry[] => {
+  if (!Array.isArray(v)) throw new HttpError(400, 'exercises must be an array');
+  const list = v.slice(0, 150).flatMap(e => {
+    const x = (e ?? {}) as Record<string, unknown>;
+    const id = typeof x.id === 'string' && /^[a-z0-9-]{2,40}$/.test(x.id) ? x.id : null;
+    return id ? [{ id, name: clip(x.name, 60), muscle: clip(x.muscle, 30), equipment: clip(x.equipment, 30), timed: x.timed === true }] : [];
+  });
+  if (list.length < 4) throw new HttpError(400, 'not enough exercises');
+  return list;
+};
+
 // The conversation must start with the user and end with a new question.
 const messagesOf = (v: unknown): Anthropic.MessageParam[] => {
   if (!Array.isArray(v)) throw new HttpError(400, 'messages must be an array');
@@ -112,6 +158,49 @@ async function chat(lang: Lang, context: CoachContext, messages: Anthropic.Messa
   const text = textOf(res);
   if (!text) throw new HttpError(502, 'empty answer');
   return { text };
+}
+
+async function trainer(lang: Lang, context: TrainerContext, messages: Anthropic.MessageParam[]) {
+  const res = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 16000,
+    // Training advice needs a bit more thought than small talk.
+    output_config: { effort: 'medium' },
+    system: [
+      { type: 'text', text: trainerSystem(lang) },
+      { type: 'text', text: trainerNote(context) },
+    ],
+    messages,
+  });
+  const answer = textOf(res);
+  if (!answer) throw new HttpError(502, 'empty answer');
+  return { text: answer };
+}
+
+const clamp = (v: unknown, min: number, max: number) => Math.min(max, Math.max(min, num(v, max)));
+
+async function routine(lang: Lang, context: TrainerContext, request: string, catalog: CatalogEntry[]) {
+  const listing = catalog.map(e => `- ${e.id}: ${e.name} (${e.muscle}, ${e.equipment}${e.timed ? ', timed in seconds' : ''})`).join('\n');
+  const res = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 16000,
+    output_config: { effort: 'medium', format: { type: 'json_schema', schema: routineSchema(catalog.map(e => e.id)) } },
+    system: [
+      { type: 'text', text: routineSystem(lang) },
+      { type: 'text', text: `${trainerNote(context)}\n\nExercise catalog (id: name):\n${listing}` },
+    ],
+    messages: [{ role: 'user', content: request }],
+  });
+  if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
+  const raw = JSON.parse(textOf(res)) as { name?: unknown; note?: unknown; exercises?: unknown[] };
+  const ids = new Set(catalog.map(e => e.id));
+  const exercises = (raw.exercises ?? []).slice(0, 10).flatMap(e => {
+    const x = e as Record<string, unknown>;
+    if (typeof x.exerciseId !== 'string' || !ids.has(x.exerciseId)) return [];
+    const repMin = clamp(x.repMin, 1, 120);
+    return [{ exerciseId: x.exerciseId, sets: clamp(x.sets, 1, 6), repMin, repMax: Math.max(repMin, clamp(x.repMax, 1, 180)), restSec: clamp(x.restSec, 15, 300) }];
+  });
+  return { name: String(raw.name ?? '').slice(0, 60), note: String(raw.note ?? '').slice(0, 300), exercises };
 }
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -212,6 +301,16 @@ Deno.serve(async req => {
       const messages = messagesOf(body.messages);
       checkQuota(usage);
       result = await chat(lang, contextOf(body.context), messages);
+    } else if (body.action === 'trainer') {
+      const messages = messagesOf(body.messages);
+      checkQuota(usage);
+      result = await trainer(lang, trainerContextOf(body.context), messages);
+    } else if (body.action === 'routine') {
+      const request = typeof body.text === 'string' ? body.text.trim().slice(0, 500) : '';
+      if (request.length < 3) throw new HttpError(400, 'describe the routine');
+      const catalog = catalogOf(body.exercises);
+      checkQuota(usage);
+      result = await routine(lang, trainerContextOf(body.context), request, catalog);
     } else if (body.action === 'estimate') {
       const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
       if (text.length < 3) throw new HttpError(400, 'describe the meal');

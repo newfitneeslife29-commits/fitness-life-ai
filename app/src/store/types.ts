@@ -39,6 +39,10 @@ export interface Profile {
     programId?: string | null;
     // The timer reads the seconds out loud in timed exercises (on by default).
     voice?: boolean;
+    // Beeps when the rest is almost over and ends (on by default).
+    restSound?: boolean;
+    // Reminders when trained muscles have rested (on by default).
+    recoveryAlerts?: boolean;
 }
 
 export interface RoutineExercise {
@@ -186,6 +190,8 @@ export interface AppState {
     // null: targets are calculated from goal and body weight.
     nutritionTargets: Macros | null;
     coachChat: ChatMessage[]; // oldest first
+    trainerChat: ChatMessage[]; // the personal trainer's, oldest first
+    activeDays?: string[]; // local "YYYY-MM-DD" days the app was opened, oldest first
     aiUsage: AiUsage | null;
     premium: PremiumStatus | null;
 }

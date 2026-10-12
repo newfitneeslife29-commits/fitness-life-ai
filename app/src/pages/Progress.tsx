@@ -1,4 +1,4 @@
-import { ChevronRight, LineChart as ChartIcon, Scale, Trash2 } from 'lucide-react';
+import { ChevronRight, Columns2, LineChart as ChartIcon, Scale, Share2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, TrainingCalendar, WeekBars } from '../components/Charts';
@@ -118,9 +118,19 @@ export default function Progress() {
                     <WeekBars weeks={weeks} target={profile.daysPerWeek} />
                     <TrainingCalendar weeks={calendar} />
                 </div>
+                <Link to="/actividad" className="mt-2 flex items-center justify-between rounded-xl px-1 py-1 text-sm font-semibold text-brand">
+                    {t('activity.title')} <ChevronRight size={16} />
+                </Link>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                     <Stat value={thisWeek.length} label={t('progress.thisWeek')} />
                     <Stat value={fmtVolume(weeks[weeks.length - 1].volumeKg, unit)} label={t('progress.volumeWeek')} />
+                </div>
+            </Section>
+
+            <Section title={t('share.section')}>
+                <div className="grid grid-cols-2 gap-2">
+                    <Link to="/wrapped" className="btn-ghost"><Share2 size={16} /> {t('wrapped.title')}</Link>
+                    <Link to="/antes-despues" className="btn-ghost"><Columns2 size={16} /> {t('compare.title')}</Link>
                 </div>
             </Section>
 

@@ -22,6 +22,23 @@ const hasData = (s: Partial<AppState>) => Boolean(s.profile) && ((s.sessions?.le
 
 let lastPushed = '';
 
+// Offline (a gym in a basement): everything keeps working on the phone and
+// is saved there; what could not be sent is sent when the signal is back.
+export type CloudStatus = 'synced' | 'pending' | 'offline';
+let status: CloudStatus = 'synced';
+const statusListeners = new Set<() => void>();
+const setStatus = (next: CloudStatus) => {
+    if (next === status) return;
+    status = next;
+    statusListeners.forEach(l => l());
+};
+export const getCloudStatus = () => status;
+export const subscribeCloudStatus = (l: () => void) => {
+    statusListeners.add(l);
+    return () => { statusListeners.delete(l); };
+};
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
 const pull = async (userId: string) => {
     const supabase = await getSupabase();
     const { data, error } = await supabase.from(TABLE).select('data, updated_at').eq('user_id', userId).maybeSingle();
@@ -91,17 +108,47 @@ const reconcile = async (account: Account, fresh: boolean) => {
 };
 
 let current: Promise<void> = Promise.resolve();
+// The account's copy could not be checked when signing in (no signal).
+let reconcilePending: Account | null = null;
 
 // Resolves once the data of the account that just signed in is in place.
 export const waitForSync = () => current;
 
 export const syncAccount = (account: Account, fresh: boolean) => {
-    current = reconcile(account, fresh).catch(e => console.warn('cloud sync failed', e));
+    current = reconcile(account, fresh).then(() => {
+        reconcilePending = null;
+        setStatus('synced');
+    }).catch(e => {
+        console.warn('cloud sync failed', e);
+        reconcilePending = account;
+        setStatus(isOffline() ? 'offline' : 'pending');
+    });
     return current;
 };
 
 let timer: number | undefined;
+let retryTimer: number | undefined;
 let started = false;
+const RETRY_MS = 30_000;
+
+const send = (userId: string) => current.then(() => push(userId)).then(() => {
+    window.clearTimeout(retryTimer);
+    setStatus('synced');
+}).catch(e => {
+    console.warn('cloud push failed', e);
+    setStatus(isOffline() ? 'offline' : 'pending');
+    // Try again later, and right away when the phone is back online.
+    window.clearTimeout(retryTimer);
+    retryTimer = window.setTimeout(retry, RETRY_MS);
+});
+
+// Back online (or a retry is due): first the sign-in check that failed, then the changes.
+const retry = () => {
+    const account = getState().account;
+    if (!account) return;
+    if (reconcilePending?.id === account.id) void syncAccount(account, false).then(() => send(account.id));
+    else if (status !== 'synced') void send(account.id);
+};
 
 // Sends changes while signed in.
 export const startCloudSync = () => {
@@ -111,10 +158,11 @@ export const startCloudSync = () => {
         const account = getState().account;
         if (!account) return;
         window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-            void current.then(() => push(account.id)).catch(e => console.warn('cloud push failed', e));
-        }, PUSH_DELAY_MS);
+        timer = window.setTimeout(() => void send(account.id), PUSH_DELAY_MS);
     });
+    window.addEventListener('online', retry);
+    window.addEventListener('offline', () => { if (status !== 'synced') setStatus('offline'); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') retry(); });
 };
 
 // Sends anything not sent yet (before signing out).
@@ -126,5 +174,8 @@ export const flushCloud = async (userId: string) => {
 
 export const forgetCloudState = () => {
     lastPushed = '';
+    reconcilePending = null;
     window.clearTimeout(timer);
+    window.clearTimeout(retryTimer);
+    setStatus('synced');
 };

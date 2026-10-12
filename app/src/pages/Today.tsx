@@ -1,4 +1,4 @@
-import { Apple, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Target, Trophy, UserRound, Weight } from 'lucide-react';
+import { Apple, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -15,9 +15,13 @@ import { fmtDate, fmtNumber, fmtVolume, fmtWeight, greeting } from '../lib/forma
 import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition';
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
+import { activitySummary } from '../lib/activity';
+import { HealthCard } from '../components/HealthCard';
+import { groupLabel, recoveryStatus } from '../lib/recovery';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
-import type { Routine } from '../store/types';
+import type { Routine, Session } from '../store/types';
+import { useNow } from '../lib/useNow';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
 
@@ -242,6 +246,69 @@ const BeginnerCard = () => (
     </Link>
 );
 
+// The Premium personal trainer: shown to everyone, unlocked with Premium.
+const TrainerCard = ({ premium }: { premium: boolean }) => (
+    <Link to="/entrenador" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Bot size={22} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 font-semibold">
+                {t('trainer.title')}
+                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={11} /> Premium</span>}
+            </span>
+            <span className="block text-sm text-white/55">{t('trainer.homeHint')}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
+// Which muscle groups are rested (green) and how long the others need.
+const RecoveryCard = ({ sessions }: { sessions: Session[] }) => {
+    const now = useNow(true, 60_000);
+    const status = recoveryStatus(sessions, now);
+    if (!status.length) return null;
+    return (
+        <div className="card p-4">
+            <div className="flex flex-wrap gap-2">
+                {status.map(s => (
+                    <span key={s.group} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${s.ready ? 'bg-good/15 text-good' : 'bg-amber-400/10 text-amber-300'}`}>
+                        {s.ready ? <Check size={14} strokeWidth={3} /> : <BatteryCharging size={14} />}
+                        <span className="capitalize">{groupLabel(s.group)}</span>
+                        <span className="text-xs opacity-80">{s.ready ? t('recovery.ready') : t('recovery.left', { hours: Math.ceil((s.readyAt - now) / 3_600_000) })}</span>
+                    </span>
+                ))}
+            </div>
+            <p className="mt-2 text-xs text-white/45">{t('recovery.hint')}</p>
+        </div>
+    );
+};
+
+const ShareLinks = () => (
+    <div className="grid grid-cols-2 gap-2">
+        <Link to="/wrapped" className="card flex flex-col gap-2 p-3 hover:bg-ink-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-fuchsia-500 text-snow"><Share2 size={20} /></span>
+            <span className="font-semibold leading-tight">{t('wrapped.cardTitle')}</span>
+            <span className="text-xs text-white/50">{t('wrapped.cardHint')}</span>
+        </Link>
+        <Link to="/antes-despues" className="card flex flex-col gap-2 p-3 hover:bg-ink-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-snow"><Columns2 size={20} /></span>
+            <span className="font-semibold leading-tight">{t('compare.title')}</span>
+            <span className="text-xs text-white/50">{t('compare.cardHint')}</span>
+        </Link>
+    </div>
+);
+
+// Women's section, on the home screen for women.
+const WomenCard = () => (
+    <Link to="/mujeres" className="flex items-center gap-3 rounded-2xl border border-pink-400/25 bg-gradient-to-br from-pink-500/15 to-transparent p-4 hover:bg-ink-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 text-pink-400"><Sparkles size={22} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{t('women.card')}</span>
+            <span className="block text-sm text-white/55">{t('women.cardHint')}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
 // For free users: what Premium unlocks, one tap away.
 const PremiumBanner = () => (
     <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-400 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
@@ -260,6 +327,8 @@ export default function Today() {
     const premium = usePremiumActive();
     const unlocked = useUnlocked();
     const week = useMemo(() => sessionsThisWeek(sessions), [sessions]);
+    const activeDays = useStore(s => s.activeDays);
+    const activity = useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions]);
     if (!profile) return null;
 
     const next = plan ? routines.find(r => r.id === plan.routineIds[plan.nextIndex]) : undefined;
@@ -315,6 +384,10 @@ export default function Today() {
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 
+            <Section><TrainerCard premium={premium} /></Section>
+
+            {profile.sex === 'mujer' && <Section><WomenCard /></Section>}
+
             {!premium && <Section><PremiumBanner /></Section>}
 
             <Section title={t('home.week')}>
@@ -334,6 +407,14 @@ export default function Today() {
                 </div>
             </Section>
 
+            <Section><HealthCard /></Section>
+
+            {sessions.length > 0 && (
+                <Section title={t('recovery.title')}>
+                    <RecoveryCard sessions={sessions} />
+                </Section>
+            )}
+
             <Section title={t('weightGoal.title')}>
                 <WeightGoalCard />
             </Section>
@@ -345,7 +426,17 @@ export default function Today() {
                     <Tile delay={200} icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
                     <Tile delay={240} icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
                 </div>
+                <Link to="/actividad" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand"><CalendarDays size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('activity.card')}</p>
+                        <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
             </Section>
+
+            {sessions.length > 0 && <Section title={t('share.section')}><ShareLinks /></Section>}
 
             <Section title={t('home.nutrition')}>
                 <NutritionToday />

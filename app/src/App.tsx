@@ -2,11 +2,15 @@ import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer, U
 import { useEffect, useState, type ReactNode } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FeedbackHost } from './components/feedback';
+import { OfflineNotice } from './components/OfflineNotice';
 import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
+import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
+import { useRecoveryAlerts } from './lib/recovery';
 import { initNative } from './lib/native';
 import Achievements from './pages/Achievements';
+import Activity from './pages/Activity';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
@@ -16,6 +20,7 @@ import Programs from './pages/Programs';
 import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
 import Community from './pages/Community';
+import Compare from './pages/Compare';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
 import { authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
@@ -26,6 +31,9 @@ import Routines from './pages/Routines';
 import SessionDetail from './pages/SessionDetail';
 import Settings from './pages/Settings';
 import Today from './pages/Today';
+import Trainer from './pages/Trainer';
+import Women from './pages/Women';
+import Wrapped from './pages/Wrapped';
 import Workout from './pages/Workout';
 import { actions, useStore } from './store/store';
 
@@ -74,6 +82,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
     return (
         // Extra bottom room while the "workout in progress" banner is showing.
         <div className={`pt-safe mx-auto min-h-dvh max-w-lg ${hasActive ? 'pb-[calc(9rem+env(safe-area-inset-bottom))]' : 'pb-nav'}`}>
+            <OfflineNotice className="mx-4 mt-3" />
             <div key={pathname} className="animate-fade"><ErrorBoundary>{children}</ErrorBoundary></div>
             <ActiveBanner />
             <BottomNav />
@@ -102,6 +111,14 @@ export default function App() {
         initNative(() => navigate(-1));
     }, [navigate]);
     useEffect(initAuth, []);
+    useRecoveryAlerts();
+    // "Your activity": one mark per day the app is used.
+    useEffect(() => {
+        const mark = () => { if (document.visibilityState === 'visible') actions.markActiveToday(localDay(new Date())); };
+        mark();
+        document.addEventListener('visibilitychange', mark);
+        return () => document.removeEventListener('visibilitychange', mark);
+    }, []);
     if (!hasProfile) return <><Onboarding /><FeedbackHost /><PasswordRecovery />{splash}</>;
     // People who used the app before accounts existed: offer one, once.
     if (askAccount) {
@@ -127,12 +144,17 @@ export default function App() {
                 <Route path="/aprende" element={<Shell><Learn /></Shell>} />
                 <Route path="/aprende/:id" element={<Shell><GuideDetail /></Shell>} />
                 <Route path="/programas" element={<Shell><Programs /></Shell>} />
+                <Route path="/entrenador" element={<Shell><Trainer /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
+                <Route path="/actividad" element={<Shell><Activity /></Shell>} />
+                <Route path="/mujeres" element={<Shell><Women /></Shell>} />
+                <Route path="/wrapped" element={<Shell><Wrapped /></Shell>} />
+                <Route path="/antes-despues" element={<Shell><Compare /></Shell>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </>

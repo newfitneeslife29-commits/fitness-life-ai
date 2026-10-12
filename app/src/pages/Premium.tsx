@@ -1,6 +1,7 @@
 import { Check, ChevronLeft, Crown, Minus, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { toast } from '../components/feedback';
 import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
@@ -17,6 +18,9 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.training', true, true],
     ['premium.row.extras', true, true],
     ['premium.row.nutrition', true, true],
+    ['premium.row.trainer', false, true],
+    ['premium.row.aiRoutines', false, true],
+    ['premium.row.programs', false, true],
     ['premium.row.coach', false, true],
     ['premium.row.estimate', false, true],
 ];
@@ -134,6 +138,7 @@ export default function Premium() {
                                                     {t(`premium.${p.id}`)}
                                                     {p.id === 'annual' && <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-snow">{t('premium.save', { n: ANNUAL_SAVING })}</span>}
                                                 </span>
+                                                {p.trialDays && <span className="block text-sm font-semibold text-good">{t('premium.trialBadge', { n: p.trialDays })}</span>}
                                                 {p.id === 'annual' && <span className="block text-sm text-white/60">{t('premium.equiv', { price: p.perMonth })}</span>}
                                             </span>
                                             <span className="shrink-0 text-right font-bold tabular-nums">
@@ -145,8 +150,13 @@ export default function Premium() {
                             </div>
                             <p className="mb-3 mt-2 text-center text-sm text-white/50">{t('premium.cancelAnytime')}</p>
                             <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
-                                <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : t('premium.subscribe')}
+                                <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : plan.trialDays ? t('premium.startTrial', { n: plan.trialDays }) : t('premium.subscribe')}
                             </button>
+                            {plan.trialDays && (
+                                <p className="mt-2 text-center text-xs text-white/55">
+                                    {t('premium.trialTerms', { n: plan.trialDays, price: plan.price, period: t(plan.id === 'annual' ? 'premium.year' : 'premium.month'), store: Capacitor.getPlatform() === 'ios' ? 'App Store' : 'Google Play' })}
+                                </p>
+                            )}
                     </>
                 </Section>
             )}
