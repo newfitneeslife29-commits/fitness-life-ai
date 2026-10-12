@@ -381,7 +381,7 @@ export const ALLOWED: Record<Setup, Equipment[]> = {
     casa: ['peso corporal'],
 };
 
-const avoided = (exerciseId: string, limitations: Limitation[]) => limitations.some(l => exerciseId in AVOID[l]);
+export const avoided = (exerciseId: string, limitations: Limitation[]) => limitations.some(l => exerciseId in AVOID[l]);
 
 // The program's days with exercises swapped around the user's limitations.
 // An exercise with no safe swap stays: the coach note tells them to go light.

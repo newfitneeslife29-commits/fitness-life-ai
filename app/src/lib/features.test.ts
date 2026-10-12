@@ -5,6 +5,7 @@ import type { Session } from '../store/types';
 import { activitySummary, localDay, monthGrid } from './activity';
 import { bmiBand, bmiOf, healthyWeightRange } from './nutrition';
 import { summarizeHeart } from './health';
+import { advancePlan, buildPlan, waveFor, weekPhase } from './plan';
 import { recoveryAlerts, recoveryStatus } from './recovery';
 import { equivalent, monthWrap } from './wrapped';
 
@@ -147,5 +148,53 @@ describe('Android health permissions', () => {
         const kept = [...declared].filter(p => !removed.has(p)).sort();
         expect(kept).toEqual(['READ_ACTIVE_CALORIES_BURNED', 'READ_HEART_RATE', 'READ_STEPS']);
         for (const p of removed) expect(declared.has(p), p).toBe(true);
+    });
+});
+
+describe('weekly plan updates', () => {
+    const profile = { goal: 'musculo' as const, level: 'intermedio' as const, daysPerWeek: 3, setup: 'gimnasio' as const };
+    it('runs a 4-week wave: base, volume, intensity, lighter week', () => {
+        expect([1, 2, 3, 4, 5].map(weekPhase)).toEqual(['base', 'volumen', 'intensidad', 'descarga', 'base']);
+        const main = { sets: 3, repMin: 6, repMax: 10, restSec: 120 };
+        const acc = { sets: 3, repMin: 10, repMax: 15, restSec: 75 };
+        expect(waveFor(acc, 'accessory', false, 2).sets).toBe(4);
+        expect(waveFor(main, 'main', false, 3)).toEqual({ sets: 3, repMin: 4, repMax: 8, restSec: 150 });
+        expect(waveFor(main, 'main', false, 3, true)).toEqual(main);
+        expect(waveFor(main, 'main', false, 4).sets).toBe(2);
+    });
+    it('keeps main lifts and swaps accessories for the same muscle', () => {
+        const w1 = buildPlan(profile, 1).routines;
+        const w2 = buildPlan(profile, 2).routines;
+        let swapped = 0;
+        w1.forEach((r, i) => r.exercises.forEach((e, j) => {
+            const next = w2[i].exercises[j];
+            if (e.exerciseId !== next.exerciseId) {
+                swapped++;
+                expect(getExercise(next.exerciseId)?.muscle).toBe(getExercise(e.exerciseId)?.muscle);
+            }
+        }));
+        expect(swapped).toBeGreaterThan(0);
+        // Day A of full body: squat, bench and row are main lifts and stay.
+        expect(w2[0].exercises.slice(0, 3).map(e => e.exerciseId)).toEqual(['sentadilla', 'press-banca', 'remo-barra']);
+        for (const r of w2) expect(new Set(r.exercises.map(e => e.exerciseId)).size).toBe(r.exercises.length);
+        // A main lift of the program never shows up as an accessory.
+        const mains = new Set(w1.flatMap(r => r.exercises.slice(0, 2).map(e => e.exerciseId)));
+        for (const [i, r] of w2.entries()) r.exercises.forEach((e, j) => {
+            if (e.exerciseId !== w1[i].exercises[j].exerciseId) expect(mains.has(e.exerciseId), e.exerciseId).toBe(false);
+        });
+    });
+    it('moves the plan on, keeps days edited by hand and lists the swaps', () => {
+        const { plan, routines } = buildPlan(profile, 1);
+        const edited = { ...routines[1], edited: true };
+        const all = [routines[0], edited, { id: 'mine', name: 'Mía', source: 'custom' as const, exercises: [] }];
+        const next = advancePlan(profile, { ...plan, nextIndex: 1 }, all, '2026-10-12');
+        expect(next.plan.week).toBe(2);
+        expect(next.plan.nextIndex).toBe(1);
+        expect(next.plan.advancedFor).toBe('2026-10-12');
+        expect(next.plan.routineIds[1]).toBe(edited.id);
+        expect(next.routines.find(r => r.id === 'mine')).toBeDefined();
+        expect(next.routines.some(r => r.id === routines[0].id)).toBe(false);
+        expect(next.plan.update?.swaps.length).toBeGreaterThan(0);
+        expect(next.plan.update?.seen).toBe(false);
     });
 });

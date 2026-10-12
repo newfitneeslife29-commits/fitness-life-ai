@@ -5,7 +5,9 @@ import { detectLang, setLang, t, type Lang } from '../i18n';
 import { uid } from '../lib/id';
 import { routineName } from '../lib/names';
 import { applyTheme, type Theme } from '../lib/theme';
-import { buildPlan } from '../lib/plan';
+import { advancePlan, buildPlan } from '../lib/plan';
+import { localDay } from '../lib/activity';
+import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
 import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
@@ -213,10 +215,17 @@ export const actions = {
         if (!active) return null;
         const session = finishWorkout(active);
         set(s => {
-            const plan = s.plan && session && active.routineId && s.plan.routineIds.includes(active.routineId)
+            let plan = s.plan && session && active.routineId && s.plan.routineIds.includes(active.routineId)
                 ? { ...s.plan, nextIndex: (s.plan.routineIds.indexOf(active.routineId) + 1) % s.plan.routineIds.length }
                 : s.plan;
-            return { ...s, active: null, plan, sessions: session ? [session, ...s.sessions] : s.sessions };
+            const sessions = session ? [session, ...s.sessions] : s.sessions;
+            let routines = s.routines;
+            // The week's days are done: next week's routines are ready (once per week).
+            const weekKey = localDay(weekStart(new Date()));
+            if (plan && session && s.profile && plan.advancedFor !== weekKey && sessionsThisWeek(sessions).length >= s.profile.daysPerWeek) {
+                ({ plan, routines } = advancePlan(s.profile, plan, routines, weekKey));
+            }
+            return { ...s, active: null, plan, routines, sessions };
         });
         return session?.id ?? null;
     },
@@ -318,7 +327,7 @@ export const actions = {
             const name = routine.name.trim() || (existing ? routineName(existing) : 'Rutina');
             // A plan day keeps its translatable name only if it was not renamed.
             const dayKey = existing?.dayKey && name === routineName(existing) ? existing.dayKey : undefined;
-            const next: Routine = { id, name, dayKey, exercises: routine.exercises, source: existing?.source ?? 'custom' };
+            const next: Routine = { id, name, dayKey, exercises: routine.exercises, source: existing?.source ?? 'custom', ...(existing?.source === 'plan' ? { edited: true } : {}) };
             return { ...s, routines: existing ? s.routines.map(r => r.id === id ? next : r) : [...s.routines, next] };
         });
         return id;
@@ -404,6 +413,10 @@ export const actions = {
     markActiveToday(day: string) {
         if (state.activeDays?.[state.activeDays.length - 1] === day || state.activeDays?.includes(day)) return;
         set(s => ({ ...s, activeDays: [...(s.activeDays ?? []), day].slice(-800) }));
+    },
+
+    dismissPlanUpdate() {
+        set(s => (s.plan?.update ? { ...s, plan: { ...s.plan, update: { ...s.plan.update, seen: true } } } : s));
     },
 
     markAchievementsSeen(ids: string[]) {

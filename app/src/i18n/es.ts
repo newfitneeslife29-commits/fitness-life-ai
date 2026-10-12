@@ -935,7 +935,7 @@ export const es = {
     'wrapped.heatmapTitle': "Mi constancia",
     'wrapped.footer': "Entreno con Fitness Life",
     'wrapped.share': "Compartir",
-    'wrapped.hint': "Formato historia (9:16) para Instagram Stories o TikTok.",
+    'wrapped.hint': "Formato historia (9:16) para Instagram, Facebook o TikTok.",
     'wrapped.saved': "Imagen guardada en descargas",
     'wrapped.failed': "No se pudo compartir. Inténtalo de nuevo.",
     'wrapped.previewAlt': "Vista previa de la tarjeta",
@@ -989,4 +989,25 @@ export const es = {
     'health.from': "Desde {source}",
     'health.disconnect': "Desconectar",
     'health.settings': "Permisos de salud",
+
+    // Share to apps
+    'share.more': "Más",
+    'share.to': "Compartir en {app}",
+
+    // Weekly plan updates
+    'plan.weekLine': "Semana {week} de tu plan · {phase}. Al completar tus días de la semana, tus rutinas se renuevan.",
+    'plan.phase.base': "base",
+    'plan.phase.volumen': "más volumen",
+    'plan.phase.intensidad': "más intensidad",
+    'plan.phase.descarga': "semana de recuperación",
+    'plan.phaseHint.base': "Volvemos a la base con ejercicios nuevos en los accesorios.",
+    'plan.phaseHint.volumen': "Una serie más en los ejercicios accesorios y más segundos en los de tiempo.",
+    'plan.phaseHint.intensidad': "Menos repeticiones y más descanso en los ejercicios principales: toca subir peso.",
+    'plan.phaseHint.descarga': "Una serie menos en todo para recuperarte y volver más fuerte.",
+    'plan.updated.title': "¡Semana completada!",
+    'plan.updated.body': "Tus rutinas se renovaron: ahora estás en la semana {week} ({phase}).",
+    'plan.updated.more_one': "y {n} cambio más",
+    'plan.updated.more_other': "y {n} cambios más",
+    'plan.updated.see': "Ver mis rutinas",
+    'plan.updated.ok': "Entendido",
 };

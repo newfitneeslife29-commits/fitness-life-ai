@@ -1,6 +1,6 @@
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { App } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -186,6 +186,35 @@ export const shareImage = async (blob: Blob, name: string, title: string): Promi
     } catch (e) {
         if (e instanceof Error && /cancel|abort/i.test(e.message + e.name)) return 'shared';
         return 'failed';
+    }
+};
+
+// Straight to one app (Android): Instagram or Facebook Stories, or the
+// Facebook, Instagram or TikTok app. Elsewhere, or when that app is not
+// installed, the share sheet opens instead, where those apps also appear.
+export type ShareTarget = 'instagram-story' | 'facebook-story' | 'instagram' | 'facebook' | 'tiktok';
+interface StorySharePlugin { share(options: { target: ShareTarget; path: string }): Promise<void> }
+const StoryShare = registerPlugin<StorySharePlugin>('StoryShare');
+
+export const shareImageTo = async (target: ShareTarget, blob: Blob, name: string, title: string): Promise<'shared' | 'saved' | 'failed' | 'fallback'> => {
+    if (Capacitor.getPlatform() !== 'android') {
+        const r = await shareImage(blob, name, title);
+        return r === 'shared' ? 'fallback' : r;
+    }
+    try {
+        const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+        });
+        const written = await Filesystem.writeFile({ path: name, data, directory: Directory.Cache });
+        await StoryShare.share({ target, path: written.uri });
+        return 'shared';
+    } catch {
+        // App missing (or a phone that blocks it): the share sheet still works.
+        const r = await shareImage(blob, name, title);
+        return r === 'shared' ? 'fallback' : r;
     }
 };
 

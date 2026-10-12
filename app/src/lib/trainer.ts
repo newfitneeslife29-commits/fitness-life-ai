@@ -3,6 +3,7 @@ import { ALLOWED } from '../data/programs';
 import type { CatalogExercise, TrainerContext } from './ai';
 import { planName, routineName, sessionName } from './names';
 import { ageOf } from './nutrition';
+import { weekPhase } from './plan';
 import { sessionsThisWeek, streakWeeks } from './stats';
 import type { AppState, LoggedSet, Session, Setup } from '../store/types';
 
@@ -29,7 +30,7 @@ export const trainerContext = (state: AppState): TrainerContext => {
     const planRoutines = state.plan ? state.plan.routineIds.map(id => state.routines.find(r => r.id === id)).filter(r => !!r) : [];
     const custom = state.routines.filter(r => r.source === 'custom');
     const plan = [
-        state.plan ? `Program: ${planName(state.plan)} (next up: day ${state.plan.nextIndex + 1})` : 'No program',
+        state.plan ? `Program: ${planName(state.plan)} (week ${state.plan.week ?? 1}, ${weekPhase(state.plan.week ?? 1)} phase; next up: day ${state.plan.nextIndex + 1})` : 'No program',
         ...planRoutines.map((r, i) => `Day ${i + 1} · ${routineName(r)}: ${r.exercises.map(e => `${exerciseName(e.exerciseId)} ${e.sets}×${e.repMin}–${e.repMax}${getExercise(e.exerciseId)?.timed ? ' s' : ''}`).join(', ')}`),
         ...(custom.length ? [`Own routines: ${custom.map(r => routineName(r)).join(', ')}`] : []),
     ].join('\n');

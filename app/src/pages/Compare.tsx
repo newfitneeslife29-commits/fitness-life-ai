@@ -1,11 +1,11 @@
-import { ChevronLeft, ImagePlus, Lock, Share2 } from 'lucide-react';
+import { ChevronLeft, ImagePlus, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../components/feedback';
+import { ShareBar } from '../components/ShareBar';
 import { Chips, Section } from '../components/ui';
 import { t } from '../i18n';
 import { pickImage } from '../lib/image';
-import { shareImage } from '../lib/native';
 import { canvasBlob, compareImage, ensureFonts, type CompareLayout } from '../lib/shareCards';
 
 type Photo = { image: ImageBitmap | HTMLImageElement; url: string };
@@ -73,12 +73,7 @@ export default function Compare() {
         return () => { cancelled = true; };
     }, [before, after, beforeNote, afterNote, layout, split]);
 
-    const share = async () => {
-        if (!canvasRef.current) return;
-        const result = await shareImage(await canvasBlob(canvasRef.current), 'fitness-life-antes-despues.png', t('compare.title'));
-        if (result === 'saved') toast(t('wrapped.saved'));
-        if (result === 'failed') toast(t('wrapped.failed'));
-    };
+    const blob = async () => (canvasRef.current ? canvasBlob(canvasRef.current) : null);
 
     return (
         <div className="space-y-5 pb-4">
@@ -114,7 +109,7 @@ export default function Compare() {
                 {preview ? (
                     <>
                         <img src={preview} alt={t('compare.previewAlt')} className={`mx-auto w-full rounded-2xl shadow-2xl shadow-black/50 ${layout === 'stack' ? 'max-w-[19rem]' : ''}`} />
-                        <button onClick={share} className="btn-primary w-full"><Share2 size={18} /> {t('wrapped.share')}</button>
+                        <ShareBar getBlob={blob} story={layout === 'stack'} name="fitness-life-antes-despues.png" title={t('compare.title')} />
                     </>
                 ) : (
                     <p className="card p-6 text-center text-sm text-white/50">{t('compare.empty')}</p>
