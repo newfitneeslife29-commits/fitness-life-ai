@@ -588,7 +588,12 @@ test('account: sign up, cloud copy, and sign in on another phone', async ({ page
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page.getByText('Sesión cerrada')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible({ timeout: 10_000 });
+    const welcome = page.getByRole('heading', { name: /Entrena con un plan/ });
+    await welcome.waitFor({ timeout: 10_000 }).catch(async () => {
+        console.log('After sign-out the page shows:', page.url(), (await page.locator('body').innerText()).slice(0, 600));
+        console.log('Stored state:', await page.evaluate(() => (localStorage.getItem('fitness-life:v1') ?? '').slice(0, 300)));
+    });
+    await expect(welcome).toBeVisible();
 
     // Another phone: sign in and the plan comes back, no questions.
     const other = await (await browser.newContext({ locale: 'es-ES' })).newPage();
