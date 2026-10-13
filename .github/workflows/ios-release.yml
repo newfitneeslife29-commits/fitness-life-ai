@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         working-directory: app
@@ -30,6 +30,12 @@ jobs:
       VERSION_NAME: 1.0.${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
+      # App Store Connect only takes apps built with the iOS 26 SDK or later.
+      - name: Use the newest Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
       - name: Check the Apple settings
         env:
           PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
