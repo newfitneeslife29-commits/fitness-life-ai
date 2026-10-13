@@ -724,6 +724,11 @@ test('community: read, like, comment and post', async ({ page }) => {
             sent.push({ url, method: req.method(), body: req.postData() ? (() => { try { return req.postDataJSON(); } catch { return null; } })() : null });
             return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
         }
+        // Like the real database: posts and profiles are linked directly and
+        // through likes and comments, so the author embed must name its key.
+        if (/author:community_profiles\(/.test(decodeURIComponent(url))) {
+            return route.fulfill({ status: 300, headers: cors, json: { code: 'PGRST201', message: "Could not embed because more than one relationship was found for 'community_posts' and 'community_profiles'" } });
+        }
         if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: posts });
         if (url.includes('community_likes')) return route.fulfill({ headers: cors, json: [] });
         if (url.includes('community_comments')) {
