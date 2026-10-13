@@ -5,6 +5,7 @@ Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`goog
 - **Gráfico de funciones:** `feature-graphic.png` (1024×500).
 - **Capturas de pantalla del teléfono:** de `01-inicio.png` a `08-premium.png` (1080×1920), en ese orden:
   `01-inicio`, `02-entreno`, `03-maquina-ocupada`, `04-entrenador-ia`, `05-mujeres`, `06-gym-wrapped`, `07-nutricion`, `08-premium`.
+- **Capturas para computadoras y Chromebook:** las mismas 8 en horizontal (1920×1080), en [`google-play/chromebook/`](google-play/chromebook/).
 
 ## Ficha de Play Store principal
 
