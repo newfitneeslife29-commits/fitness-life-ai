@@ -54,6 +54,10 @@ export const HealthCard = () => {
     }
 
     const today = state.today;
+    // Apple Health hides refused access: nothing at all may mean "not allowed".
+    const ios = Capacitor.getPlatform() === 'ios';
+    const nothing = ios && (!today || (!today.steps && !today.activeKcal && !today.heart));
+    const shown = (n: number | null | undefined) => (n != null && !nothing ? fmtNumber(n) : '—');
     return (
         <div className="card p-4">
             <div className="flex items-center justify-between">
@@ -64,10 +68,11 @@ export const HealthCard = () => {
                 )}
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
-                <Metric icon={<Footprints size={18} />} value={today?.steps != null ? fmtNumber(today.steps) : '—'} label={t('health.steps')} />
-                <Metric icon={<Flame size={18} />} value={today?.activeKcal != null ? fmtNumber(today.activeKcal) : '—'} label={t('health.kcal')} />
+                <Metric icon={<Footprints size={18} />} value={shown(today?.steps)} label={t('health.steps')} />
+                <Metric icon={<Flame size={18} />} value={shown(today?.activeKcal)} label={t('health.kcal')} />
                 <Metric icon={<HeartPulse size={18} />} value={today?.heart ? String(today.heart.avg) : '—'} label={t('health.bpm')} />
             </div>
+            {nothing && <p className="mt-2 text-xs text-white/50">{t('health.iosNoData')}</p>}
             {today?.heart && <p className="mt-2 text-xs text-white/50">{t('health.heartRange', { min: today.heart.min, max: today.heart.max, last: today.heart.last })}</p>}
             <p className="mt-2 text-[11px] text-white/40">{t('health.from', { source })} · <button className="underline" onClick={() => { disconnectHealth(); refresh(); }}>{t('health.disconnect')}</button></p>
         </div>

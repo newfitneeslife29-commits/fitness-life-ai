@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         working-directory: app
@@ -30,6 +30,12 @@ jobs:
       VERSION_NAME: 1.0.${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
+      # App Store Connect only takes apps built with the iOS 26 SDK or later.
+      - name: Use the newest Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
       - name: Check the Apple settings
         env:
           PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
@@ -63,18 +69,35 @@ jobs:
           VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
           VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
           VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
-      # Xcode creates the certificate and provisioning profile itself
-      # (automatic signing through the API key), so nothing else is stored.
+      # The archive is built unsigned: a development-signed archive needs a
+      # registered device. The export below signs it for the App Store, and
+      # Xcode creates the distribution certificate and profile itself
+      # (cloud signing through the API key), so nothing else is stored.
       - name: Archive
         run: >
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
           -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive"
-          -allowProvisioningUpdates
-          -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
-          -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
-          DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic
+          DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
           MARKETING_VERSION="$VERSION_NAME" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
           archive
+      # An unsigned archive carries no entitlements, and the export signs with
+      # the ones it finds in the app. Sign it ad hoc with App.entitlements so
+      # Apple Health (HealthKit) keeps working in the App Store build.
+      - name: Add the entitlements
+        run: |
+          app="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          codesign --force --sign - --entitlements ios/App/App/App.entitlements "$app"
+          codesign -d --entitlements - "$app" 2>&1 | tee "$RUNNER_TEMP/entitlements.txt"
+          grep -q 'com.apple.developer.healthkit' "$RUNNER_TEMP/entitlements.txt" || { echo "::error::HealthKit entitlement missing"; exit 1; }
+      # The icon colors in Settings need the alternate icon sets inside the app.
+      - name: Check the app icons
+        run: |
+          app="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundleAlternateIcons' "$app/Info.plist" | tee "$RUNNER_TEMP/icons.txt"
+          count=$(grep -c 'AppIcon-' "$RUNNER_TEMP/icons.txt" || true)
+          echo "Alternate icons in Info.plist: $count"
+          xcrun assetutil --info "$app/Assets.car" | grep -o '"Name" : "AppIcon[^"]*"' | sort -u
+          [ "$count" -ge 8 ] || { echo "::error::The alternate app icons are missing from the app"; exit 1; }
       - name: Upload to App Store Connect
         run: |
           cat > "$RUNNER_TEMP/export.plist" <<EOF

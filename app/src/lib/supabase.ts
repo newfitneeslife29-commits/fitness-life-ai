@@ -26,3 +26,20 @@ export const getSupabase = () => {
         throw e;
     });
 };
+
+// A client with a session: without an account the app signs in anonymously
+// (the AI counts uses per device, the community needs a session to read).
+// One anonymous sign-in at a time, so two features starting together don't
+// create two users.
+let anonymous: Promise<void> | null = null;
+export const getSessionClient = async (): Promise<SupabaseClient> => {
+    const supabase = await getSupabase();
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+        anonymous ??= supabase.auth.signInAnonymously().then(({ error }) => {
+            if (error) throw error;
+        }).finally(() => { anonymous = null; });
+        await anonymous;
+    }
+    return supabase;
+};

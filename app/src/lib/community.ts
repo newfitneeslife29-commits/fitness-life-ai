@@ -1,6 +1,6 @@
 import { getState, subscribeStore } from '../store/store';
 import { uid } from './id';
-import { getSupabase, SUPABASE_URL } from './supabase';
+import { getSessionClient, getSupabase, SUPABASE_URL } from './supabase';
 
 // Community: posts with text and an optional photo, likes and comments.
 // Reading needs any session (the anonymous one is fine); posting, liking and
@@ -50,21 +50,13 @@ const myId = async () => {
 };
 
 // Any session will do for reading; without one, sign in anonymously first.
-const reader = async () => {
-    const supabase = await getSupabase();
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-        const { error } = await supabase.auth.signInAnonymously();
-        if (error) throw error;
-    }
-    return supabase;
-};
+const reader = getSessionClient;
 
 export const fetchFeed = async (before?: string): Promise<Post[]> => {
     const supabase = await reader();
     let query = supabase
         .from('community_posts')
-        .select('id, body, image_path, created_at, user_id, author:community_profiles(name, avatar_path, updated_at), community_likes(count), community_comments(count)')
+        .select('id, body, image_path, created_at, user_id, author:community_profiles!community_posts_user_id_fkey(name, avatar_path, updated_at), community_likes(count), community_comments(count)')
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
     if (before) query = query.lt('created_at', before);
@@ -129,7 +121,7 @@ export const fetchComments = async (postId: string): Promise<Comment[]> => {
     const supabase = await reader();
     const { data, error } = await supabase
         .from('community_comments')
-        .select('id, body, created_at, user_id, author:community_profiles(name, avatar_path, updated_at)')
+        .select('id, body, created_at, user_id, author:community_profiles!community_comments_user_id_fkey(name, avatar_path, updated_at)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(200);

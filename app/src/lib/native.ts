@@ -40,7 +40,7 @@ let audio: AudioContext | null = null;
 export const primeSound = () => {
     try {
         audio ??= new AudioContext();
-        if (audio.state === 'suspended') void audio.resume();
+        if (audio.state !== 'running') void audio.resume();
     } catch {
         audio = null;
     }
@@ -103,6 +103,18 @@ const notificationsOk = async () => {
     return notificationsAllowed;
 };
 
+// Exact alarms need a special permission on Android 12+ (off by default on
+// Android 14+). Asking for one makes the plugin open the system settings, so
+// alerts are exact only when it's already allowed; otherwise they may come a
+// little late, and nobody gets sent to Settings mid-workout.
+let exactAllowed: Promise<boolean> | null = null;
+const exactAlarms = () => {
+    exactAllowed ??= Capacitor.getPlatform() !== 'android'
+        ? Promise.resolve(true)
+        : LocalNotifications.checkExactNotificationSetting().then(r => r.exact_alarm === 'granted').catch(() => false);
+    return exactAllowed;
+};
+
 export const scheduleRestAlert = async (atMs: number) => {
     if (!isNative()) return;
     await quiet(async () => {
@@ -110,7 +122,10 @@ export const scheduleRestAlert = async (atMs: number) => {
         await LocalNotifications.cancel({ notifications: [{ id: REST_NOTIFICATION_ID }] });
         if (atMs <= Date.now() + 1000) return;
         await LocalNotifications.schedule({
-            notifications: [{ id: REST_NOTIFICATION_ID, title: t('notify.restTitle'), body: t('notify.restBody'), schedule: { at: new Date(atMs), allowWhileIdle: true } }],
+            notifications: [{
+                id: REST_NOTIFICATION_ID, title: t('notify.restTitle'), body: t('notify.restBody'),
+                schedule: { at: new Date(atMs), allowWhileIdle: true }, isExactNotification: await exactAlarms(),
+            }],
         });
     });
 };
@@ -130,7 +145,8 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
         const due = alerts.filter(a => a.at.getTime() > Date.now() + 60_000).slice(0, RECOVERY_IDS.length);
         if (!due.length || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
-            notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true } })),
+            // Hours away: an inexact alarm is fine and needs no special permission.
+            notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
         });
     });
 };
@@ -223,7 +239,12 @@ export const shareImageTo = async (target: ShareTarget, blob: Blob, name: string
 export const saveFile = async (name: string, content: string) => {
     if (isNative()) {
         const written = await Filesystem.writeFile({ path: name, data: content, directory: Directory.Cache, encoding: Encoding.UTF8 });
-        await Share.share({ title: t('backup.shareTitle'), url: written.uri, dialogTitle: t('backup.save') });
+        try {
+            await Share.share({ title: t('backup.shareTitle'), url: written.uri, dialogTitle: t('backup.save') });
+        } catch (e) {
+            // Closing the share sheet is not an error.
+            if (!/cancel/i.test(String((e as Error)?.message ?? e))) throw e;
+        }
         return;
     }
     const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
@@ -244,5 +265,13 @@ export const initNative = (onBack: () => void) => {
     initialized = true;
     // Status bar colors follow the theme (src/lib/theme.ts).
     void quiet(() => SplashScreen.hide());
-    void quiet(() => App.addListener('backButton', ({ canGoBack }) => (canGoBack ? backHandler() : App.exitApp())));
+    void quiet(() => App.addListener('backButton', ({ canGoBack }) => {
+        // An open sheet or dialog closes first (they close on Escape).
+        if (document.querySelector('[aria-modal="true"]')) {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            return;
+        }
+        if (canGoBack) backHandler();
+        else void App.exitApp();
+    }));
 };

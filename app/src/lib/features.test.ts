@@ -165,6 +165,8 @@ describe('app icon colors', () => {
         expect(manifest.match(/category\.LAUNCHER/g)).toHaveLength(ids.length);
         const java = readFileSync('android/app/src/main/java/com/fitnesslife/app/LauncherIconPlugin.java', 'utf8');
         const swift = readFileSync('ios/App/App/LauncherIconPlugin.swift', 'utf8');
+        // The plugin is registered by MainViewController, so the app must start with it.
+        expect(readFileSync('ios/App/App/SceneDelegate.swift', 'utf8')).toContain('rootViewController = MainViewController()');
         const list = ids.map(id => `"${id}"`).join(', ');
         expect(java).toContain(`Arrays.asList(${list})`);
         expect(swift).toContain(`[${list}]`);
@@ -223,5 +225,24 @@ describe('weekly plan updates', () => {
         expect(next.routines.some(r => r.id === routines[0].id)).toBe(false);
         expect(next.plan.update?.swaps.length).toBeGreaterThan(0);
         expect(next.plan.update?.seen).toBe(false);
+    });
+    it('keeps days the person deleted out and each day in its place', () => {
+        const four = { ...profile, daysPerWeek: 4 };
+        const { plan, routines } = buildPlan(four, 1);
+        // Day 2 deleted (as deleteRoutine does), day 3 edited by hand.
+        const edited = { ...routines[2], name: 'Mi día', edited: true };
+        const kept = [routines[0], edited, routines[3]];
+        const next = advancePlan(four, { ...plan, routineIds: kept.map(r => r.id), nextIndex: 0 }, kept, '2026-10-12');
+        const days = next.plan.routineIds.map(id => next.routines.find(r => r.id === id)!);
+        expect(days).toHaveLength(3);
+        expect(days.map(d => d.dayKey)).toEqual([routines[0].dayKey, routines[2].dayKey, routines[3].dayKey]);
+        expect(days[1].id).toBe(edited.id);
+        // Swaps only compare a day with its own next version.
+        const nextDay0 = buildPlan({ ...four, programId: plan.programId }, 2).routines[0];
+        const day0Swaps = routines[0].exercises.flatMap((e, j) => (nextDay0.exercises[j] && nextDay0.exercises[j].exerciseId !== e.exerciseId ? [e.exerciseId] : []));
+        for (const swap of next.plan.update!.swaps) {
+            expect([...routines[0].exercises, ...routines[3].exercises].map(e => e.exerciseId)).toContain(swap.from);
+        }
+        expect(next.plan.update!.swaps.filter(s => routines[0].exercises.some(e => e.exerciseId === s.from)).length).toBe(day0Swaps.length);
     });
 });

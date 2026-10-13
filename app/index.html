@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // iPhone/iPad zoom into fields with text under 16px and stay zoomed;
+      // maximum-scale stops that there (iOS still lets people pinch to zoom).
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover');
+      }
+    </script>
     <meta name="theme-color" content="#0b0d10" />
     <meta name="description" content="Tu plan de fuerza, tus series y tu progreso. Funciona sin conexión." />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
@@ -49,6 +56,8 @@
         });
         setTimeout(function () {
           if (started()) return;
+          // Without the app the native splash would hide this message forever.
+          try { window.Capacitor.Plugins.SplashScreen.hide(); } catch (e) {}
           for (var i = 0; i < rejections.length; i++) show(rejections[i]);
           show('La app no arrancó');
         }, 8000);

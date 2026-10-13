@@ -9,6 +9,7 @@ import { authAvailable } from '../lib/auth';
 import { addComment, createPost, deleteComment, deletePost, fetchComments, fetchFeed, PAGE_SIZE, report, setLike, type Comment, type Post } from '../lib/community';
 import { pickImage, resizeImage } from '../lib/image';
 import { actions, getState, useStore } from '../store/store';
+import { errorText } from '../lib/errorText';
 
 // Community: share progress, like and comment. Posting needs an account.
 
@@ -237,7 +238,7 @@ export default function Community() {
     const member = Boolean(account);
     const me = account?.id ?? null;
     const [posts, setPosts] = useState<Post[] | null>(null);
-    const [failed, setFailed] = useState(false);
+    const [failed, setFailed] = useState<string | false>(false);
     const [more, setMore] = useState(false);
     const [composing, setComposing] = useState(false);
     const [commentsFor, setCommentsFor] = useState<Post | null>(null);
@@ -249,8 +250,10 @@ export default function Community() {
             const page = await fetchFeed();
             setPosts(page);
             setMore(page.length >= PAGE_SIZE);
-        } catch {
-            setFailed(true);
+        } catch (e) {
+            // The reason is shown small under the message, to tell a network
+            // problem from a server one.
+            setFailed(errorText(e));
             setPosts(p => p ?? []);
         }
     }, []);
@@ -367,6 +370,7 @@ export default function Community() {
                     <div className="card p-8 text-center">
                         <ShieldAlert size={28} className="mx-auto mb-2 text-white/30" />
                         <p className="text-sm text-white/60">{failed ? t('community.loadFailed') : t('community.empty')}</p>
+                        {failed && <p className="mt-1 break-words text-xs text-white/35">{failed}</p>}
                         {failed && <button className="btn-ghost mt-3" onClick={() => void load()}><RefreshCw size={16} /> {t('community.retry')}</button>}
                     </div>
                 ) : (

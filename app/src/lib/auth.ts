@@ -1,5 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { AuthError, User } from '@supabase/supabase-js';
+import { confirm } from '../components/feedback';
+import { t } from '../i18n';
 import { actions, getState } from '../store/store';
 import type { Account } from '../store/types';
 import { flushCloud, forgetCloudState, startCloudSync, syncAccount } from './cloud';
@@ -21,8 +23,11 @@ export type OAuthProvider = 'google' | 'apple' | 'facebook';
 const NATIVE_CALLBACK = 'com.fitnesslife.app://auth-callback';
 const native = Capacitor.isNativePlatform();
 
-// Where e-mail links and web OAuth come back to.
+// Where web OAuth and e-mail links come back to. In the apps, e-mail links
+// (confirm, reset password) open the app: the sign-in code can only be
+// exchanged where it was requested (PKCE), so the website can't finish it.
 const webRedirect = () => (native ? SITE_URL : `${location.origin}${location.pathname}`);
+const emailRedirect = () => (native ? NATIVE_CALLBACK : webRedirect());
 
 export type AuthErrorCode = 'invalid' | 'exists' | 'weak' | 'email' | 'confirm' | 'network' | 'rate' | 'failed';
 export class AuthFailure extends Error {
@@ -49,14 +54,18 @@ const toAccount = (user: User | null | undefined): Account | null =>
 
 // Fired when an e-mail "reset password" link is opened: the app asks for a new one.
 export const PASSWORD_RECOVERY_EVENT = 'fitness-life:password-recovery';
+// Fired when a sign-in link coming back to the app can't be used (expired, cancelled).
+export const AUTH_LINK_FAILED_EVENT = 'fitness-life:auth-link-failed';
 
 const onAccount = (account: Account | null) => {
     const before = getState().account;
     if (account?.id === before?.id) return;
+    // Premium bought without an account belongs to the anonymous id: carry it over.
+    const carryPremium = !before && Boolean(account) && Boolean(getState().premium?.active);
     actions.setAccount(account);
     actions.setAiUsage(null);
     actions.setPremium(null);
-    void switchPremiumUser();
+    void switchPremiumUser(carryPremium);
     if (account) void syncAccount(account, true);
     else forgetCloudState();
 };
@@ -73,8 +82,11 @@ export const startAuth = () => {
         supabase.auth.onAuthStateChange((event, session) => {
             // Supabase asks not to await other auth calls inside this callback.
             window.setTimeout(() => {
-                if (event === 'PASSWORD_RECOVERY') window.dispatchEvent(new Event(PASSWORD_RECOVERY_EVENT));
-                if (event === 'INITIAL_SESSION') {
+                if (event === 'PASSWORD_RECOVERY') {
+                    // A reset link signs the person in, but only sends this event.
+                    onAccount(toAccount(session?.user));
+                    window.dispatchEvent(new Event(PASSWORD_RECOVERY_EVENT));
+                } else if (event === 'INITIAL_SESSION') {
                     const account = toAccount(session?.user);
                     if (account && account.id === getState().account?.id) void syncAccount(account, false);
                     else onAccount(account);
@@ -92,9 +104,16 @@ export const startAuth = () => {
             const [{ App }, { Browser }] = await Promise.all([import('@capacitor/app'), import('@capacitor/browser')]);
             await App.addListener('appUrlOpen', async ({ url }) => {
                 if (!url.startsWith(NATIVE_CALLBACK)) return;
-                await Browser.close().catch(() => {});
-                const code = new URL(url).searchParams.get('code');
-                if (code) await supabase.auth.exchangeCodeForSession(code);
+                // Android closes the browser tab itself when the app comes back
+                // (closing it again can leave an empty screen on top).
+                if (Capacitor.getPlatform() === 'ios') await Browser.close().catch(() => {});
+                const link = new URL(url);
+                const params = new URLSearchParams(link.hash.slice(1));
+                link.searchParams.forEach((v, k) => params.set(k, v));
+                const code = params.get('code');
+                const failed = params.get('error_description') || params.get('error')
+                    || (code ? (await supabase.auth.exchangeCodeForSession(code)).error?.message : null);
+                if (failed) window.dispatchEvent(new CustomEvent(AUTH_LINK_FAILED_EVENT, { detail: failed }));
             });
         }
     })().catch(e => {
@@ -114,7 +133,8 @@ export const initAuth = () => {
             return false;
         }
     })();
-    if (stored || getState().account || /[?&]code=/.test(location.search)) void startAuth().catch(() => {});
+    // In the apps a sign-in link can open the app before any session exists, so always listen there.
+    if (native || stored || getState().account || /[?&]code=/.test(location.search)) void startAuth().catch(() => {});
 };
 
 const ready = async () => {
@@ -129,7 +149,7 @@ const ready = async () => {
 // 'signedIn', or 'confirm' when the project asks to confirm the e-mail first.
 export const signUpWithEmail = async (email: string, password: string): Promise<'signedIn' | 'confirm'> => {
     const supabase = await ready();
-    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: webRedirect() } });
+    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: emailRedirect() } });
     if (error) throw failure(error);
     // An e-mail already in use comes back without identities (and without an error).
     if (data.user && data.user.identities?.length === 0) throw new AuthFailure('exists');
@@ -157,7 +177,7 @@ export const signInWithProvider = async (provider: OAuthProvider) => {
 
 export const sendPasswordReset = async (email: string) => {
     const supabase = await ready();
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: webRedirect() });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: emailRedirect() });
     if (error) throw failure(error);
 };
 
@@ -169,13 +189,20 @@ export const updatePassword = async (password: string) => {
 
 // The data stays in the account; this phone goes back to a clean start, so
 // the next account (or someone else) doesn't get it.
-export const signOut = async () => {
+// Returns false when the person keeps the session (changes not sent yet).
+export const signOut = async (): Promise<boolean> => {
     const supabase = await ready();
     const account = getState().account;
-    if (account) await flushCloud(account.id).catch(() => {});
+    if (account) {
+        const sent = await flushCloud(account.id).then(() => true, () => false);
+        // Without signal the latest changes can't reach the account yet, and
+        // signing out wipes this phone: only go ahead if the person says so.
+        if (!sent && !(await confirm({ title: t('account.unsyncedTitle'), message: t('account.unsyncedMessage'), confirmLabel: t('account.signOutAnyway'), danger: true }))) return false;
+    }
     await supabase.auth.signOut({ scope: 'local' });
     onAccount(null);
     actions.resetAll();
+    return true;
 };
 
 // Deletes the account, its cloud copy and its AI usage records (server side).
