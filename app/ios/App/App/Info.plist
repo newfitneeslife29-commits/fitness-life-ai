@@ -10,6 +10,9 @@
 	<string>Fitness Life usa la cámara para fotografiar tus comidas y calcular sus calorías, y para tu foto de perfil y tus publicaciones.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fitness Life usa tus fotos para calcular las calorías de una comida, tu foto de perfil y tus publicaciones en la comunidad.</string>
+	<!-- Only standard HTTPS: exempt from export compliance documents. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
