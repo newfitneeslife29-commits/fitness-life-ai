@@ -8,6 +8,8 @@
 	<string>Fitness Life no escribe datos en Salud.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Fitness Life usa la cámara para fotografiar tus comidas y calcular sus calorías, y para tu foto de perfil y tus publicaciones.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Fitness Life guarda en tus Fotos las tarjetas e imágenes que decides guardar para compartir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fitness Life usa tus fotos para calcular las calorías de una comida, tu foto de perfil y tus publicaciones en la comunidad.</string>
 	<!-- Only standard HTTPS: exempt from export compliance documents. -->
@@ -28,6 +30,12 @@
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>es</string>
+		<string>en</string>
+		<string>pt</string>
+	</array>
 	<key>CFBundleDisplayName</key>
         <string>Fitness Life</string>
 	<key>CFBundleExecutable</key>

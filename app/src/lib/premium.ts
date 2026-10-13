@@ -215,13 +215,15 @@ const getBackend = () => {
 
 export const getOffer = async () => (await getBackend()).offer();
 
-// After signing in or out: purchases follow the new user id.
-export const switchPremiumUser = async () => {
-    if (!backend) return;
+// After signing in or out: purchases follow the new user id. With carry,
+// a subscription bought before having an account moves to the new one
+// (the store transfers it on restore).
+export const switchPremiumUser = async (carry = false) => {
+    if (!backend && !carry) return;
     try {
-        const b = await backend;
+        const b = await (backend ?? getBackend());
         await b.switchUser(await getUserId());
-        await refreshPremium();
+        actions.setPremium(await (carry ? b.restore() : b.status()));
     } catch {
         backend = null; // set up again on next use
     }

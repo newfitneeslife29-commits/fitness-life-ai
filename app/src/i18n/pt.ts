@@ -1037,4 +1037,10 @@ export const pt: Dict = {
     'appIcon.changed.now': "Ícone {name} pronto",
     'appIcon.changed.tab': "Ícone {name} pronto",
     'appIcon.failed': "Não foi possível mudar o ícone. Tente de novo.",
+
+    // Sign-in links that can't be used
+    'auth.linkFailed': "Esse link não funciona mais (expirou ou já foi usado). Tente de novo pelo app.",
+
+    // Apple Health without data
+    'health.iosNoData': "Sem dados? Permita o acesso em Ajustes › Saúde › Acesso a Dados e Dispositivos › Fitness Life.",
 };

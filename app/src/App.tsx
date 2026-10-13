@@ -1,7 +1,7 @@
 import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { FeedbackHost } from './components/feedback';
+import { FeedbackHost, toast } from './components/feedback';
 import { OfflineNotice } from './components/OfflineNotice';
 import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
@@ -22,7 +22,7 @@ import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
-import { authAvailable, initAuth } from './lib/auth';
+import { AUTH_LINK_FAILED_EVENT, authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
 import Onboarding from './pages/Onboarding';
 import Progress from './pages/Progress';
@@ -111,6 +111,12 @@ export default function App() {
         initNative(() => navigate(-1));
     }, [navigate]);
     useEffect(initAuth, []);
+    // A sign-in or reset link that can't be used (expired, already used).
+    useEffect(() => {
+        const failed = () => toast(t('auth.linkFailed'), 5000);
+        window.addEventListener(AUTH_LINK_FAILED_EVENT, failed);
+        return () => window.removeEventListener(AUTH_LINK_FAILED_EVENT, failed);
+    }, []);
     useRecoveryAlerts();
     // "Your activity": one mark per day the app is used.
     useEffect(() => {

@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -20,7 +20,12 @@ const paint = () => {
     if (Capacitor.isNativePlatform()) {
         // Style.Dark = light text, for the dark theme.
         void StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light }).catch(() => {});
-        if (Capacitor.getPlatform() === 'android') void StatusBar.setBackgroundColor({ color: BACKGROUND[theme] }).catch(() => {});
+        if (Capacitor.getPlatform() === 'android') {
+            void StatusBar.setBackgroundColor({ color: BACKGROUND[theme] }).catch(() => {});
+            // Both bars (status and navigation), kept when the phone switches
+            // light/dark; StatusBar alone only covers the top bar.
+            void SystemBars.setStyle({ style: theme === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => {});
+        }
     }
 };
 

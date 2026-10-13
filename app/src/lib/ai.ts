@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { blobToBase64 } from './image';
-import { backendAvailable, getSupabase } from './supabase';
+import { backendAvailable, getSessionClient } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
 import type { Activity, AiUsage, ChatMessage, Goal, Level, Limitation, Macros, Setup, Sex } from '../store/types';
@@ -46,20 +46,7 @@ export interface MealEstimate {
     note: string;
 }
 
-// Without an account the app signs in anonymously, so the coach can count
-// uses per device. One sign-in at a time.
-let anonymous: Promise<void> | null = null;
-const getClient = async (): Promise<SupabaseClient> => {
-    const supabase = await getSupabase();
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-        anonymous ??= supabase.auth.signInAnonymously().then(({ error }) => {
-            if (error) throw error;
-        }).finally(() => { anonymous = null; });
-        await anonymous;
-    }
-    return supabase;
-};
+const getClient = getSessionClient;
 
 const call = async <T>(body: Record<string, unknown>): Promise<T> => {
     if (!aiAvailable()) throw new AiError('unavailable');

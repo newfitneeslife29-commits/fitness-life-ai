@@ -20,6 +20,7 @@ const config: CapacitorConfig = {
             showSpinner: false,
         },
         LocalNotifications: {
+            smallIcon: 'ic_stat_notify', // res/drawable/ic_stat_notify.xml
             iconColor: '#f26b1d',
         },
     },

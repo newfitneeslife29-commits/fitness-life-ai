@@ -56,7 +56,7 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
             {/* Photo mosaic, slowly drifting, fading into the page. */}
             <div aria-hidden className="pointer-events-none"><PhotoMosaic /></div>
 
-            <header className="pt-safe relative z-10 mx-auto flex w-full max-w-lg items-center justify-between px-5 pt-4">
+            <header className="relative z-10 mx-auto flex w-full max-w-lg items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))]">
                 <div className="flex items-center gap-2.5 rounded-full bg-ink/85 py-1.5 pl-1.5 pr-4">
                     <Logo size={32} />
                     <span className="font-bold tracking-tight">Fitness Life</span>

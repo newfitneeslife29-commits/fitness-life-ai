@@ -1037,4 +1037,10 @@ export const es = {
     'appIcon.changed.now': "Ícono {name} listo",
     'appIcon.changed.tab': "Ícono {name} listo",
     'appIcon.failed': "No se pudo cambiar el ícono. Inténtalo de nuevo.",
+
+    // Sign-in links that can't be used
+    'auth.linkFailed': "Ese enlace ya no sirve (caducó o ya se usó). Vuelve a intentarlo desde la app.",
+
+    // Apple Health without data
+    'health.iosNoData': "¿No ves datos? Permite el acceso en Ajustes › Salud › Acceso a datos y dispositivos › Fitness Life.",
 };

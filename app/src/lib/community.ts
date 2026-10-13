@@ -1,6 +1,6 @@
 import { getState, subscribeStore } from '../store/store';
 import { uid } from './id';
-import { getSupabase, SUPABASE_URL } from './supabase';
+import { getSessionClient, getSupabase, SUPABASE_URL } from './supabase';
 
 // Community: posts with text and an optional photo, likes and comments.
 // Reading needs any session (the anonymous one is fine); posting, liking and
@@ -50,15 +50,7 @@ const myId = async () => {
 };
 
 // Any session will do for reading; without one, sign in anonymously first.
-const reader = async () => {
-    const supabase = await getSupabase();
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-        const { error } = await supabase.auth.signInAnonymously();
-        if (error) throw error;
-    }
-    return supabase;
-};
+const reader = getSessionClient;
 
 export const fetchFeed = async (before?: string): Promise<Post[]> => {
     const supabase = await reader();
