@@ -56,6 +56,11 @@ export interface Plan {
 // Plans the store offers, annual first.
 export type Offer = Plan[];
 
+// Plan selected when the Premium page opens: one with a free trial, so
+// people see it straight away; otherwise the annual plan, or what the store has.
+export const firstPlan = (offer: Pick<Plan, 'id' | 'trialDays'>[]): PlanId | null =>
+    offer.find(p => p.trialDays)?.id ?? (offer.some(p => p.id === 'annual') ? 'annual' : offer[0]?.id ?? null);
+
 export const fallbackPlan = (id: PlanId): Omit<Plan, 'buy'> =>
     ({ id, price: money(PRICES[id]), perMonth: money(PRICES[id] / (id === 'annual' ? 12 : 1)) });
 

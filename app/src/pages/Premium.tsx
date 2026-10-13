@@ -7,7 +7,7 @@ import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { refreshUsage } from '../lib/ai';
 import { fmtDate } from '../lib/format';
-import { ANNUAL_SAVING, fallbackPlan, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, type Offer, type PlanId } from '../lib/premium';
+import { ANNUAL_SAVING, fallbackPlan, firstPlan, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, type Offer, type PlanId } from '../lib/premium';
 import { useStore } from '../store/store';
 
 // Section anchors of public/legal.html in each language.
@@ -49,7 +49,8 @@ export default function Premium() {
         if (!available) return;
         getOffer().then(o => {
             setOffer(o);
-            if (o.length && !o.some(p => p.id === 'annual')) setPlanId(o[0].id);
+            const first = firstPlan(o);
+            if (first) setPlanId(first);
         }).catch(() => setOffer(null));
         refreshPremium().catch(() => {});
     }, [available]);
