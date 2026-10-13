@@ -165,6 +165,8 @@ describe('app icon colors', () => {
         expect(manifest.match(/category\.LAUNCHER/g)).toHaveLength(ids.length);
         const java = readFileSync('android/app/src/main/java/com/fitnesslife/app/LauncherIconPlugin.java', 'utf8');
         const swift = readFileSync('ios/App/App/LauncherIconPlugin.swift', 'utf8');
+        // The plugin is registered by MainViewController, so the app must start with it.
+        expect(readFileSync('ios/App/App/SceneDelegate.swift', 'utf8')).toContain('rootViewController = MainViewController()');
         const list = ids.map(id => `"${id}"`).join(', ');
         expect(java).toContain(`Arrays.asList(${list})`);
         expect(swift).toContain(`[${list}]`);
