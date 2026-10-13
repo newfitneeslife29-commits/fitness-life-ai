@@ -24,6 +24,7 @@ import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
+import { errorText } from '../lib/errorText';
 import type { Goal, Level, Setup } from '../store/types';
 
 const ToggleRow = ({ icon, title, hint, on, onChange, test }: {
@@ -412,8 +413,8 @@ function AppIconPicker() {
             await setAppIcon(id);
             setCurrent(id);
             toast(t(`appIcon.changed.${appIconTiming}`, { name: t(`appIcon.name.${id}`) }), 4000);
-        } catch {
-            toast(t('appIcon.failed'));
+        } catch (e) {
+            toast(`${t('appIcon.failed')} (${errorText(e)})`, 6000);
         }
     };
     return (
