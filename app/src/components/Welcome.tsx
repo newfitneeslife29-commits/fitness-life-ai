@@ -3,6 +3,7 @@ import { useRef, type ReactNode } from 'react';
 import { exercisePhotos } from '../data/exercises';
 import { getLang, LANGS, t, type Lang } from '../i18n';
 import { LEGAL_URL } from '../lib/premium';
+import { MARK_PATH } from '../lib/shareCards';
 import { actions, useStore } from '../store/store';
 import { toast } from './feedback';
 
@@ -10,13 +11,7 @@ import { toast } from './feedback';
 export const Logo = ({ size = 40 }: { size?: number }) => (
     <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden>
         <rect width="512" height="512" rx="112" className="fill-ink-3" />
-        <g className="fill-brand">
-            <rect x="96" y="196" width="40" height="120" rx="14" />
-            <rect x="144" y="164" width="44" height="184" rx="16" />
-            <rect x="324" y="164" width="44" height="184" rx="16" />
-            <rect x="376" y="196" width="40" height="120" rx="14" />
-            <rect x="188" y="236" width="136" height="40" rx="10" />
-        </g>
+        <path className="fill-brand" transform="translate(256 262) scale(2.5) translate(0 -51)" d={MARK_PATH} />
     </svg>
 );
 
