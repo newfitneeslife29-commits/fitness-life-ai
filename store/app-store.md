@@ -44,3 +44,88 @@ Cuando la cuenta esté activa:
 ## 6. Iniciar sesión con Apple
 
 Apple exige "Iniciar sesión con Apple" si la app ofrece Google. Se configura en developer.apple.com (Services ID y una clave de Sign in with Apple) y en Supabase → Authentication → Providers → **Apple**. Al activarlo en Supabase, el botón aparece solo en la app.
+
+## 7. Ficha del App Store (textos para copiar)
+
+Las capturas para iPhone de 6,9" (1290×2796) están en [`app-store/`](app-store/), de `01-inicio.png` a `08-premium.png`, en ese orden.
+
+**Nombre** (máx. 30): `Fitness Life: Gym y Nutrición`
+
+**Subtítulo** (máx. 30): `Gym, rutinas y nutrición IA`
+
+**Texto promocional** (máx. 170):
+```
+Nuevo: tu plan cambia cada semana, un entrenador con IA para el gym o la casa y Gym Wrapped para compartir tu mes. Prueba Premium 7 días gratis.
+```
+
+**Palabras clave** (máx. 100, separadas por comas, sin espacios):
+```
+gym,rutinas,gimnasio,pesas,fuerza,nutricion,calorias,proteina,entrenador,casa,mujeres,musculo,dieta
+```
+
+**Descripción:**
+```
+Fitness Life arma tu plan de fuerza en un minuto y te acompaña en cada entreno, cada comida y cada récord.
+
+TU PLAN, A TU MEDIDA
+• Dinos tu objetivo, tu nivel, tus días y dónde entrenas: gimnasio, mancuernas o en casa sin material.
+• Tu plan avanza cada semana: al completar tu semana, tus rutinas se renuevan con nuevas fases y ejercicios.
+• Sección de entrenamiento para mujeres: planes para bajar de peso o tonificar, en casa o en el gimnasio.
+
+TU ENTRENADOR PERSONAL CON IA (PREMIUM)
+• Pregúntale qué entrenar hoy, con cuánto peso y cómo mejorar.
+• Pídele una rutina para casa sin material, con mancuernas o para el gym, y la guarda en tu plan.
+
+ENTRENA MEJOR
+• Fotos de cada ejercicio y consejos de técnica.
+• Temporizador de descanso automático con vibración y sonido.
+• Repite la serie anterior con un toque y la app te dice cuándo subir de peso.
+• ¿Máquina ocupada? Cámbiala al instante por otro ejercicio del mismo músculo.
+• Alertas de recuperación: te avisa cuando tus músculos ya descansaron.
+• Funciona sin internet: tus entrenos se guardan y se sincronizan al volver la señal.
+
+MIRA Y COMPARTE TU PROGRESO
+• Constancia por semanas, 1RM estimado, volumen y peso corporal.
+• Tu actividad: calendario con los días que entrenas y tus rachas.
+• Gym Wrapped: tu mes en tarjetas para Instagram, Facebook y TikTok, con un fondo de gym o tu propia foto.
+• Antes y después: compara tus fotos y compártelas.
+• Pasos, calorías activas y pulso desde la app Salud.
+
+NUTRICIÓN SIN COMPLICARTE
+• Calorías, proteína, carbohidratos y grasa del día, con objetivos según tu meta.
+• Índice de masa corporal (IMC) y tu rango de peso saludable.
+• Tabla con 94 alimentos comunes.
+• Premium: toma una foto de tu comida y la IA calcula los macros.
+• Premium: coach de nutrición con IA que conoce tu objetivo y lo que llevas comido hoy.
+
+COMUNIDAD
+• Publica tu progreso con fotos, da like y comenta.
+• Reporta y bloquea con un toque: tolerancia cero con el contenido ofensivo.
+
+TU CUENTA, TUS DATOS
+• Úsala sin cuenta o entra con tu correo, Google o Apple para guardar una copia en la nube.
+• Elige el color del ícono de la app.
+• Sin anuncios. No vendemos tus datos.
+• En español, inglés y portugués, con modo claro y oscuro.
+
+FITNESS LIFE PREMIUM
+Entrenar es gratis. Premium añade la IA: entrenador personal, coach de nutrición y comidas calculadas desde una foto.
+• Mensual: 4,99 USD al mes, con 7 días de prueba gratis para nuevos suscriptores.
+• Anual: 39,99 USD al año.
+El pago se carga a tu cuenta de Apple al confirmar la compra (o al terminar la prueba gratis). La suscripción se renueva sola salvo que la canceles al menos 24 horas antes del final del periodo. Puedes gestionarla y cancelarla en los Ajustes de tu cuenta de Apple.
+
+Términos de uso: https://newfitneeslife29-commits.github.io/fitness-life-ai/legal.html#terminos
+Privacidad: https://newfitneeslife29-commits.github.io/fitness-life-ai/legal.html#privacidad
+
+Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a un profesional antes de empezar un programa de ejercicio o cambiar tu dieta.
+```
+
+**URL de soporte:** `https://newfitneeslife29-commits.github.io/fitness-life-ai/`
+**URL de la política de privacidad:** `https://newfitneeslife29-commits.github.io/fitness-life-ai/legal.html#privacidad`
+**Categoría:** Salud y forma física (secundaria: Estilo de vida).
+**Clasificación por edad:** responde "No" a todo, salvo **contenido generado por usuarios** (comunidad): Sí. El resultado suele ser 12+.
+
+**Notas para el revisor de Apple:**
+```
+Fitness Life works without an account: tap "Start for free" and then "Continue without account". Premium is an auto-renewable subscription (monthly with a 7-day free trial, or annual) and unlocks the AI personal trainer and the AI nutrition coach. The community has report and block buttons on every post and comment.
+```
