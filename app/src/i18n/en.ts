@@ -1017,4 +1017,23 @@ export const en: Dict = {
     'wrapped.bg.plain': "Plain",
     'wrapped.takePhoto': "Take photo",
     'wrapped.fromGallery': "From gallery",
+
+    // App icon color (Settings)
+    'appIcon.title': "App icon",
+    'appIcon.name.naranja': "Orange",
+    'appIcon.name.rojo': "Red",
+    'appIcon.name.rosa': "Pink",
+    'appIcon.name.morado': "Purple",
+    'appIcon.name.azul': "Blue",
+    'appIcon.name.verde': "Green",
+    'appIcon.name.dorado': "Gold",
+    'appIcon.name.blanco': "White",
+    'appIcon.name.claro': "White background",
+    'appIcon.hint.background': "The icon changes when you leave the app. If it was on your home screen, you may need to add it again from the app list.",
+    'appIcon.hint.now': "The icon changes right away. Your iPhone will show a message.",
+    'appIcon.hint.tab': "On the web this changes the tab icon. On your phone it changes the app icon.",
+    'appIcon.changed.background': "{name} icon: you'll see it when you leave the app",
+    'appIcon.changed.now': "{name} icon set",
+    'appIcon.changed.tab': "{name} icon set",
+    'appIcon.failed': "Couldn't change the icon. Try again.",
 };

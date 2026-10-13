@@ -1,6 +1,7 @@
 // Share cards drawn on a canvas (no libraries, works offline): "Gym Wrapped"
 // stories (1080×1920, dark) and the before/after photo comparison. Every card
 // carries the Fitness Life logo.
+import { MARK_PATH } from './appIcons';
 
 export const BRAND = 'FITNESS LIFE';
 const FONT = '"Inter Variable", Inter, system-ui, sans-serif';
@@ -48,13 +49,6 @@ export const darkBackground = (ctx: CanvasRenderingContext2D, w: number, h: numb
     glow(w * 0.1, h * 0.08, w * 0.9, `${accent}55`);
     glow(w * 0.95, h * 0.95, w * 0.9, 'rgba(168,85,247,0.28)');
 };
-
-// The brand mark: a W over a V with a notched diamond between them,
-// 120 wide (x -60..60) and 108 tall (y -3..105). Same shape as the app icon.
-export const MARK_PATH =
-    'M-60 -3L-15 42L0 27L15 42L60 -3L60 17L15 62L0 47L-15 62L-60 17Z' +
-    'M-60 25L0 85L60 25L60 45L0 105L-60 45Z' +
-    'M-11 66L-3 58L0 61L3 58L11 66L0 77Z';
 
 // The app icon and the name.
 export const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opts: { name?: boolean; align?: 'left' | 'center'; color?: string } = {}) => {

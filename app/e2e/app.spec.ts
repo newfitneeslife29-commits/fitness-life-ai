@@ -940,3 +940,20 @@ test('Gym Wrapped: gym background by default, or the user\'s own photo', async (
     await expect(page.getByRole('button', { name: 'Tomar foto' })).toBeVisible();
     await expect.poll(() => page.getByRole('img', { name: 'Vista previa de la tarjeta' }).getAttribute('src')).not.toBe(before);
 });
+
+test('the app icon color can be changed in Settings', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    const icons = page.getByRole('radiogroup', { name: 'Ícono de la app' });
+    await expect(icons.getByRole('radio')).toHaveCount(9);
+    await expect(icons.getByRole('radio', { name: 'Naranja' })).toHaveAttribute('aria-checked', 'true');
+    await icons.getByRole('radio', { name: 'Morado' }).click();
+    await expect(icons.getByRole('radio', { name: 'Morado' })).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByText('Ícono Morado listo')).toBeVisible();
+    // On the web the tab icon changes, and the choice is kept.
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /^data:image\/svg\+xml,.*%237c3aed/);
+    await page.reload();
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /%237c3aed/);
+    await expect(icons.getByRole('radio', { name: 'Morado' })).toHaveAttribute('aria-checked', 'true');
+});

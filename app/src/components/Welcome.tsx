@@ -3,7 +3,7 @@ import { useRef, type ReactNode } from 'react';
 import { exercisePhotos } from '../data/exercises';
 import { getLang, LANGS, t, type Lang } from '../i18n';
 import { LEGAL_URL } from '../lib/premium';
-import { MARK_PATH } from '../lib/shareCards';
+import { MARK_PATH } from '../lib/appIcons';
 import { actions, useStore } from '../store/store';
 import { toast } from './feedback';
 

@@ -19,6 +19,8 @@ import { blobToDataUrl, pickImage, resizeImage } from '../lib/image';
 import { streakWeeks } from '../lib/stats';
 import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
+import { appIconTiming, getAppIcon, setAppIcon } from '../lib/appIcon';
+import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
@@ -111,6 +113,8 @@ export default function Settings() {
                     ))}
                 </div>
             </Section>
+
+            <AppIconPicker />
 
             <Section title={t('settings.profile')}>
                 <div className="card space-y-5 p-4">
@@ -391,3 +395,42 @@ const PremiumCard = () => {
         </Section>
     );
 };
+
+// The color of the app icon on the phone (or of the browser tab on the web).
+function AppIconPicker() {
+    const [current, setCurrent] = useState<AppIconId | null>(null);
+    useEffect(() => {
+        let live = true;
+        void getAppIcon().then(id => live && setCurrent(id));
+        return () => {
+            live = false;
+        };
+    }, []);
+    const choose = async (id: AppIconId) => {
+        if (id === current) return;
+        try {
+            await setAppIcon(id);
+            setCurrent(id);
+            toast(t(`appIcon.changed.${appIconTiming}`, { name: t(`appIcon.name.${id}`) }), 4000);
+        } catch {
+            toast(t('appIcon.failed'));
+        }
+    };
+    return (
+        <Section title={t('appIcon.title')}>
+            <div className="card p-3">
+                <div className="grid grid-cols-5 gap-x-1 gap-y-3" role="radiogroup" aria-label={t('appIcon.title')}>
+                    {APP_ICONS.map(icon => (
+                        <button key={icon.id} role="radio" aria-checked={current === icon.id} onClick={() => void choose(icon.id)}
+                            className="flex flex-col items-center gap-1 text-[11px] font-medium text-white/60">
+                            <img src={appIconUrl(icon)} alt="" width={48} height={48}
+                                className={`h-12 w-12 rounded-[11px] ring-offset-2 ring-offset-ink-2 transition ${current === icon.id ? 'ring-2 ring-brand' : 'ring-1 ring-white/10'}`} />
+                            <span className={current === icon.id ? 'text-brand-strong' : ''}>{t(`appIcon.name.${icon.id}`)}</span>
+                        </button>
+                    ))}
+                </div>
+                <p className="mt-3 text-xs text-white/50">{t(`appIcon.hint.${appIconTiming}`)}</p>
+            </div>
+        </Section>
+    );
+}
