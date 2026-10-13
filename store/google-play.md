@@ -54,7 +54,7 @@ COMUNIDAD
 • Reporta y bloquea con un toque: tolerancia cero con el contenido ofensivo.
 
 TU CUENTA, TUS DATOS
-• Úsala sin cuenta o entra con tu correo, Google o Facebook para guardar una copia en la nube.
+• Úsala sin cuenta o entra con tu correo o Google para guardar una copia en la nube.
 • Sin anuncios. No vendemos tus datos.
 • En español, inglés y portugués, con modo claro y oscuro.
 
