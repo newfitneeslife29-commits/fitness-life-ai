@@ -1,0 +1,98 @@
+name: iOS for TestFlight
+
+# Builds the signed iPhone app and uploads it to App Store Connect, where it
+# shows up in TestFlight after Apple processes it (about 15 minutes).
+# Run it from Actions → "iOS for TestFlight" → Run workflow.
+# Every run gets a higher build number, as Apple requires.
+#
+# Needs, in Settings → Secrets and variables → Actions:
+# - variable APPLE_TEAM_ID: the 10-character Team ID (developer.apple.com → Account → Membership).
+# - secrets APPSTORE_KEY_ID, APPSTORE_ISSUER_ID and APPSTORE_PRIVATE_KEY: an App Store Connect
+#   API key with the Admin role (Users and Access → Integrations → App Store Connect API).
+#   APPSTORE_PRIVATE_KEY is the whole content of the downloaded .p8 file.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-release
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: app
+    env:
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the Apple settings
+        env:
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          missing=""
+          [ -n "$TEAM_ID" ] || missing="$missing APPLE_TEAM_ID(variable)"
+          [ -n "$KEY_ID" ] || missing="$missing APPSTORE_KEY_ID"
+          [ -n "$ISSUER_ID" ] || missing="$missing APPSTORE_ISSUER_ID"
+          [ -n "$PRIVATE_KEY" ] || missing="$missing APPSTORE_PRIVATE_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing Apple settings:$missing. See the comment at the top of ios-release.yml."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$PRIVATE_KEY" > "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - name: Point the app at the Supabase backend
+        working-directory: .
+        run: .github/scripts/supabase-env.sh
+        env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          ANON_KEY_VARIABLE: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - run: npm run native
+        env:
+          VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
+          VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
+          VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
+      # Xcode creates the certificate and provisioning profile itself
+      # (automatic signing through the API key), so nothing else is stored.
+      - name: Archive
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
+          -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+          -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
+          DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic
+          MARKETING_VERSION="$VERSION_NAME" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+          archive
+      - name: Upload to App Store Connect
+        run: |
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
+      - name: Remove the key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
