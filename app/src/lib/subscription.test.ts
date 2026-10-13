@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { hasEntitlement } from '../../../supabase/functions/nutrition-coach/subscription';
-import { trialDaysOf } from './premium';
+import { firstPlan, trialDaysOf } from './premium';
 
 // Server-side Premium check against RevenueCat's subscriber payload.
 describe('hasEntitlement', () => {
@@ -35,5 +35,14 @@ describe('trialDaysOf', () => {
         expect(trialDaysOf(product, true)).toBe(7);
         expect(trialDaysOf(product, false)).toBeUndefined();
         expect(trialDaysOf({ identifier: 'x', introPrice: { price: 0.99, periodUnit: 'MONTH', periodNumberOfUnits: 1, cycles: 1 } })).toBeUndefined();
+    });
+});
+
+describe('firstPlan', () => {
+    it('opens on the plan with a free trial, otherwise the annual one', () => {
+        expect(firstPlan([{ id: 'annual' }, { id: 'monthly', trialDays: 7 }])).toBe('monthly');
+        expect(firstPlan([{ id: 'annual' }, { id: 'monthly' }])).toBe('annual');
+        expect(firstPlan([{ id: 'monthly' }])).toBe('monthly');
+        expect(firstPlan([])).toBeNull();
     });
 });
