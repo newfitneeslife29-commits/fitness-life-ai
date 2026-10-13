@@ -469,7 +469,11 @@ const BmiCard = ({ weightKg, heightCm, unit }: { weightKg: number; heightCm: num
                 </div>
                 <span className="absolute -top-1 w-1.5 -translate-x-1/2 rounded-full bg-white shadow ring-2 ring-ink" style={{ left: `${pos}%`, height: '1.1rem' }} aria-hidden />
             </div>
-            <div className="mt-1 flex justify-between text-[10px] tabular-nums text-white/40"><span>15</span><span>18,5</span><span>25</span><span>30</span><span>40</span></div>
+            <div className="relative mt-1 h-3 text-[10px] tabular-nums text-white/40" aria-hidden>
+                {[15, 18.5, 25, 30, 40].map((v, i, all) => (
+                    <span key={v} className={`absolute ${i === 0 ? '' : i === all.length - 1 ? '-translate-x-full' : '-translate-x-1/2'}`} style={{ left: `${((v - 15) / 25) * 100}%` }}>{v.toLocaleString(locale())}</span>
+                ))}
+            </div>
             <p className="mt-3 text-sm text-white/75">{t('bmi.range', { height: heightCm, min: fmtWeight(range.minKg, unit), max: fmtWeight(range.maxKg, unit) })}</p>
             <p className="mt-2 text-xs text-white/45">{t('bmi.note')}</p>
         </div>

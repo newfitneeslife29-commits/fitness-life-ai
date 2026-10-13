@@ -1043,4 +1043,9 @@ export const es = {
 
     // Apple Health without data
     'health.iosNoData': "¿No ves datos? Permite el acceso en Ajustes › Salud › Acceso a datos y dispositivos › Fitness Life.",
+
+    // Signing out with changes not sent yet
+    'account.unsyncedTitle': "Hay cambios sin guardar en tu cuenta",
+    'account.unsyncedMessage': "No hay conexión y tus últimos cambios todavía no llegaron a tu cuenta. Si cierras sesión ahora, se perderán. Mejor espera a tener señal.",
+    'account.signOutAnyway': "Cerrar sesión igual",
 };

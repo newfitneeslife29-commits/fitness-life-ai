@@ -7,7 +7,7 @@ import { Chips, Section } from '../components/ui';
 import { exerciseName } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { localDay, monthGrid } from '../lib/activity';
-import { fmtNumber } from '../lib/format';
+import { fmtNumber, fmtWeight } from '../lib/format';
 import { kgToDisplay } from '../lib/progression';
 import { loadPicture, pickImage } from '../lib/image';
 import { canvasBlob, ensureFonts, heatmapStory, recordsStory, volumeStory, type CardBackground } from '../lib/shareCards';
@@ -61,7 +61,7 @@ export default function Wrapped() {
             } else if (card === 'records') {
                 canvas = recordsStory({
                     bg, eyebrow, title: t('wrapped.recordsTitle'),
-                    rows: wrap.records.map(r => ({ name: exerciseName(r.exerciseId), value: `${value(r.weightKg)} ${unit} × ${r.reps}`, badge: r.isNew ? t('wrapped.newPr') : undefined })),
+                    rows: wrap.records.map(r => ({ name: exerciseName(r.exerciseId), value: `${fmtWeight(r.weightKg, unit)} × ${r.reps}`, badge: r.isNew ? t('wrapped.newPr') : undefined })),
                     empty: t('wrapped.noRecords'), footer: footerLine,
                 });
             } else {

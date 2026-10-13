@@ -2,8 +2,6 @@ import { getExercise, type Muscle } from '../data/exercises';
 import type { LoggedSet, Session } from '../store/types';
 import { estimate1RM, volume } from './progression';
 
-const DAY_MS = 86_400_000;
-
 // Monday 00:00 (local time) of the week containing `date`.
 export const weekStart = (date: Date): Date => {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -12,9 +10,12 @@ export const weekStart = (date: Date): Date => {
     return d;
 };
 
+// Up to the next Monday 00:00 built from the calendar date, so weeks with a
+// daylight-saving change (23 or 25 hours in a day) don't overlap.
 const sameWeek = (iso: string, start: Date) => {
     const t = Date.parse(iso);
-    return t >= start.getTime() && t < start.getTime() + 7 * DAY_MS + 3_600_000; // +1h covers DST shifts
+    const next = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7).getTime();
+    return t >= start.getTime() && t < next;
 };
 
 export const sessionsThisWeek = (sessions: Session[], now = new Date()) => {

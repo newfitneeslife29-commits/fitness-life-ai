@@ -7,7 +7,7 @@ import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { refreshUsage } from '../lib/ai';
 import { fmtDate } from '../lib/format';
-import { ANNUAL_SAVING, fallbackPlan, firstPlan, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, type Offer, type PlanId } from '../lib/premium';
+import { ANNUAL_SAVING, fallbackPlan, firstPlan, getOffer, LEGAL_URL, PREMIUM_AI_USES, premiumAvailable, refreshPremium, restorePremium, usePremiumActive, type Offer, type PlanId } from '../lib/premium';
 import { useStore } from '../store/store';
 
 // Section anchors of public/legal.html in each language.
@@ -39,7 +39,8 @@ export default function Premium() {
     const [planId, setPlanId] = useState<PlanId>('annual');
     const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
     const available = premiumAvailable();
-    const active = premium?.active ?? false;
+    // Premium per the store, or per the AI server (bought on another device).
+    const active = usePremiumActive();
     // Store prices once loaded; until then (or if a plan is missing there) the USD defaults.
     const plans = offer?.length ? offer : PLAN_IDS.map(fallbackPlan);
     const plan = plans.find(p => p.id === planId) ?? plans[0];

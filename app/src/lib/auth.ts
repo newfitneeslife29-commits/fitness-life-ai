@@ -1,5 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { AuthError, User } from '@supabase/supabase-js';
+import { confirm } from '../components/feedback';
+import { t } from '../i18n';
 import { actions, getState } from '../store/store';
 import type { Account } from '../store/types';
 import { flushCloud, forgetCloudState, startCloudSync, syncAccount } from './cloud';
@@ -187,13 +189,20 @@ export const updatePassword = async (password: string) => {
 
 // The data stays in the account; this phone goes back to a clean start, so
 // the next account (or someone else) doesn't get it.
-export const signOut = async () => {
+// Returns false when the person keeps the session (changes not sent yet).
+export const signOut = async (): Promise<boolean> => {
     const supabase = await ready();
     const account = getState().account;
-    if (account) await flushCloud(account.id).catch(() => {});
+    if (account) {
+        const sent = await flushCloud(account.id).then(() => true, () => false);
+        // Without signal the latest changes can't reach the account yet, and
+        // signing out wipes this phone: only go ahead if the person says so.
+        if (!sent && !(await confirm({ title: t('account.unsyncedTitle'), message: t('account.unsyncedMessage'), confirmLabel: t('account.signOutAnyway'), danger: true }))) return false;
+    }
     await supabase.auth.signOut({ scope: 'local' });
     onAccount(null);
     actions.resetAll();
+    return true;
 };
 
 // Deletes the account, its cloud copy and its AI usage records (server side).

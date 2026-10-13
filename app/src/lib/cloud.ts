@@ -131,7 +131,14 @@ let retryTimer: number | undefined;
 let started = false;
 const RETRY_MS = 30_000;
 
-const send = (userId: string) => current.then(() => push(userId)).then(() => {
+// Until the sign-in check has run, this phone's copy must not replace the
+// account's (it may be older or empty): that check goes first.
+const pushChecked = (userId: string) => {
+    if (reconcilePending?.id === userId) throw new Error('account copy not checked yet');
+    return push(userId);
+};
+
+const send = (userId: string) => current.then(() => pushChecked(userId)).then(() => {
     window.clearTimeout(retryTimer);
     setStatus('synced');
 }).catch(e => {
@@ -169,7 +176,7 @@ export const startCloudSync = () => {
 export const flushCloud = async (userId: string) => {
     window.clearTimeout(timer);
     await current.catch(() => {});
-    await push(userId);
+    await pushChecked(userId);
 };
 
 export const forgetCloudState = () => {

@@ -158,3 +158,13 @@ describe('trainingCalendar', () => {
         expect(cal[1][3].future).toBe(true);
     });
 });
+
+describe('weeks', () => {
+    it('counts a session early on Monday in its own week only', () => {
+        const monday = new Date(2026, 9, 12, 0, 30); // Monday 00:30, local time
+        const session = { id: 's', routineId: null, routineName: 'A', startedAt: monday.toISOString(), endedAt: monday.toISOString(), sets: [] } as unknown as Session;
+        const series = weeklySeries([session], 2, new Date(2026, 9, 13));
+        expect(series.map(w => w.sessions)).toEqual([0, 1]);
+        expect(streakWeeks([session], new Date(2026, 9, 13))).toBe(1);
+    });
+});

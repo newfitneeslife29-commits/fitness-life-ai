@@ -21,7 +21,7 @@ import { planName } from '../lib/names';
 import type { Theme } from '../lib/theme';
 import { appIconTiming, getAppIcon, setAppIcon } from '../lib/appIcon';
 import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
-import { fallbackPlan, premiumAvailable, refreshPremium } from '../lib/premium';
+import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
 import { actions, getSaveError, useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
@@ -329,8 +329,11 @@ const AccountCard = () => {
     }
     const out = async () => {
         if (!(await confirm({ title: t('account.signOutTitle'), message: t('account.signOutMessage'), confirmLabel: t('account.signOut') }))) return;
-        await signOut().catch(() => {});
-        toast(t('account.signedOut'));
+        try {
+            if (await signOut()) toast(t('account.signedOut'));
+        } catch {
+            toast(t('auth.err.failed'));
+        }
     };
     const remove = async () => {
         if (!(await confirm({ title: t('account.deleteTitle'), message: t('account.deleteMessage'), confirmLabel: t('account.delete'), danger: true }))) return;
@@ -342,7 +345,7 @@ const AccountCard = () => {
             toast(t('auth.err.failed'));
         }
     };
-    const provider = ['google', 'apple'].includes(account.provider) ? account.provider : 'email';
+    const provider = ['google', 'apple', 'facebook'].includes(account.provider) ? account.provider : 'email';
     return (
         <Section title={t('account.section')}>
             <div className="card p-4">
@@ -376,6 +379,7 @@ const AccountCard = () => {
 
 const PremiumCard = () => {
     const premium = useStore(s => s.premium);
+    const active = usePremiumActive();
     useEffect(() => {
         if (premiumAvailable()) refreshPremium().catch(() => {});
     }, []);
@@ -384,10 +388,10 @@ const PremiumCard = () => {
             <Link to="/premium" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-amber-300 text-ink"><Crown size={20} /></span>
                 <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{premium?.active ? t('premium.active') : 'Fitness Life Premium'}</p>
+                    <p className="font-semibold">{active ? t('premium.active') : 'Fitness Life Premium'}</p>
                     <p className="text-sm text-white/55">
-                        {premium?.active
-                            ? premium.expiresAt ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) }) : t('premium.noExpiry')
+                        {active
+                            ? premium?.expiresAt ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) }) : t('premium.noExpiry')
                             : t('settings.premiumPitch', { price: fallbackPlan('annual').perMonth })}
                     </p>
                 </div>

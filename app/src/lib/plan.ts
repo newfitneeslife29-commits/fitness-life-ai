@@ -92,17 +92,27 @@ export const advancePlan = (profile: PlanProfile, plan: Plan, routines: Routine[
     const week = (plan.week ?? 1) + 1;
     // Same program as now, even if the profile would pick another one today.
     const next = buildPlan({ ...profile, programId: plan.programId }, week);
-    const old = plan.routineIds.map(id => routines.find(r => r.id === id));
+    const old = plan.routineIds.map(id => routines.find(r => r.id === id)).filter((r): r is Routine => Boolean(r));
     const swaps: { from: string; to: string }[] = [];
-    const kept = next.routines.map((r, i) => {
-        const before = old[i];
-        if (before?.edited) return before;
-        before?.exercises.forEach((e, j) => {
+    const renew = (before: Routine, r: Routine) => {
+        if (before.edited) return before;
+        before.exercises.forEach((e, j) => {
             const to = r.exercises[j]?.exerciseId;
             if (to && to !== e.exerciseId) swaps.push({ from: e.exerciseId, to });
         });
         return r;
-    });
+    };
+    // Each plan day is matched to the same program day (dayKey), so days the
+    // person deleted stay deleted, their order stays, and routines they added
+    // to the plan stay as they are. Plans from before dayKey existed match by
+    // position.
+    const byKey = new Map(next.routines.filter(r => r.dayKey).map(r => [r.dayKey!, r]));
+    const kept = old.some(r => r.dayKey)
+        ? old.map(before => {
+            const r = before.dayKey ? byKey.get(before.dayKey) : undefined;
+            return r ? renew(before, r) : before;
+        })
+        : next.routines.map((r, i) => (old[i] ? renew(old[i], r) : r));
     const ids = new Set(plan.routineIds);
     return {
         plan: { ...next.plan, routineIds: kept.map(r => r.id), nextIndex: plan.nextIndex % kept.length, advancedFor: weekKey, update: { week, swaps, seen: false } },

@@ -226,4 +226,23 @@ describe('weekly plan updates', () => {
         expect(next.plan.update?.swaps.length).toBeGreaterThan(0);
         expect(next.plan.update?.seen).toBe(false);
     });
+    it('keeps days the person deleted out and each day in its place', () => {
+        const four = { ...profile, daysPerWeek: 4 };
+        const { plan, routines } = buildPlan(four, 1);
+        // Day 2 deleted (as deleteRoutine does), day 3 edited by hand.
+        const edited = { ...routines[2], name: 'Mi día', edited: true };
+        const kept = [routines[0], edited, routines[3]];
+        const next = advancePlan(four, { ...plan, routineIds: kept.map(r => r.id), nextIndex: 0 }, kept, '2026-10-12');
+        const days = next.plan.routineIds.map(id => next.routines.find(r => r.id === id)!);
+        expect(days).toHaveLength(3);
+        expect(days.map(d => d.dayKey)).toEqual([routines[0].dayKey, routines[2].dayKey, routines[3].dayKey]);
+        expect(days[1].id).toBe(edited.id);
+        // Swaps only compare a day with its own next version.
+        const nextDay0 = buildPlan({ ...four, programId: plan.programId }, 2).routines[0];
+        const day0Swaps = routines[0].exercises.flatMap((e, j) => (nextDay0.exercises[j] && nextDay0.exercises[j].exerciseId !== e.exerciseId ? [e.exerciseId] : []));
+        for (const swap of next.plan.update!.swaps) {
+            expect([...routines[0].exercises, ...routines[3].exercises].map(e => e.exerciseId)).toContain(swap.from);
+        }
+        expect(next.plan.update!.swaps.filter(s => routines[0].exercises.some(e => e.exerciseId === s.from)).length).toBe(day0Swaps.length);
+    });
 });

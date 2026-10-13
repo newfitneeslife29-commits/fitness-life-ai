@@ -1042,4 +1042,9 @@ export const en: Dict = {
 
     // Apple Health without data
     'health.iosNoData': "No data? Allow access in Settings › Health › Data Access & Devices › Fitness Life.",
+
+    // Signing out with changes not sent yet
+    'account.unsyncedTitle': "Some changes aren't saved to your account",
+    'account.unsyncedMessage': "There's no connection and your latest changes haven't reached your account yet. If you sign out now, they'll be lost. Better wait until you're online.",
+    'account.signOutAnyway': "Sign out anyway",
 };
