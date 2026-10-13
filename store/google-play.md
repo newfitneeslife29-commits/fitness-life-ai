@@ -3,13 +3,15 @@
 Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`google-play/`](google-play/):
 - **Icono de la app:** `icon-512.png` (512×512).
 - **Gráfico de funciones:** `feature-graphic.png` (1024×500).
-- **Capturas de pantalla del teléfono:** de `01-inicio.png` a `08-premium.png` (1080×1920), en ese orden.
+- **Capturas de pantalla del teléfono:** de `01-inicio.png` a `08-premium.png` (1080×1920), en ese orden:
+  `01-inicio`, `02-entreno`, `03-maquina-ocupada`, `04-entrenador-ia`, `05-mujeres`, `06-gym-wrapped`, `07-nutricion`, `08-premium`.
+- **Capturas para computadoras y Chromebook:** las mismas 8 en horizontal (1920×1080), en [`google-play/chromebook/`](google-play/chromebook/).
 
 ## Ficha de Play Store principal
 
 **Nombre de la app** (máx. 30): `Fitness Life: Gym y Nutrición`
 
-**Descripción breve** (máx. 80): `Plan de gimnasio a tu medida, progreso y coach de nutrición con IA.`
+**Descripción breve** (máx. 80): `Plan de gym o casa, entrenador con IA y nutrición. Prueba Premium 7 días gratis.`
 
 **Descripción completa:**
 
@@ -17,23 +19,33 @@ Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`goog
 Fitness Life arma tu plan de fuerza en un minuto y te acompaña en cada entreno, cada comida y cada récord.
 
 TU PLAN, A TU MEDIDA
-• Dinos tu objetivo (ganar músculo, ganar fuerza o ponerte en forma), tu nivel y cuántos días entrenas.
-• Recibe rutinas listas para el gimnasio, con mancuernas o en casa sin material, con series, repeticiones y descansos.
-• Inicio te muestra qué toca entrenar hoy y cómo vas en la semana.
+• Dinos tu objetivo, tu nivel, tus días y dónde entrenas: gimnasio, mancuernas o en casa sin material.
+• Tu plan avanza cada semana: al completar tu semana, tus rutinas se renuevan con nuevas fases y ejercicios.
+• Sección de entrenamiento para mujeres: planes para bajar de peso o tonificar, en casa o en el gimnasio.
 
-ENTRENA CON TÉCNICA
-• Fotos de los 45 ejercicios y consejos para hacerlos bien.
-• Registra peso y repeticiones serie a serie, con temporizador de descanso.
-• La app te dice cuándo subir de peso: progresión automática en cada ejercicio.
+TU ENTRENADOR PERSONAL CON IA (PREMIUM)
+• Pregúntale qué entrenar hoy, con cuánto peso y cómo mejorar.
+• Pídele una rutina para casa sin material, con mancuernas o para el gym, y la guarda en tu plan.
 
-MIRA CÓMO PROGRESAS
-• Constancia por semanas, 1RM estimado por ejercicio y volumen total.
-• Peso corporal con gráfica.
-• Logros y récords celebrados al terminar cada entreno.
+ENTRENA MEJOR
+• Fotos de cada ejercicio y consejos de técnica.
+• Temporizador de descanso automático con vibración y sonido.
+• Repite la serie anterior con un toque y la app te dice cuándo subir de peso.
+• ¿Máquina ocupada? Cámbiala al instante por otro ejercicio del mismo músculo.
+• Alertas de recuperación: te avisa cuando tus músculos ya descansaron.
+• Funciona sin internet: tus entrenos se guardan y se sincronizan al volver la señal.
+
+MIRA Y COMPARTE TU PROGRESO
+• Constancia por semanas, 1RM estimado, volumen y peso corporal.
+• Tu actividad: calendario con los días que entrenas y tus rachas.
+• Gym Wrapped: tu mes en tarjetas para Instagram, Facebook y TikTok, con un fondo de gym o tu propia foto.
+• Antes y después: compara tus fotos y compártelas.
+• Pasos, calorías activas y pulso desde Health Connect.
 
 NUTRICIÓN SIN COMPLICARTE
 • Calorías, proteína, carbohidratos y grasa del día, con objetivos según tu meta.
-• Tabla de alimentos con 94 alimentos comunes: huevo, pollo, pescado, arroz, frutas y más.
+• Índice de masa corporal (IMC) y tu rango de peso saludable.
+• Tabla con 94 alimentos comunes.
 • Premium: toma una foto de tu comida y la IA calcula los macros.
 • Premium: coach de nutrición con IA que conoce tu objetivo y lo que llevas comido hoy.
 
@@ -42,12 +54,12 @@ COMUNIDAD
 • Reporta y bloquea con un toque: tolerancia cero con el contenido ofensivo.
 
 TU CUENTA, TUS DATOS
-• Úsala sin cuenta o crea una para guardar una copia en la nube.
+• Úsala sin cuenta o entra con tu correo, Google o Facebook para guardar una copia en la nube.
 • Sin anuncios. No vendemos tus datos.
 • En español, inglés y portugués, con modo claro y oscuro.
 
 FITNESS LIFE PREMIUM
-Entrenar es gratis. Premium añade la IA: coach de nutrición y comidas calculadas desde una foto o una descripción. Plan mensual o anual; cancela cuando quieras desde Google Play.
+Entrenar es gratis. Premium añade la IA: entrenador personal, coach de nutrición y comidas calculadas desde una foto. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
 
 Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a un profesional antes de empezar un programa de ejercicio o cambiar tu dieta.
 ```
@@ -119,3 +131,17 @@ Google exige **12 testers durante 14 días seguidos** antes de dejarte publicar 
 4. **Países:** elige dónde estará disponible (por ejemplo, toda Latinoamérica, España y Estados Unidos).
 5. Envía a revisión. Cuando la aprueben, copia el **enlace de participación** y mándalo a los testers. Cada uno lo abre con su Gmail, acepta e instala la app.
 6. Tras 14 días con 12 o más testers activos, ve a **Panel → Solicitar acceso a producción**.
+
+## Solicitar acceso a producción (cuestionario)
+
+Al terminar los 14 días, Play pregunta cómo fue la prueba. Borradores de respuesta. Cámbialos por lo que pase de verdad en la prueba: Google revisa que sean ciertos.
+
+- **¿Cómo reclutaste a los testers?** Familiares, amigos y compañeros del gimnasio que entrenan o quieren empezar. Les mandé el enlace de participación por WhatsApp y correo.
+- **¿Qué tan fácil fue reclutarlos?** Fácil: es una app que cualquiera que va al gimnasio o entrena en casa puede usar.
+- **Describe cómo usaron la app.** Crearon su plan, registraron entrenos en el gimnasio y en casa, usaron el temporizador de descanso, el entrenador con IA, la nutrición y compartieron su Gym Wrapped.
+- **¿Qué comentarios recibiste y cómo los recogiste?** Por mensajes directos y por los comentarios de prueba de Play. Anota aquí lo que te digan tus testers (lo que les gustó, lo que falló y lo que pidieron).
+- **¿Para quién es la app?** Adultos (18+) que quieren ganar músculo, bajar de peso o ponerse en forma, en el gimnasio o en casa.
+- **¿Qué valor aporta?** Un plan de fuerza a la medida que avanza cada semana, registro de series con progresión automática, nutrición y un entrenador con IA, todo en español, inglés y portugués.
+- **Instalaciones esperadas el primer año:** elige el rango que te parezca realista (por ejemplo, de 1.000 a 10.000).
+- **¿Hiciste cambios por la prueba?** Durante la prueba salieron las versiones 1.0.12 a 1.0.16: rutinas para casa con IA, sección para mujeres, máquina ocupada, compartir en redes, rutinas que avanzan cada semana, permisos de Health Connect corregidos y prueba gratis de Premium. Añade lo que cambies por los comentarios de tus testers.
+- **¿Está lista para producción?** Sí, si en la prueba no hubo cierres ni errores graves. Revisa antes **Calidad → Android vitals** en Play Console.

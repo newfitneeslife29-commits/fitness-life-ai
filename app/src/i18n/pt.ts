@@ -1018,4 +1018,23 @@ export const pt: Dict = {
     'wrapped.bg.plain': "Liso",
     'wrapped.takePhoto': "Tirar foto",
     'wrapped.fromGallery': "Da galeria",
+
+    // App icon color (Settings)
+    'appIcon.title': "Ícone do app",
+    'appIcon.name.naranja': "Laranja",
+    'appIcon.name.rojo': "Vermelho",
+    'appIcon.name.rosa': "Rosa",
+    'appIcon.name.morado': "Roxo",
+    'appIcon.name.azul': "Azul",
+    'appIcon.name.verde': "Verde",
+    'appIcon.name.dorado': "Dourado",
+    'appIcon.name.blanco': "Branco",
+    'appIcon.name.claro': "Fundo branco",
+    'appIcon.hint.background': "O ícone muda ao sair do app. Se ele estava na tela inicial, talvez seja preciso colocá-lo de novo pela lista de apps.",
+    'appIcon.hint.now': "O ícone muda na hora. Seu iPhone vai mostrar uma mensagem.",
+    'appIcon.hint.tab': "Na web muda o ícone da aba. No celular muda o ícone do app.",
+    'appIcon.changed.background': "Ícone {name}: você vai vê-lo ao sair do app",
+    'appIcon.changed.now': "Ícone {name} pronto",
+    'appIcon.changed.tab': "Ícone {name} pronto",
+    'appIcon.failed': "Não foi possível mudar o ícone. Tente de novo.",
 };

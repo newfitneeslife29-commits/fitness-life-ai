@@ -3,6 +3,7 @@ import { busyAlternatives, getExercise } from '../data/exercises';
 import { womenProgram } from '../data/programs';
 import type { Session } from '../store/types';
 import { activitySummary, localDay, monthGrid } from './activity';
+import { APP_ICONS, DEFAULT_ICON } from './appIcons';
 import { bmiBand, bmiOf, healthyWeightRange } from './nutrition';
 import { summarizeHeart } from './health';
 import { advancePlan, buildPlan, waveFor, weekPhase } from './plan';
@@ -148,6 +149,32 @@ describe('Android health permissions', () => {
         const kept = [...declared].filter(p => !removed.has(p)).sort();
         expect(kept).toEqual(['READ_ACTIVE_CALORIES_BURNED', 'READ_HEART_RATE', 'READ_STEPS']);
         for (const p of removed) expect(declared.has(p), p).toBe(true);
+    });
+});
+
+describe('app icon colors', () => {
+    const ids = APP_ICONS.map(i => i.id);
+    const cap = (id: string) => id[0].toUpperCase() + id.slice(1);
+    it('has the same colors in the app, Android and iOS', async () => {
+        const { existsSync, readFileSync } = await import('node:fs');
+        const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+        const aliases = [...manifest.matchAll(/<activity-alias\s+android:name="\.Icon(\w+)"[\s\S]*?android:enabled="(\w+)"/g)];
+        expect(aliases.map(m => m[1])).toEqual(ids.map(cap));
+        expect(aliases.filter(m => m[2] === 'true').map(m => m[1])).toEqual([cap(DEFAULT_ICON)]);
+        // Only the aliases open the app from the launcher.
+        expect(manifest.match(/category\.LAUNCHER/g)).toHaveLength(ids.length);
+        const java = readFileSync('android/app/src/main/java/com/fitnesslife/app/LauncherIconPlugin.java', 'utf8');
+        const swift = readFileSync('ios/App/App/LauncherIconPlugin.swift', 'utf8');
+        const list = ids.map(id => `"${id}"`).join(', ');
+        expect(java).toContain(`Arrays.asList(${list})`);
+        expect(swift).toContain(`[${list}]`);
+        const pbx = readFileSync('ios/App/App.xcodeproj/project.pbxproj', 'utf8');
+        const alternates = ids.filter(id => id !== DEFAULT_ICON).map(id => `AppIcon-${cap(id)}`);
+        expect(pbx).toContain(`ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "${alternates.join(' ')}"`);
+        for (const id of ids.filter(i => i !== DEFAULT_ICON)) {
+            expect(existsSync(`android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_${id}.xml`), id).toBe(true);
+            expect(existsSync(`ios/App/App/Assets.xcassets/AppIcon-${cap(id)}.appiconset/AppIcon-${cap(id)}.png`), id).toBe(true);
+        }
     });
 });
 

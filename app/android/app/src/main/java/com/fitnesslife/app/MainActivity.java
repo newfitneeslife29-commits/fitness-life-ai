@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // App-only plugins (not from npm) are registered before the bridge starts.
         registerPlugin(StorySharePlugin.class);
+        registerPlugin(LauncherIconPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

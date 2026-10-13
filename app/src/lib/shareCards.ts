@@ -1,6 +1,7 @@
 // Share cards drawn on a canvas (no libraries, works offline): "Gym Wrapped"
 // stories (1080×1920, dark) and the before/after photo comparison. Every card
 // carries the Fitness Life logo.
+import { MARK_PATH } from './appIcons';
 
 export const BRAND = 'FITNESS LIFE';
 const FONT = '"Inter Variable", Inter, system-ui, sans-serif';
@@ -49,7 +50,7 @@ export const darkBackground = (ctx: CanvasRenderingContext2D, w: number, h: numb
     glow(w * 0.95, h * 0.95, w * 0.9, 'rgba(168,85,247,0.28)');
 };
 
-// The app icon (a dumbbell) and the name.
+// The app icon and the name.
 export const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opts: { name?: boolean; align?: 'left' | 'center'; color?: string } = {}) => {
     const s = size / 512;
     const nameSize = size * 0.42;
@@ -61,10 +62,12 @@ export const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number, si
     ctx.fillStyle = INK;
     ctx.fill();
     ctx.fillStyle = ORANGE;
-    for (const [rx, ry, rw, rh, rr] of [[96, 196, 40, 120, 14], [144, 164, 44, 184, 16], [324, 164, 44, 184, 16], [376, 196, 40, 120, 14], [188, 236, 136, 40, 10]]) {
-        roundRect(ctx, left + rx * s, y + ry * s, rw * s, rh * s, rr * s);
-        ctx.fill();
-    }
+    ctx.save();
+    ctx.translate(left + 256 * s, y + 262 * s);
+    ctx.scale(2.5 * s, 2.5 * s);
+    ctx.translate(0, -51);
+    ctx.fill(new Path2D(MARK_PATH));
+    ctx.restore();
     if (opts.name !== false) {
         ctx.fillStyle = opts.color ?? '#ffffff';
         ctx.textBaseline = 'middle';

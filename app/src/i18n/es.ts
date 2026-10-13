@@ -1018,4 +1018,23 @@ export const es = {
     'wrapped.bg.plain': "Liso",
     'wrapped.takePhoto': "Tomar foto",
     'wrapped.fromGallery': "De la galería",
+
+    // App icon color (Settings)
+    'appIcon.title': "Ícono de la app",
+    'appIcon.name.naranja': "Naranja",
+    'appIcon.name.rojo': "Rojo",
+    'appIcon.name.rosa': "Rosa",
+    'appIcon.name.morado': "Morado",
+    'appIcon.name.azul': "Azul",
+    'appIcon.name.verde': "Verde",
+    'appIcon.name.dorado': "Dorado",
+    'appIcon.name.blanco': "Blanco",
+    'appIcon.name.claro': "Fondo blanco",
+    'appIcon.hint.background': "El ícono cambia al salir de la app. Si lo tenías en la pantalla de inicio, puede que tengas que volver a ponerlo desde la lista de apps.",
+    'appIcon.hint.now': "El ícono cambia al momento. Tu iPhone te avisará con un mensaje.",
+    'appIcon.hint.tab': "En la web cambia el ícono de la pestaña. En el teléfono cambia el de la app.",
+    'appIcon.changed.background': "Ícono {name}: lo verás al salir de la app",
+    'appIcon.changed.now': "Ícono {name} listo",
+    'appIcon.changed.tab': "Ícono {name} listo",
+    'appIcon.failed': "No se pudo cambiar el ícono. Inténtalo de nuevo.",
 };
