@@ -112,11 +112,151 @@ const paragraph = (ctx: CanvasRenderingContext2D, value: string, x: number, y: n
 
 export interface StoryStat { value: string; label: string }
 
+// Behind the numbers: the plain dark design, a gym poster drawn here (a
+// barbell under spotlights) or the user's own photo.
+type Picture = CanvasImageSource & { width: number; height: number };
+export type CardBackground = { kind: 'plain' } | { kind: 'gym' } | { kind: 'photo'; image: Picture };
+
+// Small seeded random, so the dust in the gym poster is the same every time.
+const seeded = (seed: number) => () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+};
+
+const plate = (ctx: CanvasRenderingContext2D, x: number, w: number, h: number) => {
+    const g = ctx.createLinearGradient(x, -h / 2, x + w, h / 2);
+    g.addColorStop(0, '#2b3038');
+    g.addColorStop(0.5, '#15181d');
+    g.addColorStop(1, '#0d0f12');
+    roundRect(ctx, x, -h / 2, w, h, 14);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(242,107,29,0.85)';
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(x + 8, -h / 2 + 18, 6, h - 36);
+};
+
+const barbell = (ctx: CanvasRenderingContext2D, cx: number, cy: number, angle: number, scale: number) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.scale(scale, scale);
+    ctx.shadowColor = 'rgba(242,107,29,0.55)';
+    ctx.shadowBlur = 70;
+    const bar = ctx.createLinearGradient(0, -16, 0, 16);
+    bar.addColorStop(0, '#6b737c');
+    bar.addColorStop(0.45, '#eef1f4');
+    bar.addColorStop(1, '#5a6169');
+    roundRect(ctx, -700, -15, 1400, 30, 15);
+    ctx.fillStyle = bar;
+    ctx.fill();
+    ctx.shadowBlur = 40;
+    for (const side of [1, -1]) {
+        ctx.save();
+        ctx.scale(side, 1);
+        ctx.fillStyle = '#9aa2ab';
+        roundRect(ctx, 380, -38, 34, 76, 8);
+        ctx.fill();
+        let x = 420;
+        for (const [w, h] of [[78, 560], [66, 470], [54, 370], [44, 270]]) {
+            plate(ctx, x, w, h);
+            x += w + 8;
+        }
+        ctx.restore();
+    }
+    ctx.restore();
+};
+
+const gymPoster = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#120c09');
+    bg.addColorStop(0.55, '#0b0d10');
+    bg.addColorStop(1, '#170d07');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+    // Spotlights from the ceiling.
+    for (const [x, spread, a] of [[w * 0.2, 520, 0.16], [w * 0.75, 620, 0.2], [w * 0.5, 380, 0.1]] as const) {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, `rgba(255,190,140,${a})`);
+        g.addColorStop(0.8, 'rgba(242,107,29,0)');
+        ctx.beginPath();
+        ctx.moveTo(x - 40, 0);
+        ctx.lineTo(x + 40, 0);
+        ctx.lineTo(x + spread, h);
+        ctx.lineTo(x - spread, h);
+        ctx.closePath();
+        ctx.fillStyle = g;
+        ctx.fill();
+    }
+    // Huge faint word behind everything.
+    ctx.save();
+    ctx.translate(w / 2, h * 0.58);
+    ctx.rotate(-Math.PI / 2);
+    font(ctx, 900, 330);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    ctx.fillText('NO LIMITS', 0, 0);
+    ctx.restore();
+    // Floor glow and the barbell.
+    const floor = ctx.createRadialGradient(w / 2, h * 0.93, 0, w / 2, h * 0.93, w * 0.8);
+    floor.addColorStop(0, 'rgba(242,107,29,0.35)');
+    floor.addColorStop(1, 'rgba(242,107,29,0)');
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    barbell(ctx, w / 2, h * 0.925, -0.08, 0.5);
+    ctx.restore();
+    // Chalk dust.
+    const rand = seeded(42);
+    for (let i = 0; i < 90; i++) {
+        ctx.beginPath();
+        ctx.arc(rand() * w, rand() * h, 1 + rand() * 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${0.05 + rand() * 0.18})`;
+        ctx.fill();
+    }
+    // Keep the text area readable.
+    const shade = ctx.createLinearGradient(0, 0, 0, h);
+    shade.addColorStop(0, 'rgba(11,13,16,0.35)');
+    shade.addColorStop(0.6, 'rgba(11,13,16,0.25)');
+    shade.addColorStop(1, 'rgba(11,13,16,0.05)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, w, h);
+};
+
+const photoBackground = (ctx: CanvasRenderingContext2D, image: Picture, w: number, h: number) => {
+    ctx.fillStyle = INK;
+    ctx.fillRect(0, 0, w, h);
+    cover(ctx, image, 0, 0, w, h);
+    // Darker at the top and bottom, where the text is; the photo shows through.
+    const shade = ctx.createLinearGradient(0, 0, 0, h);
+    shade.addColorStop(0, 'rgba(11,13,16,0.82)');
+    shade.addColorStop(0.32, 'rgba(11,13,16,0.45)');
+    shade.addColorStop(0.62, 'rgba(11,13,16,0.4)');
+    shade.addColorStop(1, 'rgba(11,13,16,0.9)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, w, h);
+};
+
+let boxFill = 'rgba(255,255,255,0.06)';
+
+
 const W = 1080, H = 1920, PAD = 90;
 
-const storyFrame = (eyebrow: string, title: string) => {
+const storyFrame = (eyebrow: string, title: string, bg: CardBackground = { kind: 'plain' }) => {
     const { canvas, ctx } = newCanvas(W, H);
-    darkBackground(ctx, W, H);
+    if (bg.kind === 'photo') photoBackground(ctx, bg.image, W, H);
+    else if (bg.kind === 'gym') gymPoster(ctx, W, H);
+    else darkBackground(ctx, W, H);
+    // Over a picture, text gets a soft shadow and boxes a dark glass.
+    boxFill = bg.kind === 'plain' ? 'rgba(255,255,255,0.06)' : 'rgba(11,13,16,0.6)';
+    if (bg.kind !== 'plain') {
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 18;
+    }
     drawLogo(ctx, PAD, 110, 84);
     text(ctx, eyebrow.toUpperCase(), PAD, 330, { size: 40, weight: 700, color: ORANGE });
     text(ctx, title, PAD, 410, { size: 72, weight: 800, maxWidth: W - PAD * 2 });
@@ -128,7 +268,7 @@ const statsRow = (ctx: CanvasRenderingContext2D, stats: StoryStat[], y: number) 
     stats.forEach((s, i) => {
         const x = PAD + colW * i;
         roundRect(ctx, x + 8, y, colW - 16, 210, 36);
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillStyle = boxFill;
         ctx.fill();
         text(ctx, s.value, x + colW / 2, y + 112, { size: 64, weight: 800, align: 'center', maxWidth: colW - 40 });
         text(ctx, s.label, x + colW / 2, y + 168, { size: 30, weight: 500, color: 'rgba(255,255,255,0.6)', align: 'center', maxWidth: colW - 40 });
@@ -140,8 +280,8 @@ const footer = (ctx: CanvasRenderingContext2D, line: string) => {
 };
 
 // 1. Weight lifted this month, and what it compares to.
-export const volumeStory = (o: { eyebrow: string; title: string; big: string; bigLabel: string; emoji?: string; equivalence?: string; stats: StoryStat[]; footer: string }) => {
-    const { canvas, ctx } = storyFrame(o.eyebrow, o.title);
+export const volumeStory = (o: { bg?: CardBackground; eyebrow: string; title: string; big: string; bigLabel: string; emoji?: string; equivalence?: string; stats: StoryStat[]; footer: string }) => {
+    const { canvas, ctx } = storyFrame(o.eyebrow, o.title, o.bg);
     text(ctx, o.big, W / 2, 760, { size: 190, weight: 900, align: 'center', maxWidth: W - PAD * 2 });
     text(ctx, o.bigLabel, W / 2, 840, { size: 48, weight: 600, color: 'rgba(255,255,255,0.7)', align: 'center' });
     if (o.emoji && o.equivalence) {
@@ -156,15 +296,16 @@ export const volumeStory = (o: { eyebrow: string; title: string; big: string; bi
 };
 
 // 2. Personal records of the month.
-export const recordsStory = (o: { eyebrow: string; title: string; rows: { name: string; value: string; badge?: string }[]; empty: string; footer: string }) => {
-    const { canvas, ctx } = storyFrame(o.eyebrow, o.title);
+export const recordsStory = (o: { bg?: CardBackground; eyebrow: string; title: string; rows: { name: string; value: string; badge?: string }[]; empty: string; footer: string }) => {
+    const { canvas, ctx } = storyFrame(o.eyebrow, o.title, o.bg);
     let y = 560;
     if (!o.rows.length) paragraph(ctx, o.empty, W / 2, 900, W - PAD * 2, { size: 52, weight: 700, align: 'center' });
     o.rows.forEach((r, i) => {
         roundRect(ctx, PAD, y, W - PAD * 2, 190, 40);
         const g = ctx.createLinearGradient(PAD, y, W - PAD, y);
-        g.addColorStop(0, i === 0 ? 'rgba(242,107,29,0.35)' : 'rgba(255,255,255,0.08)');
-        g.addColorStop(1, 'rgba(255,255,255,0.04)');
+        const plain = boxFill.startsWith('rgba(255');
+        g.addColorStop(0, i === 0 ? 'rgba(242,107,29,0.45)' : plain ? 'rgba(255,255,255,0.08)' : boxFill);
+        g.addColorStop(1, plain ? 'rgba(255,255,255,0.04)' : 'rgba(11,13,16,0.45)');
         ctx.fillStyle = g;
         ctx.fill();
         ctx.font = `76px ${FONT}`;
@@ -187,14 +328,14 @@ export const recordsStory = (o: { eyebrow: string; title: string; rows: { name: 
 };
 
 // 3. Attendance heat map: the month as a calendar.
-export const heatmapStory = (o: { eyebrow: string; title: string; weekdays: string[]; days: { day: number; inMonth: boolean; trained: boolean }[][]; stats: StoryStat[]; footer: string }) => {
-    const { canvas, ctx } = storyFrame(o.eyebrow, o.title);
+export const heatmapStory = (o: { bg?: CardBackground; eyebrow: string; title: string; weekdays: string[]; days: { day: number; inMonth: boolean; trained: boolean }[][]; stats: StoryStat[]; footer: string }) => {
+    const { canvas, ctx } = storyFrame(o.eyebrow, o.title, o.bg);
     const gap = 18, cell = (W - PAD * 2 - gap * 6) / 7;
     o.weekdays.forEach((w, i) => text(ctx, w, PAD + i * (cell + gap) + cell / 2, 560, { size: 30, weight: 700, color: 'rgba(255,255,255,0.45)', align: 'center' }));
     o.days.forEach((week, r) => week.forEach((d, i) => {
         const x = PAD + i * (cell + gap), y = 600 + r * (cell + gap);
         roundRect(ctx, x, y, cell, cell, 28);
-        ctx.fillStyle = !d.inMonth ? 'rgba(255,255,255,0.02)' : d.trained ? ORANGE : 'rgba(255,255,255,0.07)';
+        ctx.fillStyle = !d.inMonth ? 'rgba(255,255,255,0.02)' : d.trained ? ORANGE : boxFill.startsWith('rgba(255') ? 'rgba(255,255,255,0.07)' : boxFill;
         ctx.fill();
         if (d.inMonth) text(ctx, String(d.day), x + cell / 2, y + cell / 2 + 14, { size: 38, weight: d.trained ? 800 : 500, align: 'center', color: d.trained ? INK : 'rgba(255,255,255,0.5)' });
     }));

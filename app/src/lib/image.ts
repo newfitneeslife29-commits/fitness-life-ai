@@ -75,3 +75,7 @@ export const blobToDataUrl = (blob: Blob) =>
 
 // Base64 without the "data:image/jpeg;base64," prefix.
 export const blobToBase64 = async (blob: Blob) => (await blobToDataUrl(blob)).split(',')[1] ?? '';
+
+// A photo ready to draw on a canvas (share cards, before/after), the right
+// way up.
+export const loadPicture = async (file: Blob): Promise<ImageBitmap | HTMLImageElement> => loadBitmap(file);

@@ -897,7 +897,7 @@ export const pt: Dict = {
 
     // Share cards (Gym Wrapped) and before/after
     'wrapped.title': "Gym Wrapped",
-    'wrapped.subtitle': "Seu mês em cards para Instagram e TikTok",
+    'wrapped.subtitle': "Seu mês em cards para Instagram, Facebook e TikTok",
     'wrapped.card': "Card",
     'wrapped.card.volume': "Peso levantado",
     'wrapped.card.records': "Recordes",
@@ -1010,4 +1010,12 @@ export const pt: Dict = {
     'plan.updated.more_other': "e mais {n} mudanças",
     'plan.updated.see': "Ver minhas rotinas",
     'plan.updated.ok': "Entendi",
+
+    // Share card backgrounds
+    'wrapped.background': "Fundo",
+    'wrapped.bg.gym': "Academia",
+    'wrapped.bg.photo': "Sua foto",
+    'wrapped.bg.plain': "Liso",
+    'wrapped.takePhoto': "Tirar foto",
+    'wrapped.fromGallery': "Da galeria",
 };
