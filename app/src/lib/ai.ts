@@ -3,7 +3,7 @@ import { blobToBase64 } from './image';
 import { backendAvailable, getSessionClient } from './supabase';
 import type { Lang } from '../i18n';
 import { actions } from '../store/store';
-import type { Activity, AiUsage, ChatMessage, Goal, Level, Limitation, Macros, Setup, Sex } from '../store/types';
+import type { Activity, AiUsage, ChatMessage, Goal, Level, Limitation, Macros, MealPlan, Setup, Sex } from '../store/types';
 
 // The nutrition coach runs in a Supabase Edge Function
 // (supabase/functions/nutrition-coach) that holds the Anthropic key. The
@@ -118,6 +118,14 @@ export const askTrainer = async (lang: Lang, context: TrainerContext, history: C
 export const designRoutine = (lang: Lang, context: TrainerContext, request: string, exercises: CatalogExercise[]) =>
     call<AiRoutine>({ action: 'routine', lang, context, text: request, exercises });
 
+// ---------- Meal plan (Premium) ----------
+
+export type AiMealPlan = Pick<MealPlan, 'name' | 'note' | 'days'>;
+
+// A week of meals for the user's targets; `request` holds their preferences.
+export const designMealPlan = (lang: Lang, context: CoachContext, request: string, mealsPerDay: number) =>
+    call<AiMealPlan>({ action: 'mealplan', lang, context, text: request, mealsPerDay });
+
 export const estimateMeal = (lang: Lang, description: string) =>
     call<MealEstimate>({ action: 'estimate', lang, text: description });
 
@@ -145,7 +153,7 @@ export type AiReportReason = 'offensive' | 'harmful' | 'wrong' | 'other';
 export const AI_REPORT_REASONS: AiReportReason[] = ['offensive', 'harmful', 'wrong', 'other'];
 
 export interface AiReport {
-    kind: 'coach' | 'meal' | 'trainer' | 'routine';
+    kind: 'coach' | 'meal' | 'trainer' | 'routine' | 'mealplan';
     content: string;
     question?: string;
 }

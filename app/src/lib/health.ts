@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { localDay } from './activity';
 import { isNative } from './native';
 
 // Steps, active calories and heart rate from Health Connect (Android) or
@@ -18,7 +19,7 @@ export type HealthState =
     | { kind: 'disconnected' }
     | { kind: 'connected'; today: HealthToday | null };
 
-const READ = ['steps', 'calories', 'heartRate'] as const;
+const READ = ['steps', 'calories', 'heartRate', 'sleep'] as const;
 const CONNECTED_KEY = 'fitness-life:health';
 
 const plugin = async () => (await import('@capgo/capacitor-health')).Health;
@@ -36,7 +37,7 @@ export const summarizeHeart = (samples: { value: number; startDate: string }[]):
     };
 };
 
-const remembered = () => {
+export const healthRemembered = () => {
     try {
         return localStorage.getItem(CONNECTED_KEY) === '1';
     } catch {
@@ -76,11 +77,50 @@ const status = async (): Promise<HealthState> => {
         const { available, platform } = await Health.isAvailable();
         // Android 9–13 need the Health Connect app from Google Play (or an update of it).
         if (!available) return platform === 'android' ? { kind: 'install' } : { kind: 'unsupported' };
-        if (!remembered()) return { kind: 'disconnected' };
+        if (!healthRemembered()) return { kind: 'disconnected' };
         return { kind: 'connected', today: await readToday().catch(() => null) };
     } catch {
         return { kind: 'unsupported' };
     }
+};
+
+// Steps of each of the last `days` local days.
+export const readStepDays = async (days: number, now = new Date()): Promise<Record<string, number>> => {
+    const Health = await plugin();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+    const { samples } = await Health.queryAggregated({ dataType: 'steps', startDate: start.toISOString(), endDate: now.toISOString(), bucket: 'day', aggregation: 'sum' });
+    return Object.fromEntries(samples.map(s => [localDay(new Date(s.startDate)), Math.round(s.value)]));
+};
+
+export interface SleepNight { day: string; bedAt: string; wakeAt: string; minutes: number }
+
+// Sleep samples grouped by the day of waking up. Time asleep counts the
+// sleep stages; a phone without a watch may only record "in bed", which then counts.
+export const sleepNights = (samples: { startDate: string; endDate: string; sleepState?: string }[]): SleepNight[] => {
+    const nights = new Map<string, { bed: number; wake: number; asleep: number; inBed: number }>();
+    for (const s of samples) {
+        const start = new Date(s.startDate).getTime();
+        const end = new Date(s.endDate).getTime();
+        if (!(end > start)) continue;
+        const day = localDay(new Date(end));
+        const n = nights.get(day) ?? { bed: start, wake: end, asleep: 0, inBed: 0 };
+        n.bed = Math.min(n.bed, start);
+        n.wake = Math.max(n.wake, end);
+        const minutes = (end - start) / 60000;
+        if (s.sleepState === 'inBed') n.inBed += minutes;
+        else if (s.sleepState !== 'awake') n.asleep += minutes;
+        nights.set(day, n);
+    }
+    return [...nights].map(([day, n]) => ({
+        day, bedAt: new Date(n.bed).toISOString(), wakeAt: new Date(n.wake).toISOString(), minutes: Math.round(n.asleep || n.inBed),
+    })).filter(n => n.minutes >= 60);
+};
+
+export const readSleep = async (nights: number, now = new Date()) => {
+    const Health = await plugin();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - nights, 12);
+    const { samples } = await Health.readSamples({ dataType: 'sleep', startDate: start.toISOString(), endDate: now.toISOString(), limit: 1000 });
+    return sleepNights(samples);
 };
 
 export const connectHealth = async (): Promise<boolean> => {

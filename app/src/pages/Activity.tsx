@@ -36,7 +36,7 @@ export default function Activity() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title={t('activity.title')} subtitle={t('activity.subtitle')} />
+            <PageHeader tone="rose" title={t('activity.title')} subtitle={t('activity.subtitle')} />
 
             <Section>
                 <div className="grid grid-cols-2 gap-2">

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
+import { TrainingReminder } from '../components/TrainingReminder';
 import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Chips, PageHeader, Section, Sheet } from '../components/ui';
 import { programName } from '../data/programs';
@@ -171,6 +172,7 @@ export default function Settings() {
 
             <Section title={t('settings.workout')}>
                 <div className="card divide-y divide-line">
+                    <TrainingReminder />
                     <ToggleRow icon={<BellRing size={20} />} title={t('settings.restSound')} hint={t('settings.restSoundHint')}
                         on={profile.restSound !== false} onChange={on => actions.updateProfile({ restSound: on })}
                         test={{ label: t('settings.restSoundTest'), run: () => { primeSound(); restOver(true); } }} />

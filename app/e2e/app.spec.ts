@@ -365,6 +365,17 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                 });
             }
             if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
+            if (body.action === 'mealplan') {
+                // Each day's dishes carry the day number, so the test can tell the days apart.
+                const days = Array.from({ length: 7 }, (_, d) => ({
+                    meals: [
+                        { slot: 'desayuno', time: '07:30', name: `Avena con huevos ${d + 1}`, foods: ['60 g de avena', '2 huevos revueltos'], kcal: 520, protein: 32, carbs: 55, fat: 18 },
+                        { slot: 'almuerzo', time: '13:30', name: `Pollo con arroz ${d + 1}`, foods: ['150 g de pechuga de pollo', '1 taza de arroz'], kcal: 750, protein: 55, carbs: 85, fat: 15 },
+                        { slot: 'cena', time: '20:00', name: `Atún con papas ${d + 1}`, foods: ['1 lata de atún', '200 g de papa'], kcal: 600, protein: 40, carbs: 60, fat: 20 },
+                    ],
+                }));
+                return route.fulfill({ headers: cors, json: { name: 'Plan para ganar músculo', note: 'Cocina el arroz para tres días.', days } });
+            }
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
         if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
@@ -437,6 +448,158 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
+});
+
+test('AI meal plan (Premium): made for the user, shown by day in order, and logged with one tap', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    await page.getByRole('button', { name: /Crea tu plan de comidas con IA/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Plan de comidas con IA' });
+    await sheet.getByRole('radio', { name: '3 comidas' }).click();
+    await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('no como cerdo');
+    await sheet.getByRole('button', { name: 'Comida económica' }).click();
+    await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
+    await expect(page.getByText('Plan de comidas guardado')).toBeVisible();
+    expect(calls.find(c => c.action === 'mealplan')).toMatchObject({
+        action: 'mealplan', lang: 'es', mealsPerDay: 3, text: 'no como cerdo, Comida económica',
+        context: { goal: 'musculo', targets: { kcal: 2900, protein: 160 } },
+    });
+
+    // Today's menu, in order, with the amounts.
+    const today = (new Date().getDay() + 6) % 7 + 1;
+    await expect(page.getByText('Plan para ganar músculo')).toBeVisible();
+    await expect(page.getByText('Hoy te toca')).toBeVisible();
+    await expect(page.getByText(`Avena con huevos ${today}`)).toBeVisible();
+    await expect(page.getByText('150 g de pechuga de pollo').first()).toBeVisible();
+    await expect(page.getByText('Total del día: 1870 kcal · P 127 g · C 200 g · G 53 g')).toBeVisible();
+    const times = await page.locator('ol li > span.tabular-nums').allTextContents();
+    expect(times).toEqual(['07:30', '13:30', '20:00']);
+
+    // One tap logs a meal of today; it counts toward the day's calories.
+    await page.getByRole('button', { name: `Anotar Pollo con arroz ${today} como comido` }).click();
+    await expect(page.getByText(`Anotado: Pollo con arroz ${today}`)).toBeVisible();
+    await expect(page.getByText('750 de 2900 kcal')).toBeVisible();
+    await expect(page.getByText('Anotado', { exact: true })).toBeVisible();
+
+    // Other days show their own menu, without logging buttons.
+    const other = today === 7 ? 1 : today + 1;
+    await page.getByRole('tablist', { name: 'Días de la semana' }).getByRole('tab').nth(other - 1).click();
+    await expect(page.getByText(`Cena`).first()).toBeVisible();
+    await expect(page.getByText(`Atún con papas ${other}`)).toBeVisible();
+    await expect(page.getByRole('button', { name: /como comido/ })).toHaveCount(0);
+
+    // Reminders can be turned off; the plan stays after a reload.
+    const reminders = page.getByRole('switch', { name: 'Avisos de cada comida' });
+    await expect(reminders).toHaveAttribute('aria-checked', 'true');
+    await reminders.click();
+    await expect(reminders).toHaveAttribute('aria-checked', 'false');
+    await page.reload();
+    await expect(page.getByText(`Avena con huevos ${today}`)).toBeVisible();
+    await expect(page.getByText('Anotado', { exact: true })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Avisos de cada comida' })).toHaveAttribute('aria-checked', 'false');
+
+    // It can be deleted.
+    await page.getByRole('button', { name: 'Borrar plan de comidas' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Borrar' }).click();
+    await expect(page.getByRole('button', { name: /Crea tu plan de comidas con IA/ })).toBeVisible();
+});
+
+test('nutrition: water for the day and saved recipes', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    // 80 kg × 35 ml = 2800 → 3 L (12 glasses); the "muscle" diet is 2 g/kg of protein: +250 ml.
+    await expect(page.getByLabel('Agua: 0 de 3,25 litros')).toBeVisible();
+    await expect(page.getByText('+ 250 ml por tu dieta alta en proteína')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir un vaso de agua (250 ml)' }).click();
+    await page.getByRole('button', { name: 'Añadir un vaso de agua (250 ml)' }).click();
+    await expect(page.getByLabel('Agua: 0,5 de 3,25 litros')).toBeVisible();
+    await expect(page.getByText('Te faltan 11 vasos para tu meta de hoy')).toBeVisible();
+    await page.getByRole('button', { name: 'Quitar un vaso' }).click();
+    await expect(page.getByLabel('Agua: 0,25 de 3,25 litros')).toBeVisible();
+
+    // A recipe with its macros per serving, logged with one tap.
+    await page.getByRole('button', { name: /Guarda tus recetas/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Nueva receta' });
+    await sheet.getByLabel('Nombre').fill('Pancakes de avena');
+    await sheet.getByLabel('Porciones que salen').fill('2');
+    await sheet.getByLabel('Ingredientes (uno por línea)').fill('80 g de avena\n1 plátano\n2 huevos');
+    await sheet.getByLabel('Proteína (g)').fill('15');
+    await sheet.getByLabel('Carbohidratos (g)').fill('40');
+    await sheet.getByLabel('Grasa (g)').fill('8');
+    await sheet.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('Receta guardada')).toBeVisible();
+    await page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' }).click();
+    await expect(page.getByText('292 de 2900 kcal')).toBeVisible();
+    await page.locator('button[aria-expanded]', { hasText: 'Pancakes de avena' }).click();
+    await expect(page.getByText('Salen 2 porciones', { exact: false })).toBeVisible();
+    await expect(page.getByText('1 plátano')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByLabel('Agua: 0,25 de 3,25 litros')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' })).toBeVisible();
+});
+
+test('movement: a walk of the walking plan with GPS, a ride by hand, steps and sleep', async ({ page, context }) => {
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Movimiento/ }).click();
+    await expect(page.getByRole('heading', { name: 'Movimiento' })).toBeVisible();
+    await expect(page.getByLabel('0 pasos hoy')).toBeVisible();
+
+    // A walking plan, and its first walk recorded with the GPS.
+    await page.getByRole('button', { name: /¿Solo quieres caminar\?/ }).click();
+    await page.getByRole('button', { name: /Empieza a caminar/ }).click();
+    await expect(page.getByText('Semana 1 de 4')).toBeVisible();
+    await expect(page.getByText('Caminata 1: 15 minutos')).toBeVisible();
+    await expect(page.getByText('de 5000')).toBeVisible(); // the plan's step goal
+    await page.getByRole('button', { name: 'Empezar caminata' }).click();
+    await expect(page.getByText('Meta: 15 minutos')).toBeVisible();
+    await expect(page.getByText('GPS listo')).toBeVisible();
+    // About 27 m north at a walking pace (3.3 m a second); faster would be a GPS jump.
+    for (let i = 1; i <= 8; i++) {
+        await page.waitForTimeout(1100);
+        await context.setGeolocation({ latitude: 40.4168 + i * 0.00003, longitude: -3.7038, accuracy: 5 });
+    }
+    await expect(page.getByLabel(/Distancia: 0\.0[23] km/)).toBeVisible();
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Actividad guardada')).toBeVisible();
+    await expect(page.getByText('1 de 3 caminatas esta semana', { exact: false }).or(page.getByLabel('1 de 3 caminatas esta semana'))).toBeVisible();
+    await expect(page.getByText(/0,0[23] km/).first()).toBeVisible();
+    // Without a step counter, the walk's steps count for the day (27 m / 74.7 cm ≈ 36).
+    await expect(page.getByLabel(/^[23]\d pasos hoy$/)).toBeVisible();
+
+    // A ride typed in, in km.
+    await page.getByRole('button', { name: 'Añadir a mano' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Añadir a mano' });
+    await sheet.getByRole('radio', { name: 'Bicicleta' }).click();
+    await sheet.getByLabel('Distancia (km)').fill('12,5');
+    await sheet.getByLabel('Minutos').fill('40');
+    await sheet.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('12,50 km')).toBeVisible();
+    await expect(page.getByText(/18,8 km\/h/)).toBeVisible();
+
+    // Sleep typed in.
+    await page.getByRole('button', { name: 'Anotar sueño' }).click();
+    const sleep = page.getByRole('dialog', { name: 'Anotar sueño' });
+    await sleep.getByLabel('Me dormí').fill('23:30');
+    await sleep.getByLabel('Me desperté').fill('07:00');
+    await expect(sleep.getByText('7,5 h')).toBeVisible();
+    await sleep.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('¡Buen descanso!', { exact: false })).toBeVisible();
+
+    // Everything stays.
+    await page.reload();
+    await expect(page.getByText('12,50 km')).toBeVisible();
+    await expect(page.getByText('7,5 h').first()).toBeVisible();
 });
 
 test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {
@@ -790,6 +953,121 @@ test('community: read, like, comment and post', async ({ page }) => {
     await expect(page.getByText('¡Nuevo récord en sentadilla! 100 kg')).toHaveCount(0);
 });
 
+// Onboarding, then an account made from the community (keeping this phone's plan).
+const signUpWithAccount = async (page: Page) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await page.getByRole('link', { name: 'Crear cuenta o iniciar sesión' }).click();
+    await page.getByRole('button', { name: '¿No tienes cuenta? Créala gratis' }).click();
+    await page.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Guardar mis datos' }).click();
+};
+
+test('community: stories, following someone with a private profile, and my own private profile', async ({ page }) => {
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' };
+    const ana = { name: 'Ana', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' };
+    let anaFollow: string | null = null; // my follow of Ana: null, 'pending' or 'accepted'
+    let myPrivate = false;
+    const leoRequest = [{ follower: 'leo', created_at: new Date().toISOString(), author: { name: 'Leo', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' } }];
+    let requests = leoRequest;
+    const anaPost = {
+        id: 'p1', body: 'Día de pierna 🦵', image_path: null, created_at: new Date(Date.now() - 3600_000).toISOString(),
+        user_id: 'ana', author: ana, community_likes: [{ count: 0 }], community_comments: [{ count: 0 }],
+    };
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/)/, async route => {
+        const req = route.request();
+        const method = req.method();
+        if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (method === 'HEAD') {
+            const n = url.includes('community_follows') && url.includes('following=eq.ana') ? (anaFollow === 'accepted' ? 13 : 12)
+                : url.includes('community_follows') && url.includes('follower=eq.ana') ? 7
+                    : url.includes('community_posts') ? 1 : 0;
+            return route.fulfill({ status: 200, headers: { ...cors, 'content-range': `0-0/${n}` }, body: '' });
+        }
+        if (method !== 'GET') {
+            const body = req.postData() ? (() => { try { return req.postDataJSON(); } catch { return null; } })() : null;
+            sent.push({ url, method, body });
+            if (url.includes('community_follows') && method === 'POST') anaFollow = 'pending';
+            if (url.includes('community_follows') && method === 'PATCH') requests = [];
+            if (url.includes('community_profiles') && method === 'PATCH') myPrivate = (body as { is_private: boolean }).is_private;
+            return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
+        }
+        if (url.includes('community_stories')) {
+            return route.fulfill({ headers: cors, json: [
+                { id: 's1', user_id: 'ana', image_path: 'ana/stories/s1.jpg', caption: 'Rumbo al gym 💪', created_at: new Date(Date.now() - 7200_000).toISOString(), author: ana },
+            ] });
+        }
+        if (url.includes('community_profiles') && url.includes('id=eq.ana')) return route.fulfill({ headers: cors, json: [{ ...ana, id: 'ana', is_private: true }] });
+        if (url.includes('community_profiles') && url.includes(`id=eq.${ME}`)) return route.fulfill({ headers: cors, json: [{ is_private: myPrivate }] });
+        if (url.includes('community_follows')) {
+            if (url.includes('following=eq.ana') && url.includes(`follower=eq.${ME}`)) return route.fulfill({ headers: cors, json: anaFollow ? [{ status: anaFollow }] : [] });
+            if (url.includes(`following=eq.${ME}`) && url.includes('status=eq.pending')) return route.fulfill({ headers: cors, json: requests });
+            return route.fulfill({ headers: cors, json: [] });
+        }
+        if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: url.includes('user_id=in.(ana)') && anaFollow !== 'accepted' ? [] : [anaPost] });
+        return route.fulfill({ headers: cors, json: [] });
+    });
+    await page.route('http://ai.test/storage/v1/object/public/**', route => route.fulfill({ path: fixture('meal.jpg') }));
+
+    await signUpWithAccount(page);
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+
+    // A story at the top: opens full screen, with its caption.
+    await page.getByRole('button', { name: 'Historia de Ana' }).click();
+    const viewer = page.getByRole('dialog', { name: 'Historia de Ana' });
+    await expect(viewer.getByText('Rumbo al gym 💪')).toBeVisible();
+    await viewer.getByRole('button', { name: 'Cerrar' }).click();
+    await expect(viewer).toBeHidden();
+
+    // My own story: a photo and a caption.
+    await page.getByRole('button', { name: 'Nueva historia' }).click();
+    const composer = page.getByRole('dialog', { name: 'Nueva historia' });
+    const chooser = page.waitForEvent('filechooser');
+    await composer.getByRole('button', { name: 'Galería' }).click();
+    await (await chooser).setFiles(fixture('meal.jpg'));
+    await composer.getByLabel('Escribe algo (opcional)').fill('Mi primera historia');
+    await composer.getByRole('button', { name: 'Compartir historia' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Acepto' }).click();
+    await expect(page.getByText('¡Historia publicada! Dura 24 horas')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_stories'))?.body).toMatchObject({ user_id: ME, caption: 'Mi primera historia' });
+    expect(sent.some(r => r.url.includes('/storage/v1/object/community/') && r.url.includes('/stories/'))).toBe(true);
+
+    // Ana's profile is private: ask to follow.
+    await page.getByRole('link', { name: /Ana/ }).first().click();
+    await expect(page.getByText('Esta cuenta es privada')).toBeVisible();
+    await expect(page.getByText('12', { exact: true })).toBeVisible(); // followers
+    await page.getByRole('button', { name: 'Seguir' }).click();
+    await expect(page.getByText(/Solicitud enviada/)).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'POST')?.body).toMatchObject({ follower: ME, following: 'ana' });
+    await expect(page.getByRole('button', { name: 'Solicitado' })).toBeVisible();
+
+    // Once Ana accepts, her posts show.
+    anaFollow = 'accepted';
+    await page.reload();
+    await expect(page.getByText('Día de pierna 🦵')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiendo' })).toBeVisible();
+
+    // My profile: private, and Leo's request accepted.
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await expect(page.getByText('1 solicitudes para seguirte')).toBeVisible();
+    await page.getByRole('link', { name: 'Mi perfil' }).click();
+    await page.getByRole('switch', { name: 'Perfil privado' }).click();
+    await expect(page.getByText('Tu perfil ahora es privado')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_profiles') && r.method === 'PATCH')?.body).toEqual({ is_private: true });
+    await page.getByRole('button', { name: 'Aceptar a Leo' }).click();
+    await expect(page.getByText('Leo ahora te sigue')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'PATCH')).toMatchObject({ body: { status: 'accepted' } });
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'PATCH')!.url).toContain('follower=eq.leo');
+});
+
 // Newer Chrome (Android, 2026) returns a Promise from window.scrollTo. An
 // effect that returned it broke every tab change with "is not a function".
 test('tabs work when scrollTo returns a Promise, like newer Chrome', async ({ page }) => {
@@ -907,7 +1185,7 @@ test('offline: says nothing is lost, and the rest sound can be turned off', asyn
     await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toHaveCount(0);
 
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
-    const sound = page.getByRole('switch', { name: 'Sonido al terminar el descanso' });
+    const sound = page.getByRole('switch', { name: 'Sonido del cronómetro y del descanso' });
     await expect(sound).toHaveAttribute('aria-checked', 'true');
     await sound.click();
     await expect(sound).toHaveAttribute('aria-checked', 'false');

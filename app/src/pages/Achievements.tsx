@@ -30,7 +30,7 @@ export default function Achievements() {
 
     return (
         <div className="space-y-5 pb-4">
-            <PageHeader title={t('nav.achievements')} subtitle={t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })} />
+            <PageHeader tone="amber" title={t('nav.achievements')} subtitle={t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })} />
             <Section>
                 <div className="mb-4 h-2 overflow-hidden rounded-full bg-ink-4">
                     <div className="h-full rounded-full bg-gradient-to-r from-brand to-brand-strong" style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />

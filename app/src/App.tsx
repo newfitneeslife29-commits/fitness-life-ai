@@ -7,10 +7,16 @@ import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
 import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
+import { useMealReminders } from './lib/mealplan';
+import { useMovementSync } from './lib/movement';
 import { useRecoveryAlerts } from './lib/recovery';
+import { useTrainingReminders } from './lib/reminders';
 import { cancelRestAlert, initNative } from './lib/native';
 import Achievements from './pages/Achievements';
 import Activity from './pages/Activity';
+import Cardio from './pages/Cardio';
+import Move from './pages/Move';
+import MemberProfile from './pages/MemberProfile';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
@@ -118,6 +124,9 @@ export default function App() {
         return () => window.removeEventListener(AUTH_LINK_FAILED_EVENT, failed);
     }, []);
     useRecoveryAlerts();
+    useMealReminders();
+    useTrainingReminders();
+    useMovementSync();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);
@@ -145,6 +154,7 @@ export default function App() {
             {splash}
             <Routes key={lang}>
                 <Route path="/entreno" element={<ErrorBoundary><Workout /></ErrorBoundary>} />
+                <Route path="/cardio" element={<ErrorBoundary><Cardio /></ErrorBoundary>} />
                 <Route path="/cuenta" element={<AuthScreen initialMode="signIn" onDone={() => navigate('/ajustes', { replace: true })} onBack={() => navigate(-1)} />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />
                 <Route path="/rutinas" element={<Shell><Routines /></Shell>} />
@@ -161,9 +171,11 @@ export default function App() {
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
+                <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="/actividad" element={<Shell><Activity /></Shell>} />
+                <Route path="/movimiento" element={<Shell><Move /></Shell>} />
                 <Route path="/mujeres" element={<Shell><Women /></Shell>} />
                 <Route path="/wrapped" element={<Shell><Wrapped /></Shell>} />
                 <Route path="/antes-despues" element={<Shell><Compare /></Shell>} />

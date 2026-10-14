@@ -60,9 +60,11 @@ const beep = (freq: number, ms: number, delayMs = 0) => {
     osc.stop(at + ms / 1000 + 0.02);
 };
 
-// Last seconds of a rest: a short tick. Rest over: two beeps and a long vibration.
-export const restTick = (sound: boolean) => {
-    if (sound) beep(880, 90);
+// Countdown at the end of a rest or a timed set: a tick each of the last
+// 10 seconds, higher for the last 3. Over: two beeps and a long vibration.
+export const COUNTDOWN_SEC = 10;
+export const restTick = (sound: boolean, final = false) => {
+    if (sound) beep(final ? 1100 : 880, final ? 130 : 80);
     haptic('tap');
 };
 export const restOver = (sound: boolean) => {
@@ -147,6 +149,35 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
         await LocalNotifications.schedule({
             // Hours away: an inexact alarm is fine and needs no special permission.
             notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
+        });
+    });
+};
+
+// Weekly reminders (lib/mealplan.ts, lib/reminders.ts): one notification a
+// week each, at a weekday and time. Each call replaces the group's previous ones.
+export interface WeeklyReminder {
+    id: number;
+    weekday: number; // 1 = Sunday … 7 = Saturday
+    hour: number;
+    minute: number;
+    title: string;
+    body: string;
+}
+const REMINDER_IDS = {
+    meals: Array.from({ length: 70 }, (_, i) => 5200 + i),
+    training: Array.from({ length: 7 }, (_, i) => 5300 + i),
+};
+export const reminderId = (group: keyof typeof REMINDER_IDS, index: number) => REMINDER_IDS[group][index];
+export const scheduleWeeklyReminders = async (group: keyof typeof REMINDER_IDS, reminders: WeeklyReminder[]) => {
+    if (!isNative()) return;
+    await quiet(async () => {
+        await LocalNotifications.cancel({ notifications: REMINDER_IDS[group].map(id => ({ id })) });
+        if (!reminders.length || !(await notificationsOk())) return;
+        await LocalNotifications.schedule({
+            notifications: reminders.map(r => ({
+                id: r.id, title: r.title, body: r.body,
+                schedule: { on: { weekday: r.weekday, hour: r.hour, minute: r.minute }, allowWhileIdle: true }, isExactNotification: false,
+            })),
         });
     });
 };

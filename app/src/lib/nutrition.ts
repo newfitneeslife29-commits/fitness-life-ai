@@ -102,3 +102,22 @@ export const healthyWeightRange = (heightCm: number) => {
     const m2 = (heightCm / 100) ** 2;
     return { minKg: Math.round(18.5 * m2 * 10) / 10, maxKg: Math.round(24.9 * m2 * 10) / 10 };
 };
+
+// ---------- Water ----------
+
+export const GLASS_ML = 250;
+
+// Daily water: about 35 ml per kg of body weight, more on training days, with
+// a very active day, or with a high-protein diet (the kidneys need more water
+// for it). Rounded up to whole glasses.
+export const waterTargetMl = (
+    profile: { sex?: 'hombre' | 'mujer'; activity?: 'sedentario' | 'ligero' | 'moderado' | 'alto' },
+    weightKg: number | null,
+    opts: { trained: boolean; proteinG?: number | null },
+) => {
+    let ml = weightKg ? weightKg * 35 : profile.sex === 'mujer' ? 2000 : 2500;
+    if (opts.trained) ml += 500;
+    if (profile.activity === 'alto') ml += 250;
+    if (weightKg && opts.proteinG && opts.proteinG / weightKg >= 1.8) ml += 250;
+    return Math.min(6000, Math.ceil(ml / GLASS_ML) * GLASS_ML);
+};

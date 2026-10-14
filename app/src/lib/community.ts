@@ -2,7 +2,8 @@ import { getState, subscribeStore } from '../store/store';
 import { uid } from './id';
 import { getSessionClient, getSupabase, SUPABASE_URL } from './supabase';
 
-// Community: posts with text and an optional photo, likes and comments.
+// Community: posts with text and an optional photo, likes and comments,
+// 24-hour stories, followers and private profiles.
 // Reading needs any session (the anonymous one is fine); posting, liking and
 // commenting need an account. Tables: community_* (supabase/migrations);
 // photos: the public "community" bucket, one folder per user.
@@ -52,14 +53,16 @@ const myId = async () => {
 // Any session will do for reading; without one, sign in anonymously first.
 const reader = getSessionClient;
 
-export const fetchFeed = async (before?: string): Promise<Post[]> => {
+export const fetchFeed = async (before?: string, opts: { only?: string[] } = {}): Promise<Post[]> => {
     const supabase = await reader();
+    if (opts.only && !opts.only.length) return [];
     let query = supabase
         .from('community_posts')
         .select('id, body, image_path, created_at, user_id, author:community_profiles!community_posts_user_id_fkey(name, avatar_path, updated_at), community_likes(count), community_comments(count)')
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
     if (before) query = query.lt('created_at', before);
+    if (opts.only) query = query.in('user_id', opts.only);
     const { data, error } = await query;
     if (error) throw error;
     const rows = (data ?? []) as unknown as {
@@ -145,13 +148,191 @@ export const deleteComment = async (commentId: string) => {
 };
 
 // Already reported by this person counts as done.
-export const report = async (target: { postId?: string; commentId?: string }, reason = '') => {
+export const report = async (target: { postId?: string; commentId?: string; storyId?: string }, reason = '') => {
     const supabase = await reader();
-    const { error } = await supabase.from('community_reports').insert({ post_id: target.postId ?? null, comment_id: target.commentId ?? null, reason });
+    const { error } = await supabase.from('community_reports').insert({
+        post_id: target.postId ?? null, comment_id: target.commentId ?? null, ...(target.storyId ? { story_id: target.storyId } : {}), reason,
+    });
     if (error && error.code !== '23505') throw error;
 };
 
 export const currentMemberId = myId;
+
+// ---------- Stories ----------
+
+export interface Story {
+    id: string;
+    userId: string;
+    imageUrl: string;
+    imagePath: string;
+    caption: string;
+    createdAt: string;
+}
+
+export interface StoryGroup {
+    userId: string;
+    author: Author;
+    stories: Story[]; // oldest first
+}
+
+// Live stories grouped by person: mine first, then the newest.
+export const fetchStories = async (): Promise<StoryGroup[]> => {
+    const supabase = await reader();
+    const { data, error } = await supabase
+        .from('community_stories')
+        .select('id, user_id, image_path, caption, created_at, author:community_profiles!community_stories_user_id_fkey(name, avatar_path, updated_at)')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: true })
+        .limit(300);
+    if (error) throw error;
+    const blocked = new Set(getState().blockedUsers ?? []);
+    const me = await myId();
+    const groups = new Map<string, StoryGroup>();
+    for (const r of (data ?? []) as unknown as { id: string; user_id: string; image_path: string; caption: string; created_at: string; author: ProfileRow }[]) {
+        if (blocked.has(r.user_id)) continue;
+        const g = groups.get(r.user_id) ?? { userId: r.user_id, author: authorOf(r.author), stories: [] };
+        g.stories.push({ id: r.id, userId: r.user_id, imagePath: r.image_path, imageUrl: publicUrl(r.image_path)!, caption: r.caption, createdAt: r.created_at });
+        groups.set(r.user_id, g);
+    }
+    const last = (g: StoryGroup) => g.stories[g.stories.length - 1].createdAt;
+    return [...groups.values()].sort((a, b) => (a.userId === me ? -1 : b.userId === me ? 1 : last(b).localeCompare(last(a))));
+};
+
+export const createStory = async (photo: Blob, caption: string) => {
+    const { supabase, id } = await requireMember();
+    const storyId = uid();
+    const imagePath = `${id}/stories/${storyId}.jpg`;
+    const { error: upload } = await supabase.storage.from(BUCKET).upload(imagePath, photo, { contentType: 'image/jpeg', upsert: false });
+    if (upload) throw upload;
+    const { error } = await supabase.from('community_stories').insert({ id: storyId, user_id: id, image_path: imagePath, caption: caption.trim().slice(0, 200) });
+    if (error) {
+        await supabase.storage.from(BUCKET).remove([imagePath]);
+        throw error;
+    }
+};
+
+export const deleteStory = async (story: Story) => {
+    const { supabase } = await requireMember();
+    const { error } = await supabase.from('community_stories').delete().eq('id', story.id);
+    if (error) throw error;
+    await supabase.storage.from(BUCKET).remove([story.imagePath]);
+};
+
+// Stories this phone has already shown (their circle turns grey).
+const SEEN_KEY = 'fitness-life:stories-seen';
+export const seenStories = (): Set<string> => {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]') as string[]);
+    } catch {
+        return new Set();
+    }
+};
+export const markStorySeen = (id: string) => {
+    const seen = seenStories();
+    if (seen.has(id)) return;
+    try {
+        localStorage.setItem(SEEN_KEY, JSON.stringify([...seen, id].slice(-500)));
+    } catch { /* private mode */ }
+};
+
+// ---------- Followers and private profiles ----------
+
+export type FollowState = 'none' | 'pending' | 'accepted';
+
+export interface MemberProfile {
+    id: string;
+    author: Author;
+    isPrivate: boolean;
+    followers: number;
+    following: number;
+    posts: number;
+    myFollow: FollowState; // whether I follow them
+    canSee: boolean;
+}
+
+export const fetchMemberProfile = async (userId: string): Promise<MemberProfile> => {
+    const supabase = await reader();
+    const me = await myId();
+    const [{ data: row, error }, followers, following, mine] = await Promise.all([
+        supabase.from('community_profiles').select('id, name, avatar_path, updated_at, is_private').eq('id', userId).maybeSingle(),
+        supabase.from('community_follows').select('follower', { count: 'exact', head: true }).eq('following', userId).eq('status', 'accepted'),
+        supabase.from('community_follows').select('following', { count: 'exact', head: true }).eq('follower', userId).eq('status', 'accepted'),
+        me ? supabase.from('community_follows').select('status').eq('follower', me).eq('following', userId).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
+    if (error) throw error;
+    const p = row as { name: string; avatar_path: string | null; updated_at: string; is_private: boolean } | null;
+    const myFollow = ((mine.data as { status?: FollowState } | null)?.status ?? 'none') as FollowState;
+    const isPrivate = p?.is_private ?? false;
+    const canSee = userId === me || !isPrivate || myFollow === 'accepted';
+    const { count: posts } = canSee
+        ? await supabase.from('community_posts').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+        : { count: 0 };
+    return {
+        id: userId, author: authorOf(p), isPrivate, followers: followers.count ?? 0, following: following.count ?? 0,
+        posts: posts ?? 0, myFollow, canSee,
+    };
+};
+
+export const fetchMemberPosts = (userId: string) => fetchFeed(undefined, { only: [userId] });
+
+export const follow = async (userId: string) => {
+    const { supabase, id } = await requireMember();
+    const { error } = await supabase.from('community_follows').insert({ follower: id, following: userId });
+    if (error && error.code !== '23505') throw error;
+};
+
+export const unfollow = async (userId: string) => {
+    const { supabase, id } = await requireMember();
+    const { error } = await supabase.from('community_follows').delete().eq('follower', id).eq('following', userId);
+    if (error) throw error;
+};
+
+// People I follow (accepted), for the "Following" feed.
+export const fetchFollowingIds = async (): Promise<string[]> => {
+    const me = await myId();
+    if (!me) return [];
+    const supabase = await reader();
+    const { data, error } = await supabase.from('community_follows').select('following').eq('follower', me).eq('status', 'accepted').limit(1000);
+    if (error) throw error;
+    return (data ?? []).map(r => (r as { following: string }).following);
+};
+
+export interface FollowRequest { userId: string; author: Author; createdAt: string }
+
+export const fetchFollowRequests = async (): Promise<FollowRequest[]> => {
+    const me = await myId();
+    if (!me) return [];
+    const supabase = await reader();
+    const { data, error } = await supabase
+        .from('community_follows')
+        .select('follower, created_at, author:community_profiles!community_follows_follower_fkey(name, avatar_path, updated_at)')
+        .eq('following', me).eq('status', 'pending').order('created_at', { ascending: false });
+    if (error) throw error;
+    return ((data ?? []) as unknown as { follower: string; created_at: string; author: ProfileRow }[])
+        .map(r => ({ userId: r.follower, author: authorOf(r.author), createdAt: r.created_at }));
+};
+
+export const answerFollowRequest = async (userId: string, accept: boolean) => {
+    const { supabase, id } = await requireMember();
+    const { error } = accept
+        ? await supabase.from('community_follows').update({ status: 'accepted' }).eq('follower', userId).eq('following', id)
+        : await supabase.from('community_follows').delete().eq('follower', userId).eq('following', id);
+    if (error) throw error;
+};
+
+export const fetchMyPrivacy = async (): Promise<boolean> => {
+    const me = await myId();
+    if (!me) return false;
+    const supabase = await reader();
+    const { data } = await supabase.from('community_profiles').select('is_private').eq('id', me).maybeSingle();
+    return Boolean((data as { is_private?: boolean } | null)?.is_private);
+};
+
+export const setPrivateProfile = async (isPrivate: boolean) => {
+    const { supabase, id } = await requireMember();
+    const { error } = await supabase.from('community_profiles').update({ is_private: isPrivate }).eq('id', id);
+    if (error) throw error;
+};
 
 // ---------- The signed-in person's public profile (name and picture) ----------
 

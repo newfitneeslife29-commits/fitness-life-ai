@@ -1,5 +1,5 @@
 import { locale, t, tp } from '../i18n';
-import { isNative } from './native';
+import { COUNTDOWN_SEC, isNative } from './native';
 
 // Short spoken cues for the exercise timer: the device's own text-to-speech
 // engine in the apps (Android's WebView has no speechSynthesis), the Web
@@ -50,12 +50,12 @@ export const spokenTime = (sec: number) => {
 };
 
 // What to say at second `sec` of a hold that aims for `target` seconds:
-// a countdown into the target, "time!" on it, and the time every 10 seconds.
+// a countdown of the last 10 seconds, "time!" on it, and the time every 10 seconds.
 export const cueAt = (sec: number, target: number): string | null => {
     if (sec <= 0) return null;
     if (target > 0) {
         if (sec === target) return t('voice.target');
-        if (sec >= target - 3 && sec < target) return String(target - sec);
+        if (sec >= target - COUNTDOWN_SEC && sec < target) return String(target - sec);
     }
     if (sec % 10 === 0) return spokenTime(sec);
     return null;

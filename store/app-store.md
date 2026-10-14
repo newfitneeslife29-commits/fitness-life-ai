@@ -107,6 +107,7 @@ NUTRICIÓN SIN COMPLICARTE
 • Índice de masa corporal (IMC) y tu rango de peso saludable.
 • Tabla con 94 alimentos comunes.
 • Premium: toma una foto de tu comida y la IA calcula los macros.
+• Premium: plan de comidas de 7 días con IA, ordenado por horario, con lo que te toca comer cada día y un aviso a la hora de cada comida.
 • Premium: coach de nutrición con IA que conoce tu objetivo y lo que llevas comido hoy.
 
 COMUNIDAD
@@ -120,7 +121,7 @@ TU CUENTA, TUS DATOS
 • En español, inglés y portugués, con modo claro y oscuro.
 
 FITNESS LIFE PREMIUM
-Entrenar es gratis. Premium añade la IA: entrenador personal, coach de nutrición y comidas calculadas desde una foto.
+Entrenar es gratis. Premium añade la IA: entrenador personal, plan de comidas, coach de nutrición y comidas calculadas desde una foto.
 • Mensual: 4,99 USD al mes, con 7 días de prueba gratis para nuevos suscriptores.
 • Anual: 39,99 USD al año.
 El pago se carga a tu cuenta de Apple al confirmar la compra (o al terminar la prueba gratis). La suscripción se renueva sola salvo que la canceles al menos 24 horas antes del final del periodo. Puedes gestionarla y cancelarla en los Ajustes de tu cuenta de Apple.

@@ -14,7 +14,7 @@ const PUSH_DELAY_MS = 2500;
 
 // What goes to the cloud: the training data, not this device's session state.
 export const snapshot = (s: AppState) => {
-    const { account: _a, authPrompted: _p, cloudSyncedAt: _c, active: _w, aiUsage: _u, premium: _m, lang: _l, theme: _t, ...data } = s;
+    const { account: _a, authPrompted: _p, cloudSyncedAt: _c, active: _w, cardioActive: _r, aiUsage: _u, premium: _m, lang: _l, theme: _t, ...data } = s;
     return data;
 };
 

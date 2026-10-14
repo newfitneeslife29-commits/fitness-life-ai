@@ -2,7 +2,7 @@ import { Mic, MicOff, Play, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
 import { fmtClock } from '../lib/format';
-import { haptic } from '../lib/native';
+import { COUNTDOWN_SEC, haptic, primeSound, restOver, restTick } from '../lib/native';
 import { useNow } from '../lib/useNow';
 import { cueAt, speak, stopSpeaking, voiceAvailable } from '../lib/voice';
 import { actions, useStore } from '../store/store';
@@ -10,10 +10,12 @@ import { actions, useStore } from '../store/store';
 const COUNT_IN = 3; // seconds of "3, 2, 1" before the hold starts
 
 // Stopwatch for timed exercises (plank, mountain climbers...). A voice counts
-// in, calls out the time every 10 seconds and says when the target is reached;
-// "Finish" saves the seconds held into the set.
+// in, calls out the time every 10 seconds and counts down the last 10 to the
+// target; beeps mark the same moments even without the voice (in every
+// workout, the women's included). "Finish" saves the seconds held into the set.
 export const HoldTimer = ({ target, onDone }: { target: number; onDone: (seconds: number) => void }) => {
     const voiceOn = useStore(s => s.profile?.voice !== false) && voiceAvailable();
+    const sound = useStore(s => s.profile?.restSound !== false);
     const [goAt, setGoAt] = useState<number | null>(null);
     const now = useNow(goAt !== null, 200);
     // Negative while counting in. The first render after Start still has the
@@ -25,14 +27,22 @@ export const HoldTimer = ({ target, onDone }: { target: number; onDone: (seconds
         if (goAt === null || lastCue.current === elapsed) return;
         lastCue.current = elapsed;
         const cue = elapsed < 0 ? String(-elapsed) : elapsed === 0 ? t('voice.go') : cueAt(elapsed, target);
-        if (elapsed === target && target > 0) haptic('success');
+        const left = target - elapsed;
+        if (elapsed < 0) restTick(sound);
+        else if (elapsed === 0) restTick(sound, true);
+        else if (target > 0 && left > 0 && left <= COUNTDOWN_SEC) restTick(sound, left <= 3);
+        if (elapsed === target && target > 0) {
+            haptic('success');
+            restOver(sound);
+        }
         if (cue && voiceOn) void speak(cue);
-    }, [elapsed, goAt, target, voiceOn]);
+    }, [elapsed, goAt, target, voiceOn, sound]);
 
     useEffect(() => () => { void stopSpeaking(); }, []);
 
     const start = () => {
         lastCue.current = null;
+        primeSound();
         haptic('tap');
         setGoAt(Date.now() + COUNT_IN * 1000);
     };

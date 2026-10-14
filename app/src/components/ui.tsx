@@ -2,7 +2,33 @@ import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { t } from '../i18n';
 
-export const PageHeader = ({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) => (
+// Each main tab has its own colour: a gradient header with soft light blobs.
+const TONES = {
+    orange: 'from-brand via-orange-500 to-amber-500 shadow-brand/25',
+    violet: 'from-violet-600 via-indigo-600 to-fuchsia-600 shadow-violet-600/25',
+    sky: 'from-sky-500 via-blue-600 to-indigo-600 shadow-sky-500/25',
+    emerald: 'from-emerald-500 via-green-600 to-teal-600 shadow-emerald-500/25',
+    amber: 'from-amber-500 via-orange-500 to-rose-500 shadow-amber-500/25',
+    rose: 'from-rose-500 via-pink-600 to-fuchsia-600 shadow-rose-500/25',
+} as const;
+export type Tone = keyof typeof TONES;
+
+export const PageHeader = ({ title, subtitle, action, tone, children }: {
+    title: string; subtitle?: string; action?: ReactNode; tone?: Tone; children?: ReactNode;
+}) => tone ? (
+    <header className={`relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] text-snow shadow-lg ${TONES[tone]}`}>
+        <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-snow/15 blur-2xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-black/10 blur-2xl" />
+        <div className="relative flex items-end justify-between gap-4">
+            <div className="min-w-0">
+                <h1 className="truncate text-3xl font-extrabold tracking-tight">{title}</h1>
+                {subtitle && <p className="mt-0.5 text-sm text-snow/85">{subtitle}</p>}
+            </div>
+            {action}
+        </div>
+        {children && <div className="relative mt-4">{children}</div>}
+    </header>
+) : (
     <header className="flex items-end justify-between gap-4 px-4 pb-4 pt-6">
         <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold tracking-tight">{title}</h1>
@@ -10,6 +36,14 @@ export const PageHeader = ({ title, subtitle, action }: { title: string; subtitl
         </div>
         {action}
     </header>
+);
+
+// A small figure on a coloured header: big number, short label.
+export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) => (
+    <div className="rounded-2xl bg-snow/15 px-3 py-2.5 backdrop-blur">
+        <p className="text-xl font-extrabold tabular-nums leading-tight">{value}</p>
+        <p className="text-[11px] font-medium uppercase tracking-wide text-snow/80">{label}</p>
+    </div>
 );
 
 export const Section = ({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) => (

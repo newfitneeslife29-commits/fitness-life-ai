@@ -175,3 +175,53 @@ export const routineSchema = (exerciseIds: string[]) => ({
   required: ['name', 'note', 'exercises'],
   additionalProperties: false,
 });
+
+// ---------- Meal plan ----------
+
+export const MEAL_SLOTS = ['desayuno', 'media-manana', 'almuerzo', 'merienda', 'cena', 'snack'] as const;
+export type MealSlot = (typeof MEAL_SLOTS)[number];
+
+export const mealPlanSystem = (lang: Lang, mealsPerDay: number) => `You plan a week of meals for a user of a strength-training app, many of whom are beginners who do not know what to eat. The app shows the plan day by day, in order, and reminds them at the time of each meal.
+
+Plan 7 days (Monday first) with ${mealsPerDay} meals a day, from breakfast to dinner, at realistic times ("HH:MM", 24 h) spread through the day; if the user mentions when they wake up, work or train, fit the times to that. Each day's meals should add up to the user's daily targets below, within about 5%. If there are no targets, estimate them from the profile and goal. Spread protein across the meals.
+
+Use simple, affordable foods that are easy to find and cook where people speak ${LANGUAGE[lang]}, with home-style dishes. Give every food an amount a beginner can follow (grams, cups, units or spoons), for example "2 huevos revueltos" or "80 g de avena". Repeat breakfasts and snacks across days so shopping stays easy, and vary lunches and dinners. Respect what the user asks: foods they avoid, allergies, budget, a vegetarian diet, their schedule.
+
+For each meal give its slot, the time, a short dish name (2 to 5 words), the foods with amounts (1 to 6), and its kcal, protein, carbs and fat, with kcal consistent with the macros.
+
+Write "name" as a short plan name (2 to 5 words), "note" as one or two short sentences with the idea of the plan and a practical tip (for example to cook in batches), and every dish and food in ${LANGUAGE[lang]}. This is general guidance, not medical advice: if the user mentions a medical condition, pregnancy, an eating disorder or a very low calorie goal, keep the plan moderate and say in the note to check it with a doctor or dietitian. If the request has nothing to do with food, return no days and say so in the note.`;
+
+export const MEALPLAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    note: { type: 'string' },
+    days: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          meals: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                slot: { type: 'string', enum: [...MEAL_SLOTS] },
+                time: { type: 'string' },
+                name: { type: 'string' },
+                foods: { type: 'array', items: { type: 'string' } },
+                kcal: NUMBER, protein: NUMBER, carbs: NUMBER, fat: NUMBER,
+              },
+              required: ['slot', 'time', 'name', 'foods', 'kcal', 'protein', 'carbs', 'fat'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['meals'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['name', 'note', 'days'],
+  additionalProperties: false,
+};

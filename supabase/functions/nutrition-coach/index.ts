@@ -16,15 +16,18 @@
 //   { action: 'trainer', lang, context, messages: [{ role, text }] } → { text, usage }  (personal trainer)
 //   { action: 'routine', lang, context, text, exercises: [{ id, name, muscle, equipment, timed }] }
 //       → { name, note, exercises: [{ exerciseId, sets, repMin, repMax, restSec }], usage }
+//   { action: 'mealplan', lang, context, text?, mealsPerDay: 3..6 }
+//       → { name, note, days: [{ meals: [{ slot, time, name, foods, kcal, protein, carbs, fat }] }] × 7, usage }
 // Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
-  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, photoSystem, routineSchema, routineSystem, trainerNote, trainerSystem,
-  type CoachContext, type Lang, type Macros, type TrainerContext,
+  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEALPLAN_SCHEMA, mealPlanSystem, photoSystem, routineSchema, routineSystem,
+  trainerNote, trainerSystem, type CoachContext, type Lang, type Macros, type TrainerContext,
 } from './prompt.ts';
+import { cleanMealPlan } from './mealplan.ts';
 import { hasEntitlement } from './subscription.ts';
 
 // Fast, low-cost model: a Premium user's whole month costs cents, so the
@@ -203,6 +206,21 @@ async function routine(lang: Lang, context: TrainerContext, request: string, cat
   return { name: String(raw.name ?? '').slice(0, 60), note: String(raw.note ?? '').slice(0, 300), exercises };
 }
 
+async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+  const res = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 16000,
+    output_config: { effort: 'medium', format: { type: 'json_schema', schema: MEALPLAN_SCHEMA } },
+    system: [
+      { type: 'text', text: mealPlanSystem(lang, mealsPerDay) },
+      { type: 'text', text: contextNote(context) },
+    ],
+    messages: [{ role: 'user', content: request || 'Plan my meals for the week.' }],
+  });
+  if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
+  return cleanMealPlan(JSON.parse(textOf(res)));
+}
+
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 type ImageType = (typeof IMAGE_TYPES)[number];
 const MAX_IMAGE_BASE64 = 2_000_000; // about 1.5 MB; the app sends ~200 KB
@@ -311,6 +329,12 @@ Deno.serve(async req => {
       const catalog = catalogOf(body.exercises);
       checkQuota(usage);
       result = await routine(lang, trainerContextOf(body.context), request, catalog);
+    } else if (body.action === 'mealplan') {
+      const request = typeof body.text === 'string' ? body.text.trim().slice(0, 500) : '';
+      const perDay = Number(body.mealsPerDay);
+      const mealsPerDay = Number.isFinite(perDay) ? Math.min(6, Math.max(3, Math.round(perDay))) : 4;
+      checkQuota(usage);
+      result = await mealPlan(lang, contextOf(body.context), request, mealsPerDay);
     } else if (body.action === 'estimate') {
       const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
       if (text.length < 3) throw new HttpError(400, 'describe the meal');

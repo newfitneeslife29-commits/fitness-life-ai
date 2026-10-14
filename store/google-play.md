@@ -47,6 +47,7 @@ NUTRICIÓN SIN COMPLICARTE
 • Índice de masa corporal (IMC) y tu rango de peso saludable.
 • Tabla con 94 alimentos comunes.
 • Premium: toma una foto de tu comida y la IA calcula los macros.
+• Premium: plan de comidas de 7 días con IA, ordenado por horario, con lo que te toca comer cada día y un aviso a la hora de cada comida.
 • Premium: coach de nutrición con IA que conoce tu objetivo y lo que llevas comido hoy.
 
 COMUNIDAD
@@ -59,7 +60,7 @@ TU CUENTA, TUS DATOS
 • En español, inglés y portugués, con modo claro y oscuro.
 
 FITNESS LIFE PREMIUM
-Entrenar es gratis. Premium añade la IA: entrenador personal, coach de nutrición y comidas calculadas desde una foto. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
+Entrenar es gratis. Premium añade la IA: entrenador personal, plan de comidas, coach de nutrición y comidas calculadas desde una foto. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
 
 Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a un profesional antes de empezar un programa de ejercicio o cambiar tu dieta.
 ```

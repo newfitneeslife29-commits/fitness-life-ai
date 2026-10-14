@@ -3,11 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Fitness Life lee tus pasos, calorías activas y ritmo cardíaco de Salud para mostrarlos junto a tus entrenos. No escribe ni comparte tus datos de salud.</string>
+	<string>Fitness Life lee tus pasos, distancia, calorías activas, ritmo cardíaco y sueño de Salud para mostrarlos junto a tus entrenos. No escribe ni comparte tus datos de salud.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Fitness Life no escribe datos en Salud.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Fitness Life usa la cámara para fotografiar tus comidas y calcular sus calorías, y para tu foto de perfil y tus publicaciones.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Fitness Life usa tu ubicación solo mientras registras una caminata o un paseo en bicicleta, para medir la distancia. La ruta no sale de tu teléfono.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Fitness Life sigue midiendo la distancia de tu caminata o paseo en bicicleta con la pantalla bloqueada, solo mientras lo registras. La ruta no sale de tu teléfono.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Fitness Life cuenta tus pasos del día con el sensor de movimiento del iPhone.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Fitness Life guarda en tus Fotos las tarjetas e imágenes que decides guardar para compartir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
