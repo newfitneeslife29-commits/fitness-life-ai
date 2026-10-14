@@ -16,6 +16,7 @@ import Achievements from './pages/Achievements';
 import Activity from './pages/Activity';
 import Cardio from './pages/Cardio';
 import Move from './pages/Move';
+import MemberProfile from './pages/MemberProfile';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Exercises from './pages/Exercises';
@@ -170,6 +171,7 @@ export default function App() {
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
+                <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="/actividad" element={<Shell><Activity /></Shell>} />

@@ -953,6 +953,121 @@ test('community: read, like, comment and post', async ({ page }) => {
     await expect(page.getByText('¡Nuevo récord en sentadilla! 100 kg')).toHaveCount(0);
 });
 
+// Onboarding, then an account made from the community (keeping this phone's plan).
+const signUpWithAccount = async (page: Page) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await page.getByRole('link', { name: 'Crear cuenta o iniciar sesión' }).click();
+    await page.getByRole('button', { name: '¿No tienes cuenta? Créala gratis' }).click();
+    await page.getByLabel('Correo electrónico').fill('sebas@example.com');
+    await page.getByLabel('Contraseña', { exact: true }).fill('secreto123');
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Guardar mis datos' }).click();
+};
+
+test('community: stories, following someone with a private profile, and my own private profile', async ({ page }) => {
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' };
+    const ana = { name: 'Ana', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' };
+    let anaFollow: string | null = null; // my follow of Ana: null, 'pending' or 'accepted'
+    let myPrivate = false;
+    const leoRequest = [{ follower: 'leo', created_at: new Date().toISOString(), author: { name: 'Leo', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' } }];
+    let requests = leoRequest;
+    const anaPost = {
+        id: 'p1', body: 'Día de pierna 🦵', image_path: null, created_at: new Date(Date.now() - 3600_000).toISOString(),
+        user_id: 'ana', author: ana, community_likes: [{ count: 0 }], community_comments: [{ count: 0 }],
+    };
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/)/, async route => {
+        const req = route.request();
+        const method = req.method();
+        if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (method === 'HEAD') {
+            const n = url.includes('community_follows') && url.includes('following=eq.ana') ? (anaFollow === 'accepted' ? 13 : 12)
+                : url.includes('community_follows') && url.includes('follower=eq.ana') ? 7
+                    : url.includes('community_posts') ? 1 : 0;
+            return route.fulfill({ status: 200, headers: { ...cors, 'content-range': `0-0/${n}` }, body: '' });
+        }
+        if (method !== 'GET') {
+            const body = req.postData() ? (() => { try { return req.postDataJSON(); } catch { return null; } })() : null;
+            sent.push({ url, method, body });
+            if (url.includes('community_follows') && method === 'POST') anaFollow = 'pending';
+            if (url.includes('community_follows') && method === 'PATCH') requests = [];
+            if (url.includes('community_profiles') && method === 'PATCH') myPrivate = (body as { is_private: boolean }).is_private;
+            return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
+        }
+        if (url.includes('community_stories')) {
+            return route.fulfill({ headers: cors, json: [
+                { id: 's1', user_id: 'ana', image_path: 'ana/stories/s1.jpg', caption: 'Rumbo al gym 💪', created_at: new Date(Date.now() - 7200_000).toISOString(), author: ana },
+            ] });
+        }
+        if (url.includes('community_profiles') && url.includes('id=eq.ana')) return route.fulfill({ headers: cors, json: [{ ...ana, id: 'ana', is_private: true }] });
+        if (url.includes('community_profiles') && url.includes(`id=eq.${ME}`)) return route.fulfill({ headers: cors, json: [{ is_private: myPrivate }] });
+        if (url.includes('community_follows')) {
+            if (url.includes('following=eq.ana') && url.includes(`follower=eq.${ME}`)) return route.fulfill({ headers: cors, json: anaFollow ? [{ status: anaFollow }] : [] });
+            if (url.includes(`following=eq.${ME}`) && url.includes('status=eq.pending')) return route.fulfill({ headers: cors, json: requests });
+            return route.fulfill({ headers: cors, json: [] });
+        }
+        if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: url.includes('user_id=in.(ana)') && anaFollow !== 'accepted' ? [] : [anaPost] });
+        return route.fulfill({ headers: cors, json: [] });
+    });
+    await page.route('http://ai.test/storage/v1/object/public/**', route => route.fulfill({ path: fixture('meal.jpg') }));
+
+    await signUpWithAccount(page);
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+
+    // A story at the top: opens full screen, with its caption.
+    await page.getByRole('button', { name: 'Historia de Ana' }).click();
+    const viewer = page.getByRole('dialog', { name: 'Historia de Ana' });
+    await expect(viewer.getByText('Rumbo al gym 💪')).toBeVisible();
+    await viewer.getByRole('button', { name: 'Cerrar' }).click();
+    await expect(viewer).toBeHidden();
+
+    // My own story: a photo and a caption.
+    await page.getByRole('button', { name: 'Nueva historia' }).click();
+    const composer = page.getByRole('dialog', { name: 'Nueva historia' });
+    const chooser = page.waitForEvent('filechooser');
+    await composer.getByRole('button', { name: 'Galería' }).click();
+    await (await chooser).setFiles(fixture('meal.jpg'));
+    await composer.getByLabel('Escribe algo (opcional)').fill('Mi primera historia');
+    await composer.getByRole('button', { name: 'Compartir historia' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Acepto' }).click();
+    await expect(page.getByText('¡Historia publicada! Dura 24 horas')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_stories'))?.body).toMatchObject({ user_id: ME, caption: 'Mi primera historia' });
+    expect(sent.some(r => r.url.includes('/storage/v1/object/community/') && r.url.includes('/stories/'))).toBe(true);
+
+    // Ana's profile is private: ask to follow.
+    await page.getByRole('link', { name: /Ana/ }).first().click();
+    await expect(page.getByText('Esta cuenta es privada')).toBeVisible();
+    await expect(page.getByText('12', { exact: true })).toBeVisible(); // followers
+    await page.getByRole('button', { name: 'Seguir' }).click();
+    await expect(page.getByText(/Solicitud enviada/)).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'POST')?.body).toMatchObject({ follower: ME, following: 'ana' });
+    await expect(page.getByRole('button', { name: 'Solicitado' })).toBeVisible();
+
+    // Once Ana accepts, her posts show.
+    anaFollow = 'accepted';
+    await page.reload();
+    await expect(page.getByText('Día de pierna 🦵')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiendo' })).toBeVisible();
+
+    // My profile: private, and Leo's request accepted.
+    await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await expect(page.getByText('1 solicitudes para seguirte')).toBeVisible();
+    await page.getByRole('link', { name: 'Mi perfil' }).click();
+    await page.getByRole('switch', { name: 'Perfil privado' }).click();
+    await expect(page.getByText('Tu perfil ahora es privado')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_profiles') && r.method === 'PATCH')?.body).toEqual({ is_private: true });
+    await page.getByRole('button', { name: 'Aceptar a Leo' }).click();
+    await expect(page.getByText('Leo ahora te sigue')).toBeVisible();
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'PATCH')).toMatchObject({ body: { status: 'accepted' } });
+    expect(sent.find(r => r.url.includes('community_follows') && r.method === 'PATCH')!.url).toContain('follower=eq.leo');
+});
+
 // Newer Chrome (Android, 2026) returns a Promise from window.scrollTo. An
 // effect that returned it broke every tab change with "is not a function".
 test('tabs work when scrollTo returns a Promise, like newer Chrome', async ({ page }) => {
