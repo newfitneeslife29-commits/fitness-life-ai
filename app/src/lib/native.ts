@@ -151,6 +151,32 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
     });
 };
 
+// The meal plan's reminders (lib/mealplan.ts): one notification a week per
+// meal, at its time. Each call replaces the previous ones.
+export interface MealReminder {
+    id: number;
+    weekday: number; // 1 = Sunday … 7 = Saturday
+    hour: number;
+    minute: number;
+    title: string;
+    body: string;
+}
+export const MEAL_REMINDER_BASE = 5200;
+const MEAL_REMINDER_IDS = Array.from({ length: 70 }, (_, i) => MEAL_REMINDER_BASE + i);
+export const scheduleMealReminders = async (reminders: MealReminder[]) => {
+    if (!isNative()) return;
+    await quiet(async () => {
+        await LocalNotifications.cancel({ notifications: MEAL_REMINDER_IDS.map(id => ({ id })) });
+        if (!reminders.length || !(await notificationsOk())) return;
+        await LocalNotifications.schedule({
+            notifications: reminders.map(r => ({
+                id: r.id, title: r.title, body: r.body,
+                schedule: { on: { weekday: r.weekday, hour: r.hour, minute: r.minute }, allowWhileIdle: true }, isExactNotification: false,
+            })),
+        });
+    });
+};
+
 // Share sheet; falls back to the clipboard. Returns what happened.
 export const shareText = async (title: string, text: string): Promise<'shared' | 'copied' | 'failed'> => {
     try {

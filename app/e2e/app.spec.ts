@@ -365,6 +365,17 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                 });
             }
             if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
+            if (body.action === 'mealplan') {
+                // Each day's dishes carry the day number, so the test can tell the days apart.
+                const days = Array.from({ length: 7 }, (_, d) => ({
+                    meals: [
+                        { slot: 'desayuno', time: '07:30', name: `Avena con huevos ${d + 1}`, foods: ['60 g de avena', '2 huevos revueltos'], kcal: 520, protein: 32, carbs: 55, fat: 18 },
+                        { slot: 'almuerzo', time: '13:30', name: `Pollo con arroz ${d + 1}`, foods: ['150 g de pechuga de pollo', '1 taza de arroz'], kcal: 750, protein: 55, carbs: 85, fat: 15 },
+                        { slot: 'cena', time: '20:00', name: `Atún con papas ${d + 1}`, foods: ['1 lata de atún', '200 g de papa'], kcal: 600, protein: 40, carbs: 60, fat: 20 },
+                    ],
+                }));
+                return route.fulfill({ headers: cors, json: { name: 'Plan para ganar músculo', note: 'Cocina el arroz para tres días.', days } });
+            }
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
         if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
@@ -437,6 +448,64 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await page.reload();
     await expect(page.getByText(/pechuga de pollo/)).toBeVisible();
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
+});
+
+test('AI meal plan (Premium): made for the user, shown by day in order, and logged with one tap', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    await page.getByRole('button', { name: /Crea tu plan de comidas con IA/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Plan de comidas con IA' });
+    await sheet.getByRole('radio', { name: '3 comidas' }).click();
+    await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('no como cerdo');
+    await sheet.getByRole('button', { name: 'Comida económica' }).click();
+    await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
+    await expect(page.getByText('Plan de comidas guardado')).toBeVisible();
+    expect(calls.find(c => c.action === 'mealplan')).toMatchObject({
+        action: 'mealplan', lang: 'es', mealsPerDay: 3, text: 'no como cerdo, Comida económica',
+        context: { goal: 'musculo', targets: { kcal: 2900, protein: 160 } },
+    });
+
+    // Today's menu, in order, with the amounts.
+    const today = (new Date().getDay() + 6) % 7 + 1;
+    await expect(page.getByText('Plan para ganar músculo')).toBeVisible();
+    await expect(page.getByText('Hoy te toca')).toBeVisible();
+    await expect(page.getByText(`Avena con huevos ${today}`)).toBeVisible();
+    await expect(page.getByText('150 g de pechuga de pollo').first()).toBeVisible();
+    await expect(page.getByText('Total del día: 1870 kcal · P 127 g · C 200 g · G 53 g')).toBeVisible();
+    const times = await page.locator('ol li > span.tabular-nums').allTextContents();
+    expect(times).toEqual(['07:30', '13:30', '20:00']);
+
+    // One tap logs a meal of today; it counts toward the day's calories.
+    await page.getByRole('button', { name: `Anotar Pollo con arroz ${today} como comido` }).click();
+    await expect(page.getByText(`Anotado: Pollo con arroz ${today}`)).toBeVisible();
+    await expect(page.getByText('750 de 2900 kcal')).toBeVisible();
+    await expect(page.getByText('Anotado', { exact: true })).toBeVisible();
+
+    // Other days show their own menu, without logging buttons.
+    const other = today === 7 ? 1 : today + 1;
+    await page.getByRole('tablist', { name: 'Días de la semana' }).getByRole('tab').nth(other - 1).click();
+    await expect(page.getByText(`Cena`).first()).toBeVisible();
+    await expect(page.getByText(`Atún con papas ${other}`)).toBeVisible();
+    await expect(page.getByRole('button', { name: /como comido/ })).toHaveCount(0);
+
+    // Reminders can be turned off; the plan stays after a reload.
+    const reminders = page.getByRole('switch', { name: 'Avisos de cada comida' });
+    await expect(reminders).toHaveAttribute('aria-checked', 'true');
+    await reminders.click();
+    await expect(reminders).toHaveAttribute('aria-checked', 'false');
+    await page.reload();
+    await expect(page.getByText(`Avena con huevos ${today}`)).toBeVisible();
+    await expect(page.getByText('Anotado', { exact: true })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Avisos de cada comida' })).toHaveAttribute('aria-checked', 'false');
+
+    // It can be deleted.
+    await page.getByRole('button', { name: 'Borrar plan de comidas' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Borrar' }).click();
+    await expect(page.getByRole('button', { name: /Crea tu plan de comidas con IA/ })).toBeVisible();
 });
 
 test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {

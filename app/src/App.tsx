@@ -7,6 +7,7 @@ import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
 import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
+import { useMealReminders } from './lib/mealplan';
 import { useRecoveryAlerts } from './lib/recovery';
 import { cancelRestAlert, initNative } from './lib/native';
 import Achievements from './pages/Achievements';
@@ -118,6 +119,7 @@ export default function App() {
         return () => window.removeEventListener(AUTH_LINK_FAILED_EVENT, failed);
     }, []);
     useRecoveryAlerts();
+    useMealReminders();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);

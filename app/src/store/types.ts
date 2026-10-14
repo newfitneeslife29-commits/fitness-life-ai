@@ -43,6 +43,8 @@ export interface Profile {
     restSound?: boolean;
     // Reminders when trained muscles have rested (on by default).
     recoveryAlerts?: boolean;
+    // A notification at the time of each meal of the meal plan (on by default).
+    mealReminders?: boolean;
 }
 
 export interface RoutineExercise {
@@ -151,6 +153,27 @@ export interface Meal extends Macros {
     date: string; // ISO
     name: string;
     source: 'manual' | 'ai';
+    planKey?: string; // logged from the meal plan: "planId:day:meal"
+}
+
+// ---------- Meal plan (made by the AI) ----------
+
+export type MealSlot = 'desayuno' | 'media-manana' | 'almuerzo' | 'merienda' | 'cena' | 'snack';
+
+export interface PlannedMeal extends Macros {
+    slot: MealSlot;
+    time: string; // "HH:MM"
+    name: string;
+    foods: string[]; // with amounts, e.g. "80 g de avena"
+}
+
+export interface MealPlan {
+    id: string;
+    name: string;
+    note: string;
+    request: string; // what the user asked for
+    createdAt: string; // ISO
+    days: { meals: PlannedMeal[] }[]; // 7 days, Monday first
 }
 
 export interface ChatMessage {
@@ -205,6 +228,7 @@ export interface AppState {
     nutritionTargets: Macros | null;
     coachChat: ChatMessage[]; // oldest first
     trainerChat: ChatMessage[]; // the personal trainer's, oldest first
+    mealPlan?: MealPlan | null;
     activeDays?: string[]; // local "YYYY-MM-DD" days the app was opened, oldest first
     aiUsage: AiUsage | null;
     premium: PremiumStatus | null;

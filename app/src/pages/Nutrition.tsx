@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
+import { MealPlanSection } from '../components/MealPlan';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
 import { PageHeader, Section, Sheet } from '../components/ui';
@@ -559,6 +560,10 @@ export default function Nutrition() {
                     <button onClick={() => setDay(d => addDays(d, 1))} disabled={isToday} aria-label={t('nutrition.nextDay')} className="rounded-full p-2 text-white/60 hover:bg-ink-3 hover:text-white disabled:opacity-30"><ChevronRight size={20} /></button>
                 </div>
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
+            </Section>
+
+            <Section title={t('mealPlan.section')}>
+                <MealPlanSection context={context} />
             </Section>
 
             {weightKg && (

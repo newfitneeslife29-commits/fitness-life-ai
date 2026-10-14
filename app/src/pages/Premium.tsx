@@ -21,6 +21,7 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.trainer', false, true],
     ['premium.row.aiRoutines', false, true],
     ['premium.row.programs', false, true],
+    ['premium.row.mealPlan', false, true],
     ['premium.row.coach', false, true],
     ['premium.row.estimate', false, true],
 ];

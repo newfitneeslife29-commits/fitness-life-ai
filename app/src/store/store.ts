@@ -9,7 +9,7 @@ import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // The device holds the working copy of everything. With an account, a copy
 // also lives in the cloud (lib/cloud.ts); without one, export/import in
@@ -376,6 +376,10 @@ export const actions = {
 
     deleteMeal(id: string) {
         set(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
+    },
+
+    setMealPlan(mealPlan: MealPlan | null) {
+        set(s => ({ ...s, mealPlan }));
     },
 
     setNutritionTargets(targets: Macros | null) {
