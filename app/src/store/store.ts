@@ -9,7 +9,7 @@ import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Recipe, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // The device holds the working copy of everything. With an account, a copy
 // also lives in the cloud (lib/cloud.ts); without one, export/import in
@@ -376,6 +376,29 @@ export const actions = {
 
     deleteMeal(id: string) {
         set(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
+    },
+
+    // Water of a local day, in ml (a glass at a time); about half a year is kept.
+    addWater(day: string, deltaMl: number) {
+        set(s => {
+            const water = { ...(s.water ?? {}), [day]: Math.min(10_000, Math.max(0, (s.water?.[day] ?? 0) + deltaMl)) };
+            const keep = Object.keys(water).sort().slice(-180);
+            return { ...s, water: Object.fromEntries(keep.map(d => [d, water[d]])) };
+        });
+    },
+
+    saveRecipe(recipe: Omit<Recipe, 'id' | 'createdAt'> & { id?: string }) {
+        const clean = { ...recipe, name: recipe.name.trim(), ...roundMacros(recipe) };
+        set(s => {
+            const list = s.recipes ?? [];
+            const existing = recipe.id ? list.find(r => r.id === recipe.id) : undefined;
+            const next: Recipe = { ...clean, id: existing?.id ?? uid(), createdAt: existing?.createdAt ?? new Date().toISOString() };
+            return { ...s, recipes: existing ? list.map(r => (r.id === next.id ? next : r)) : [next, ...list] };
+        });
+    },
+
+    deleteRecipe(id: string) {
+        set(s => ({ ...s, recipes: (s.recipes ?? []).filter(r => r.id !== id) }));
     },
 
     setMealPlan(mealPlan: MealPlan | null) {

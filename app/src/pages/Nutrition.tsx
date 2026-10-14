@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { MealPlanSection } from '../components/MealPlan';
+import { Recipes } from '../components/Recipes';
+import { WaterCard } from '../components/Water';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
 import { PageHeader, Section, Sheet } from '../components/ui';
@@ -13,7 +15,7 @@ import { pickImage, resizeImage } from '../lib/image';
 import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, fmtWeight, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
-import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, type BmiBand } from '../lib/nutrition';
+import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal, Unit } from '../store/types';
@@ -535,6 +537,15 @@ export default function Nutrition() {
     const totals = useMemo(() => sumMacros(dayMeals), [dayMeals]);
     const isToday = day.getTime() === startOfDay(new Date()).getTime();
 
+    const trainedOn = (d: Date) => sessions.some(s => new Date(s.startedAt).toDateString() === d.toDateString());
+    const waterTarget = waterTargetMl(profile, weightKg, { trained: trainedOn(day), proteinG: targets?.protein });
+    const waterWhy = [
+        weightKg ? t('water.whyWeight', { kg: fmtNumber(weightKg) }) : t('water.whyDefault'),
+        ...(trainedOn(day) ? [t('water.whyTrained')] : []),
+        ...(profile.activity === 'alto' ? [t('water.whyActive')] : []),
+        ...(weightKg && targets && targets.protein / weightKg >= 1.8 ? [t('water.whyProtein')] : []),
+    ].join(' ');
+
     const today = new Date();
     const context: CoachContext = {
         goal: profile.goal,
@@ -560,6 +571,10 @@ export default function Nutrition() {
                     <button onClick={() => setDay(d => addDays(d, 1))} disabled={isToday} aria-label={t('nutrition.nextDay')} className="rounded-full p-2 text-white/60 hover:bg-ink-3 hover:text-white disabled:opacity-30"><ChevronRight size={20} /></button>
                 </div>
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
+            </Section>
+
+            <Section title={t('water.title')}>
+                <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
             </Section>
 
             <Section title={t('mealPlan.section')}>
@@ -593,6 +608,10 @@ export default function Nutrition() {
                     <p className="card px-4 py-6 text-center text-sm text-white/50">{t('nutrition.noMeals')}</p>
                 )}
                 <button className="btn-primary mt-2 w-full" onClick={() => setAdding(true)}><Plus size={18} /> {t('meal.add')}</button>
+            </Section>
+
+            <Section title={t('recipes.title')}>
+                <Recipes day={day} />
             </Section>
 
             <Section title={t('foods.title')}>

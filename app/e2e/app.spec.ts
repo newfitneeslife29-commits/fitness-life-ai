@@ -508,6 +508,43 @@ test('AI meal plan (Premium): made for the user, shown by day in order, and logg
     await expect(page.getByRole('button', { name: /Crea tu plan de comidas con IA/ })).toBeVisible();
 });
 
+test('nutrition: water for the day and saved recipes', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    // 80 kg × 35 ml = 2800 → 3 L (12 glasses); the "muscle" diet is 2 g/kg of protein: +250 ml.
+    await expect(page.getByLabel('Agua: 0 de 3,25 litros')).toBeVisible();
+    await expect(page.getByText('+ 250 ml por tu dieta alta en proteína')).toBeVisible();
+    await page.getByRole('button', { name: 'Añadir un vaso de agua (250 ml)' }).click();
+    await page.getByRole('button', { name: 'Añadir un vaso de agua (250 ml)' }).click();
+    await expect(page.getByLabel('Agua: 0,5 de 3,25 litros')).toBeVisible();
+    await expect(page.getByText('Te faltan 11 vasos para tu meta de hoy')).toBeVisible();
+    await page.getByRole('button', { name: 'Quitar un vaso' }).click();
+    await expect(page.getByLabel('Agua: 0,25 de 3,25 litros')).toBeVisible();
+
+    // A recipe with its macros per serving, logged with one tap.
+    await page.getByRole('button', { name: /Guarda tus recetas/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Nueva receta' });
+    await sheet.getByLabel('Nombre').fill('Pancakes de avena');
+    await sheet.getByLabel('Porciones que salen').fill('2');
+    await sheet.getByLabel('Ingredientes (uno por línea)').fill('80 g de avena\n1 plátano\n2 huevos');
+    await sheet.getByLabel('Proteína (g)').fill('15');
+    await sheet.getByLabel('Carbohidratos (g)').fill('40');
+    await sheet.getByLabel('Grasa (g)').fill('8');
+    await sheet.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('Receta guardada')).toBeVisible();
+    await page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' }).click();
+    await expect(page.getByText('292 de 2900 kcal')).toBeVisible();
+    await page.locator('button[aria-expanded]', { hasText: 'Pancakes de avena' }).click();
+    await expect(page.getByText('Salen 2 porciones', { exact: false })).toBeVisible();
+    await expect(page.getByText('1 plátano')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByLabel('Agua: 0,25 de 3,25 litros')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' })).toBeVisible();
+});
+
 test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
     const reports: Record<string, unknown>[] = [];

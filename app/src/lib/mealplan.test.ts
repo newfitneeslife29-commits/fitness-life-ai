@@ -34,3 +34,4 @@ describe('meal plan', () => {
         expect(loggedKeys([logged], new Date(2026, 9, 15)).size).toBe(0);
     });
 });
+

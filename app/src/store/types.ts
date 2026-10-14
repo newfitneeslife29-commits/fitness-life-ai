@@ -158,6 +158,16 @@ export interface Meal extends Macros {
     planKey?: string; // logged from the meal plan: "planId:day:meal"
 }
 
+// A recipe the user saved; macros are per serving.
+export interface Recipe extends Macros {
+    id: string;
+    name: string;
+    servings: number;
+    ingredients: string[];
+    steps: string;
+    createdAt: string;
+}
+
 // ---------- Meal plan (made by the AI) ----------
 
 export type MealSlot = 'desayuno' | 'media-manana' | 'almuerzo' | 'merienda' | 'cena' | 'snack';
@@ -231,6 +241,8 @@ export interface AppState {
     coachChat: ChatMessage[]; // oldest first
     trainerChat: ChatMessage[]; // the personal trainer's, oldest first
     mealPlan?: MealPlan | null;
+    water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
+    recipes?: Recipe[]; // the user's own, newest first
     activeDays?: string[]; // local "YYYY-MM-DD" days the app was opened, oldest first
     aiUsage: AiUsage | null;
     premium: PremiumStatus | null;
