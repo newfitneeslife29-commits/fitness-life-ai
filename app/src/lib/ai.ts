@@ -57,6 +57,11 @@ const call = async <T>(body: Record<string, unknown>): Promise<T> => {
         throw new AiError('network');
     }
     const { data, error } = await supabase.functions.invoke('nutrition-coach', { body });
+    // Long answers (the meal plan) arrive as HTTP 200 and carry their error inside.
+    if (!error && typeof data?.error === 'string' && typeof data?.status === 'number') {
+        if (data.usage) actions.setAiUsage(data.usage as AiUsage);
+        throw statusError(data.status);
+    }
     if (!error) {
         if (data?.usage) actions.setAiUsage(data.usage as AiUsage);
         return data as T;
@@ -65,12 +70,13 @@ const call = async <T>(body: Record<string, unknown>): Promise<T> => {
     const status = response?.status;
     const usage = await response?.clone().json().then(b => b?.usage as AiUsage | undefined).catch(() => undefined);
     if (usage) actions.setAiUsage(usage);
-    if (status === 402) throw new AiError('upgrade');
-    if (status === 429) throw new AiError('quota');
-    if (status === 422) throw new AiError('refused');
     if (status === undefined || error.name === 'FunctionsFetchError') throw new AiError('network');
-    throw new AiError('failed');
+    throw statusError(status);
 };
+
+const statusError = (status: number) => new AiError(
+    status === 402 ? 'upgrade' : status === 429 ? 'quota' : status === 422 ? 'refused' : 'failed',
+);
 
 export const askCoach = async (lang: Lang, context: CoachContext, history: ChatMessage[]) => {
     const messages = history.map(m => ({ role: m.role, text: m.text }));

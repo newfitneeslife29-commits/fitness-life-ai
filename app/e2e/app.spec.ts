@@ -365,6 +365,10 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                 });
             }
             if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
+            if (body.action === 'mealplan' && body.text === 'falla') {
+                // Long answers arrive as HTTP 200 and carry their error inside.
+                return route.fulfill({ headers: cors, body: `   ${JSON.stringify({ error: 'truncated', status: 502, usage })}` });
+            }
             if (body.action === 'mealplan') {
                 // Each day's dishes carry the day number, so the test can tell the days apart.
                 const days = Array.from({ length: 7 }, (_, d) => ({
@@ -450,6 +454,8 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
 });
 
+const AI_FAILED = 'Algo falló al consultar al asistente. Inténtalo de nuevo.';
+
 test('AI meal plan (Premium): made for the user, shown by day in order, and logged with one tap', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
     await mockAi(page, calls, { premium: true });
@@ -459,12 +465,17 @@ test('AI meal plan (Premium): made for the user, shown by day in order, and logg
 
     await page.getByRole('button', { name: /Crea tu plan de comidas con IA/ }).click();
     const sheet = page.getByRole('dialog', { name: 'Plan de comidas con IA' });
+    // A failure on the server is told, and nothing is saved.
+    await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('falla');
+    await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
+    await expect(page.getByText(AI_FAILED)).toBeVisible();
+    await expect(sheet).toBeVisible();
     await sheet.getByRole('radio', { name: '3 comidas' }).click();
     await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('no como cerdo');
     await sheet.getByRole('button', { name: 'Comida económica' }).click();
     await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
     await expect(page.getByText('Plan de comidas guardado')).toBeVisible();
-    expect(calls.find(c => c.action === 'mealplan')).toMatchObject({
+    expect(calls.filter(c => c.action === 'mealplan').at(-1)).toMatchObject({
         action: 'mealplan', lang: 'es', mealsPerDay: 3, text: 'no como cerdo, Comida económica',
         context: { goal: 'musculo', targets: { kcal: 2900, protein: 160 } },
     });
