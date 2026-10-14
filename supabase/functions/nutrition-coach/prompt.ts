@@ -181,47 +181,59 @@ export const routineSchema = (exerciseIds: string[]) => ({
 export const MEAL_SLOTS = ['desayuno', 'media-manana', 'almuerzo', 'merienda', 'cena', 'snack'] as const;
 export type MealSlot = (typeof MEAL_SLOTS)[number];
 
-export const mealPlanSystem = (lang: Lang, mealsPerDay: number) => `You plan a week of meals for a user of a strength-training app, many of whom are beginners who do not know what to eat. The app shows the plan day by day, in order, and reminds them at the time of each meal.
+// The week is planned in two steps so that every answer stays short and
+// fast: first the outline (dish names and times for 7 days, so they vary),
+// then each day in detail, all days at the same time.
+const mealPlanRules = (lang: Lang) => `Use simple, affordable foods that are easy to find and cook where people speak ${LANGUAGE[lang]}, with home-style dishes. Respect what the user asks: foods they avoid, allergies, budget, a vegetarian diet, their schedule. This is general guidance, not medical advice.`;
 
-Plan 7 days (Monday first) with ${mealsPerDay} meals a day, from breakfast to dinner, at realistic times ("HH:MM", 24 h) spread through the day; if the user mentions when they wake up, work or train, fit the times to that. Each day's meals should add up to the user's daily targets below, within about 5%. If there are no targets, estimate them from the profile and goal. Spread protein across the meals.
+export const mealOutlineSystem = (lang: Lang, mealsPerDay: number) => `You outline a week of meals for a user of a strength-training app, many of whom are beginners who do not know what to eat. The app shows the plan day by day and reminds them at the time of each meal.
 
-Use simple, affordable foods that are easy to find and cook where people speak ${LANGUAGE[lang]}, with home-style dishes. Give every food an amount a beginner can follow (grams, cups, units or spoons), for example "2 huevos revueltos" or "80 g de avena". Repeat breakfasts and snacks across days so shopping stays easy, and vary lunches and dinners. Respect what the user asks: foods they avoid, allergies, budget, a vegetarian diet, their schedule.
+Plan 7 days (Monday first) with ${mealsPerDay} meals a day, from breakfast to dinner, at realistic times ("HH:MM", 24 h) spread through the day; if the user mentions when they wake up, work or train, fit the times to that. For each meal give only its slot, its time and a short dish name (2 to 5 words). Repeat breakfasts and snacks across days so shopping stays easy, and vary lunches and dinners.
 
-For each meal give its slot, the time, a short dish name (2 to 5 words), the foods with amounts (1 to 6), and its kcal, protein, carbs and fat, with kcal consistent with the macros.
+${mealPlanRules(lang)}
 
-Write "name" as a short plan name (2 to 5 words), "note" as one or two short sentences with the idea of the plan and a practical tip (for example to cook in batches), and every dish and food in ${LANGUAGE[lang]}. This is general guidance, not medical advice: if the user mentions a medical condition, pregnancy, an eating disorder or a very low calorie goal, keep the plan moderate and say in the note to check it with a doctor or dietitian. If the request has nothing to do with food, return no days and say so in the note.`;
+Write "name" as a short plan name (2 to 5 words), "note" as one or two short sentences with the idea of the plan and a practical tip (for example to cook in batches), and every dish in ${LANGUAGE[lang]}. If the user mentions a medical condition, pregnancy, an eating disorder or a very low calorie goal, keep the plan moderate and say in the note to check it with a doctor or dietitian. If the request has nothing to do with food, return no days and say so in the note.`;
 
-export const MEALPLAN_SCHEMA = {
+export const mealDaySystem = (lang: Lang) => `You detail one day of a meal plan for a user of a strength-training app. The dishes and times of the day are given; keep them, in the same order.
+
+For each meal give the foods with an amount a beginner can follow (grams, cups, units or spoons), for example "2 huevos revueltos" or "80 g de avena" (1 to 6 foods), and its kcal, protein, carbs and fat, with kcal consistent with the macros. The meals of the day should add up to the user's daily targets below, within about 5%; if there are no targets, estimate them from the profile and goal. Spread protein across the meals.
+
+${mealPlanRules(lang)} Write every dish and food in ${LANGUAGE[lang]}.`;
+
+const OUTLINE_MEAL = {
+  type: 'object',
+  properties: { slot: { type: 'string', enum: [...MEAL_SLOTS] }, time: { type: 'string' }, name: { type: 'string' } },
+  required: ['slot', 'time', 'name'],
+  additionalProperties: false,
+};
+
+const DAY_MEAL = {
+  type: 'object',
+  properties: {
+    slot: { type: 'string', enum: [...MEAL_SLOTS] },
+    time: { type: 'string' },
+    name: { type: 'string' },
+    foods: { type: 'array', items: { type: 'string' } },
+    kcal: NUMBER, protein: NUMBER, carbs: NUMBER, fat: NUMBER,
+  },
+  required: ['slot', 'time', 'name', 'foods', 'kcal', 'protein', 'carbs', 'fat'],
+  additionalProperties: false,
+};
+
+export const MEAL_OUTLINE_SCHEMA = {
   type: 'object',
   properties: {
     name: { type: 'string' },
     note: { type: 'string' },
-    days: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          meals: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                slot: { type: 'string', enum: [...MEAL_SLOTS] },
-                time: { type: 'string' },
-                name: { type: 'string' },
-                foods: { type: 'array', items: { type: 'string' } },
-                kcal: NUMBER, protein: NUMBER, carbs: NUMBER, fat: NUMBER,
-              },
-              required: ['slot', 'time', 'name', 'foods', 'kcal', 'protein', 'carbs', 'fat'],
-              additionalProperties: false,
-            },
-          },
-        },
-        required: ['meals'],
-        additionalProperties: false,
-      },
-    },
+    days: { type: 'array', items: { type: 'object', properties: { meals: { type: 'array', items: OUTLINE_MEAL } }, required: ['meals'], additionalProperties: false } },
   },
   required: ['name', 'note', 'days'],
+  additionalProperties: false,
+};
+
+export const MEAL_DAY_SCHEMA = {
+  type: 'object',
+  properties: { meals: { type: 'array', items: DAY_MEAL } },
+  required: ['meals'],
   additionalProperties: false,
 };

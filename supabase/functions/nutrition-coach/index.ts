@@ -24,7 +24,7 @@ import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
-  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEALPLAN_SCHEMA, mealPlanSystem, photoSystem, routineSchema, routineSystem,
+  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEAL_DAY_SCHEMA, MEAL_OUTLINE_SCHEMA, mealDaySystem, mealOutlineSystem, photoSystem, routineSchema, routineSystem,
   trainerNote, trainerSystem, type CoachContext, type Lang, type Macros, type TrainerContext,
 } from './prompt.ts';
 import { cleanMealPlan } from './mealplan.ts';
@@ -206,19 +206,41 @@ async function routine(lang: Lang, context: TrainerContext, request: string, cat
   return { name: String(raw.name ?? '').slice(0, 60), note: String(raw.note ?? '').slice(0, 300), exercises };
 }
 
-async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+// Two short steps instead of one long answer (which ran out of room and
+// took over a minute): the outline of the week, then the 7 days in detail
+// at the same time. A day that fails is filled in from the others.
+async function structured<T>(system: string, note: string, content: string, schema: Record<string, unknown>): Promise<T> {
   const res = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 16000,
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema: MEALPLAN_SCHEMA } },
-    system: [
-      { type: 'text', text: mealPlanSystem(lang, mealsPerDay) },
-      { type: 'text', text: contextNote(context) },
-    ],
-    messages: [{ role: 'user', content: request || 'Plan my meals for the week.' }],
+    max_tokens: 8000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+    system: [{ type: 'text', text: system }, { type: 'text', text: note }],
+    messages: [{ role: 'user', content }],
   });
   if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
-  return cleanMealPlan(JSON.parse(textOf(res)));
+  return JSON.parse(textOf(res)) as T;
+}
+
+type OutlineMeal = { slot: string; time: string; name: string };
+
+async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+  const note = contextNote(context);
+  const outline = await structured<{ name?: string; note?: string; days?: { meals?: OutlineMeal[] }[] }>(
+    mealOutlineSystem(lang, mealsPerDay), note, request || 'Plan my meals for the week.', MEAL_OUTLINE_SCHEMA,
+  );
+  const days = (outline.days ?? []).slice(0, 7).filter(d => d.meals?.length);
+  if (!days.length) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
+  const detailed = await Promise.allSettled(days.map((d, i) => structured<{ meals?: unknown[] }>(
+    mealDaySystem(lang), note,
+    `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
+    MEAL_DAY_SCHEMA,
+  )));
+  const ok = detailed.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
+  if (!ok.length) throw (detailed[0] as PromiseRejectedResult).reason;
+  return cleanMealPlan({
+    name: outline.name, note: outline.note,
+    days: detailed.map(r => (r.status === 'fulfilled' ? r.value : ok[0])),
+  });
 }
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
