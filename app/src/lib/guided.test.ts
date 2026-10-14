@@ -11,9 +11,11 @@ const session = (startedAt: string, sets: [string, number, number][]): Session =
 });
 
 describe('voice timer cues', () => {
-    it('counts into the target, calls it, and says the time every 10 seconds', () => {
+    it('counts down the last 10 seconds, calls the target, and says the time every 10 seconds', () => {
         expect(cueAt(1, 30)).toBeNull();
         expect(cueAt(10, 30)).toBe('10 segundos');
+        expect(cueAt(19, 30)).toBeNull();
+        expect(cueAt(20, 30)).toBe('10');
         expect(cueAt(27, 30)).toBe('3');
         expect(cueAt(29, 30)).toBe('1');
         expect(cueAt(30, 30)).toBe('¡Tiempo!');

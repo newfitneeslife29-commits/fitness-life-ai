@@ -792,8 +792,8 @@ export const pt: Dict = {
     'workout.repeatSet': "Repetir {value}",
     'workout.repeatSet.label': "Repetir a série anterior",
     'settings.workout': "Durante o treino",
-    'settings.restSound': "Som ao fim do descanso",
-    'settings.restSoundHint': "Bipes nos últimos 3 segundos e vibração no fim. O descanso começa sozinho ao marcar cada série.",
+    'settings.restSound': "Som do cronômetro e do descanso",
+    'settings.restSoundHint': "Bipes nos últimos 10 segundos do descanso e do cronômetro e vibração no fim. O descanso começa sozinho ao marcar cada série.",
     'settings.restSoundTest': "Testar",
 
     // Activity, offline, BMI

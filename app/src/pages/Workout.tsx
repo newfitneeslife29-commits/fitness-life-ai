@@ -11,7 +11,7 @@ import { Sheet } from '../components/ui';
 import { busyAlternatives, equipmentLabel, exerciseName, exerciseTip, getExercise, muscleLabel } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
-import { cancelRestAlert, haptic, keepAwake, primeSound, restOver, restTick, scheduleRestAlert } from '../lib/native';
+import { cancelRestAlert, COUNTDOWN_SEC, haptic, keepAwake, primeSound, restOver, restTick, scheduleRestAlert } from '../lib/native';
 import { sessionName } from '../lib/names';
 import { displayToKg, kgToDisplay } from '../lib/progression';
 import { useNow } from '../lib/useNow';
@@ -214,12 +214,12 @@ const RestBar = ({ endsAt, total }: { endsAt: number; total: number }) => {
     const now = useNow(true, 250);
     const left = Math.ceil((endsAt - now) / 1000);
     const finished = left <= 0;
-    // 3, 2, 1: a tick each second, then the "go" alert.
+    // The last 10 seconds: a tick each second, then the "go" alert.
     const ticked = useRef<number | null>(null);
     useEffect(() => {
-        if (left > 0 && left <= 3 && ticked.current !== left) {
+        if (left > 0 && left <= COUNTDOWN_SEC && ticked.current !== left) {
             ticked.current = left;
-            restTick(sound);
+            restTick(sound, left <= 3);
         }
     }, [left, sound]);
     useEffect(() => {

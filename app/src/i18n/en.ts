@@ -791,8 +791,8 @@ export const en: Dict = {
     'workout.repeatSet': "Repeat {value}",
     'workout.repeatSet.label': "Repeat the previous set",
     'settings.workout': "During the workout",
-    'settings.restSound': "Sound when rest ends",
-    'settings.restSoundHint': "Beeps in the last 3 seconds and a vibration at the end. The rest starts by itself when you tick a set.",
+    'settings.restSound': "Timer and rest sounds",
+    'settings.restSoundHint': "Beeps in the last 10 seconds of the rest and of the timer and a vibration at the end. The rest starts by itself when you tick a set.",
     'settings.restSoundTest': "Test",
 
     // Activity, offline, BMI

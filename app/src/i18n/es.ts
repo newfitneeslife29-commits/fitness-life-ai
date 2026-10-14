@@ -792,8 +792,8 @@ export const es = {
     'workout.repeatSet': "Repetir {value}",
     'workout.repeatSet.label': "Repetir la serie anterior",
     'settings.workout': "Durante el entreno",
-    'settings.restSound': "Sonido al terminar el descanso",
-    'settings.restSoundHint': "Pitidos en los últimos 3 segundos y vibración al terminar. El descanso empieza solo al marcar cada serie.",
+    'settings.restSound': "Sonido del cronómetro y del descanso",
+    'settings.restSoundHint': "Pitidos en los últimos 10 segundos del descanso y del cronómetro y vibración al terminar. El descanso empieza solo al marcar cada serie.",
     'settings.restSoundTest': "Probar",
 
     // Activity, offline, BMI

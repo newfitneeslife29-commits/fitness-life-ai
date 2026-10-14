@@ -60,9 +60,11 @@ const beep = (freq: number, ms: number, delayMs = 0) => {
     osc.stop(at + ms / 1000 + 0.02);
 };
 
-// Last seconds of a rest: a short tick. Rest over: two beeps and a long vibration.
-export const restTick = (sound: boolean) => {
-    if (sound) beep(880, 90);
+// Countdown at the end of a rest or a timed set: a tick each of the last
+// 10 seconds, higher for the last 3. Over: two beeps and a long vibration.
+export const COUNTDOWN_SEC = 10;
+export const restTick = (sound: boolean, final = false) => {
+    if (sound) beep(final ? 1100 : 880, final ? 130 : 80);
     haptic('tap');
 };
 export const restOver = (sound: boolean) => {
