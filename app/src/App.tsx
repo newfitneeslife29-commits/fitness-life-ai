@@ -9,6 +9,7 @@ import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
 import { useMealReminders } from './lib/mealplan';
 import { useRecoveryAlerts } from './lib/recovery';
+import { useTrainingReminders } from './lib/reminders';
 import { cancelRestAlert, initNative } from './lib/native';
 import Achievements from './pages/Achievements';
 import Activity from './pages/Activity';
@@ -120,6 +121,7 @@ export default function App() {
     }, []);
     useRecoveryAlerts();
     useMealReminders();
+    useTrainingReminders();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);

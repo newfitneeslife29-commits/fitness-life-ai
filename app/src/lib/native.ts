@@ -153,9 +153,9 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
     });
 };
 
-// The meal plan's reminders (lib/mealplan.ts): one notification a week per
-// meal, at its time. Each call replaces the previous ones.
-export interface MealReminder {
+// Weekly reminders (lib/mealplan.ts, lib/reminders.ts): one notification a
+// week each, at a weekday and time. Each call replaces the group's previous ones.
+export interface WeeklyReminder {
     id: number;
     weekday: number; // 1 = Sunday … 7 = Saturday
     hour: number;
@@ -163,12 +163,15 @@ export interface MealReminder {
     title: string;
     body: string;
 }
-export const MEAL_REMINDER_BASE = 5200;
-const MEAL_REMINDER_IDS = Array.from({ length: 70 }, (_, i) => MEAL_REMINDER_BASE + i);
-export const scheduleMealReminders = async (reminders: MealReminder[]) => {
+const REMINDER_IDS = {
+    meals: Array.from({ length: 70 }, (_, i) => 5200 + i),
+    training: Array.from({ length: 7 }, (_, i) => 5300 + i),
+};
+export const reminderId = (group: keyof typeof REMINDER_IDS, index: number) => REMINDER_IDS[group][index];
+export const scheduleWeeklyReminders = async (group: keyof typeof REMINDER_IDS, reminders: WeeklyReminder[]) => {
     if (!isNative()) return;
     await quiet(async () => {
-        await LocalNotifications.cancel({ notifications: MEAL_REMINDER_IDS.map(id => ({ id })) });
+        await LocalNotifications.cancel({ notifications: REMINDER_IDS[group].map(id => ({ id })) });
         if (!reminders.length || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
             notifications: reminders.map(r => ({

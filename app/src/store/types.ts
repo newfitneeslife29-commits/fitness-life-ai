@@ -45,6 +45,8 @@ export interface Profile {
     recoveryAlerts?: boolean;
     // A notification at the time of each meal of the meal plan (on by default).
     mealReminders?: boolean;
+    // "Time to train" on the chosen days (0 = Monday … 6 = Sunday); off when null.
+    trainingReminder?: { time: string; days: number[] } | null;
 }
 
 export interface RoutineExercise {

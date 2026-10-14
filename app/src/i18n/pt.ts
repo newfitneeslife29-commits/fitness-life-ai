@@ -1096,4 +1096,13 @@ export const pt: Dict = {
     'mealPlan.slot.cena': "Jantar",
     'mealPlan.slot.snack': "Lanche",
     'premium.row.mealPlan': "Plano de refeições com IA e avisos",
+
+    // Training reminder
+    'reminder.train': "Lembrete para treinar",
+    'reminder.trainHint': "Avisamos no seu horário nos dias de treino",
+    'reminder.time': "Hora",
+    'reminder.days': "Dias de treino",
+    'reminder.trainTitle': "Hora de treinar! 💪",
+    'reminder.trainBody': "Hoje é dia de: {name}. Vamos!",
+    'reminder.trainBodyFree': "Abra o Fitness Life e comece seu treino.",
 };

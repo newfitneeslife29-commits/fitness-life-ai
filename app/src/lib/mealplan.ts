@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { t } from '../i18n';
 import { localDay } from './activity';
-import { MEAL_REMINDER_BASE, scheduleMealReminders, type MealReminder } from './native';
+import { reminderId, scheduleWeeklyReminders, type WeeklyReminder } from './native';
 import { sumMacros } from './nutrition';
 import { useStore } from '../store/store';
 import type { Meal, MealPlan, PlannedMeal } from '../store/types';
@@ -12,6 +12,9 @@ import type { Meal, MealPlan, PlannedMeal } from '../store/types';
 
 // 0 = Monday … 6 = Sunday, like the plan's days.
 export const planDayOf = (date: Date) => (date.getDay() + 6) % 7;
+
+// The notification calendar counts from Sunday (1) to Saturday (7).
+export const notificationWeekday = (planDay: number) => ((planDay + 1) % 7) + 1;
 
 // Ties a logged meal to the plan meal it came from.
 export const planKey = (plan: MealPlan, day: number, meal: number) => `${plan.id}:${day}:${meal}`;
@@ -31,12 +34,12 @@ export const mealDate = (date: Date, time: string) => {
 };
 
 // One weekly notification per meal of the plan.
-export const mealReminders = (plan: MealPlan): MealReminder[] =>
+export const mealReminders = (plan: MealPlan): WeeklyReminder[] =>
     plan.days.flatMap((day, d) => day.meals.map((meal, i) => {
         const [hour, minute] = meal.time.split(':').map(Number);
         return {
-            id: MEAL_REMINDER_BASE + d * 10 + i,
-            weekday: ((d + 1) % 7) + 1,
+            id: reminderId('meals', d * 10 + i),
+            weekday: notificationWeekday(d),
             hour, minute,
             title: t('mealPlan.notifyTitle', { meal: t(`mealPlan.slot.${meal.slot}`), time: meal.time }),
             body: meal.foods.length ? `${meal.name}: ${meal.foods.join(', ')}` : meal.name,
@@ -49,6 +52,6 @@ export const useMealReminders = () => {
     const on = useStore(s => s.profile !== null && s.profile.mealReminders !== false);
     const lang = useStore(s => s.lang);
     useEffect(() => {
-        void scheduleMealReminders(plan && on ? mealReminders(plan) : []);
+        void scheduleWeeklyReminders('meals', plan && on ? mealReminders(plan) : []);
     }, [plan, on, lang]);
 };

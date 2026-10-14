@@ -1095,4 +1095,13 @@ export const en: Dict = {
     'mealPlan.slot.cena': "Dinner",
     'mealPlan.slot.snack': "Snack",
     'premium.row.mealPlan': "AI meal plan with reminders",
+
+    // Training reminder
+    'reminder.train': "Training reminder",
+    'reminder.trainHint': "We'll remind you at your time on your training days",
+    'reminder.time': "Time",
+    'reminder.days': "Training days",
+    'reminder.trainTitle': "It's time to train! 💪",
+    'reminder.trainBody': "Today: {name}. Let's go!",
+    'reminder.trainBodyFree': "Open Fitness Life and start your workout.",
 };

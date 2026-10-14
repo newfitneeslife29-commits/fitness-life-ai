@@ -1096,4 +1096,13 @@ export const es = {
     'mealPlan.slot.cena': "Cena",
     'mealPlan.slot.snack': "Snack",
     'premium.row.mealPlan': "Plan de comidas con IA y avisos",
+
+    // Training reminder
+    'reminder.train': "Recordatorio para entrenar",
+    'reminder.trainHint': "Te avisamos a tu hora los días que entrenas",
+    'reminder.time': "Hora",
+    'reminder.days': "Días para entrenar",
+    'reminder.trainTitle': "¡Es tu hora de entrenar! 💪",
+    'reminder.trainBody': "Hoy toca: {name}. ¡Vamos!",
+    'reminder.trainBodyFree': "Abre Fitness Life y empieza tu entrenamiento.",
 };
