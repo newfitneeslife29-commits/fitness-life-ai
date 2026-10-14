@@ -8,7 +8,7 @@ import { Recipes } from '../components/Recipes';
 import { WaterCard } from '../components/Water';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
-import { PageHeader, Section, Sheet } from '../components/ui';
+import { HeroStat, PageHeader, Section, Sheet } from '../components/ui';
 import { getLang, locale, t } from '../i18n';
 import { aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
 import { pickImage, resizeImage } from '../lib/image';
@@ -17,6 +17,7 @@ import { fmtDate, fmtNumber, fmtWeight, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
 import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
+import { localDay } from '../lib/activity';
 import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal, Unit } from '../store/types';
 
@@ -64,7 +65,7 @@ const MacroBar = ({ label, eaten, target, color }: { label: string; eaten: numbe
 );
 
 const Summary = ({ totals, targets, onEdit }: { totals: Macros; targets: Macros; onEdit: () => void }) => (
-    <div className="card p-4">
+    <div className="card bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent p-4">
         <div className="flex items-center gap-4">
             <KcalRing eaten={totals.kcal} target={targets.kcal} />
             <div className="min-w-0 flex-1 space-y-2.5">
@@ -537,6 +538,7 @@ export default function Nutrition() {
     const totals = useMemo(() => sumMacros(dayMeals), [dayMeals]);
     const isToday = day.getTime() === startOfDay(new Date()).getTime();
 
+    const waterDrunk = useStore(s => s.water?.[localDay(day)] ?? 0);
     const trainedOn = (d: Date) => sessions.some(s => new Date(s.startedAt).toDateString() === d.toDateString());
     const waterTarget = waterTargetMl(profile, weightKg, { trained: trainedOn(day), proteinG: targets?.protein });
     const waterWhy = [
@@ -561,8 +563,14 @@ export default function Nutrition() {
     };
 
     return (
-        <div className="space-y-6">
-            <PageHeader title={t('nav.nutrition')} subtitle={t('nutrition.subtitle')} />
+        <div className="space-y-6 pb-4">
+            <PageHeader tone="emerald" title={t('nav.nutrition')} subtitle={t('nutrition.subtitle')}>
+                <div className="grid grid-cols-3 gap-2">
+                    <HeroStat value={targets ? fmtNumber(Math.max(0, targets.kcal - totals.kcal)) : fmtNumber(totals.kcal)} label={targets ? t('nutrition.heroLeft') : t('nutrition.heroEaten')} />
+                    <HeroStat value={`${fmtNumber(totals.protein)} g`} label={t('macro.protein')} />
+                    <HeroStat value={`${((waterDrunk) / 1000).toLocaleString(locale(), { maximumFractionDigits: 2 })} L`} label={t('water.title')} />
+                </div>
+            </PageHeader>
 
             <Section>
                 <div className="mb-3 flex items-center justify-between">

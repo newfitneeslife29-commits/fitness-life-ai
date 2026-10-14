@@ -28,7 +28,7 @@ export const MoveCard = () => {
                 )}
                 <ChevronRight className="shrink-0" />
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20"><div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} /></div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20"><div className="h-full rounded-full bg-snow" style={{ width: `${pct}%` }} /></div>
             <p className="mt-1.5 text-xs text-snow/85">{t('move.card')}</p>
         </Link>
     );

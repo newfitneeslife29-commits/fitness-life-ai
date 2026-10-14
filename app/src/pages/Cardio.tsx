@@ -78,7 +78,7 @@ export default function Cardio() {
         <div className={`flex min-h-dvh flex-col bg-gradient-to-b ${theme.from} ${theme.to} px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-snow`}>
             <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-lg font-bold">{theme.icon} {t(`cardio.kind.${active.kind}`)}</span>
-                <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${active.gps === 'ok' ? 'bg-white/20' : 'bg-black/30'}`} role="status">
+                <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${active.gps === 'ok' ? 'bg-snow/20' : 'bg-black/30'}`} role="status">
                     {active.gps === 'denied' || active.gps === 'off' ? <MapPinOff size={14} /> : <Satellite size={14} className={active.gps === 'waiting' ? 'animate-pulse' : ''} />}
                     {t(`cardio.gps.${active.gps}`)}
                 </span>
@@ -99,7 +99,7 @@ export default function Cardio() {
                 <p className="mt-6 text-5xl font-extrabold tabular-nums" role="timer">{fmtClock(seconds)}</p>
                 {target > 0 && (
                     <div className="mt-4 w-full max-w-xs">
-                        <div className="h-2 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-white" style={{ width: `${Math.min(100, (seconds / target) * 100)}%` }} /></div>
+                        <div className="h-2 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-snow" style={{ width: `${Math.min(100, (seconds / target) * 100)}%` }} /></div>
                         <p className="mt-1 text-center text-sm text-snow/80">{seconds >= target ? t('cardio.targetDone') : t('cardio.target', { min: active.targetMin! })}</p>
                     </div>
                 )}
@@ -117,7 +117,7 @@ export default function Cardio() {
             <div className="mt-6 flex items-center justify-center gap-4">
                 <button onClick={discard} aria-label={t('cardio.discard')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><X size={22} /></button>
                 <button onClick={() => { haptic('tap'); actions.pauseCardio(!paused); }} aria-label={paused ? t('cardio.resume') : t('cardio.pause')}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-ink shadow-2xl active:scale-95">
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-snow text-neutral-900 shadow-2xl active:scale-95">
                     {paused ? <Play size={32} fill="currentColor" /> : <Pause size={32} fill="currentColor" />}
                 </button>
                 <button onClick={finish} aria-label={t('cardio.finish')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><Flag size={22} /></button>

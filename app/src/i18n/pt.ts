@@ -1273,4 +1273,29 @@ export const pt: Dict = {
     'profile.privateLockedHint': "Siga para ver as publicações e stories",
     'profile.noPosts': "Ainda não publicou nada",
     'profile.noPostsMine': "Você ainda não publicou. Compartilhe seu primeiro treino!",
+
+    // Routines header
+    'routines.statDays': "dias de plano",
+    'routines.statWeek': "semana",
+    'routines.statMine': "criadas por você",
+    'routines.createOwnHint': "Escolha seus exercícios, séries e descansos",
+
+    // Progress header
+    'progress.heroEmpty': "Aqui você verá como melhora semana a semana",
+    'progress.heroTotal': "treinos",
+    'progress.heroStreak': "semanas seguidas",
+    'progress.heroRecords': "recordes",
+    'progress.empty.cta': "Começar meu primeiro treino",
+    'progress.stepsAvg': "passos por dia (7 dias)",
+    'progress.cardioWeek': "caminhando e de bike",
+    'progress.sleepAvg': "sono médio",
+
+    // Home header
+    'home.heroWeek': "treinos na semana",
+    'home.heroSteps': "passos hoje",
+    'home.heroTotal': "treinos no total",
+
+    // Nutrition header
+    'nutrition.heroLeft': "kcal restantes",
+    'nutrition.heroEaten': "kcal consumidas",
 };

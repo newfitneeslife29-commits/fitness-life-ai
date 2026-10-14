@@ -38,7 +38,7 @@ export const WaterCard = ({ day, targetMl, why }: { day: Date; targetMl: number;
                     <button onClick={() => add(-GLASS_ML)} disabled={drunk === 0} aria-label={t('water.remove')}
                         className="rounded-full border border-line p-2 text-white/60 hover:text-white disabled:opacity-30"><Minus size={18} /></button>
                     <button onClick={() => add(GLASS_ML)} aria-label={t('water.add')}
-                        className="flex items-center gap-1 rounded-full bg-sky-500 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 active:scale-95">
+                        className="flex items-center gap-1 rounded-full bg-sky-500 px-3 py-2 text-sm font-semibold text-snow shadow-lg shadow-sky-500/30 active:scale-95">
                         <Plus size={16} /> {t('water.glass')}
                     </button>
                 </div>

@@ -1,15 +1,18 @@
-import { ChevronRight, Columns2, LineChart as ChartIcon, Scale, Share2, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Bike, ChevronRight, Columns2, Footprints, LineChart as ChartIcon, Moon, Play, Scale, Share2, Trash2, Trophy } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, TrainingCalendar, WeekBars } from '../components/Charts';
 import { toast } from '../components/feedback';
-import { Empty, PageHeader, Section, Stat } from '../components/ui';
+import { HeroStat, PageHeader, Section } from '../components/ui';
 import { exerciseName, getExercise, muscleLabel, type Muscle } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { sessionName } from '../lib/names';
 import { fmtDate, fmtNumber, fmtShortDate, fmtVolume, parseDecimal } from '../lib/format';
 import { displayToKg, kgToDisplay, personalRecords, volume } from '../lib/progression';
-import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, trainingCalendar, weeklySeries } from '../lib/stats';
+import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, streakWeeks, trainingCalendar, weekStart, weeklySeries } from '../lib/stats';
+import { localDay } from '../lib/activity';
+import { distUnit, toDist } from '../lib/cardio';
+import { cardioTotals, stepsOn } from '../lib/movement';
 import { actions, useStore } from '../store/store';
 import type { Unit } from '../store/types';
 
@@ -42,7 +45,7 @@ const BodyWeightCard = ({ unit }: { unit: Unit }) => {
                         {change !== null && ` · ${t('bw.change', { change: `${change > 0 ? '+' : ''}${fmtNumber(change)} ${unit}` })}`}
                     </p>
                 </div>
-                <Scale className="text-brand" />
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500 text-snow shadow-md shadow-sky-500/30"><Scale size={22} /></span>
             </div>
             <form className="flex gap-2" onSubmit={e => { e.preventDefault(); save(); }}>
                 <input value={value} onChange={e => setValue(e.target.value)} inputMode="decimal" placeholder={t('bw.placeholder', { unit })} aria-label={t('bw.label')}
@@ -64,6 +67,30 @@ const BodyWeightCard = ({ unit }: { unit: Unit }) => {
                 </ul>
             )}
         </div>
+    );
+};
+
+// Steps, kilometres and sleep of the last 7 days, opening Movement.
+const MovementWeek = ({ unit }: { unit: Unit }) => {
+    const state = useStore(s => s);
+    const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return localDay(d); });
+    const steps = days.reduce((n, d) => n + stepsOn(state, d), 0);
+    const km = cardioTotals(state.cardio ?? [], weekStart(new Date())).distanceM;
+    const nights = (state.sleep ?? []).filter(e => days.includes(e.day));
+    const sleep = nights.length ? nights.reduce((n, e) => n + e.minutes, 0) / nights.length / 60 : 0;
+    const tile = (icon: ReactNode, value: string, label: string, color: string) => (
+        <div className="card p-3">
+            <span className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br text-snow ${color}`}>{icon}</span>
+            <p className="text-lg font-bold tabular-nums leading-tight">{value}</p>
+            <p className="text-[11px] text-white/50">{label}</p>
+        </div>
+    );
+    return (
+        <Link to="/movimiento" className="grid grid-cols-3 gap-2">
+            {tile(<Footprints size={16} />, fmtNumber(Math.round(steps / 7)), t('progress.stepsAvg'), 'from-emerald-500 to-teal-500')}
+            {tile(<Bike size={16} />, `${fmtNumber(Math.round(toDist(km, unit) * 10) / 10)} ${distUnit(unit)}`, t('progress.cardioWeek'), 'from-sky-500 to-indigo-500')}
+            {tile(<Moon size={16} />, sleep ? `${fmtNumber(Math.round(sleep * 10) / 10)} h` : '—', t('progress.sleepAvg'), 'from-indigo-500 to-violet-500')}
+        </Link>
     );
 };
 
@@ -95,23 +122,32 @@ export default function Progress() {
 
     if (sessions.length === 0) {
         return (
-            <>
-                <PageHeader title={t('nav.progress')} />
-                <div className="space-y-6">
-                    <Section>
-                        <Empty icon={<ChartIcon size={32} />} title={t('progress.empty.title')}>
-                            {t('progress.empty.body')}
-                        </Empty>
-                    </Section>
-                    <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
-                </div>
-            </>
+            <div className="space-y-6 pb-4">
+                <PageHeader tone="sky" title={t('nav.progress')} subtitle={t('progress.heroEmpty')} />
+                <Section>
+                    <div className="card relative overflow-hidden p-6 text-center">
+                        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-sky-500/20 to-transparent" />
+                        <span className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-snow shadow-lg shadow-sky-500/30"><ChartIcon size={30} /></span>
+                        <p className="relative text-lg font-bold">{t('progress.empty.title')}</p>
+                        <p className="relative mt-1 text-sm text-white/60">{t('progress.empty.body')}</p>
+                        <Link to="/" className="btn-primary relative mt-4 w-full"><Play size={16} fill="currentColor" /> {t('progress.empty.cta')}</Link>
+                    </div>
+                </Section>
+                <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
+                <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            <PageHeader title={t('nav.progress')} subtitle={tp('progress.count', sessions.length)} />
+        <div className="space-y-6 pb-4">
+            <PageHeader tone="sky" title={t('nav.progress')} subtitle={tp('progress.count', sessions.length)}>
+                <div className="grid grid-cols-3 gap-2">
+                    <HeroStat value={sessions.length} label={t('progress.heroTotal')} />
+                    <HeroStat value={streakWeeks(sessions)} label={t('progress.heroStreak')} />
+                    <HeroStat value={records.length} label={t('progress.heroRecords')} />
+                </div>
+            </PageHeader>
 
             <Section title={t('progress.consistency')}>
                 <div className="card space-y-4 p-4">
@@ -122,15 +158,23 @@ export default function Progress() {
                     {t('activity.title')} <ChevronRight size={16} />
                 </Link>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                    <Stat value={thisWeek.length} label={t('progress.thisWeek')} />
-                    <Stat value={fmtVolume(weeks[weeks.length - 1].volumeKg, unit)} label={t('progress.volumeWeek')} />
+                    <div className="rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 p-3.5 text-snow shadow-md shadow-sky-500/25">
+                        <p className="text-2xl font-extrabold tabular-nums">{thisWeek.length}</p>
+                        <p className="text-xs text-snow/85">{t('progress.thisWeek')}</p>
+                    </div>
+                    <div className="rounded-2xl bg-gradient-to-br from-brand to-amber-500 p-3.5 text-snow shadow-md shadow-brand/25">
+                        <p className="text-2xl font-extrabold tabular-nums">{fmtVolume(weeks[weeks.length - 1].volumeKg, unit)}</p>
+                        <p className="text-xs text-snow/85">{t('progress.volumeWeek')}</p>
+                    </div>
                 </div>
             </Section>
 
+            <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
+
             <Section title={t('share.section')}>
                 <div className="grid grid-cols-2 gap-2">
-                    <Link to="/wrapped" className="btn-ghost"><Share2 size={16} /> {t('wrapped.title')}</Link>
-                    <Link to="/antes-despues" className="btn-ghost"><Columns2 size={16} /> {t('compare.title')}</Link>
+                    <Link to="/wrapped" className="flex items-center gap-2 rounded-2xl bg-gradient-to-br from-brand to-fuchsia-500 p-3.5 font-semibold text-snow shadow-md shadow-brand/25"><Share2 size={18} /> {t('wrapped.title')}</Link>
+                    <Link to="/antes-despues" className="flex items-center gap-2 rounded-2xl bg-gradient-to-br from-sky-500 to-violet-500 p-3.5 font-semibold text-snow shadow-md shadow-sky-500/25"><Columns2 size={18} /> {t('compare.title')}</Link>
                 </div>
             </Section>
 
@@ -151,7 +195,7 @@ export default function Progress() {
                             <div key={m} className="flex items-center gap-3 text-sm">
                                 <span className="w-28 shrink-0 text-white/75">{muscleLabel(m)}</span>
                                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink-4">
-                                    <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (n / 20) * 100)}%` }} />
+                                    <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-500" style={{ width: `${Math.min(100, (n / 20) * 100)}%` }} />
                                 </div>
                                 <span className="w-6 text-right tabular-nums text-white/60">{n}</span>
                             </div>
@@ -167,7 +211,10 @@ export default function Progress() {
                 <div className="card divide-y divide-line">
                     {[...records].sort((a, b) => b.bestE1rm - a.bestE1rm || b.bestReps - a.bestReps).slice(0, 10).map(r => (
                         <Link key={r.exerciseId} to={`/ejercicios/${r.exerciseId}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-3">
-                            <span className="truncate">{exerciseName(r.exerciseId)}</span>
+                            <span className="flex min-w-0 items-center gap-2.5">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={15} /></span>
+                                <span className="truncate">{exerciseName(r.exerciseId)}</span>
+                            </span>
                             <span className="shrink-0 text-sm tabular-nums text-white/60">
                                 {r.bestWeightKg > 0
                                     ? <>{fmtNumber(kgToDisplay(r.bestWeightKg, unit))} × {r.repsAtBestWeight} · <b className="text-white">{fmtNumber(kgToDisplay(r.bestE1rm, unit))}</b> 1RM</>

@@ -1273,4 +1273,29 @@ export const es = {
     'profile.privateLockedHint': "Síguela para ver sus publicaciones e historias",
     'profile.noPosts': "Aún no ha publicado nada",
     'profile.noPostsMine': "Aún no has publicado nada. ¡Comparte tu primer entreno!",
+
+    // Routines header
+    'routines.statDays': "días de plan",
+    'routines.statWeek': "semana",
+    'routines.statMine': "creadas por ti",
+    'routines.createOwnHint': "Elige tus ejercicios, series y descansos",
+
+    // Progress header
+    'progress.heroEmpty': "Aquí verás cómo mejoras semana a semana",
+    'progress.heroTotal': "entrenos",
+    'progress.heroStreak': "semanas seguidas",
+    'progress.heroRecords': "récords",
+    'progress.empty.cta': "Empezar mi primer entreno",
+    'progress.stepsAvg': "pasos al día (7 días)",
+    'progress.cardioWeek': "caminando y en bici",
+    'progress.sleepAvg': "sueño promedio",
+
+    // Home header
+    'home.heroWeek': "entrenos semana",
+    'home.heroSteps': "pasos hoy",
+    'home.heroTotal': "entrenos en total",
+
+    // Nutrition header
+    'nutrition.heroLeft': "kcal restantes",
+    'nutrition.heroEaten': "kcal comidas",
 };

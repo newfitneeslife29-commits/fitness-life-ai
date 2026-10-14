@@ -61,7 +61,7 @@ export const StoryComposer = ({ open, onClose, onPosted }: { open: boolean; onCl
             {photo ? (
                 <div className="relative mx-auto aspect-[9/16] max-h-[55vh] overflow-hidden rounded-2xl bg-black">
                     <img src={photo.url} alt="" className="h-full w-full object-cover" />
-                    {caption && <p className="absolute inset-x-3 bottom-4 rounded-xl bg-black/50 px-3 py-2 text-center font-semibold text-white">{caption}</p>}
+                    {caption && <p className="absolute inset-x-3 bottom-4 rounded-xl bg-black/50 px-3 py-2 text-center font-semibold text-snow">{caption}</p>}
                     <button onClick={() => setPhoto(p => { if (p) URL.revokeObjectURL(p.url); return null; })} aria-label={t('meal.removePhoto')}
                         className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-snow"><X size={16} /></button>
                 </div>
@@ -171,12 +171,12 @@ export const StoryViewer = ({ groups, start, onClose, onChanged }: {
     });
 
     return (
-        <div className="fixed inset-0 z-[70] flex flex-col bg-black text-white" role="dialog" aria-modal="true" aria-label={t('stories.of', { name })}>
+        <div className="fixed inset-0 z-[70] flex flex-col bg-black text-snow" role="dialog" aria-modal="true" aria-label={t('stories.of', { name })}>
             <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-3 pb-6 pt-[calc(0.5rem+env(safe-area-inset-top))]">
                 <div className="flex gap-1">
                     {group.stories.map((s, n) => (
-                        <span key={s.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
-                            <span className="block h-full bg-white" style={{ width: `${n < i ? 100 : n === i ? progress * 100 : 0}%` }} />
+                        <span key={s.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-snow/30">
+                            <span className="block h-full bg-snow" style={{ width: `${n < i ? 100 : n === i ? progress * 100 : 0}%` }} />
                         </span>
                     ))}
                 </div>
@@ -184,14 +184,14 @@ export const StoryViewer = ({ groups, start, onClose, onChanged }: {
                     <Avatar src={group.author.avatarUrl} name={name} size={34} />
                     <p className="min-w-0 flex-1 truncate text-sm font-semibold">{name} <span className="font-normal text-white/60">· {timeAgo(story.createdAt)}</span></p>
                     {mine ? (
-                        <button onClick={() => void remove(story)} aria-label={t('stories.deleteTitle')} className="rounded-full p-2 hover:bg-white/10"><Trash2 size={18} /></button>
+                        <button onClick={() => void remove(story)} aria-label={t('stories.deleteTitle')} className="rounded-full p-2 hover:bg-snow/10"><Trash2 size={18} /></button>
                     ) : (
                         <>
-                            <button onClick={() => void reportIt(story)} aria-label={t('community.report')} className="rounded-full p-2 hover:bg-white/10"><Flag size={18} /></button>
-                            <button onClick={() => void block()} aria-label={`${t('community.block')} ${name}`} className="rounded-full p-2 hover:bg-white/10"><UserX size={18} /></button>
+                            <button onClick={() => void reportIt(story)} aria-label={t('community.report')} className="rounded-full p-2 hover:bg-snow/10"><Flag size={18} /></button>
+                            <button onClick={() => void block()} aria-label={`${t('community.block')} ${name}`} className="rounded-full p-2 hover:bg-snow/10"><UserX size={18} /></button>
                         </>
                     )}
-                    <button onClick={onClose} aria-label={t('common.close')} className="rounded-full p-2 hover:bg-white/10"><X size={22} /></button>
+                    <button onClick={onClose} aria-label={t('common.close')} className="rounded-full p-2 hover:bg-snow/10"><X size={22} /></button>
                 </div>
             </div>
             <div className="relative flex flex-1 items-center justify-center"

@@ -5,7 +5,7 @@ import { Avatar } from '../components/Avatar';
 import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
-import { Empty, Section } from '../components/ui';
+import { Empty, HeroStat, Section } from '../components/ui';
 import { exerciseName, exercisePhotos } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { planName, routineName, sessionName } from '../lib/names';
@@ -18,6 +18,8 @@ import { volume } from '../lib/progression';
 import { activitySummary } from '../lib/activity';
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
+import { localDay } from '../lib/activity';
+import { stepsOn } from '../lib/movement';
 import { groupLabel, recoveryStatus } from '../lib/recovery';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -100,9 +102,9 @@ const WeekStrip = ({ trained }: { trained: Set<number> }) => {
     );
 };
 
-const Tile = ({ icon, value, label, delay }: { icon: ReactNode; value: ReactNode; label: string; delay: number }) => (
+const Tile = ({ icon, value, label, delay, color }: { icon: ReactNode; value: ReactNode; label: string; delay: number; color: string }) => (
     <div className="welcome-in card p-3.5" style={{ animationDelay: `${delay}ms` }}>
-        <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-brand">{icon}</span>
+        <span className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-snow shadow-md ${color}`}>{icon}</span>
         <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
         <p className="text-xs text-white/50">{label}</p>
     </div>
@@ -250,16 +252,16 @@ const BeginnerCard = () => (
 
 // The Premium personal trainer: shown to everyone, unlocked with Premium.
 const TrainerCard = ({ premium }: { premium: boolean }) => (
-    <Link to="/entrenador" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Bot size={22} /></span>
+    <Link to="/entrenador" className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-snow shadow-lg shadow-violet-600/25 active:scale-[0.99]">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-snow/15"><Bot size={22} /></span>
         <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-2 font-semibold">
+            <span className="flex items-center gap-2 font-bold">
                 {t('trainer.title')}
-                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={11} /> Premium</span>}
+                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-bold text-neutral-900"><Crown size={11} /> Premium</span>}
             </span>
-            <span className="block text-sm text-white/55">{t('trainer.homeHint')}</span>
+            <span className="block text-sm text-snow/85">{t('trainer.homeHint')}</span>
         </span>
-        <ChevronRight className="shrink-0 text-white/40" />
+        <ChevronRight className="shrink-0" />
     </Link>
 );
 
@@ -353,6 +355,8 @@ export default function Today() {
     const unlocked = useUnlocked();
     const week = useMemo(() => sessionsThisWeek(sessions), [sessions]);
     const activeDays = useStore(s => s.activeDays);
+    const stepsMap = useStore(s => s.steps);
+    const cardio = useStore(s => s.cardio);
     const activity = useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions]);
     if (!profile) return null;
 
@@ -368,6 +372,7 @@ export default function Today() {
     const now = new Date();
     const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86_400_000);
     const tip = (dayOfYear % TIPS) + 1;
+    const stepsToday = stepsOn({ steps: stepsMap, cardio }, localDay(now));
 
     const start = async (routineId: string | null) => {
         if (active && (active.routineId === routineId || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
@@ -380,18 +385,27 @@ export default function Today() {
 
     return (
         <div className="space-y-6">
-            <header className="flex items-center gap-3 px-4 pt-6">
-                <Link to="/ajustes" aria-label={t('profile.changePhoto')} className="shrink-0 rounded-full ring-2 ring-brand/60 ring-offset-2 ring-offset-ink">
-                    <Avatar src={profile.avatar} name={profile.name} size={44} />
-                </Link>
-                <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium uppercase tracking-wider text-white/45">{now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-                    <h1 className="truncate text-2xl font-bold tracking-tight">{greeting()}{profile.name ? `, ${profile.name}` : ''}</h1>
+            <header className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-brand via-orange-500 to-rose-500 px-4 pb-6 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow shadow-lg shadow-brand/25">
+                <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-snow/15 blur-2xl" />
+                <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-amber-300/30 blur-2xl" />
+                <div className="relative flex items-center gap-3">
+                    <Link to="/ajustes" aria-label={t('profile.changePhoto')} className="shrink-0 rounded-full ring-2 ring-snow/80">
+                        <Avatar src={profile.avatar} name={profile.name} size={46} />
+                    </Link>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-snow/80">{now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                        <h1 className="truncate text-2xl font-extrabold tracking-tight">{greeting()}{profile.name ? `, ${profile.name}` : ''}</h1>
+                    </div>
+                    <span className="flex items-center gap-1 rounded-full bg-snow/20 px-3 py-1.5 text-sm font-bold backdrop-blur"
+                        aria-label={`${streak} ${tp('today.streak', streak)}`}>
+                        <Flame size={16} className={streak > 0 ? 'fill-amber-300 text-amber-300' : ''} /> {streak}
+                    </span>
                 </div>
-                <span className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold ${streak > 0 ? 'bg-brand-soft text-brand' : 'bg-ink-3 text-white/50'}`}
-                    aria-label={`${streak} ${tp('today.streak', streak)}`}>
-                    <Flame size={16} className={streak > 0 ? 'fill-brand' : ''} /> {streak}
-                </span>
+                <div className="relative mt-4 grid grid-cols-3 gap-2">
+                    <HeroStat value={`${Math.min(thisWeek, profile.daysPerWeek)}/${profile.daysPerWeek}`} label={t('home.heroWeek')} />
+                    <HeroStat value={fmtNumber(stepsToday)} label={t('home.heroSteps')} />
+                    <HeroStat value={fmtNumber(sessions.length)} label={t('home.heroTotal')} />
+                </div>
             </header>
 
             <Section>
@@ -450,13 +464,13 @@ export default function Today() {
 
             <Section title={t('home.stats')}>
                 <div className="grid grid-cols-2 gap-2">
-                    <Tile delay={120} icon={<Flame size={16} />} value={<CountUp value={streak} />} label={tp('today.streak', streak)} />
-                    <Tile delay={160} icon={<Trophy size={16} />} value={<CountUp value={sessions.length} />} label={t('today.total')} />
-                    <Tile delay={200} icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
-                    <Tile delay={240} icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
+                    <Tile delay={120} color="from-brand to-amber-500 shadow-brand/30" icon={<Flame size={16} />} value={<CountUp value={streak} />} label={tp('today.streak', streak)} />
+                    <Tile delay={160} color="from-amber-400 to-yellow-500 shadow-amber-400/30" icon={<Trophy size={16} />} value={<CountUp value={sessions.length} />} label={t('today.total')} />
+                    <Tile delay={200} color="from-sky-500 to-indigo-500 shadow-sky-500/30" icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
+                    <Tile delay={240} color="from-violet-500 to-fuchsia-500 shadow-violet-500/30" icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
                 </div>
                 <Link to="/actividad" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand"><CalendarDays size={20} /></span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-snow"><CalendarDays size={20} /></span>
                     <div className="min-w-0 flex-1">
                         <p className="font-semibold">{t('activity.card')}</p>
                         <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
@@ -472,9 +486,10 @@ export default function Today() {
             </Section>
 
             <Section>
-                <div className="relative overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-brand-soft to-transparent p-4">
-                    <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand"><Lightbulb size={15} /> {t('home.tip')}</p>
-                    <p className="text-[15px] leading-relaxed text-white/85">{t(`tip.${tip}` as Parameters<typeof t>[0])}</p>
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 via-orange-400 to-rose-400 p-4 text-neutral-900 shadow-lg shadow-amber-400/25">
+                    <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-snow/30 blur-xl" />
+                    <p className="relative mb-1 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider"><Lightbulb size={15} /> {t('home.tip')}</p>
+                    <p className="relative text-[15px] font-medium leading-relaxed">{t(`tip.${tip}` as Parameters<typeof t>[0])}</p>
                 </div>
             </Section>
 

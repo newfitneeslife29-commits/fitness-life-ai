@@ -99,8 +99,8 @@ export default function MemberProfile() {
     return (
         <div className="space-y-5 pb-4">
             <header className="relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-14 pt-[calc(0.75rem+env(safe-area-inset-top))] text-snow">
-                <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
-                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/85 hover:bg-white/10"><ChevronLeft size={22} /></button>
+                <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-snow/15 blur-2xl" />
+                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/85 hover:bg-snow/10"><ChevronLeft size={22} /></button>
             </header>
             <div className="-mt-16 px-4 text-center">
                 <span className="inline-block rounded-full bg-gradient-to-tr from-amber-400 via-brand to-fuchsia-500 p-1">

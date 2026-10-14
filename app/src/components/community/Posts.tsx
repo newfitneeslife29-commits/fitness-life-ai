@@ -152,7 +152,7 @@ export const PostCard = ({ post, me, member, onLike, onComments, onMenu }: {
             {post.imageUrl && (
                 <div className="relative mt-3 bg-ink" onDoubleClick={doubleTap}>
                     <img src={post.imageUrl} alt={t('community.photoAlt', { name })} loading="lazy" className="max-h-[32rem] w-full object-cover" />
-                    {burst && <Heart aria-hidden size={96} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pop fill-white text-white drop-shadow-2xl" />}
+                    {burst && <Heart aria-hidden size={96} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pop fill-snow text-snow drop-shadow-2xl" />}
                 </div>
             )}
             <footer className="flex items-center gap-1 px-2 py-2">

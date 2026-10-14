@@ -1272,4 +1272,29 @@ export const en: Dict = {
     'profile.privateLockedHint': "Follow it to see its posts and stories",
     'profile.noPosts': "Nothing posted yet",
     'profile.noPostsMine': "You haven't posted yet. Share your first workout!",
+
+    // Routines header
+    'routines.statDays': "plan days",
+    'routines.statWeek': "week",
+    'routines.statMine': "made by you",
+    'routines.createOwnHint': "Pick your exercises, sets and rests",
+
+    // Progress header
+    'progress.heroEmpty': "See how you improve week after week",
+    'progress.heroTotal': "workouts",
+    'progress.heroStreak': "weeks in a row",
+    'progress.heroRecords': "records",
+    'progress.empty.cta': "Start my first workout",
+    'progress.stepsAvg': "steps a day (7 days)",
+    'progress.cardioWeek': "walking and cycling",
+    'progress.sleepAvg': "average sleep",
+
+    // Home header
+    'home.heroWeek': "workouts this week",
+    'home.heroSteps': "steps today",
+    'home.heroTotal': "workouts in total",
+
+    // Nutrition header
+    'nutrition.heroLeft': "kcal left",
+    'nutrition.heroEaten': "kcal eaten",
 };

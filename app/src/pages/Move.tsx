@@ -240,7 +240,7 @@ const SleepCard = () => {
                         </>
                     )}
                 </div>
-                <button onClick={() => setOpen(true)} aria-label={t('sleep.logTitle')} className="rounded-full bg-indigo-500 p-2.5 text-white shadow-lg shadow-indigo-500/30"><Plus size={20} /></button>
+                <button onClick={() => setOpen(true)} aria-label={t('sleep.logTitle')} className="rounded-full bg-indigo-500 p-2.5 text-snow shadow-lg shadow-indigo-500/30"><Plus size={20} /></button>
             </div>
             {logged.length > 0 && (
                 <div className="px-4 pb-4">
@@ -312,7 +312,7 @@ const CardioHistory = () => {
                 <ul className="card mt-2 divide-y divide-line">
                     {sessions.slice(0, 20).map(s => (
                         <li key={s.id} className="flex items-center gap-3 px-4 py-3">
-                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white ${KINDS.find(k => k.kind === s.kind)!.gradient}`}>
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-snow ${KINDS.find(k => k.kind === s.kind)!.gradient}`}>
                                 {s.kind === 'bike' ? <Bike size={18} /> : s.kind === 'run' ? <Zap size={18} /> : <Footprints size={18} />}
                             </span>
                             <div className="min-w-0 flex-1">
@@ -340,16 +340,16 @@ export default function Move() {
     return (
         <div className="space-y-6 pb-4">
             <header className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow">
-                <div aria-hidden className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/80 hover:bg-white/10"><ChevronLeft size={22} /></button>
+                <div aria-hidden className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-snow/10 blur-2xl" />
+                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/80 hover:bg-snow/10"><ChevronLeft size={22} /></button>
                 <h1 className="relative mt-1 text-3xl font-extrabold tracking-tight">{t('move.title')}</h1>
                 <p className="relative text-sm text-snow/85">{t('move.subtitle')}</p>
             </header>
 
             {active && (
                 <Section>
-                    <button onClick={() => navigate('/cardio')} className="flex w-full items-center gap-3 rounded-2xl bg-emerald-500 p-4 text-left font-semibold text-white shadow-lg shadow-emerald-500/30">
-                        <span className="h-3 w-3 animate-pulse rounded-full bg-white" /> {t('cardio.inProgress', { kind: t(`cardio.kind.${active.kind}`) })}
+                    <button onClick={() => navigate('/cardio')} className="flex w-full items-center gap-3 rounded-2xl bg-emerald-500 p-4 text-left font-semibold text-snow shadow-lg shadow-emerald-500/30">
+                        <span className="h-3 w-3 animate-pulse rounded-full bg-snow" /> {t('cardio.inProgress', { kind: t(`cardio.kind.${active.kind}`) })}
                         <ChevronRight className="ml-auto" />
                     </button>
                 </Section>
@@ -365,7 +365,7 @@ export default function Move() {
                 <div className="grid grid-cols-3 gap-2">
                     {KINDS.map(k => (
                         <button key={k.kind} onClick={() => start(k.kind)} disabled={!!active}
-                            className={`flex flex-col items-center gap-2 rounded-2xl bg-gradient-to-br p-4 text-white shadow-lg active:scale-95 disabled:opacity-40 ${k.gradient}`}>
+                            className={`flex flex-col items-center gap-2 rounded-2xl bg-gradient-to-br p-4 text-snow shadow-lg active:scale-95 disabled:opacity-40 ${k.gradient}`}>
                             {k.icon}
                             <span className="text-sm font-bold">{t(`cardio.kind.${k.kind}`)}</span>
                         </button>

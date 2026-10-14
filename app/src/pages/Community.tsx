@@ -150,7 +150,7 @@ export default function Community() {
 
     const header = (
         <header className="relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow">
-            <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+            <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-snow/15 blur-2xl" />
             <div aria-hidden className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-amber-300/25 blur-2xl" />
             <div className="relative flex items-start gap-3">
                 <div className="min-w-0 flex-1">
@@ -159,11 +159,11 @@ export default function Community() {
                 </div>
                 {authAvailable() && (
                     <>
-                        <button onClick={() => { setPosts(null); void load(); loadStories(); }} aria-label={t('community.refresh')} className="rounded-full bg-white/15 p-2.5 hover:bg-white/25"><RefreshCw size={18} /></button>
+                        <button onClick={() => { setPosts(null); void load(); loadStories(); }} aria-label={t('community.refresh')} className="rounded-full bg-snow/15 p-2.5 hover:bg-snow/25"><RefreshCw size={18} /></button>
                         {member && (
-                            <Link to={`/comunidad/u/${me}`} aria-label={t('profile.mine')} className="relative rounded-full ring-2 ring-white/70">
+                            <Link to={`/comunidad/u/${me}`} aria-label={t('profile.mine')} className="relative rounded-full ring-2 ring-snow/70">
                                 <Avatar src={profile.avatar} name={profile.name} size={40} />
-                                {requests > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-bold text-ink">{requests}</span>}
+                                {requests > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-bold text-neutral-900">{requests}</span>}
                             </Link>
                         )}
                     </>
