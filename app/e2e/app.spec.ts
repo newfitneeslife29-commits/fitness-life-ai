@@ -976,7 +976,7 @@ test('offline: says nothing is lost, and the rest sound can be turned off', asyn
     await expect(page.getByText(/Sin conexión: todo se guarda en el teléfono/)).toHaveCount(0);
 
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
-    const sound = page.getByRole('switch', { name: 'Sonido al terminar el descanso' });
+    const sound = page.getByRole('switch', { name: 'Sonido del cronómetro y del descanso' });
     await expect(sound).toHaveAttribute('aria-checked', 'true');
     await sound.click();
     await expect(sound).toHaveAttribute('aria-checked', 'false');
