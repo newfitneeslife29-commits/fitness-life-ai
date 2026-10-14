@@ -20,7 +20,9 @@ dependencies {
     implementation project(':capacitor-share')
     implementation project(':capacitor-splash-screen')
     implementation project(':capacitor-status-bar')
+    implementation project(':capgo-background-geolocation')
     implementation project(':capgo-capacitor-health')
+    implementation project(':capgo-capacitor-pedometer')
     implementation project(':revenuecat-purchases-capacitor')
 
 }

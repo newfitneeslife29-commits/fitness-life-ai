@@ -1,0 +1,74 @@
+import { t } from '../i18n';
+import { addPoint } from './cardio';
+import { isNative } from './native';
+import { actions, getState } from '../store/store';
+
+// GPS for the walk or ride being recorded. In the apps it keeps going with
+// the screen locked (Android shows a notification while it does); on the web
+// it works while the page is open. Points only update the distance on the
+// phone: the route itself is never stored or sent.
+
+let running = false;
+
+const onFix = (lat: number, lon: number, accuracy: number, at: number) =>
+    actions.updateCardio(a => addPoint(a, { lat, lon, accuracy, at }));
+
+const fail = (denied: boolean) => actions.updateCardio(a => ({ ...a, gps: denied ? 'denied' : 'off' }));
+
+let webWatch: number | null = null;
+
+export const startTracking = async () => {
+    if (running || !getState().cardioActive) return;
+    running = true;
+    if (!isNative()) {
+        if (!('geolocation' in navigator)) return fail(false);
+        webWatch = navigator.geolocation.watchPosition(
+            p => onFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp),
+            e => fail(e.code === e.PERMISSION_DENIED),
+            { enableHighAccuracy: true, maximumAge: 0 },
+        );
+        return;
+    }
+    try {
+        const { BackgroundGeolocation } = await import('@capgo/background-geolocation');
+        await BackgroundGeolocation.start({
+            backgroundTitle: t('cardio.trackingTitle'),
+            backgroundMessage: t('cardio.trackingMessage'),
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 5,
+        }, (location, error) => {
+            if (error) return fail(error.code === 'NOT_AUTHORIZED');
+            if (location) onFix(location.latitude, location.longitude, location.accuracy, location.time ?? Date.now());
+        });
+    } catch {
+        running = false;
+        fail(false);
+    }
+};
+
+export const stopTracking = async () => {
+    if (!running) return;
+    running = false;
+    if (webWatch !== null) {
+        navigator.geolocation.clearWatch(webWatch);
+        webWatch = null;
+        return;
+    }
+    try {
+        const { BackgroundGeolocation } = await import('@capgo/background-geolocation');
+        await BackgroundGeolocation.stop();
+    } catch {
+        // Already stopped.
+    }
+};
+
+export const openLocationSettings = async () => {
+    if (!isNative()) return;
+    try {
+        const { BackgroundGeolocation } = await import('@capgo/background-geolocation');
+        await BackgroundGeolocation.openSettings();
+    } catch {
+        // Nothing to open.
+    }
+};

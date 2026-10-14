@@ -17,6 +17,7 @@ import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { activitySummary } from '../lib/activity';
 import { HealthCard } from '../components/HealthCard';
+import { MoveCard } from '../components/MoveCard';
 import { groupLabel, recoveryStatus } from '../lib/recovery';
 import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -432,6 +433,8 @@ export default function Today() {
                     <WeekStrip trained={trainedDays} />
                 </div>
             </Section>
+
+            <Section><MoveCard /></Section>
 
             <Section><HealthCard /></Section>
 

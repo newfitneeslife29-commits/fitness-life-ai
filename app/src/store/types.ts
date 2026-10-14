@@ -45,6 +45,7 @@ export interface Profile {
     recoveryAlerts?: boolean;
     // A notification at the time of each meal of the meal plan (on by default).
     mealReminders?: boolean;
+    stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)
     // "Time to train" on the chosen days (0 = Monday … 6 = Sunday); off when null.
     trainingReminder?: { time: string; days: number[] } | null;
 }
@@ -168,6 +169,51 @@ export interface Recipe extends Macros {
     createdAt: string;
 }
 
+// ---------- Movement: steps, sleep, walks and rides ----------
+
+export type CardioKind = 'walk' | 'run' | 'bike';
+
+export interface CardioSession {
+    id: string;
+    kind: CardioKind;
+    startedAt: string;
+    endedAt: string;
+    durationSec: number; // moving time, pauses left out
+    distanceM: number;
+    steps?: number; // walks and runs
+    kcal: number;
+    source: 'gps' | 'manual';
+    walkPlan?: string; // "planId:week:walk" when it was a walk of the plan
+}
+
+// The walk or ride being recorded (kept so it survives leaving the screen).
+export interface ActiveCardio {
+    kind: CardioKind;
+    startedAt: string;
+    pausedAt: number | null; // epoch ms
+    pausedMs: number;
+    distanceM: number;
+    last: { lat: number; lon: number; at: number } | null;
+    gps: 'waiting' | 'ok' | 'denied' | 'off';
+    targetMin?: number;
+    walkPlan?: string;
+}
+
+export interface SleepEntry {
+    id: string;
+    day: string; // local day of waking up, "YYYY-MM-DD"
+    bedAt: string; // ISO
+    wakeAt: string; // ISO
+    minutes: number; // asleep
+    source: 'manual' | 'health';
+}
+
+export interface WalkPlanState {
+    id: string;
+    startedAt: string; // ISO; week 1 starts that day
+    done: string[]; // "week:walk" of walks completed
+}
+
 // ---------- Meal plan (made by the AI) ----------
 
 export type MealSlot = 'desayuno' | 'media-manana' | 'almuerzo' | 'merienda' | 'cena' | 'snack';
@@ -243,6 +289,11 @@ export interface AppState {
     mealPlan?: MealPlan | null;
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
     recipes?: Recipe[]; // the user's own, newest first
+    steps?: Record<string, number>; // steps by local day
+    sleep?: SleepEntry[]; // newest first
+    cardio?: CardioSession[]; // newest first
+    cardioActive?: ActiveCardio | null;
+    walkPlan?: WalkPlanState | null;
     activeDays?: string[]; // local "YYYY-MM-DD" days the app was opened, oldest first
     aiUsage: AiUsage | null;
     premium: PremiumStatus | null;

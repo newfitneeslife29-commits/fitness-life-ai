@@ -9,7 +9,7 @@ import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
-import type { Account, ActiveWorkout, AiUsage, AppState, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Recipe, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import type { Account, ActiveCardio, ActiveWorkout, AiUsage, AppState, CardioKind, CardioSession, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Recipe, SleepEntry, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // The device holds the working copy of everything. With an account, a copy
 // also lives in the cloud (lib/cloud.ts); without one, export/import in
@@ -401,6 +401,80 @@ export const actions = {
         set(s => ({ ...s, recipes: (s.recipes ?? []).filter(r => r.id !== id) }));
     },
 
+    // ---------- Movement ----------
+
+    // Steps by local day; a day only goes up (a later reading has more steps).
+    recordSteps(days: Record<string, number>) {
+        const current = state.steps ?? {};
+        if (Object.entries(days).every(([d, n]) => (current[d] ?? 0) >= Math.round(n))) return;
+        set(s => {
+            const steps = { ...(s.steps ?? {}) };
+            for (const [d, n] of Object.entries(days)) steps[d] = Math.max(steps[d] ?? 0, Math.round(n));
+            const keep = Object.keys(steps).sort().slice(-400);
+            return { ...s, steps: Object.fromEntries(keep.map(d => [d, steps[d]])) };
+        });
+    },
+
+    // One night per day: a new entry replaces that day's (Health never replaces one typed by hand).
+    logSleep(entries: Omit<SleepEntry, 'id'>[]) {
+        set(s => {
+            let list = s.sleep ?? [];
+            for (const e of entries) {
+                const existing = list.find(x => x.day === e.day);
+                if (existing && existing.source === 'manual' && e.source === 'health') continue;
+                list = [{ ...e, id: existing?.id ?? uid() }, ...list.filter(x => x.day !== e.day)];
+            }
+            return { ...s, sleep: list.sort((a, b) => b.day.localeCompare(a.day)).slice(0, 400) };
+        });
+    },
+
+    deleteSleep(id: string) {
+        set(s => ({ ...s, sleep: (s.sleep ?? []).filter(x => x.id !== id) }));
+    },
+
+    startCardio(kind: CardioKind, opts: { targetMin?: number; walkPlan?: string } = {}) {
+        set(s => ({
+            ...s,
+            cardioActive: { kind, startedAt: new Date().toISOString(), pausedAt: null, pausedMs: 0, distanceM: 0, last: null, gps: 'waiting', ...opts },
+        }));
+    },
+
+    updateCardio(fn: (a: ActiveCardio) => ActiveCardio) {
+        if (!state.cardioActive) return;
+        const next = fn(state.cardioActive);
+        if (next !== state.cardioActive) set(s => ({ ...s, cardioActive: next }));
+    },
+
+    pauseCardio(paused: boolean) {
+        actions.updateCardio(a => {
+            if (paused === (a.pausedAt !== null)) return a;
+            return paused ? { ...a, pausedAt: Date.now() } : { ...a, pausedAt: null, pausedMs: a.pausedMs + (Date.now() - a.pausedAt!), last: null };
+        });
+    },
+
+    // Ends the walk or ride; with `session` it is saved (and counts for the walking plan).
+    finishCardio(session: Omit<CardioSession, 'id'> | null) {
+        set(s => {
+            const saved = session ? [{ ...session, id: uid() }, ...(s.cardio ?? [])].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) : s.cardio;
+            const done = session?.walkPlan && s.walkPlan && session.walkPlan.startsWith(`${s.walkPlan.id}:`)
+                ? { ...s.walkPlan, done: [...new Set([...s.walkPlan.done, session.walkPlan.slice(s.walkPlan.id.length + 1)])] }
+                : s.walkPlan;
+            return { ...s, cardio: saved, cardioActive: null, walkPlan: done };
+        });
+    },
+
+    addCardio(session: Omit<CardioSession, 'id'>) {
+        set(s => ({ ...s, cardio: [{ ...session, id: uid() }, ...(s.cardio ?? [])].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) }));
+    },
+
+    deleteCardio(id: string) {
+        set(s => ({ ...s, cardio: (s.cardio ?? []).filter(c => c.id !== id) }));
+    },
+
+    setWalkPlan(id: string | null) {
+        set(s => ({ ...s, walkPlan: id ? { id, startedAt: new Date().toISOString(), done: [] } : null }));
+    },
+
     setMealPlan(mealPlan: MealPlan | null) {
         set(s => ({ ...s, mealPlan }));
     },
@@ -474,7 +548,7 @@ export const actions = {
     // Replaces the training data with the account's copy; keeps this device's settings.
     restoreSnapshot(data: Partial<AppState>, syncedAt: string) {
         set(s => ({
-            ...EMPTY, ...data, version: 1, active: s.active,
+            ...EMPTY, ...data, version: 1, active: s.active, cardioActive: s.cardioActive,
             lang: s.lang, theme: s.theme, account: s.account, authPrompted: true, cloudSyncedAt: syncedAt,
             aiUsage: s.aiUsage, premium: s.premium,
         }));

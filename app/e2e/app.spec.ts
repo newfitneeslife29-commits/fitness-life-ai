@@ -545,6 +545,63 @@ test('nutrition: water for the day and saved recipes', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' })).toBeVisible();
 });
 
+test('movement: a walk of the walking plan with GPS, a ride by hand, steps and sleep', async ({ page, context }) => {
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Movimiento/ }).click();
+    await expect(page.getByRole('heading', { name: 'Movimiento' })).toBeVisible();
+    await expect(page.getByLabel('0 pasos hoy')).toBeVisible();
+
+    // A walking plan, and its first walk recorded with the GPS.
+    await page.getByRole('button', { name: /¿Solo quieres caminar\?/ }).click();
+    await page.getByRole('button', { name: /Empieza a caminar/ }).click();
+    await expect(page.getByText('Semana 1 de 4')).toBeVisible();
+    await expect(page.getByText('Caminata 1: 15 minutos')).toBeVisible();
+    await expect(page.getByText('de 5000')).toBeVisible(); // the plan's step goal
+    await page.getByRole('button', { name: 'Empezar caminata' }).click();
+    await expect(page.getByText('Meta: 15 minutos')).toBeVisible();
+    await expect(page.getByText('GPS listo')).toBeVisible();
+    // About 27 m north at a walking pace (3.3 m a second); faster would be a GPS jump.
+    for (let i = 1; i <= 8; i++) {
+        await page.waitForTimeout(1100);
+        await context.setGeolocation({ latitude: 40.4168 + i * 0.00003, longitude: -3.7038, accuracy: 5 });
+    }
+    await expect(page.getByLabel(/Distancia: 0\.0[23] km/)).toBeVisible();
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Actividad guardada')).toBeVisible();
+    await expect(page.getByText('1 de 3 caminatas esta semana', { exact: false }).or(page.getByLabel('1 de 3 caminatas esta semana'))).toBeVisible();
+    await expect(page.getByText(/0,0[23] km/).first()).toBeVisible();
+    // Without a step counter, the walk's steps count for the day (27 m / 74.7 cm ≈ 36).
+    await expect(page.getByLabel(/^[23]\d pasos hoy$/)).toBeVisible();
+
+    // A ride typed in, in km.
+    await page.getByRole('button', { name: 'Añadir a mano' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Añadir a mano' });
+    await sheet.getByRole('radio', { name: 'Bicicleta' }).click();
+    await sheet.getByLabel('Distancia (km)').fill('12,5');
+    await sheet.getByLabel('Minutos').fill('40');
+    await sheet.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('12,50 km')).toBeVisible();
+    await expect(page.getByText(/18,8 km\/h/)).toBeVisible();
+
+    // Sleep typed in.
+    await page.getByRole('button', { name: 'Anotar sueño' }).click();
+    const sleep = page.getByRole('dialog', { name: 'Anotar sueño' });
+    await sleep.getByLabel('Me dormí').fill('23:30');
+    await sleep.getByLabel('Me desperté').fill('07:00');
+    await expect(sleep.getByText('7,5 h')).toBeVisible();
+    await sleep.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('¡Buen descanso!', { exact: false })).toBeVisible();
+
+    // Everything stays.
+    await page.reload();
+    await expect(page.getByText('12,50 km')).toBeVisible();
+    await expect(page.getByText('7,5 h').first()).toBeVisible();
+});
+
 test('AI personal trainer (Premium): chat with the plan as context and a routine saved from AI', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
     const reports: Record<string, unknown>[] = [];
