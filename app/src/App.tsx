@@ -11,6 +11,7 @@ import { useMealReminders } from './lib/mealplan';
 import { useMovementSync } from './lib/movement';
 import { useRecoveryAlerts } from './lib/recovery';
 import { useTrainingReminders } from './lib/reminders';
+import { useTracking } from './lib/tracker';
 import { cancelRestAlert, initNative } from './lib/native';
 import Achievements from './pages/Achievements';
 import Activity from './pages/Activity';
@@ -88,7 +89,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
     return (
         // Extra bottom room while the "workout in progress" banner is showing.
         <div className={`pt-safe mx-auto min-h-dvh max-w-lg ${hasActive ? 'pb-[calc(9rem+env(safe-area-inset-bottom))]' : 'pb-nav'}`}>
-            <OfflineNotice className="mx-4 mt-3" />
+            <OfflineNotice className="relative z-10 mx-4 mt-3" />
             <div key={pathname} className="animate-fade"><ErrorBoundary>{children}</ErrorBoundary></div>
             <ActiveBanner />
             <BottomNav />
@@ -127,6 +128,7 @@ export default function App() {
     useMealReminders();
     useTrainingReminders();
     useMovementSync();
+    useTracking();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);

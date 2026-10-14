@@ -32,11 +32,12 @@ export const cleanMealPlan = (raw: { name?: unknown; note?: unknown; days?: unkn
       return [{ slot, time: timeOf(x.time, slot), name, foods, kcal: amount(x.kcal), protein: amount(x.protein), carbs: amount(x.carbs), fat: amount(x.fat) }];
     }).sort((a, b) => a.time.localeCompare(b.time));
     return { meals };
-  }).filter(d => d.meals.length);
-  // Fewer than 7 days: the week repeats them.
+  });
+  // Empty or missing days take another day's menu; the others keep their weekday.
+  const full = days.filter(d => d.meals.length);
   return {
     name: text(raw.name, 60),
     note: text(raw.note, 400),
-    days: days.length ? Array.from({ length: 7 }, (_, i) => days[i % days.length]) : [],
+    days: full.length ? Array.from({ length: 7 }, (_, i) => (days[i]?.meals.length ? days[i] : full[i % full.length])) : [],
   };
 };

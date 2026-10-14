@@ -6,6 +6,9 @@ import { locale, t, tp } from '../i18n';
 import { activitySummary, monthGrid } from '../lib/activity';
 import { useStore } from '../store/store';
 
+
+// A fixed empty list: a new [] on every read would re-render forever.
+const NO_DAYS: string[] = [];
 const Tile = ({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) => (
     <div className="card flex items-center gap-3 p-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand">{icon}</span>
@@ -18,7 +21,7 @@ const Tile = ({ icon, value, label }: { icon: ReactNode; value: string | number;
 
 // Days the app was used and days trained: a month calendar and the streaks.
 export default function Activity() {
-    const activeDays = useStore(s => s.activeDays ?? []);
+    const activeDays = useStore(s => s.activeDays ?? NO_DAYS);
     const sessions = useStore(s => s.sessions);
     const now = new Date();
     const [month, setMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });

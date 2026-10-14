@@ -89,31 +89,56 @@ export const readStepDays = async (days: number, now = new Date()): Promise<Reco
     const Health = await plugin();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
     const { samples } = await Health.queryAggregated({ dataType: 'steps', startDate: start.toISOString(), endDate: now.toISOString(), bucket: 'day', aggregation: 'sum' });
-    return Object.fromEntries(samples.map(s => [localDay(new Date(s.startDate)), Math.round(s.value)]));
+    // Keyed by the middle of the bucket: on Android the buckets are 24 h long,
+    // so after a daylight-saving change their start falls at 23:00 or 01:00.
+    return Object.fromEntries(samples.map(s => [localDay(new Date(Date.parse(s.startDate) + 12 * 3600_000)), Math.round(s.value)]));
 };
 
 export interface SleepNight { day: string; bedAt: string; wakeAt: string; minutes: number }
 
-// Sleep samples grouped by the day of waking up. Time asleep counts the
-// sleep stages; a phone without a watch may only record "in bed", which then counts.
-export const sleepNights = (samples: { startDate: string; endDate: string; sleepState?: string }[]): SleepNight[] => {
-    const nights = new Map<string, { bed: number; wake: number; asleep: number; inBed: number }>();
-    for (const s of samples) {
-        const start = new Date(s.startDate).getTime();
-        const end = new Date(s.endDate).getTime();
-        if (!(end > start)) continue;
-        const day = localDay(new Date(end));
-        const n = nights.get(day) ?? { bed: start, wake: end, asleep: 0, inBed: 0 };
-        n.bed = Math.min(n.bed, start);
-        n.wake = Math.max(n.wake, end);
-        const minutes = (end - start) / 60000;
-        if (s.sleepState === 'inBed') n.inBed += minutes;
-        else if (s.sleepState !== 'awake') n.asleep += minutes;
-        nights.set(day, n);
+type Span = [number, number];
+// Minutes covered by the spans, overlaps counted once (a watch and the phone
+// can both record the same night).
+const coveredMinutes = (spans: Span[]) => {
+    let total = 0;
+    let end = -Infinity;
+    for (const [s, e] of [...spans].sort((x, y) => x[0] - y[0])) {
+        if (e <= end) continue;
+        total += e - Math.max(s, end);
+        end = e;
     }
-    return [...nights].map(([day, n]) => ({
-        day, bedAt: new Date(n.bed).toISOString(), wakeAt: new Date(n.wake).toISOString(), minutes: Math.round(n.asleep || n.inBed),
-    })).filter(n => n.minutes >= 60);
+    return total / 60000;
+};
+
+const NIGHT_GAP = 3 * 3600_000;
+
+// Sleep samples grouped into nights (samples less than 3 h apart), each one
+// on the day of waking up. Time asleep counts the sleep stages; a phone
+// without a watch may only record "in bed", which then counts.
+export const sleepNights = (samples: { startDate: string; endDate: string; sleepState?: string }[]): SleepNight[] => {
+    const spans = samples
+        .map(s => ({ start: Date.parse(s.startDate), end: Date.parse(s.endDate), state: s.sleepState }))
+        .filter(s => s.end > s.start)
+        .sort((a, b) => a.start - b.start);
+    const sessions: { bed: number; wake: number; asleep: Span[]; inBed: Span[] }[] = [];
+    for (const s of spans) {
+        let n = sessions[sessions.length - 1];
+        if (!n || s.start - n.wake > NIGHT_GAP) sessions.push(n = { bed: s.start, wake: s.end, asleep: [], inBed: [] });
+        n.wake = Math.max(n.wake, s.end);
+        if (s.state === 'inBed') n.inBed.push([s.start, s.end]);
+        else if (s.state !== 'awake') n.asleep.push([s.start, s.end]);
+    }
+    const nights = new Map<string, SleepNight>();
+    for (const n of sessions) {
+        const minutes = Math.round(coveredMinutes(n.asleep) || coveredMinutes(n.inBed));
+        if (minutes < 60) continue;
+        const day = localDay(new Date(n.wake));
+        const prev = nights.get(day);
+        // A nap the same day doesn't replace the night.
+        if (prev && prev.minutes >= minutes) continue;
+        nights.set(day, { day, bedAt: new Date(n.bed).toISOString(), wakeAt: new Date(n.wake).toISOString(), minutes });
+    }
+    return [...nights.values()];
 };
 
 export const readSleep = async (nights: number, now = new Date()) => {

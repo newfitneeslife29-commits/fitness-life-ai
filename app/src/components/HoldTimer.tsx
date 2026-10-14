@@ -25,13 +25,15 @@ export const HoldTimer = ({ target, onDone }: { target: number; onDone: (seconds
 
     useEffect(() => {
         if (goAt === null || lastCue.current === elapsed) return;
+        const before = lastCue.current;
         lastCue.current = elapsed;
         const cue = elapsed < 0 ? String(-elapsed) : elapsed === 0 ? t('voice.go') : cueAt(elapsed, target);
         const left = target - elapsed;
         if (elapsed < 0) restTick(sound);
         else if (elapsed === 0) restTick(sound, true);
         else if (target > 0 && left > 0 && left <= COUNTDOWN_SEC) restTick(sound, left <= 3);
-        if (elapsed === target && target > 0) {
+        // Also when a tick was skipped (the app was briefly in the background).
+        if (target > 0 && elapsed >= target && (before === null || before < target)) {
             haptic('success');
             restOver(sound);
         }

@@ -66,7 +66,9 @@ const call = async <T>(body: Record<string, unknown>): Promise<T> => {
         if (data?.usage) actions.setAiUsage(data.usage as AiUsage);
         return data as T;
     }
-    const response = (error as { context?: Response }).context;
+    // Without a connection the context is the fetch error, not a response.
+    const context = (error as { context?: unknown }).context;
+    const response = typeof Response !== 'undefined' && context instanceof Response ? context : undefined;
     const status = response?.status;
     const usage = await response?.clone().json().then(b => b?.usage as AiUsage | undefined).catch(() => undefined);
     if (usage) actions.setAiUsage(usage);

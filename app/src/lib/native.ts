@@ -47,7 +47,8 @@ export const primeSound = () => {
 };
 
 const beep = (freq: number, ms: number, delayMs = 0) => {
-    if (!audio) return;
+    // A sound queued while the app was in the background would play late, on the next tap.
+    if (!audio || audio.state !== 'running') return;
     const at = audio.currentTime + delayMs / 1000;
     const osc = audio.createOscillator();
     const gain = audio.createGain();
@@ -96,13 +97,13 @@ export const keepAwake = async (on: boolean) => {
 // Rest timer alert that fires even with the phone locked (native only;
 // the web app vibrates while it is open).
 const REST_NOTIFICATION_ID = 4711;
-let notificationsAllowed: boolean | null = null;
-
+// Asks only the first time; a refusal isn't remembered here, so allowing
+// notifications later in the phone's Settings works without a restart.
 const notificationsOk = async () => {
-    if (notificationsAllowed === null) {
-        notificationsAllowed = (await LocalNotifications.requestPermissions()).display === 'granted';
-    }
-    return notificationsAllowed;
+    const { display } = await LocalNotifications.checkPermissions();
+    if (display === 'granted') return true;
+    if (display === 'denied') return false;
+    return (await LocalNotifications.requestPermissions()).display === 'granted';
 };
 
 // Exact alarms need a special permission on Android 12+ (off by default on
@@ -168,18 +169,25 @@ const REMINDER_IDS = {
     training: Array.from({ length: 7 }, (_, i) => 5300 + i),
 };
 export const reminderId = (group: keyof typeof REMINDER_IDS, index: number) => REMINDER_IDS[group][index];
-export const scheduleWeeklyReminders = async (group: keyof typeof REMINDER_IDS, reminders: WeeklyReminder[]) => {
-    if (!isNative()) return;
-    await quiet(async () => {
+// One change at a time per group: two quick changes (days toggled fast)
+// would otherwise interleave and leave a removed day scheduled.
+const reminderQueue: Record<keyof typeof REMINDER_IDS, Promise<unknown>> = { meals: Promise.resolve(), training: Promise.resolve() };
+export const scheduleWeeklyReminders = (group: keyof typeof REMINDER_IDS, reminders: WeeklyReminder[]) => {
+    if (!isNative()) return Promise.resolve();
+    const run = reminderQueue[group].then(() => quiet(async () => {
         await LocalNotifications.cancel({ notifications: REMINDER_IDS[group].map(id => ({ id })) });
         if (!reminders.length || !(await notificationsOk())) return;
+        // Exact when allowed: an inexact alarm can come up to an hour late on Android 12+.
+        const exact = await exactAlarms();
         await LocalNotifications.schedule({
             notifications: reminders.map(r => ({
                 id: r.id, title: r.title, body: r.body,
-                schedule: { on: { weekday: r.weekday, hour: r.hour, minute: r.minute }, allowWhileIdle: true }, isExactNotification: false,
+                schedule: { on: { weekday: r.weekday, hour: r.hour, minute: r.minute }, allowWhileIdle: true }, isExactNotification: exact,
             })),
         });
-    });
+    }));
+    reminderQueue[group] = run;
+    return run;
 };
 
 // Share sheet; falls back to the clipboard. Returns what happened.

@@ -53,16 +53,18 @@ const myId = async () => {
 // Any session will do for reading; without one, sign in anonymously first.
 const reader = getSessionClient;
 
-export const fetchFeed = async (before?: string, opts: { only?: string[] } = {}): Promise<Post[]> => {
+const POST_COLUMNS = 'id, body, image_path, created_at, user_id, author:community_profiles!community_posts_user_id_fkey(name, avatar_path, updated_at), community_likes(count), community_comments(count)';
+
+// All posts, one person's (`user`), or (`following`) those of the people
+// followed, matched on the server: their ids in the address would make it
+// too long for many follows.
+export const fetchFeed = async (before?: string, opts: { following?: boolean; user?: string } = {}): Promise<Post[]> => {
     const supabase = await reader();
-    if (opts.only && !opts.only.length) return [];
-    let query = supabase
-        .from('community_posts')
-        .select('id, body, image_path, created_at, user_id, author:community_profiles!community_posts_user_id_fkey(name, avatar_path, updated_at), community_likes(count), community_comments(count)')
+    let query = (opts.following ? supabase.rpc('community_following_posts').select(POST_COLUMNS) : supabase.from('community_posts').select(POST_COLUMNS))
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
     if (before) query = query.lt('created_at', before);
-    if (opts.only) query = query.in('user_id', opts.only);
+    if (opts.user) query = query.eq('user_id', opts.user);
     const { data, error } = await query;
     if (error) throw error;
     const rows = (data ?? []) as unknown as {
@@ -182,9 +184,11 @@ export const fetchStories = async (): Promise<StoryGroup[]> => {
         .from('community_stories')
         .select('id, user_id, image_path, caption, created_at, author:community_profiles!community_stories_user_id_fkey(name, avatar_path, updated_at)')
         .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(300);
     if (error) throw error;
+    // The newest 300, shown oldest first within each person.
+    data?.reverse();
     const blocked = new Set(getState().blockedUsers ?? []);
     const me = await myId();
     const groups = new Map<string, StoryGroup>();
@@ -273,7 +277,7 @@ export const fetchMemberProfile = async (userId: string): Promise<MemberProfile>
     };
 };
 
-export const fetchMemberPosts = (userId: string) => fetchFeed(undefined, { only: [userId] });
+export const fetchMemberPosts = (userId: string) => fetchFeed(undefined, { user: userId });
 
 export const follow = async (userId: string) => {
     const { supabase, id } = await requireMember();
@@ -288,15 +292,6 @@ export const unfollow = async (userId: string) => {
 };
 
 // People I follow (accepted), for the "Following" feed.
-export const fetchFollowingIds = async (): Promise<string[]> => {
-    const me = await myId();
-    if (!me) return [];
-    const supabase = await reader();
-    const { data, error } = await supabase.from('community_follows').select('following').eq('follower', me).eq('status', 'accepted').limit(1000);
-    if (error) throw error;
-    return (data ?? []).map(r => (r as { following: string }).following);
-};
-
 export interface FollowRequest { userId: string; author: Author; createdAt: string }
 
 export const fetchFollowRequests = async (): Promise<FollowRequest[]> => {
@@ -330,8 +325,15 @@ export const fetchMyPrivacy = async (): Promise<boolean> => {
 
 export const setPrivateProfile = async (isPrivate: boolean) => {
     const { supabase, id } = await requireMember();
-    const { error } = await supabase.from('community_profiles').update({ is_private: isPrivate }).eq('id', id);
+    const { data, error } = await supabase.from('community_profiles').update({ is_private: isPrivate }).eq('id', id).select('id');
     if (error) throw error;
+    // No profile row yet (never published): publish it, then try again.
+    if (!data?.length) {
+        try { localStorage.removeItem(SYNCED_KEY); } catch { /* private mode */ }
+        await syncCommunityProfile();
+        const again = await supabase.from('community_profiles').update({ is_private: isPrivate }).eq('id', id).select('id');
+        if (again.error || !again.data?.length) throw again.error ?? new Error('no profile');
+    }
 };
 
 // ---------- The signed-in person's public profile (name and picture) ----------

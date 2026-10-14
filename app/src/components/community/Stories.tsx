@@ -127,15 +127,26 @@ export const StoryViewer = ({ groups, start, onClose, onChanged }: {
         return () => cancelAnimationFrame(raf);
     }, [paused, story?.id]);
 
+    // Keys use the latest next/prev without subscribing again on every frame.
+    const keys = useRef({ next, prev, onClose });
+    keys.current = { next, prev, onClose };
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-            if (e.key === 'ArrowRight') next();
-            if (e.key === 'ArrowLeft') prev();
+            if (e.key === 'Escape') keys.current.onClose();
+            if (e.key === 'ArrowRight') keys.current.next();
+            if (e.key === 'ArrowLeft') keys.current.prev();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    });
+    }, []);
+
+    // Holding to pause: letting go resumes the same story, it doesn't skip.
+    const pressedAt = useRef(0);
+    const tap = (fn: () => void) => () => {
+        const held = pressedAt.current > 0 && Date.now() - pressedAt.current >= 300;
+        pressedAt.current = 0;
+        if (!held) fn();
+    };
 
     if (!group || !story) return null;
     const name = displayName(group.author.name);
@@ -195,10 +206,10 @@ export const StoryViewer = ({ groups, start, onClose, onChanged }: {
                 </div>
             </div>
             <div className="relative flex flex-1 items-center justify-center"
-                onPointerDown={() => setPaused(true)} onPointerUp={() => setPaused(false)} onPointerLeave={() => setPaused(false)}>
+                onPointerDown={() => { pressedAt.current = Date.now(); setPaused(true); }} onPointerUp={() => setPaused(false)} onPointerLeave={() => setPaused(false)}>
                 <img src={story.imageUrl} alt={story.caption || t('stories.of', { name })} className="max-h-full w-full object-contain" draggable={false} />
-                <button aria-label={t('stories.previous')} onClick={prev} className="absolute inset-y-0 left-0 w-1/3" />
-                <button aria-label={t('stories.next')} onClick={next} className="absolute inset-y-0 right-0 w-2/3" />
+                <button aria-label={t('stories.previous')} onClick={tap(prev)} className="absolute inset-y-0 left-0 w-1/3" />
+                <button aria-label={t('stories.next')} onClick={tap(next)} className="absolute inset-y-0 right-0 w-2/3" />
                 {story.caption && (
                     <p className="pointer-events-none absolute inset-x-4 bottom-[calc(2rem+env(safe-area-inset-bottom))] rounded-2xl bg-black/55 px-4 py-3 text-center text-lg font-semibold backdrop-blur">{story.caption}</p>
                 )}

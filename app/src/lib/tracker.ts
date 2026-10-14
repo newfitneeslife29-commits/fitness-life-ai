@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { t } from '../i18n';
 import { addPoint } from './cardio';
 import { isNative } from './native';
-import { actions, getState } from '../store/store';
+import { actions, getState, useStore } from '../store/store';
 
 // GPS for the walk or ride being recorded. In the apps it keeps going with
 // the screen locked (Android shows a notification while it does); on the web
@@ -13,15 +14,23 @@ let running = false;
 const onFix = (lat: number, lon: number, accuracy: number, at: number) =>
     actions.updateCardio(a => addPoint(a, { lat, lon, accuracy, at }));
 
-const fail = (denied: boolean) => actions.updateCardio(a => ({ ...a, gps: denied ? 'denied' : 'off' }));
-
 let webWatch: number | null = null;
+
+// After a refusal it stops listening, so the next try (once the location is
+// allowed in Settings) starts again.
+const fail = (denied: boolean) => {
+    actions.updateCardio(a => ({ ...a, gps: denied ? 'denied' : 'off' }));
+    if (denied) void stopTracking();
+};
 
 export const startTracking = async () => {
     if (running || !getState().cardioActive) return;
     running = true;
     if (!isNative()) {
-        if (!('geolocation' in navigator)) return fail(false);
+        if (!('geolocation' in navigator)) {
+            running = false;
+            return fail(false);
+        }
         webWatch = navigator.geolocation.watchPosition(
             p => onFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp),
             e => fail(e.code === e.PERMISSION_DENIED),
@@ -71,4 +80,22 @@ export const openLocationSettings = async () => {
     } catch {
         // Nothing to open.
     }
+};
+
+// Keeps the GPS on while a walk or ride is being recorded, wherever the app
+// is (also after it was closed and opened again), off once it ends (finished,
+// discarded, data reset or replaced). Coming back to the app tries again
+// after the location was refused.
+export const useTracking = () => {
+    const on = useStore(s => !!s.cardioActive);
+    useEffect(() => {
+        if (!on) {
+            void stopTracking();
+            return;
+        }
+        void startTracking();
+        const retry = () => { if (document.visibilityState === 'visible') void startTracking(); };
+        document.addEventListener('visibilitychange', retry);
+        return () => document.removeEventListener('visibilitychange', retry);
+    }, [on]);
 };

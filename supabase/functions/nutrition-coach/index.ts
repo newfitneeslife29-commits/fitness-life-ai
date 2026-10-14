@@ -229,18 +229,22 @@ async function mealPlan(lang: Lang, context: CoachContext, request: string, meal
   const outline = await structured<{ name?: string; note?: string; days?: { meals?: OutlineMeal[] }[] }>(
     mealOutlineSystem(lang, mealsPerDay), note, request || 'Plan my meals for the week.', MEAL_OUTLINE_SCHEMA,
   );
-  const days = (outline.days ?? []).slice(0, 7).filter(d => d.meals?.length);
-  if (!days.length) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
-  const detailed = await Promise.allSettled(days.map((d, i) => structured<{ meals?: unknown[] }>(
-    mealDaySystem(lang), note,
-    `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
-    MEAL_DAY_SCHEMA,
-  )));
-  const ok = detailed.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
-  if (!ok.length) throw (detailed[0] as PromiseRejectedResult).reason;
+  // Days stay in place (Monday first): an empty one is filled later, never shifts the rest.
+  const days = (outline.days ?? []).slice(0, 7);
+  if (!days.some(d => d.meals?.length)) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
+  const detailed = await Promise.allSettled(days.map((d, i) => d.meals?.length
+    ? structured<{ meals?: unknown[] }>(
+      mealDaySystem(lang), note,
+      `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
+      MEAL_DAY_SCHEMA,
+    )
+    : Promise.resolve({ meals: [] })));
+  const failed = detailed.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
+  if (failed.length === days.filter(d => d.meals?.length).length) throw failed[0].reason;
+  // A day whose detail failed keeps its outline: the right meals, without the amounts.
   return cleanMealPlan({
     name: outline.name, note: outline.note,
-    days: detailed.map(r => (r.status === 'fulfilled' ? r.value : ok[0])),
+    days: detailed.map((r, i) => (r.status === 'fulfilled' && r.value.meals?.length ? r.value : { meals: days[i].meals ?? [] })),
   });
 }
 

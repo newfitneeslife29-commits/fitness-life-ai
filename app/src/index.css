@@ -7,14 +7,14 @@
   :root {
     --ink: 11 13 16; --ink-2: 18 21 26; --ink-3: 26 30 37; --ink-4: 37 42 51;
     --line: 42 48 58; --fg: 255 255 255;
-    --brand: 242 107 29; --brand-strong: 255 138 61; --good: 52 211 153;
+    --brand: 242 107 29; --brand-strong: 255 138 61; --good: 52 211 153; --warn: 252 211 77;
     color-scheme: dark;
   }
   /* Light theme: same layout, light surfaces and darker accents for contrast. */
   :root.light {
     --ink: 244 245 247; --ink-2: 255 255 255; --ink-3: 236 238 242; --ink-4: 222 226 232;
     --line: 223 227 233; --fg: 17 19 24;
-    --brand: 234 92 12; --brand-strong: 194 65 12; --good: 5 150 105;
+    --brand: 234 92 12; --brand-strong: 194 65 12; --good: 5 150 105; --warn: 180 83 9;
     color-scheme: light;
   }
   /* Paint the page on html too: some old WebViews leave it white otherwise. */
@@ -41,6 +41,9 @@
   .label { @apply text-xs font-medium uppercase tracking-wider text-white/45; }
   .pb-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .pt-safe { padding-top: env(safe-area-inset-top); }
+  /* A coloured header inside the page frame (already padded by .pt-safe):
+     its colour runs up under the status bar instead of leaving a gap. */
+  .bleed-top { margin-top: calc(-1 * env(safe-area-inset-top)); }
 }
 
 /* Welcome screen and launch intro. Reduced motion shortens them (rule above). */

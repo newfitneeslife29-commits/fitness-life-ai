@@ -54,7 +54,9 @@ const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () 
                 toast(result.note || t('mealPlan.empty'), 4000);
                 return;
             }
-            actions.setMealPlan({ id: uid(), request: request.trim(), createdAt: new Date().toISOString(), ...result });
+            // Only the plan: the answer also carries the AI usage counter.
+            const { name, note, days } = result;
+            actions.setMealPlan({ id: uid(), request: request.trim(), createdAt: new Date().toISOString(), name, note, days });
             toast(t('mealPlan.saved'));
             setRequest('');
             onClose();
@@ -86,7 +88,7 @@ const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () 
                     <div className="mt-2 flex flex-wrap gap-2">
                         {IDEAS.map(k => <button key={k} onClick={() => addIdea(t(k))} className="chip text-left hover:text-white">{t(k)}</button>)}
                     </div>
-                    {!context.targets && <p className="mt-3 text-xs text-amber-300/90">{t('mealPlan.noTargets')}</p>}
+                    {!context.targets && <p className="mt-3 text-xs text-warn">{t('mealPlan.noTargets')}</p>}
                     <button className="btn-primary mt-4 w-full" disabled={busy} onClick={create}>
                         <Sparkles size={18} /> {busy ? t('mealPlan.busy') : t('mealPlan.create')}
                     </button>

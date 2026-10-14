@@ -13,7 +13,7 @@ import { healthRemembered } from '../lib/health';
 import { cardioTotals, enablePedometer, manualSleep, pedometerOn, pedometerSupported, sleepRating, stepGoalOf, stepsOn, syncMovement, walkPlanStatus } from '../lib/movement';
 import { isNative } from '../lib/native';
 import { weekStart } from '../lib/stats';
-import { actions, useStore } from '../store/store';
+import { actions, getState, useStore } from '../store/store';
 import type { CardioKind, CardioSession, Unit } from '../store/types';
 
 // Movement: steps of the day and their history, sleep, walks and rides
@@ -124,6 +124,11 @@ const WalkPlanCard = () => {
 
     const start = () => {
         if (!plan || !status) return;
+        // A walk or ride already being recorded is never replaced.
+        if (getState().cardioActive) {
+            navigate('/cardio');
+            return;
+        }
         actions.startCardio('walk', { targetMin: status.spec.minutes, walkPlan: `${plan.id}:${status.week}:${status.walk}` });
         navigate('/cardio');
     };
@@ -334,12 +339,12 @@ export default function Move() {
     const navigate = useNavigate();
     const active = useStore(s => s.cardioActive ?? null);
     const start = (kind: CardioKind) => {
-        actions.startCardio(kind);
+        if (!getState().cardioActive) actions.startCardio(kind);
         navigate('/cardio');
     };
     return (
         <div className="space-y-6 pb-4">
-            <header className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow">
+            <header className="bleed-top relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow">
                 <div aria-hidden className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-snow/10 blur-2xl" />
                 <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/80 hover:bg-snow/10"><ChevronLeft size={22} /></button>
                 <h1 className="relative mt-1 text-3xl font-extrabold tracking-tight">{t('move.title')}</h1>

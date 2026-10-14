@@ -1,5 +1,5 @@
 import { Check, ChevronLeft, Lock, UserCheck, UserPlus, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm, toast } from '../components/feedback';
@@ -28,22 +28,36 @@ export default function MemberProfile() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [busy, setBusy] = useState(false);
 
+    // The answer for another person (opened from this one) is dropped.
+    const shown = useRef(id);
     const load = useCallback(async () => {
+        shown.current = id;
+        const current = () => shown.current === id;
         try {
             const p = await fetchMemberProfile(id);
+            const list = p.canSee ? await fetchMemberPosts(id) : [];
+            if (!current()) return;
             setProfile(p);
-            setPosts(p.canSee ? await fetchMemberPosts(id) : []);
+            setPosts(list);
             if (mine) {
-                setIsPrivate(await fetchMyPrivacy());
-                setRequests(await fetchFollowRequests());
+                const [priv, reqs] = await Promise.all([fetchMyPrivacy(), fetchFollowRequests()]);
+                if (!current()) return;
+                setIsPrivate(priv);
+                setRequests(reqs);
             }
         } catch {
+            if (!current()) return;
             toast(t('community.failed'));
             setPosts([]);
         }
     }, [id, mine]);
 
-    useEffect(() => { void load(); }, [load]);
+    useEffect(() => {
+        setProfile(null);
+        setPosts(null);
+        setRequests([]);
+        void load();
+    }, [load]);
 
     const toggleFollow = async () => {
         if (!me) {
@@ -98,7 +112,7 @@ export default function MemberProfile() {
 
     return (
         <div className="space-y-5 pb-4">
-            <header className="relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-14 pt-[calc(0.75rem+env(safe-area-inset-top))] text-snow">
+            <header className="bleed-top relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-14 pt-[calc(0.75rem+env(safe-area-inset-top))] text-snow">
                 <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-snow/15 blur-2xl" />
                 <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/85 hover:bg-snow/10"><ChevronLeft size={22} /></button>
             </header>

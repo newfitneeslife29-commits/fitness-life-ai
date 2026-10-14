@@ -24,6 +24,12 @@ describe('meal plan from the AI (server)', () => {
         expect(cleanMealPlan({}).days).toEqual([]);
     });
 
+    it('keeps each day on its weekday when one comes back empty', () => {
+        const day = (name: string) => ({ meals: [{ slot: 'almuerzo', time: '13:00', name, foods: [] }] });
+        const plan = cleanMealPlan({ name: 'x', note: '', days: [day('Lunes'), { meals: [] }, day('Miércoles'), day('Jueves')] });
+        expect(plan.days.map(d => d.meals[0].name)).toEqual(['Lunes', 'Miércoles', 'Miércoles', 'Jueves', 'Miércoles', 'Jueves', 'Lunes']);
+    });
+
     it('accepts only real clock times', () => {
         expect(timeOf('25:00', 'almuerzo')).toBe('13:30');
         expect(timeOf('9:05', 'desayuno')).toBe('09:05');

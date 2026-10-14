@@ -13,8 +13,10 @@ export const MoveCard = () => {
     const goal = stepGoalOf(state);
     const night = state.sleep?.[0];
     const pct = Math.min(100, (steps / goal) * 100);
+    // A walk or ride still recording (also after the app was reopened) opens straight.
+    const active = state.cardioActive;
     return (
-        <Link to="/movimiento" className="block overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-sky-600 p-4 text-snow shadow-lg shadow-teal-500/25 active:scale-[0.99]">
+        <Link to={active ? '/cardio' : '/movimiento'} className="block overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-sky-600 p-4 text-snow shadow-lg shadow-teal-500/25 active:scale-[0.99]">
             <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><Footprints size={22} /></span>
                 <div className="min-w-0 flex-1">
@@ -29,7 +31,11 @@ export const MoveCard = () => {
                 <ChevronRight className="shrink-0" />
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20"><div className="h-full rounded-full bg-snow" style={{ width: `${pct}%` }} /></div>
-            <p className="mt-1.5 text-xs text-snow/85">{t('move.card')}</p>
+            {active ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-snow" /> {t('cardio.inProgress', { kind: t(`cardio.kind.${active.kind}`) })}
+                </p>
+            ) : <p className="mt-1.5 text-xs text-snow/85">{t('move.card')}</p>}
         </Link>
     );
 };

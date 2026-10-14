@@ -1,12 +1,12 @@
 import { Bike, Flag, Footprints, MapPinOff, Pause, Play, Satellite, X, Zap } from 'lucide-react';
-import { useEffect } from 'react';
+import { useRef } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { t } from '../i18n';
 import { cardioKcal, distUnit, movingSec, pace, speed, stepsFor, toDist } from '../lib/cardio';
 import { fmtClock, fmtNumber } from '../lib/format';
 import { haptic } from '../lib/native';
-import { openLocationSettings, startTracking, stopTracking } from '../lib/tracker';
+import { openLocationSettings, stopTracking } from '../lib/tracker';
 import { useNow } from '../lib/useNow';
 import { actions, getState, useStore } from '../store/store';
 
@@ -27,12 +27,8 @@ export default function Cardio() {
     const weightKg = useStore(s => s.bodyWeights[0]?.weightKg ?? null);
     const navigate = useNavigate();
     const now = useNow(!!active, 1000);
-
-    // Starts (or picks up again, after the app was closed) the GPS.
-    useEffect(() => {
-        if (active) void startTracking();
-        // Only when a recording begins or comes back.
-    }, [!!active]);
+    // The GPS itself runs from App (lib/tracker.ts useTracking).
+    const busy = useRef(false);
 
     if (!active) return <Navigate to="/movimiento" replace />;
 
@@ -44,28 +40,43 @@ export default function Cardio() {
     const p = pace(active.distanceM, seconds, unit);
     const target = active.targetMin ? active.targetMin * 60 : 0;
 
-    const finish = async () => {
+    // One tap at a time: a second tap on Finish while the first one is still
+    // asking or saving does nothing.
+    const once = (fn: () => Promise<void>) => async () => {
+        if (busy.current) return;
+        busy.current = true;
+        try {
+            await fn();
+        } finally {
+            busy.current = false;
+        }
+    };
+
+    const finish = once(async () => {
         const save = active.distanceM > 20 || seconds > 60;
         if (save && !(await confirm({ title: t('cardio.finishTitle'), message: t('cardio.finishMessage'), confirmLabel: t('cardio.finish') }))) return;
         await stopTracking();
-        const a = getState().cardioActive!;
+        const a = getState().cardioActive;
+        if (!a) return;
         const durationSec = movingSec(a);
+        // A plan walk counts once most of its time was walked.
+        const planDone = !!a.walkPlan && (!a.targetMin || durationSec >= a.targetMin * 60 * 0.8);
         actions.finishCardio(save ? {
             kind: a.kind, startedAt: a.startedAt, endedAt: new Date().toISOString(), durationSec, distanceM: Math.round(a.distanceM),
             steps: a.kind === 'bike' ? undefined : stepsFor(a.distanceM, heightCm), kcal: cardioKcal(a.kind, a.distanceM, durationSec, weightKg),
-            source: 'gps', walkPlan: a.walkPlan,
+            source: 'gps', walkPlan: planDone ? a.walkPlan : undefined,
         } : null);
         haptic('success');
-        if (save) toast(t('cardio.saved'));
+        if (save) toast(planDone || !a.walkPlan ? t('cardio.saved') : t('cardio.savedShort', { min: a.targetMin! }));
         navigate('/movimiento', { replace: true });
-    };
+    });
 
-    const discard = async () => {
+    const discard = once(async () => {
         if (!(await confirm({ title: t('cardio.discardTitle'), message: t('cardio.discardMessage'), confirmLabel: t('cardio.discard'), danger: true }))) return;
         await stopTracking();
         actions.finishCardio(null);
         navigate('/movimiento', { replace: true });
-    };
+    });
 
     const stat = (value: string, label: string) => (
         <div className="rounded-2xl bg-black/20 p-3 text-center backdrop-blur">
@@ -115,12 +126,12 @@ export default function Cardio() {
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-4">
-                <button onClick={discard} aria-label={t('cardio.discard')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><X size={22} /></button>
+                <button onClick={() => void discard()} aria-label={t('cardio.discard')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><X size={22} /></button>
                 <button onClick={() => { haptic('tap'); actions.pauseCardio(!paused); }} aria-label={paused ? t('cardio.resume') : t('cardio.pause')}
                     className="flex h-20 w-20 items-center justify-center rounded-full bg-snow text-neutral-900 shadow-2xl active:scale-95">
                     {paused ? <Play size={32} fill="currentColor" /> : <Pause size={32} fill="currentColor" />}
                 </button>
-                <button onClick={finish} aria-label={t('cardio.finish')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><Flag size={22} /></button>
+                <button onClick={() => void finish()} aria-label={t('cardio.finish')} className="flex h-14 w-14 items-center justify-center rounded-full bg-black/25"><Flag size={22} /></button>
             </div>
         </div>
     );

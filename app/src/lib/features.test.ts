@@ -139,7 +139,7 @@ describe('summarizeHeart', () => {
 });
 
 describe('Android health permissions', () => {
-    it('keeps only the three Health Connect reads the app uses', async () => {
+    it('keeps only the Health Connect reads the app uses (steps, calories, heart rate, sleep)', async () => {
         const { readFileSync } = await import('node:fs');
         const app = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
         const plugin = readFileSync('node_modules/@capgo/capacitor-health/android/src/main/AndroidManifest.xml', 'utf8');
@@ -147,7 +147,7 @@ describe('Android health permissions', () => {
         const declared = names(plugin, /android\.permission\.health\.([A-Z0-9_]+)"/g);
         const removed = names(app, /android\.permission\.health\.([A-Z0-9_]+)" tools:node="remove"/g);
         const kept = [...declared].filter(p => !removed.has(p)).sort();
-        expect(kept).toEqual(['READ_ACTIVE_CALORIES_BURNED', 'READ_HEART_RATE', 'READ_STEPS']);
+        expect(kept).toEqual(['READ_ACTIVE_CALORIES_BURNED', 'READ_HEART_RATE', 'READ_SLEEP', 'READ_STEPS']);
         for (const p of removed) expect(declared.has(p), p).toBe(true);
     });
 });

@@ -111,7 +111,8 @@ export const walkPlanStatus = (plan: WalkPlanState, now = new Date()): WalkToday
     const def = getWalkPlan(plan.id);
     if (!def) return null;
     const start = new Date(plan.startedAt);
-    const days = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 86_400_000);
+    // Rounded: a day across a daylight-saving change lasts 23 or 25 hours.
+    const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 86_400_000);
     const week = Math.min(def.weeks.length - 1, Math.max(0, Math.floor(days / 7)));
     const spec = def.weeks[week];
     const doneThisWeek = plan.done.filter(k => k.startsWith(`${week}:`)).length;

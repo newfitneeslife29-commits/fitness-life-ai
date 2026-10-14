@@ -274,7 +274,7 @@ const RecoveryCard = ({ sessions }: { sessions: Session[] }) => {
         <div className="card p-4">
             <div className="flex flex-wrap gap-2">
                 {status.map(s => (
-                    <span key={s.group} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${s.ready ? 'bg-good/15 text-good' : 'bg-amber-400/10 text-amber-300'}`}>
+                    <span key={s.group} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${s.ready ? 'bg-good/15 text-good' : 'bg-amber-400/15 text-warn'}`}>
                         {s.ready ? <Check size={14} strokeWidth={3} /> : <BatteryCharging size={14} />}
                         <span className="capitalize">{groupLabel(s.group)}</span>
                         <span className="text-xs opacity-80">{s.ready ? t('recovery.ready') : t('recovery.left', { hours: Math.ceil((s.readyAt - now) / 3_600_000) })}</span>
@@ -338,7 +338,7 @@ const WomenCard = () => (
 
 // For free users: what Premium unlocks, one tap away.
 const PremiumBanner = () => (
-    <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-400 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
+    <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-600 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><Crown size={22} /></span>
         <span className="min-w-0 flex-1">
             <span className="block font-bold">Fitness Life Premium</span>
@@ -385,7 +385,7 @@ export default function Today() {
 
     return (
         <div className="space-y-6">
-            <header className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-brand via-orange-500 to-rose-500 px-4 pb-6 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow shadow-lg shadow-brand/25">
+            <header className="bleed-top relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-brand via-orange-500 to-rose-500 px-4 pb-6 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow shadow-lg shadow-brand/25">
                 <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-snow/15 blur-2xl" />
                 <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-amber-300/30 blur-2xl" />
                 <div className="relative flex items-center gap-3">
