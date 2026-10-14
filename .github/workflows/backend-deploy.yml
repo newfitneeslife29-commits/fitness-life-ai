@@ -213,3 +213,14 @@ jobs:
             exit 1
           fi
           echo "The coach answered: $(jq -r .text /tmp/answer.json)"
+          # The meal plan is the longest answer: it must come back whole and in time.
+          plan='{"action":"mealplan","lang":"es","mealsPerDay":4,"text":"","context":{"goal":"musculo","weightKg":80,"targets":{"kcal":2900,"protein":160,"carbs":350,"fat":80},"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false}}'
+          start=$(date +%s)
+          status=$(call "$plan" -H "x-smoke-test: $SMOKE_TEST_TOKEN" --max-time 150)
+          echo "Meal plan: HTTP $status in $(( $(date +%s) - start )) s"
+          if [ "$status" != 200 ] || [ "$(jq '.days | length' /tmp/answer.json)" != 7 ]; then
+            echo "::error::The meal plan failed (HTTP $status)."
+            head -c 2000 /tmp/answer.json; echo
+            exit 1
+          fi
+          jq -c '{name, days: (.days | length), day1: [.days[0].meals[] | {slot, time, name, kcal}]}' /tmp/answer.json

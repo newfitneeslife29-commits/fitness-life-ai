@@ -69,7 +69,7 @@ export const FeedbackHost = () => {
     return (
         <>
             {d && (
-                <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center" role="alertdialog" aria-modal="true" aria-label={d.title}>
+                <div className="fixed inset-0 z-[80] flex items-end justify-center p-3 sm:items-center" role="alertdialog" aria-modal="true" aria-label={d.title}>
                     <div aria-hidden className="absolute inset-0 animate-fade bg-black/70" onClick={() => close(false)} />
                     <div className="relative w-full max-w-sm animate-rise rounded-3xl border border-line bg-ink-2 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5">
                         <h2 className="text-lg font-semibold">{d.title}</h2>
@@ -83,7 +83,7 @@ export const FeedbackHost = () => {
                     </div>
                 </div>
             )}
-            <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[70] flex flex-col items-center gap-2 px-4">
+            <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[90] flex flex-col items-center gap-2 px-4">
                 {state.toasts.map(t => (
                     <div key={t.id} role="status" className="flex animate-rise items-center gap-2 rounded-full border border-line bg-ink-3 px-4 py-2 text-sm shadow-lg shadow-black/40">
                         <CheckCircle2 size={16} className="text-good" /> {t.text}

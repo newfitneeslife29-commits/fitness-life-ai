@@ -1297,4 +1297,5 @@ export const en: Dict = {
     // Nutrition header
     'nutrition.heroLeft': "kcal left",
     'nutrition.heroEaten': "kcal eaten",
+    'cardio.savedShort': "Saved. To count for your plan, walk at least 80% of the {min} min.",
 };

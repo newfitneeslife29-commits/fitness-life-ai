@@ -31,7 +31,7 @@ const PlateLine = ({ total, unit }: { total: number; unit: Unit }) => {
     return (
         <span className="text-white/60">
             {load.perSide.length ? load.perSide.map(fmtNumber).join(' + ') : t('plates.barOnly')}
-            {!load.exact && <span className="text-amber-300"> (≈ {fmtNumber(load.loaded)})</span>}
+            {!load.exact && <span className="text-warn"> (≈ {fmtNumber(load.loaded)})</span>}
         </span>
     );
 };

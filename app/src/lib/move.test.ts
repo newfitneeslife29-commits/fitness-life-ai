@@ -68,6 +68,18 @@ describe('sleep', () => {
         expect(nights).toEqual([{ day: '2026-10-14', bedAt: new Date('2026-10-13T22:45:00').toISOString(), wakeAt: new Date('2026-10-14T07:10:00').toISOString(), minutes: 450 }]);
     });
 
+    it('keeps a night together across midnight and counts overlaps once', () => {
+        const nights = sleepNights([
+            // Phone and watch record the same hours.
+            { startDate: '2026-10-13T23:00:00', endDate: '2026-10-14T03:00:00', sleepState: 'light' },
+            { startDate: '2026-10-13T23:30:00', endDate: '2026-10-14T03:00:00', sleepState: 'deep' },
+            { startDate: '2026-10-14T03:20:00', endDate: '2026-10-14T07:00:00', sleepState: 'asleep' },
+            // A nap the same afternoon doesn't replace the night.
+            { startDate: '2026-10-14T15:00:00', endDate: '2026-10-14T16:10:00', sleepState: 'asleep' },
+        ]);
+        expect(nights).toEqual([{ day: '2026-10-14', bedAt: new Date('2026-10-13T23:00:00').toISOString(), wakeAt: new Date('2026-10-14T07:00:00').toISOString(), minutes: 460 }]);
+    });
+
     it('takes bedtime from the evening before when typed by hand', () => {
         const e = manualSleep(new Date(2026, 9, 14), '23:30', '07:00');
         expect(e).toMatchObject({ day: '2026-10-14', minutes: 450, source: 'manual' });

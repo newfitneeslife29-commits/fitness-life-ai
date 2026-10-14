@@ -1,5 +1,5 @@
 import { Camera, ImageIcon, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
@@ -8,7 +8,7 @@ import { StoriesBar, StoryComposer, StoryViewer } from '../components/community/
 import { Section, Sheet } from '../components/ui';
 import { t } from '../i18n';
 import { authAvailable } from '../lib/auth';
-import { createPost, fetchFeed, fetchFollowingIds, fetchFollowRequests, fetchStories, PAGE_SIZE, type Post, type StoryGroup } from '../lib/community';
+import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, type Post, type StoryGroup } from '../lib/community';
 import { pickImage, resizeImage } from '../lib/image';
 import { useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
@@ -107,7 +107,8 @@ export default function Community() {
     const [storyAt, setStoryAt] = useState<number | null>(null);
     const [addingStory, setAddingStory] = useState(false);
     const [requests, setRequests] = useState(0);
-    const [following, setFollowing] = useState<string[] | undefined>(undefined);
+    // Only the answer to the latest request is shown (switching tabs fast).
+    const request = useRef(0);
 
     const loadStories = useCallback(() => {
         fetchStories().then(setStories).catch(() => setStories([]));
@@ -115,13 +116,14 @@ export default function Community() {
 
     const load = useCallback(async () => {
         setFailed(false);
+        const n = ++request.current;
         try {
-            const only = tab === 'following' ? await fetchFollowingIds() : undefined;
-            setFollowing(only);
-            const page = await fetchFeed(undefined, { only });
+            const page = await fetchFeed(undefined, { following: tab === 'following' });
+            if (n !== request.current) return;
             setPosts(page);
             setMore(page.length >= PAGE_SIZE);
         } catch (e) {
+            if (n !== request.current) return;
             // The reason is shown small under the message, to tell a network
             // problem from a server one.
             setFailed(errorText(e));
@@ -140,7 +142,9 @@ export default function Community() {
         const last = posts?.[posts.length - 1];
         if (!last) return;
         try {
-            const page = await fetchFeed(last.createdAt, { only: following });
+            const n = request.current;
+            const page = await fetchFeed(last.createdAt, { following: tab === 'following' });
+            if (n !== request.current) return;
             setPosts(p => [...(p ?? []), ...page]);
             setMore(page.length >= PAGE_SIZE);
         } catch {
@@ -149,7 +153,7 @@ export default function Community() {
     };
 
     const header = (
-        <header className="relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow">
+        <header className="bleed-top relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow">
             <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-snow/15 blur-2xl" />
             <div aria-hidden className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-amber-300/25 blur-2xl" />
             <div className="relative flex items-start gap-3">
@@ -221,7 +225,7 @@ export default function Community() {
                 <Section>
                     <div className="grid grid-cols-2 gap-1 rounded-xl bg-ink-2 p-1" role="tablist" aria-label={t('community.feeds')}>
                         {(['all', 'following'] as const).map(k => (
-                            <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); setPosts(null); }}
+                            <button key={k} role="tab" aria-selected={tab === k} onClick={() => { if (k !== tab) { setTab(k); setPosts(null); } }}
                                 className={`rounded-lg py-2 text-sm font-semibold ${tab === k ? 'bg-gradient-to-r from-brand to-rose-500 text-snow shadow' : 'text-white/55'}`}>
                                 {t(`community.tab.${k}`)}
                             </button>

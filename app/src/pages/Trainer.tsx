@@ -12,11 +12,13 @@ import { fmtRange, fmtRest } from '../lib/format';
 import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { routineCatalog, trainerContext } from '../lib/trainer';
 import { actions, getState, useStore } from '../store/store';
-import type { Setup } from '../store/types';
+import type { AppState, Setup } from '../store/types';
 
 // Premium: a personal trainer that knows the user's plan and recent workouts,
 // answers questions and designs routines from the app's exercises.
 
+// A fixed empty list: a new [] on every read would re-render forever.
+const NO_CHAT: NonNullable<AppState['trainerChat']> = [];
 const SUGGESTIONS = ['trainer.s1', 'trainer.s2', 'trainer.s3', 'trainer.s4'] as const;
 const IDEAS = ['trainer.idea1', 'trainer.idea2', 'trainer.idea3'] as const;
 // Training at home gets its own ideas: no equipment, short and effective.
@@ -115,7 +117,7 @@ const RoutineSheet = ({ open, onClose, place: initialPlace }: { open: boolean; o
 
 export default function Trainer() {
     const navigate = useNavigate();
-    const chat = useStore(s => s.trainerChat ?? []);
+    const chat = useStore(s => s.trainerChat ?? NO_CHAT);
     const name = useStore(s => s.profile?.name);
     const [input, setInputState] = useState(() => draft);
     const setInput = (text: string) => {

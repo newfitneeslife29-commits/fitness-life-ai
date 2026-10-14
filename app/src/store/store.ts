@@ -565,7 +565,7 @@ export const actions = {
             throw new Error(t('backup.invalid'));
         }
         const { exportedAt: _ignored, ...rest } = data as AppState & { exportedAt?: string };
-        set(s => ({ ...EMPTY, ...rest, active: null, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt }));
+        set(s => ({ ...EMPTY, ...rest, active: null, cardioActive: null, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt }));
     },
 
     resetAll() {

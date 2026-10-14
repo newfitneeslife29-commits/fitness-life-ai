@@ -18,6 +18,8 @@ export default {
         snow: '#ffffff',
         brand: { DEFAULT: c('brand'), soft: 'rgb(var(--brand) / 0.12)', strong: c('brand-strong') },
         good: c('good'),
+        // Amber that stays readable on light surfaces too.
+        warn: c('warn'),
       },
       keyframes: {
         fade: { from: { opacity: '0' }, to: { opacity: '1' } },

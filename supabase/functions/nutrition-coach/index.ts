@@ -18,13 +18,14 @@
 //       → { name, note, exercises: [{ exerciseId, sets, repMin, repMax, restSec }], usage }
 //   { action: 'mealplan', lang, context, text?, mealsPerDay: 3..6 }
 //       → { name, note, days: [{ meals: [{ slot, time, name, foods, kcal, protein, carbs, fat }] }] × 7, usage }
+//       (always HTTP 200 once it starts: an error then comes as { error, status } in the body)
 // Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
-  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEALPLAN_SCHEMA, mealPlanSystem, photoSystem, routineSchema, routineSystem,
+  chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEAL_DAY_SCHEMA, MEAL_OUTLINE_SCHEMA, mealDaySystem, mealOutlineSystem, photoSystem, routineSchema, routineSystem,
   trainerNote, trainerSystem, type CoachContext, type Lang, type Macros, type TrainerContext,
 } from './prompt.ts';
 import { cleanMealPlan } from './mealplan.ts';
@@ -206,19 +207,45 @@ async function routine(lang: Lang, context: TrainerContext, request: string, cat
   return { name: String(raw.name ?? '').slice(0, 60), note: String(raw.note ?? '').slice(0, 300), exercises };
 }
 
-async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+// Two short steps instead of one long answer (which ran out of room and
+// took over a minute): the outline of the week, then the 7 days in detail
+// at the same time. A day that fails is filled in from the others.
+async function structured<T>(system: string, note: string, content: string, schema: Record<string, unknown>): Promise<T> {
   const res = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 16000,
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema: MEALPLAN_SCHEMA } },
-    system: [
-      { type: 'text', text: mealPlanSystem(lang, mealsPerDay) },
-      { type: 'text', text: contextNote(context) },
-    ],
-    messages: [{ role: 'user', content: request || 'Plan my meals for the week.' }],
+    max_tokens: 8000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+    system: [{ type: 'text', text: system }, { type: 'text', text: note }],
+    messages: [{ role: 'user', content }],
   });
   if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
-  return cleanMealPlan(JSON.parse(textOf(res)));
+  return JSON.parse(textOf(res)) as T;
+}
+
+type OutlineMeal = { slot: string; time: string; name: string };
+
+async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+  const note = contextNote(context);
+  const outline = await structured<{ name?: string; note?: string; days?: { meals?: OutlineMeal[] }[] }>(
+    mealOutlineSystem(lang, mealsPerDay), note, request || 'Plan my meals for the week.', MEAL_OUTLINE_SCHEMA,
+  );
+  // Days stay in place (Monday first): an empty one is filled later, never shifts the rest.
+  const days = (outline.days ?? []).slice(0, 7);
+  if (!days.some(d => d.meals?.length)) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
+  const detailed = await Promise.allSettled(days.map((d, i) => d.meals?.length
+    ? structured<{ meals?: unknown[] }>(
+      mealDaySystem(lang), note,
+      `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
+      MEAL_DAY_SCHEMA,
+    )
+    : Promise.resolve({ meals: [] })));
+  const failed = detailed.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
+  if (failed.length === days.filter(d => d.meals?.length).length) throw failed[0].reason;
+  // A day whose detail failed keeps its outline: the right meals, without the amounts.
+  return cleanMealPlan({
+    name: outline.name, note: outline.note,
+    days: detailed.map((r, i) => (r.status === 'fulfilled' && r.value.meals?.length ? r.value : { meals: days[i].meals ?? [] })),
+  });
 }
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -298,6 +325,41 @@ const checkQuota = (usage: Usage) => {
 
 // ---------- Handler ----------
 
+// What the app gets for an error: the HTTP status and a short code.
+const failure = (error: unknown, usage?: Usage): { status: number; body: Record<string, unknown> } => {
+  if (error instanceof HttpError) return { status: error.status, body: { error: error.message, usage } };
+  if (error instanceof Anthropic.RateLimitError || error instanceof Anthropic.InternalServerError || error instanceof Anthropic.APIConnectionError) {
+    console.error('nutrition-coach: model unavailable', error);
+    return { status: 503, body: { error: 'busy' } };
+  }
+  console.error('nutrition-coach error', error);
+  return { status: 500, body: { error: 'failed' } };
+};
+
+// For answers that take long (the meal plan): the response starts at once and
+// sends a space every few seconds until the JSON is ready, so phones don't
+// drop a request that stays silent for a minute. Leading spaces are valid
+// JSON. An error comes in the body as { error, status }.
+const keepAlive = (work: () => Promise<object>, usage: Usage) => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const ping = setInterval(() => controller.enqueue(encoder.encode(' ')), 5000);
+      let out: object;
+      try {
+        out = await work();
+      } catch (error) {
+        const { status, body } = failure(error, usage);
+        out = { ...body, status };
+      }
+      clearInterval(ping);
+      controller.enqueue(encoder.encode(JSON.stringify(out)));
+      controller.close();
+    },
+  });
+  return new Response(stream, { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+};
+
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -334,7 +396,12 @@ Deno.serve(async req => {
       const perDay = Number(body.mealsPerDay);
       const mealsPerDay = Number.isFinite(perDay) ? Math.min(6, Math.max(3, Math.round(perDay))) : 4;
       checkQuota(usage);
-      result = await mealPlan(lang, contextOf(body.context), request, mealsPerDay);
+      const known = usage;
+      return keepAlive(async () => {
+        const plan = await mealPlan(lang, contextOf(body.context), request, mealsPerDay);
+        await admin.from('ai_usage').insert({ user_id: user.id, action: 'nutrition_mealplan' });
+        return { ...plan, usage: { ...known, used: known.used + 1 } };
+      }, known);
     } else if (body.action === 'estimate') {
       const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
       if (text.length < 3) throw new HttpError(400, 'describe the meal');
@@ -355,12 +422,7 @@ Deno.serve(async req => {
     await admin.from('ai_usage').insert({ user_id: user.id, action: `nutrition_${body.action}` });
     return json({ ...result, usage: { ...usage, used: usage.used + 1 } });
   } catch (error) {
-    if (error instanceof HttpError) return json({ error: error.message, usage }, error.status);
-    if (error instanceof Anthropic.RateLimitError || error instanceof Anthropic.InternalServerError || error instanceof Anthropic.APIConnectionError) {
-      console.error('nutrition-coach: model unavailable', error);
-      return json({ error: 'busy' }, 503);
-    }
-    console.error('nutrition-coach error', error);
-    return json({ error: 'failed' }, 500);
+    const { status, body } = failure(error, usage);
+    return json(body, status);
   }
 });

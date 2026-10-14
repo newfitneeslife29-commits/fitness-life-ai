@@ -365,6 +365,10 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
                 });
             }
             if (body.action === 'trainer') return route.fulfill({ headers: cors, json: { text: 'Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.' } });
+            if (body.action === 'mealplan' && body.text === 'falla') {
+                // Long answers arrive as HTTP 200 and carry their error inside.
+                return route.fulfill({ headers: cors, body: `   ${JSON.stringify({ error: 'truncated', status: 502, usage })}` });
+            }
             if (body.action === 'mealplan') {
                 // Each day's dishes carry the day number, so the test can tell the days apart.
                 const days = Array.from({ length: 7 }, (_, d) => ({
@@ -450,6 +454,8 @@ test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)'
     await expect(page.getByText('418 de 2900 kcal')).toBeVisible();
 });
 
+const AI_FAILED = 'Algo falló al consultar al asistente. Inténtalo de nuevo.';
+
 test('AI meal plan (Premium): made for the user, shown by day in order, and logged with one tap', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];
     await mockAi(page, calls, { premium: true });
@@ -459,12 +465,17 @@ test('AI meal plan (Premium): made for the user, shown by day in order, and logg
 
     await page.getByRole('button', { name: /Crea tu plan de comidas con IA/ }).click();
     const sheet = page.getByRole('dialog', { name: 'Plan de comidas con IA' });
+    // A failure on the server is told, and nothing is saved.
+    await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('falla');
+    await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
+    await expect(page.getByText(AI_FAILED)).toBeVisible();
+    await expect(sheet).toBeVisible();
     await sheet.getByRole('radio', { name: '3 comidas' }).click();
     await sheet.getByLabel('¿Algo que debamos saber? (opcional)').fill('no como cerdo');
     await sheet.getByRole('button', { name: 'Comida económica' }).click();
     await sheet.getByRole('button', { name: 'Crear mi plan' }).click();
     await expect(page.getByText('Plan de comidas guardado')).toBeVisible();
-    expect(calls.find(c => c.action === 'mealplan')).toMatchObject({
+    expect(calls.filter(c => c.action === 'mealplan').at(-1)).toMatchObject({
         action: 'mealplan', lang: 'es', mealsPerDay: 3, text: 'no como cerdo, Comida económica',
         context: { goal: 'musculo', targets: { kcal: 2900, protein: 160 } },
     });
@@ -571,8 +582,9 @@ test('movement: a walk of the walking plan with GPS, a ride by hand, steps and s
     await expect(page.getByLabel(/Distancia: 0\.0[23] km/)).toBeVisible();
     await page.getByRole('button', { name: 'Terminar' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
-    await expect(page.getByText('Actividad guardada')).toBeVisible();
-    await expect(page.getByText('1 de 3 caminatas esta semana', { exact: false }).or(page.getByLabel('1 de 3 caminatas esta semana'))).toBeVisible();
+    // Saved, but a few seconds of a 15-minute walk don't count for the plan.
+    await expect(page.getByText('Guardado. Para que cuente en tu plan, camina al menos el 80 % de los 15 min.')).toBeVisible();
+    await expect(page.getByText('0 de 3 caminatas esta semana', { exact: false }).or(page.getByLabel('0 de 3 caminatas esta semana'))).toBeVisible();
     await expect(page.getByText(/0,0[23] km/).first()).toBeVisible();
     // Without a step counter, the walk's steps count for the day (27 m / 74.7 cm ≈ 36).
     await expect(page.getByLabel(/^[23]\d pasos hoy$/)).toBeVisible();
@@ -981,11 +993,13 @@ test('community: stories, following someone with a private profile, and my own p
         id: 'p1', body: 'Día de pierna 🦵', image_path: null, created_at: new Date(Date.now() - 3600_000).toISOString(),
         user_id: 'ana', author: ana, community_likes: [{ count: 0 }], community_comments: [{ count: 0 }],
     };
-    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/)/, async route => {
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/(rpc\/)?community_|storage\/v1\/)/, async route => {
         const req = route.request();
         const method = req.method();
         if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = decodeURIComponent(req.url());
+        // The "Following" feed, matched on the server.
+        if (url.includes('/rpc/community_following_posts')) return route.fulfill({ headers: cors, json: anaFollow === 'accepted' ? [anaPost] : [] });
         if (method === 'HEAD') {
             const n = url.includes('community_follows') && url.includes('following=eq.ana') ? (anaFollow === 'accepted' ? 13 : 12)
                 : url.includes('community_follows') && url.includes('follower=eq.ana') ? 7
@@ -997,7 +1011,10 @@ test('community: stories, following someone with a private profile, and my own p
             sent.push({ url, method, body });
             if (url.includes('community_follows') && method === 'POST') anaFollow = 'pending';
             if (url.includes('community_follows') && method === 'PATCH') requests = [];
-            if (url.includes('community_profiles') && method === 'PATCH') myPrivate = (body as { is_private: boolean }).is_private;
+            if (url.includes('community_profiles') && method === 'PATCH') {
+                myPrivate = (body as { is_private: boolean }).is_private;
+                return route.fulfill({ status: 200, headers: cors, json: [{ id: ME }] }); // the updated row
+            }
             return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
         }
         if (url.includes('community_stories')) {
@@ -1005,14 +1022,14 @@ test('community: stories, following someone with a private profile, and my own p
                 { id: 's1', user_id: 'ana', image_path: 'ana/stories/s1.jpg', caption: 'Rumbo al gym 💪', created_at: new Date(Date.now() - 7200_000).toISOString(), author: ana },
             ] });
         }
-        if (url.includes('community_profiles') && url.includes('id=eq.ana')) return route.fulfill({ headers: cors, json: [{ ...ana, id: 'ana', is_private: true }] });
-        if (url.includes('community_profiles') && url.includes(`id=eq.${ME}`)) return route.fulfill({ headers: cors, json: [{ is_private: myPrivate }] });
+        if (url.includes('/rest/v1/community_profiles') && url.includes('id=eq.ana')) return route.fulfill({ headers: cors, json: [{ ...ana, id: 'ana', is_private: true }] });
+        if (url.includes('/rest/v1/community_profiles') && url.includes(`id=eq.${ME}`)) return route.fulfill({ headers: cors, json: [{ is_private: myPrivate }] });
         if (url.includes('community_follows')) {
             if (url.includes('following=eq.ana') && url.includes(`follower=eq.${ME}`)) return route.fulfill({ headers: cors, json: anaFollow ? [{ status: anaFollow }] : [] });
             if (url.includes(`following=eq.${ME}`) && url.includes('status=eq.pending')) return route.fulfill({ headers: cors, json: requests });
             return route.fulfill({ headers: cors, json: [] });
         }
-        if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: url.includes('user_id=in.(ana)') && anaFollow !== 'accepted' ? [] : [anaPost] });
+        if (url.includes('community_posts')) return route.fulfill({ headers: cors, json: url.includes('user_id=eq.ana') && anaFollow !== 'accepted' ? [] : [anaPost] });
         return route.fulfill({ headers: cors, json: [] });
     });
     await page.route('http://ai.test/storage/v1/object/public/**', route => route.fulfill({ path: fixture('meal.jpg') }));
@@ -1055,8 +1072,14 @@ test('community: stories, following someone with a private profile, and my own p
     await expect(page.getByText('Día de pierna 🦵')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Siguiendo' })).toBeVisible();
 
-    // My profile: private, and Leo's request accepted.
+    // The "Following" feed has her post.
     await page.getByRole('link', { name: 'Comunidad', exact: true }).click();
+    await page.getByRole('tab', { name: 'Siguiendo' }).click();
+    await expect(page.getByText('Día de pierna 🦵')).toBeVisible();
+    await page.getByRole('tab', { name: 'Siguiendo' }).click(); // the same tab again keeps the posts
+    await expect(page.getByText('Día de pierna 🦵')).toBeVisible();
+
+    // My profile: private, and Leo's request accepted.
     await expect(page.getByText('1 solicitudes para seguirte')).toBeVisible();
     await page.getByRole('link', { name: 'Mi perfil' }).click();
     await page.getByRole('switch', { name: 'Perfil privado' }).click();

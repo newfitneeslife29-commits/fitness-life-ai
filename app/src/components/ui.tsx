@@ -8,7 +8,7 @@ const TONES = {
     violet: 'from-violet-600 via-indigo-600 to-fuchsia-600 shadow-violet-600/25',
     sky: 'from-sky-500 via-blue-600 to-indigo-600 shadow-sky-500/25',
     emerald: 'from-emerald-500 via-green-600 to-teal-600 shadow-emerald-500/25',
-    amber: 'from-amber-500 via-orange-500 to-rose-500 shadow-amber-500/25',
+    amber: 'from-amber-600 via-orange-600 to-rose-600 shadow-amber-500/25',
     rose: 'from-rose-500 via-pink-600 to-fuchsia-600 shadow-rose-500/25',
 } as const;
 export type Tone = keyof typeof TONES;
@@ -16,7 +16,7 @@ export type Tone = keyof typeof TONES;
 export const PageHeader = ({ title, subtitle, action, tone, children }: {
     title: string; subtitle?: string; action?: ReactNode; tone?: Tone; children?: ReactNode;
 }) => tone ? (
-    <header className={`relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] text-snow shadow-lg ${TONES[tone]}`}>
+    <header className={`bleed-top relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] text-snow shadow-lg ${TONES[tone]}`}>
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-snow/15 blur-2xl" />
         <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-black/10 blur-2xl" />
         <div className="relative flex items-end justify-between gap-4">

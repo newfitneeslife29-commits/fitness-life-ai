@@ -1298,4 +1298,5 @@ export const pt: Dict = {
     // Nutrition header
     'nutrition.heroLeft': "kcal restantes",
     'nutrition.heroEaten': "kcal consumidas",
+    'cardio.savedShort': "Salvo. Para contar no seu plano, caminhe pelo menos 80% dos {min} min.",
 };
