@@ -1,0 +1,58 @@
+name: Sign in with Apple
+
+# Turns on "Sign in with Apple" in Supabase and keeps it working. Apple's
+# client secret lasts at most six months, so this makes a new one every month.
+# Run it once from Actions → "Sign in with Apple" → Run workflow.
+#
+# Needs, in Settings → Secrets and variables → Actions:
+# - variables APPLE_TEAM_ID and SUPABASE_PROJECT_REF (already there), and
+#   APPLE_SERVICES_ID: the Services ID made for the sign-in (com.fitnesslife.app.signin).
+# - secrets SUPABASE_ACCESS_TOKEN (already there), APPLE_SIGNIN_KEY_ID and
+#   APPLE_SIGNIN_PRIVATE_KEY: the Sign in with Apple key (Keys → +) and the
+#   whole content of its downloaded .p8 file.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 9 1 * *'
+
+jobs:
+  supabase:
+    runs-on: ubuntu-latest
+    env:
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      SERVICES_ID: ${{ vars.APPLE_SERVICES_ID }}
+      KEY_ID: ${{ secrets.APPLE_SIGNIN_KEY_ID }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the settings
+        env:
+          PRIVATE_KEY: ${{ secrets.APPLE_SIGNIN_PRIVATE_KEY }}
+        run: |
+          missing=""
+          for name in TEAM_ID SERVICES_ID KEY_ID PROJECT_REF SUPABASE_ACCESS_TOKEN PRIVATE_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing settings:$missing. See the comment at the top of apple-signin.yml."
+            exit 1
+          fi
+      - name: Turn on Apple in Supabase
+        env:
+          PRIVATE_KEY: ${{ secrets.APPLE_SIGNIN_PRIVATE_KEY }}
+        run: |
+          secret=$(node .github/scripts/apple-client-secret.mjs)
+          echo "::add-mask::$secret"
+          # The Services ID signs in on the web and in the app's browser; the
+          # bundle ID is there for a native sign-in later.
+          jq -n --arg secret "$secret" --arg ids "$SERVICES_ID,com.fitnesslife.app" \
+            '{external_apple_enabled: true, external_apple_client_id: $ids, external_apple_secret: $secret}' \
+            | curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' -d @- \
+            | jq '{external_apple_enabled, external_apple_client_id}'
+          anon=$(curl -fsS "https://api.supabase.com/v1/projects/$PROJECT_REF/api-keys" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            | jq -r '[.[] | select(.name == "anon")][0].api_key')
+          curl -fsS "https://$PROJECT_REF.supabase.co/auth/v1/settings" -H "apikey: $anon" | jq -e '.external.apple == true' > /dev/null \
+            || { echo "::error::Supabase did not turn Apple on"; exit 1; }
+          echo "Sign in with Apple is on."

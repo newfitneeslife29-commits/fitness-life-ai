@@ -43,7 +43,18 @@ Cuando la cuenta esté activa:
 
 ## 6. Iniciar sesión con Apple
 
-Apple exige "Iniciar sesión con Apple" si la app ofrece Google. Se configura en developer.apple.com (Services ID y una clave de Sign in with Apple) y en Supabase → Authentication → Providers → **Apple**. Al activarlo en Supabase, el botón aparece solo en la app.
+Apple exige "Iniciar sesión con Apple" si la app ofrece Google. Lo configura el flujo **Sign in with Apple** de GitHub, que además renueva la clave cada mes (Apple la deja durar como máximo 6 meses).
+
+1. developer.apple.com → **Identifiers** → `com.fitnesslife.app` → activa **Sign in with Apple** → Save.
+2. **Identifiers → +** → **Services IDs**: descripción `Fitness Life Sign In`, identificador `com.fitnesslife.app.signin`. Ábrelo, activa **Sign in with Apple** → **Configure**:
+   - Primary App ID: `com.fitnesslife.app`.
+   - Domains: `<proyecto>.supabase.co` (el de `SUPABASE_PROJECT_REF`).
+   - Return URLs: `https://<proyecto>.supabase.co/auth/v1/callback`.
+3. **Keys → +**: nombre `Sign in with Apple`, activa **Sign in with Apple** → Configure → `com.fitnesslife.app` → descarga el `.p8`.
+4. En GitHub:
+   - Variable `APPLE_SERVICES_ID`: `com.fitnesslife.app.signin`.
+   - Secrets `APPLE_SIGNIN_KEY_ID` (el ID de esa clave) y `APPLE_SIGNIN_PRIVATE_KEY` (todo el contenido del `.p8`).
+5. Actions → **Sign in with Apple** → **Run workflow**. Al terminar, el botón de Apple aparece solo en la app y en la web.
 
 ## 7. Ficha del App Store (textos para copiar)
 
