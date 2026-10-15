@@ -1,3 +1,4 @@
+import { GetTheAppBanner } from '../components/GetTheApp';
 import { Apple, ArrowRight, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, PartyPopper, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -413,6 +414,8 @@ export default function Today() {
                     <HeroStat value={fmtNumber(sessions.length)} label={t('home.heroTotal')} />
                 </div>
             </header>
+
+            <Section className="empty:hidden"><GetTheAppBanner /></Section>
 
             <Section>
                 {next ? (

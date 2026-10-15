@@ -1300,4 +1300,7 @@ export const es = {
     'nutrition.heroEaten': "kcal comidas",
     'cardio.savedShort': "Guardado. Para que cuente en tu plan, camina al menos el 80 % de los {min} min.",
     'exercises.byMuscle': "Grupos musculares",
+    'getApp.title': "Descarga la app Fitness Life",
+    'getApp.text': "Recordatorios, pasos, sueño y GPS con la pantalla bloqueada.",
+    'getApp.welcome': "También en tu teléfono",
 };

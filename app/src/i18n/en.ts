@@ -1299,4 +1299,7 @@ export const en: Dict = {
     'nutrition.heroEaten': "kcal eaten",
     'cardio.savedShort': "Saved. To count for your plan, walk at least 80% of the {min} min.",
     'exercises.byMuscle': "Muscle groups",
+    'getApp.title': "Get the Fitness Life app",
+    'getApp.text': "Reminders, steps, sleep and GPS with the screen locked.",
+    'getApp.welcome': "Also on your phone",
 };
