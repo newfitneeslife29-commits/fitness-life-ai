@@ -2,7 +2,8 @@ import { Check, ChevronLeft, Crown, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
-import { Chips, Section, Sheet } from '../components/ui';
+import { Chips, Photo, Section, Sheet } from '../components/ui';
+import { programCovers, type Cover } from '../data/covers';
 import { exerciseName } from '../data/exercises';
 import { adaptDays, pickProgram, programDescription, programName, PROGRAMS, type Program } from '../data/programs';
 import { l10n, t, tp } from '../i18n';
@@ -57,18 +58,24 @@ const ProgramSheet = ({ program, onClose }: { program: Program; onClose: () => v
     );
 };
 
-const ProgramCard = ({ program, badge, onOpen }: { program: Program; badge?: string; onOpen: () => void }) => {
+const ProgramCard = ({ program, cover, badge, onOpen }: { program: Program; cover: Cover; badge?: string; onOpen: () => void }) => {
     const current = useStore(s => s.plan?.programId === program.id);
     return (
-        <button onClick={onOpen} className={`card block w-full p-4 text-left hover:bg-ink-3 ${current ? 'border-brand' : ''}`}>
-            <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold">{programName(program)}</p>
-                {program.premium && <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={12} /> Premium</span>}
-                {current && <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-snow">{t('programs.currentBadge')}</span>}
-                {!current && badge && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-strong">{badge}</span>}
-            </div>
-            <p className="mt-1 line-clamp-2 text-sm text-white/55">{programDescription(program)}</p>
-            <p className="mt-2 text-xs text-white/40">{tp('programs.days', program.days.length)} · {t(`setup.${program.setup}.short`)}</p>
+        <button onClick={onOpen} className={`card flex w-full items-stretch gap-3 p-3 text-left hover:bg-ink-3 ${current ? 'border-brand' : ''}`}>
+            <span className="relative w-20 shrink-0 self-stretch overflow-hidden rounded-xl bg-ink-3 shadow-md">
+                <Photo photo={cover} />
+                <span aria-hidden className="absolute inset-0 rounded-xl ring-1 ring-inset ring-black/10" />
+            </span>
+            <span className="block min-w-0 flex-1 py-1">
+                <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{programName(program)}</span>
+                    {program.premium && <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={12} /> Premium</span>}
+                    {current && <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-snow">{t('programs.currentBadge')}</span>}
+                    {!current && badge && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-strong">{badge}</span>}
+                </span>
+                <span className="mt-1 line-clamp-2 block text-sm text-white/55">{programDescription(program)}</span>
+                <span className="mt-2 block text-xs text-white/40">{tp('programs.days', program.days.length)} · {t(`setup.${program.setup}.short`)}</span>
+            </span>
         </button>
     );
 };
@@ -86,6 +93,9 @@ export default function Programs() {
         [t('programs.women'), shown.filter(p => p.women)],
         [t('programs.premium'), shown.filter(p => p.premium)],
     ];
+    // Different photos down the page, in the order the cards are shown.
+    const listed = groups.flatMap(([, list]) => list);
+    const covers = new Map(programCovers(listed).map((c, i) => [listed[i].id, c]));
 
     return (
         <div className="space-y-5">
@@ -108,7 +118,7 @@ export default function Programs() {
                 <Section key={title} title={title}>
                     <div className="space-y-2">
                         {list.map(p => (
-                            <ProgramCard key={p.id} program={p} badge={p.id === recommended.id ? t('programs.recommended') : undefined} onOpen={() => setOpen(p)} />
+                            <ProgramCard key={p.id} program={p} cover={covers.get(p.id)!} badge={p.id === recommended.id ? t('programs.recommended') : undefined} onOpen={() => setOpen(p)} />
                         ))}
                     </div>
                 </Section>

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import type { Cover } from '../data/covers';
 import { t } from '../i18n';
 
 // Each main tab has its own colour: a gradient header with soft light blobs.
@@ -13,10 +14,25 @@ const TONES = {
 } as const;
 export type Tone = keyof typeof TONES;
 
-export const PageHeader = ({ title, subtitle, action, tone, children }: {
-    title: string; subtitle?: string; action?: ReactNode; tone?: Tone; children?: ReactNode;
+// A decorative photo filling its (relative) parent; the parent adds the
+// gradient that keeps text on it readable.
+export const Photo = ({ photo, className = '' }: { photo: Cover; className?: string }) => (
+    <img src={photo.src} alt="" loading="lazy" decoding="async" draggable={false}
+        className={`pointer-events-none absolute inset-0 h-full w-full select-none object-cover ${className}`} style={{ objectPosition: photo.position }} />
+);
+
+// With a photo, the tab's colour tints it and a dark fade keeps the text readable.
+export const PageHeader = ({ title, subtitle, action, tone, photo, children }: {
+    title: string; subtitle?: string; action?: ReactNode; tone?: Tone; photo?: Cover; children?: ReactNode;
 }) => tone ? (
     <header className={`bleed-top relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] text-snow shadow-lg ${TONES[tone]}`}>
+        {photo && (
+            <>
+                <Photo photo={photo} />
+                <div aria-hidden className={`photo-tint absolute inset-0 bg-gradient-to-br opacity-90 ${TONES[tone]}`} />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/25" />
+            </>
+        )}
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-snow/15 blur-2xl" />
         <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-black/10 blur-2xl" />
         <div className="relative flex items-end justify-between gap-4">
@@ -46,8 +62,8 @@ export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) 
     </div>
 );
 
-export const Section = ({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) => (
-    <section className={`px-4 ${className}`}>
+export const Section = ({ title, action, children, className = '', id }: { title?: string; action?: ReactNode; children: ReactNode; className?: string; id?: string }) => (
+    <section id={id} className={`scroll-mt-4 px-4 ${className}`}>
         {(title || action) && (
             <div className="mb-2 flex items-center justify-between">
                 {title && <h2 className="label">{title}</h2>}

@@ -5,8 +5,9 @@ import { Avatar } from '../components/Avatar';
 import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
-import { Empty, HeroStat, Section } from '../components/ui';
-import { exerciseName, exercisePhotos } from '../data/exercises';
+import { Empty, HeroStat, Photo, Section } from '../components/ui';
+import { namedCover, routineCover } from '../data/covers';
+import { exerciseName } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { planName, routineName, sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
@@ -111,12 +112,13 @@ const Tile = ({ icon, value, label, delay, color }: { icon: ReactNode; value: Re
 );
 
 const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onStart: () => void; continuing: boolean }) => {
-    const { plan } = useStore();
-    const photo = exercisePhotos(routine.exercises[0]?.exerciseId ?? '')?.[1];
+    const { plan, routines } = useStore();
+    const planRoutines = (plan?.routineIds ?? []).map(id => routines.find(r => r.id === id)).filter((r): r is Routine => !!r);
+    const cover = routineCover(routine, planRoutines);
     return (
         <div className="welcome-in relative overflow-hidden rounded-3xl bg-black shadow-xl shadow-black/20">
-            {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
+            <img src={cover.src} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: cover.position }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
             <div className="relative flex min-h-[17rem] flex-col justify-end p-5 text-snow">
                 <span className="mb-auto self-start rounded-full bg-brand px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-snow">{t('today.next')}</span>
                 <p className="mt-6 text-xs text-snow/70">{plan && planName(plan)} · {t('today.dayOf', { n: (plan?.nextIndex ?? 0) + 1, total: plan?.routineIds.length ?? 0 })}</p>
@@ -252,16 +254,18 @@ const BeginnerCard = () => (
 
 // The Premium personal trainer: shown to everyone, unlocked with Premium.
 const TrainerCard = ({ premium }: { premium: boolean }) => (
-    <Link to="/entrenador" className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-snow shadow-lg shadow-violet-600/25 active:scale-[0.99]">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-snow/15"><Bot size={22} /></span>
-        <span className="min-w-0 flex-1">
+    <Link to="/entrenador" className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-snow shadow-lg shadow-violet-600/25 active:scale-[0.99]">
+        <Photo photo={namedCover('espalda-5')} />
+        <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-violet-700/95 via-indigo-600/80 to-indigo-600/30" />
+        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-snow/15 backdrop-blur"><Bot size={22} /></span>
+        <span className="relative min-w-0 flex-1">
             <span className="flex items-center gap-2 font-bold">
                 {t('trainer.title')}
                 {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-bold text-neutral-900"><Crown size={11} /> Premium</span>}
             </span>
             <span className="block text-sm text-snow/85">{t('trainer.homeHint')}</span>
         </span>
-        <ChevronRight className="shrink-0" />
+        <ChevronRight className="relative shrink-0" />
     </Link>
 );
 
@@ -326,13 +330,15 @@ const PlanUpdateCard = ({ update }: { update: PlanUpdate }) => (
 
 // Women's section, on the home screen for women.
 const WomenCard = () => (
-    <Link to="/mujeres" className="flex items-center gap-3 rounded-2xl border border-pink-400/25 bg-gradient-to-br from-pink-500/15 to-transparent p-4 hover:bg-ink-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 text-pink-400"><Sparkles size={22} /></span>
-        <span className="min-w-0 flex-1">
-            <span className="block font-semibold">{t('women.card')}</span>
-            <span className="block text-sm text-white/55">{t('women.cardHint')}</span>
+    <Link to="/mujeres" className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-pink-600 p-4 text-snow shadow-lg shadow-pink-500/20 active:scale-[0.99]">
+        <Photo photo={namedCover('mujer-disco')} />
+        <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-pink-700/95 via-rose-600/75 to-fuchsia-600/20" />
+        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/20 backdrop-blur"><Sparkles size={22} /></span>
+        <span className="relative min-w-0 flex-1">
+            <span className="block font-bold">{t('women.card')}</span>
+            <span className="block text-sm text-snow/90">{t('women.cardHint')}</span>
         </span>
-        <ChevronRight className="shrink-0 text-white/40" />
+        <ChevronRight className="relative shrink-0" />
     </Link>
 );
 

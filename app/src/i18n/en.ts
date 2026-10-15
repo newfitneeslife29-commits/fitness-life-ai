@@ -1298,4 +1298,5 @@ export const en: Dict = {
     'nutrition.heroLeft': "kcal left",
     'nutrition.heroEaten': "kcal eaten",
     'cardio.savedShort': "Saved. To count for your plan, walk at least 80% of the {min} min.",
+    'exercises.byMuscle': "Muscle groups",
 };

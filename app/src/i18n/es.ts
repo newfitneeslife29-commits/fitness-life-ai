@@ -1299,4 +1299,5 @@ export const es = {
     'nutrition.heroLeft': "kcal restantes",
     'nutrition.heroEaten': "kcal comidas",
     'cardio.savedShort': "Guardado. Para que cuente en tu plan, camina al menos el 80 % de los {min} min.",
+    'exercises.byMuscle': "Grupos musculares",
 };

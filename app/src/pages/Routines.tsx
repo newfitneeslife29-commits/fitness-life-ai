@@ -2,8 +2,10 @@ import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, L
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
-import { HeroStat, PageHeader, Section } from '../components/ui';
-import { exerciseName, exercisePhotos } from '../data/exercises';
+import { HeroStat, PageHeader, Photo, Section } from '../components/ui';
+import { namedCover, routineCovers, type Cover } from '../data/covers';
+import { kindPhoto } from '../data/photos';
+import { exerciseName } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { planName, routineName } from '../lib/names';
 import { weekPhase } from '../lib/plan';
@@ -12,15 +14,15 @@ import type { Routine } from '../store/types';
 
 const DAY_COLORS = ['from-brand to-amber-500', 'from-violet-500 to-fuchsia-500', 'from-sky-500 to-indigo-500', 'from-emerald-500 to-teal-500', 'from-rose-500 to-pink-500', 'from-amber-500 to-orange-600'];
 
-const RoutineRow = ({ routine, badge, index, onStart }: { routine: Routine; badge?: string; index: number; onStart: () => void }) => {
+const RoutineRow = ({ routine, cover, badge, index, onStart }: { routine: Routine; cover: Cover; badge?: string; index: number; onStart: () => void }) => {
     const name = routineName(routine);
-    const photo = exercisePhotos(routine.exercises[0]?.exerciseId ?? '')?.[1];
     return (
         <div className={`card flex items-stretch overflow-hidden ${badge ? 'ring-2 ring-brand/60' : ''}`}>
             <Link to={`/rutinas/${routine.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-3 hover:bg-ink-3">
-                <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br text-lg font-extrabold text-snow ${DAY_COLORS[index % DAY_COLORS.length]}`}>
-                    {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity" />}
-                    <span className="relative">{index + 1}</span>
+                <span className={`relative flex h-16 w-14 shrink-0 items-end justify-start overflow-hidden rounded-2xl bg-gradient-to-br text-lg font-extrabold text-snow shadow-md ${DAY_COLORS[index % DAY_COLORS.length]}`}>
+                    <img src={cover.src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: cover.position }} />
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                    <span className="relative px-1.5 pb-0.5 drop-shadow">{index + 1}</span>
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
@@ -39,11 +41,14 @@ const RoutineRow = ({ routine, badge, index, onStart }: { routine: Routine; badg
     );
 };
 
-const Explore = ({ to, icon, title, hint, color }: { to: string; icon: ReactNode; title: string; hint: string; color: string }) => (
-    <Link to={to} className="card flex flex-col gap-2 p-3.5 hover:bg-ink-3 active:scale-[0.98]">
-        <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-snow shadow-md ${color}`}>{icon}</span>
-        <span className="font-semibold leading-tight">{title}</span>
-        <span className="line-clamp-2 text-xs text-white/50">{hint}</span>
+// A photo tile: the icon keeps its colour, the text sits on a dark fade.
+const Explore = ({ to, icon, title, hint, color, photo }: { to: string; icon: ReactNode; title: string; hint: string; color: string; photo: Cover }) => (
+    <Link to={to} className="relative flex min-h-[10.5rem] flex-col justify-end gap-1 overflow-hidden rounded-2xl bg-black p-3.5 text-snow shadow-md active:scale-[0.98]">
+        <Photo photo={photo} />
+        <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/5" />
+        <span className={`absolute left-3.5 top-3.5 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-snow shadow-md ${color}`}>{icon}</span>
+        <span className="relative font-semibold leading-tight">{title}</span>
+        <span className="relative line-clamp-2 text-xs text-snow/75">{hint}</span>
     </Link>
 );
 
@@ -52,6 +57,8 @@ export default function Routines() {
     const navigate = useNavigate();
     const planRoutines = plan ? plan.routineIds.map(id => routines.find(r => r.id === id)).filter((r): r is Routine => !!r) : [];
     const custom = routines.filter(r => r.source === 'custom');
+    const planCovers = routineCovers(planRoutines);
+    const customCovers = routineCovers(custom);
 
     const start = async (id: string) => {
         if (active && (active.routineId === id || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
@@ -78,7 +85,7 @@ export default function Routines() {
                 <Section title={t('routines.yourPlan', { name: planName(plan) })}>
                     <div className="space-y-2">
                         {planRoutines.map((r, i) => (
-                            <RoutineRow key={r.id} routine={r} index={i} badge={i === plan.nextIndex ? t('routines.next') : undefined} onStart={() => start(r.id)} />
+                            <RoutineRow key={r.id} routine={r} cover={planCovers[i]} index={i} badge={i === plan.nextIndex ? t('routines.next') : undefined} onStart={() => start(r.id)} />
                         ))}
                     </div>
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-white/55"><CalendarSync size={14} className="mt-px shrink-0 text-violet-400" /> {t('plan.weekLine', { week: plan.week ?? 1, phase: t(`plan.phase.${weekPhase(plan.week ?? 1)}`) })}</p>
@@ -89,7 +96,7 @@ export default function Routines() {
             <Section title={t('routines.mine')}>
                 {custom.length ? (
                     <div className="space-y-2">
-                        {custom.map((r, i) => <RoutineRow key={r.id} routine={r} index={i + planRoutines.length} onStart={() => start(r.id)} />)}
+                        {custom.map((r, i) => <RoutineRow key={r.id} routine={r} cover={customCovers[i]} index={i + planRoutines.length} onStart={() => start(r.id)} />)}
                     </div>
                 ) : (
                     <Link to="/rutinas/nueva" className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-violet-400/40 bg-violet-500/5 p-4 hover:bg-violet-500/10">
@@ -105,12 +112,12 @@ export default function Routines() {
 
             <Section title={t('learn.title')}>
                 <div className="grid grid-cols-2 gap-2">
-                    <Explore to="/entrenador" icon={<Bot size={22} />} title={t('trainer.title')} hint={t('trainer.routinesHint')} color="from-violet-500 to-indigo-600 shadow-violet-500/30" />
-                    <Explore to="/mujeres" icon={<Sparkles size={22} />} title={t('women.card')} hint={t('women.cardHint')} color="from-pink-500 to-rose-500 shadow-pink-500/30" />
-                    <Explore to="/programas" icon={<Layers size={22} />} title={t('programs.title')} hint={t('programs.hint')} color="from-brand to-amber-500 shadow-brand/30" />
-                    <Explore to="/aprende" icon={<GraduationCap size={22} />} title={t('learn.cardTitle')} hint={t('learn.cardHint')} color="from-sky-500 to-blue-600 shadow-sky-500/30" />
-                    <Explore to="/ejercicios" icon={<Dumbbell size={22} />} title={t('routines.library')} hint={t('routines.libraryHint')} color="from-emerald-500 to-teal-600 shadow-emerald-500/30" />
-                    <Explore to="/movimiento" icon={<Footprints size={22} />} title={t('move.title')} hint={t('move.card')} color="from-teal-500 to-cyan-600 shadow-teal-500/30" />
+                    <Explore to="/entrenador" icon={<Bot size={20} />} title={t('trainer.title')} hint={t('trainer.routinesHint')} color="from-violet-500 to-indigo-600 shadow-violet-500/30" photo={namedCover('espalda-5')} />
+                    <Explore to="/mujeres" icon={<Sparkles size={20} />} title={t('women.card')} hint={t('women.cardHint')} color="from-pink-500 to-rose-500 shadow-pink-500/30" photo={namedCover('gluteos-1')} />
+                    <Explore to="/programas" icon={<Layers size={20} />} title={t('programs.title')} hint={t('programs.hint')} color="from-brand to-amber-500 shadow-brand/30" photo={namedCover('pecho-2')} />
+                    <Explore to="/aprende" icon={<GraduationCap size={20} />} title={t('learn.cardTitle')} hint={t('learn.cardHint')} color="from-sky-500 to-blue-600 shadow-sky-500/30" photo={namedCover('isquios-1')} />
+                    <Explore to="/ejercicios" icon={<Dumbbell size={20} />} title={t('routines.library')} hint={t('routines.libraryHint')} color="from-emerald-500 to-teal-600 shadow-emerald-500/30" photo={namedCover('gemelos-1')} />
+                    <Explore to="/movimiento" icon={<Footprints size={20} />} title={t('move.title')} hint={t('move.card')} color="from-teal-500 to-cyan-600 shadow-teal-500/30" photo={kindPhoto('run')} />
                 </div>
             </Section>
         </div>

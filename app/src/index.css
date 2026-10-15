@@ -8,6 +8,7 @@
     --ink: 11 13 16; --ink-2: 18 21 26; --ink-3: 26 30 37; --ink-4: 37 42 51;
     --line: 42 48 58; --fg: 255 255 255;
     --brand: 242 107 29; --brand-strong: 255 138 61; --good: 52 211 153; --warn: 252 211 77;
+    --spark: 252 211 77; /* AI sparkle accent (Premium art and icons) */
     color-scheme: dark;
   }
   /* Light theme: same layout, light surfaces and darker accents for contrast. */
@@ -15,6 +16,7 @@
     --ink: 244 245 247; --ink-2: 255 255 255; --ink-3: 236 238 242; --ink-4: 222 226 232;
     --line: 223 227 233; --fg: 17 19 24;
     --brand: 234 92 12; --brand-strong: 194 65 12; --good: 5 150 105; --warn: 180 83 9;
+    --spark: 245 158 11;
     color-scheme: light;
   }
   /* Paint the page on html too: some old WebViews leave it white otherwise. */
@@ -44,6 +46,12 @@
   /* A coloured header inside the page frame (already padded by .pt-safe):
      its colour runs up under the status bar instead of leaving a gap. */
   .bleed-top { margin-top: calc(-1 * env(safe-area-inset-top)); }
+  /* The tab colour over a header photo: solid behind the title, fading so
+     the photo shows on the right (old Android WebViews need the prefix). */
+  .photo-tint {
+    -webkit-mask-image: linear-gradient(105deg, #000 30%, rgba(0, 0, 0, .3) 100%);
+    mask-image: linear-gradient(105deg, #000 30%, rgba(0, 0, 0, .3) 100%);
+  }
 }
 
 /* Welcome screen and launch intro. Reduced motion shortens them (rule above). */

@@ -1,8 +1,9 @@
-import { BookOpen, ChefHat, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ChefHat, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AiUsageLine, useAiErrorHandler } from './AiParts';
 import { confirm, toast } from './feedback';
-import { Sheet } from './ui';
+import { Photo, Sheet } from './ui';
+import { recipePhoto } from '../data/photos';
 import { getLang, t } from '../i18n';
 import { aiAvailable, estimateMeal } from '../lib/ai';
 import { fmtNumber, parseDecimal } from '../lib/format';
@@ -128,7 +129,7 @@ export const Recipes = ({ day }: { day: Date }) => {
                         <li key={r.id} className="card overflow-hidden">
                             <div className="flex items-center gap-3 p-3">
                                 <button onClick={() => setShown(shown === r.id ? null : r.id)} aria-expanded={shown === r.id} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-400"><BookOpen size={18} /></span>
+                                    <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-amber-400/15 shadow-sm"><Photo photo={recipePhoto(r.name)} /></span>
                                     <span className="min-w-0">
                                         <span className="block truncate font-semibold">{r.name}</span>
                                         <span className="block text-xs tabular-nums text-white/50">{t('recipes.serving', { kcal: fmtNumber(r.kcal), p: fmtNumber(r.protein) })}</span>

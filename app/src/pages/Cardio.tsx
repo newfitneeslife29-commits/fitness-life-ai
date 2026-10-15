@@ -2,6 +2,8 @@ import { Bike, Flag, Footprints, MapPinOff, Pause, Play, Satellite, X, Zap } fro
 import { useRef } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
+import { Photo } from '../components/ui';
+import { kindPhoto } from '../data/photos';
 import { t } from '../i18n';
 import { cardioKcal, distUnit, movingSec, pace, speed, stepsFor, toDist } from '../lib/cardio';
 import { fmtClock, fmtNumber } from '../lib/format';
@@ -86,7 +88,10 @@ export default function Cardio() {
     );
 
     return (
-        <div className={`flex min-h-dvh flex-col bg-gradient-to-b ${theme.from} ${theme.to} px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-snow`}>
+        <div className={`relative isolate flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b ${theme.from} ${theme.to} px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-snow`}>
+            {/* A faint photo of the activity under the colour; the numbers stay on plain colour. */}
+            <Photo photo={kindPhoto(active.kind, active.startedAt)} className="-z-10 opacity-20 mix-blend-luminosity" />
+            <div aria-hidden className={`absolute inset-0 -z-10 bg-gradient-to-b ${theme.from} ${theme.to} opacity-60`} />
             <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-lg font-bold">{theme.icon} {t(`cardio.kind.${active.kind}`)}</span>
                 <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${active.gps === 'ok' ? 'bg-snow/20' : 'bg-black/30'}`} role="status">
