@@ -1300,6 +1300,6 @@ export const en: Dict = {
     'cardio.savedShort': "Saved. To count for your plan, walk at least 80% of the {min} min.",
     'exercises.byMuscle': "Muscle groups",
     'getApp.title': "Get the Fitness Life app",
-    'getApp.text': "Reminders, steps, sleep and GPS with the screen locked.",
-    'getApp.welcome': "Also on your phone",
+    'getApp.freeOn': "Free on {store}",
+    'getApp.get': "Get",
 };

@@ -5,7 +5,7 @@ import { getLang, LANGS, t, type Lang } from '../i18n';
 import { LEGAL_URL } from '../lib/premium';
 import { MARK_PATH } from '../lib/appIcons';
 import { actions, useStore } from '../store/store';
-import { GetTheAppRow } from './GetTheApp';
+import { GetTheAppBar } from './GetTheApp';
 import { toast } from './feedback';
 
 // The brand mark (same shape as the app icon).
@@ -57,6 +57,7 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
             {/* Photo mosaic, slowly drifting, fading into the page. */}
             <div aria-hidden className="pointer-events-none"><PhotoMosaic /></div>
 
+            <GetTheAppBar />
             <header className="relative z-10 mx-auto flex w-full max-w-lg items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))]">
                 <div className="flex items-center gap-2.5 rounded-full bg-ink/85 py-1.5 pl-1.5 pr-4">
                     <Logo size={32} />
@@ -101,7 +102,6 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
                     <input ref={fileRef} type="file" accept="application/json,.json" className="hidden"
                         onChange={e => { const f = e.target.files?.[0]; if (f) void restore(f); e.target.value = ''; }} />
                 </div>
-                <GetTheAppRow />
                 <p className="mt-3 text-center text-[11px] text-white/40">
                     {t('welcome.legal')} <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" className="underline">{t('premium.terms')}</a>
                 </p>

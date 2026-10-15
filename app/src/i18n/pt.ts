@@ -1301,6 +1301,6 @@ export const pt: Dict = {
     'cardio.savedShort': "Salvo. Para contar no seu plano, caminhe pelo menos 80% dos {min} min.",
     'exercises.byMuscle': "Grupos musculares",
     'getApp.title': "Baixe o app Fitness Life",
-    'getApp.text': "Lembretes, passos, sono e GPS com a tela bloqueada.",
-    'getApp.welcome': "Também no seu celular",
+    'getApp.freeOn': "Grátis na {store}",
+    'getApp.get': "Obter",
 };

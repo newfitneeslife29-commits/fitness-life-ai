@@ -37,19 +37,9 @@ const hiddenRecently = () => {
     }
 };
 
-export const StoreButtons = ({ stores, className = '' }: { stores: Store[]; className?: string }) => (
-    <div className={`flex gap-2 ${className}`}>
-        {stores.map(({ id, url, label, icon: Icon }) => (
-            <a key={id} href={url} target="_blank" rel="noopener noreferrer"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-snow px-3 py-2.5 text-sm font-semibold text-neutral-900 shadow active:scale-[0.98]">
-                <Icon size={18} fill={id === 'android' ? 'currentColor' : 'none'} /> {label}
-            </a>
-        ))}
-    </div>
-);
-
-// A card on the web app's home screen.
-export const GetTheAppBanner = () => {
+// The thin bar at the very top of the welcome screen, like many websites
+// show: the app, where it is, and a button to get it. Web only.
+export const GetTheAppBar = () => {
     const [hidden, setHidden] = useState(() => isNative() || hiddenRecently());
     const stores = isNative() ? [] : deviceStores();
     if (hidden || !stores.length) return null;
@@ -57,29 +47,26 @@ export const GetTheAppBanner = () => {
         try { localStorage.setItem(HIDDEN_KEY, String(Date.now())); } catch { /* shown again next visit */ }
         setHidden(true);
     };
+    const one = stores.length === 1 ? stores[0] : null;
     return (
-        <aside aria-label={t('getApp.title')} className="rounded-2xl bg-gradient-to-r from-brand to-amber-600 p-3 text-snow shadow-lg shadow-brand/25">
-            <div className="flex items-center gap-3">
-                <span className="shrink-0 rounded-xl bg-snow/15 p-1"><Logo size={36} /></span>
-                <div className="min-w-0 flex-1">
-                    <p className="font-bold leading-tight">{t('getApp.title')}</p>
-                    <p className="text-xs text-snow/90">{t('getApp.text')}</p>
+        <aside aria-label={t('getApp.title')} className="relative z-20 border-b border-line bg-ink-2/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+            <div className="mx-auto flex max-w-lg items-center gap-2.5 px-3 py-2">
+                <button onClick={close} aria-label={t('common.close')} className="rounded-full p-1 text-white/45 hover:text-white"><X size={16} /></button>
+                <span className="shrink-0 overflow-hidden rounded-xl"><Logo size={38} /></span>
+                <div className="min-w-0 flex-1 leading-tight">
+                    <p className="truncate text-sm font-bold">Fitness Life</p>
+                    <p className="truncate text-xs text-white/55">{one ? t('getApp.freeOn', { store: one.label }) : t('getApp.title')}</p>
                 </div>
-                <button onClick={close} aria-label={t('common.close')} className="self-start rounded-full p-1 text-snow/80 hover:bg-snow/15"><X size={18} /></button>
+                {one ? (
+                    <a href={one.url} target="_blank" rel="noopener noreferrer"
+                        className="shrink-0 rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-snow active:scale-95">{t('getApp.get')}</a>
+                ) : stores.map(({ id, url, label, icon: Icon }) => (
+                    <a key={id} href={url} target="_blank" rel="noopener noreferrer" aria-label={label}
+                        className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-snow active:scale-95">
+                        <Icon size={14} fill={id === 'android' ? 'currentColor' : 'none'} /> {label}
+                    </a>
+                ))}
             </div>
-            <StoreButtons stores={stores} className="mt-2.5" />
         </aside>
-    );
-};
-
-// The same buttons on the welcome screen.
-export const GetTheAppRow = () => {
-    const stores = isNative() ? [] : deviceStores();
-    if (!stores.length) return null;
-    return (
-        <div className="mt-4">
-            <p className="mb-2 text-center text-xs font-medium text-white/55">{t('getApp.welcome')}</p>
-            <StoreButtons stores={stores} />
-        </div>
     );
 };
