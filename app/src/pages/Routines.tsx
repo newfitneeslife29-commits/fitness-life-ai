@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
 import { HeroStat, PageHeader, Section } from '../components/ui';
-import { exerciseName, exercisePhotos } from '../data/exercises';
+import { routineCover } from '../data/covers';
+import { exerciseName } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { planName, routineName } from '../lib/names';
 import { weekPhase } from '../lib/plan';
@@ -14,13 +15,14 @@ const DAY_COLORS = ['from-brand to-amber-500', 'from-violet-500 to-fuchsia-500',
 
 const RoutineRow = ({ routine, badge, index, onStart }: { routine: Routine; badge?: string; index: number; onStart: () => void }) => {
     const name = routineName(routine);
-    const photo = exercisePhotos(routine.exercises[0]?.exerciseId ?? '')?.[1];
+    const cover = routineCover(routine);
     return (
         <div className={`card flex items-stretch overflow-hidden ${badge ? 'ring-2 ring-brand/60' : ''}`}>
             <Link to={`/rutinas/${routine.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-3 hover:bg-ink-3">
-                <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br text-lg font-extrabold text-snow ${DAY_COLORS[index % DAY_COLORS.length]}`}>
-                    {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity" />}
-                    <span className="relative">{index + 1}</span>
+                <span className={`relative flex h-16 w-14 shrink-0 items-end justify-start overflow-hidden rounded-2xl bg-gradient-to-br text-lg font-extrabold text-snow shadow-md ${DAY_COLORS[index % DAY_COLORS.length]}`}>
+                    <img src={cover.src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: cover.position }} />
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                    <span className="relative px-1.5 pb-0.5 drop-shadow">{index + 1}</span>
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">

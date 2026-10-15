@@ -6,7 +6,8 @@ import { confirm } from '../components/feedback';
 import { Medal } from '../components/Medal';
 import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Empty, HeroStat, Section } from '../components/ui';
-import { exerciseName, exercisePhotos } from '../data/exercises';
+import { routineCover } from '../data/covers';
+import { exerciseName } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
 import { planName, routineName, sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
@@ -112,11 +113,11 @@ const Tile = ({ icon, value, label, delay, color }: { icon: ReactNode; value: Re
 
 const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onStart: () => void; continuing: boolean }) => {
     const { plan } = useStore();
-    const photo = exercisePhotos(routine.exercises[0]?.exerciseId ?? '')?.[1];
+    const cover = routineCover(routine);
     return (
         <div className="welcome-in relative overflow-hidden rounded-3xl bg-black shadow-xl shadow-black/20">
-            {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
+            <img src={cover.src} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: cover.position }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
             <div className="relative flex min-h-[17rem] flex-col justify-end p-5 text-snow">
                 <span className="mb-auto self-start rounded-full bg-brand px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-snow">{t('today.next')}</span>
                 <p className="mt-6 text-xs text-snow/70">{plan && planName(plan)} · {t('today.dayOf', { n: (plan?.nextIndex ?? 0) + 1, total: plan?.routineIds.length ?? 0 })}</p>

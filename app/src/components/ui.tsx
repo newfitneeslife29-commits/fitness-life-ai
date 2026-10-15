@@ -46,8 +46,8 @@ export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) 
     </div>
 );
 
-export const Section = ({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) => (
-    <section className={`px-4 ${className}`}>
+export const Section = ({ title, action, children, className = '', id }: { title?: string; action?: ReactNode; children: ReactNode; className?: string; id?: string }) => (
+    <section id={id} className={`scroll-mt-4 px-4 ${className}`}>
         {(title || action) && (
             <div className="mb-2 flex items-center justify-between">
                 {title && <h2 className="label">{title}</h2>}

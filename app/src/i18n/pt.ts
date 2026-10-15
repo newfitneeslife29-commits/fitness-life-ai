@@ -1299,4 +1299,5 @@ export const pt: Dict = {
     'nutrition.heroLeft': "kcal restantes",
     'nutrition.heroEaten': "kcal consumidas",
     'cardio.savedShort': "Salvo. Para contar no seu plano, caminhe pelo menos 80% dos {min} min.",
+    'exercises.byMuscle': "Grupos musculares",
 };

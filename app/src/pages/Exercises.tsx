@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ExerciseDemo } from '../components/ExerciseDemo';
 import { Section } from '../components/ui';
+import { muscleCover } from '../data/covers';
 import { equipmentLabel, EXERCISES, exerciseName, MUSCLE_ORDER, muscleLabel, type Muscle } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { useStore } from '../store/store';
@@ -41,8 +42,26 @@ export default function Exercises() {
                         className="w-full bg-transparent text-sm outline-none placeholder:text-white/35" />
                 </label>
             </Section>
+            {!query && (
+                <nav aria-label={t('exercises.byMuscle')} className="-mt-1 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+                    {groups.map(([muscle, list]) => {
+                        const cover = muscleCover(muscle);
+                        return (
+                            <a key={muscle} href={`#m-${muscle}`} onClick={ev => { ev.preventDefault(); document.getElementById(`m-${muscle}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                                className="relative h-36 w-28 shrink-0 snap-start overflow-hidden rounded-2xl bg-black shadow-md active:scale-[0.97]">
+                                <img src={cover.src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: cover.position }} />
+                                <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                                <span className="absolute inset-x-2 bottom-2 text-snow">
+                                    <span className="block text-sm font-bold leading-tight">{muscleLabel(muscle)}</span>
+                                    <span className="block text-[11px] text-snow/70">{tp('common.exercises', list.length)}</span>
+                                </span>
+                            </a>
+                        );
+                    })}
+                </nav>
+            )}
             {groups.map(([muscle, list]) => (
-                <Section key={muscle} title={muscleLabel(muscle)}>
+                <Section key={muscle} id={`m-${muscle}`} title={muscleLabel(muscle)}>
                     <div className="card divide-y divide-line">
                         {list.map(e => (
                             <Link key={e.id} to={`/ejercicios/${e.id}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-ink-3">
