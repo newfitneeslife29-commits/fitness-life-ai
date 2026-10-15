@@ -1,8 +1,10 @@
-import { Check, ChevronLeft, Crown, Minus, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, Minus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '../components/feedback';
+import PremiumArt from '../components/PremiumArt';
+import { AiCoachIcon, AiMealPlanIcon, AiTrainerIcon, CrownIcon, MealPhotoIcon } from '../components/PremiumIcons';
 import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { refreshUsage } from '../lib/ai';
@@ -26,6 +28,13 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.estimate', false, true],
 ];
 const PLAN_IDS: PlanId[] = ['annual', 'monthly'];
+// The AI features Premium unlocks, shown as tiles with their own icons.
+const HIGHLIGHTS = [
+    ['premium.row.trainer', AiTrainerIcon],
+    ['premium.row.coach', AiCoachIcon],
+    ['premium.row.mealPlan', AiMealPlanIcon],
+    ['premium.row.estimate', MealPhotoIcon],
+] as const;
 
 const Mark = ({ value }: { value: Cell }) =>
     typeof value === 'string' ? <span className="font-semibold">{value}</span>
@@ -92,25 +101,23 @@ export default function Premium() {
     };
 
     return (
-        <div className="space-y-6 pb-4">
-            <header className="flex items-center gap-2 px-2 pt-4">
+        <div className="relative space-y-6 pb-4">
+            <header className="absolute left-0 top-0 z-10 flex items-center gap-2 px-2 pt-4">
                 <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
             </header>
 
             <Section>
-                <div className="flex flex-col items-center text-center">
-                    <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-amber-300 text-ink shadow-lg shadow-brand/30">
-                        <Crown size={32} />
-                    </span>
-                    <h1 className="text-2xl font-bold tracking-tight">Fitness Life Premium</h1>
-                    <p className="mt-1 max-w-xs text-white/60">{t('premium.subtitle')}</p>
+                <div className="flex flex-col items-center pt-8 text-center">
+                    <PremiumArt className="h-auto w-full max-w-[320px]" />
+                    <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">Fitness Life Premium</h1>
+                    <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-white/60">{t('premium.subtitle')}</p>
                 </div>
             </Section>
 
             {active && (
                 <Section>
                     <div className="card border-brand/40 bg-brand-soft p-4">
-                        <p className="flex items-center gap-2 font-semibold text-brand-strong"><Sparkles size={18} /> {t('premium.active')}</p>
+                        <p className="flex items-center gap-2 font-semibold text-brand-strong"><CrownIcon size={20} /> {t('premium.active')}</p>
                         <p className="mt-1 text-sm text-white/70">
                             {premium?.expiresAt
                                 ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) })
@@ -153,7 +160,7 @@ export default function Premium() {
                             </div>
                             <p className="mb-3 mt-2 text-center text-sm text-white/50">{t('premium.cancelAnytime')}</p>
                             <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
-                                <Crown size={18} /> {busy === 'buy' ? t('premium.buying') : plan.trialDays ? t('premium.startTrial', { n: plan.trialDays }) : t('premium.subscribe')}
+                                <CrownIcon size={20} tone="current" /> {busy === 'buy' ? t('premium.buying') : plan.trialDays ? t('premium.startTrial', { n: plan.trialDays }) : t('premium.subscribe')}
                             </button>
                             {plan.trialDays && (
                                 <p className="mt-2 text-center text-xs text-white/55">
@@ -165,12 +172,23 @@ export default function Premium() {
             )}
 
             <Section>
+                <ul className="grid grid-cols-2 gap-2">
+                    {HIGHLIGHTS.map(([key, Icon]) => (
+                        <li key={key} className="card flex flex-col gap-2.5 bg-gradient-to-br from-brand/[0.07] to-transparent to-60% p-3.5">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-brand-soft ring-1 ring-inset ring-brand/15"><Icon size={26} /></span>
+                            <span className="text-[13px] font-semibold leading-snug text-white/90">{t(key)}</span>
+                        </li>
+                    ))}
+                </ul>
+            </Section>
+
+            <Section>
                 <table className="card w-full overflow-hidden text-sm">
                     <thead>
                         <tr className="border-b border-line text-xs text-white/50">
                             <th className="p-3 text-left font-medium"><span className="sr-only">{t('premium.feature')}</span></th>
                             <th className="w-20 p-3 font-medium">{t('premium.free')}</th>
-                            <th className="w-24 p-3 font-semibold text-brand">Premium</th>
+                            <th className="w-24 p-3 font-semibold text-brand"><span className="inline-flex items-center gap-1"><CrownIcon size={14} /> Premium</span></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
