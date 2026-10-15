@@ -1,41 +1,31 @@
 import type { Routine } from '../store/types';
 import { getExercise, type Muscle } from './exercises';
 
-// Cover photos for the workout cards (public/covers, see CREDITS.txt there):
-// one look for the whole app, dark and moody, chosen by the muscle the
-// routine works most. Each one keeps the person in frame (object-position).
+// Cover photos for the workout cards (public/covers, see CREDITS.txt there),
+// chosen by the muscle the routine works most. Each one keeps the person in
+// frame (object-position).
 
 const FOCUS: Record<string, string> = {
-    'biceps-1': '53% 39%',
-    'biceps-2': '48% 42%',
-    'biceps-3': '47% 35%',
-    'core-1': '50% 43%',
-    'espalda-1': '50% 35%',
-    'espalda-2': '50% 31%',
-    'espalda-3': '50% 32%',
-    'gluteos-1': '50% 36%',
-    'hombros-1': '44% 38%',
-    'hombros-2': '47% 33%',
-    'hombros-3': '42% 38%',
-    'pecho-1': '39% 46%',
-    'pecho-2': '50% 42%',
-    'piernas-1': '61% 35%',
-    'piernas-2': '50% 33%',
-    'triceps-1': '67% 36%',
-    'triceps-2': '66% 37%',
+    'biceps-1': '50% 42%',
+    'core-1': '52% 38%',
+    'espalda-1': '49% 39%',
+    'espalda-2': '51% 32%',
+    'pecho-1': '50% 24%',
+    'piernas-1': '61% 33%',
+    'triceps-1': '66% 36%',
 };
 
 const BY_MUSCLE: Record<Muscle, string[]> = {
-    pecho: ['pecho-1', 'pecho-2'],
-    espalda: ['espalda-1', 'espalda-2', 'espalda-3'],
-    hombros: ['hombros-1', 'hombros-2', 'hombros-3'],
-    biceps: ['biceps-1', 'biceps-2', 'biceps-3'],
-    triceps: ['triceps-1', 'triceps-2'],
-    cuadriceps: ['piernas-1', 'piernas-2'],
-    isquios: ['piernas-2', 'piernas-1'],
-    gluteos: ['gluteos-1', 'piernas-2'],
+    pecho: ['pecho-1', 'biceps-1'],
+    espalda: ['espalda-1', 'espalda-2'],
+    hombros: ['espalda-2', 'biceps-1'],
+    biceps: ['biceps-1'],
+    triceps: ['triceps-1'],
+    cuadriceps: ['piernas-1'],
+    isquios: ['piernas-1'],
+    gluteos: ['core-1', 'piernas-1'],
     gemelos: ['piernas-1'],
-    core: ['core-1', 'gluteos-1'],
+    core: ['core-1'],
 };
 
 export interface Cover { src: string; position: string }
