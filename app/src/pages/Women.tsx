@@ -2,7 +2,8 @@ import { Bot, Check, ChevronLeft, Footprints, HeartPulse, Info, Moon, Salad } fr
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
-import { Chips, Section } from '../components/ui';
+import { Chips, Photo, Section } from '../components/ui';
+import { namedCover, womenCover } from '../data/covers';
 import { exerciseName, getExercise } from '../data/exercises';
 import { adaptDays, prescribe, programDescription, programName, womenProgram } from '../data/programs';
 import { l10n, t, tp } from '../i18n';
@@ -45,12 +46,13 @@ export default function Women() {
 
     return (
         <div className="space-y-5">
-            <header className="flex items-center gap-2 px-2 pt-4">
-                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('women.title')}</h1>
-                    <p className="text-sm text-white/55">{t('women.subtitle')}</p>
-                </div>
+            <header className="bleed-top relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-pink-600 via-rose-600 to-fuchsia-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow shadow-lg shadow-pink-600/25">
+                <Photo photo={{ ...namedCover('mujer-disco'), position: '52% 16%' }} />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-pink-600/80 via-rose-600/55 to-fuchsia-700/45" />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/85 hover:bg-snow/10"><ChevronLeft size={22} /></button>
+                <h1 className="relative mt-10 text-3xl font-extrabold tracking-tight drop-shadow">{t('women.title')}</h1>
+                <p className="relative text-sm text-snow/90">{t('women.subtitle')}</p>
             </header>
 
             <Section>
@@ -76,10 +78,16 @@ export default function Women() {
             </Section>
 
             <Section title={t('women.yourPlan')}>
-                <div className="card p-4">
-                    <p className="text-lg font-bold">{programName(program)}</p>
-                    <p className="mt-1 text-sm text-white/60">{programDescription(program)}</p>
-                    <p className="mt-2 text-xs text-white/45">{t('women.rotation', { days: tp('programs.days', program.days.length), perWeek: days })}</p>
+                <div className="card overflow-hidden">
+                    <div className="relative flex min-h-[10rem] flex-col justify-end bg-pink-700 p-4 text-snow">
+                        <Photo photo={womenCover(program.id)} />
+                        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                        <p className="relative text-lg font-bold">{programName(program)}</p>
+                    </div>
+                    <div className="p-4">
+                        <p className="text-sm text-white/60">{programDescription(program)}</p>
+                        <p className="mt-2 text-xs text-white/45">{t('women.rotation', { days: tp('programs.days', program.days.length), perWeek: days })}</p>
+                    </div>
                 </div>
                 <ol className="mt-2 space-y-2">
                     {plan.map((day, i) => (

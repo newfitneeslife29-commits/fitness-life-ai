@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { AiUsageLine, PremiumLock, useAiErrorHandler } from './AiParts';
 import { confirm, toast } from './feedback';
 import { ReportAiButton } from './ReportAi';
-import { Chips, Sheet } from './ui';
+import { Chips, Photo, Sheet } from './ui';
+import type { Cover } from '../data/covers';
+import { foodPhoto, mealPhotos } from '../data/photos';
 import { getLang, locale, t } from '../i18n';
 import { aiAvailable, designMealPlan, type CoachContext } from '../lib/ai';
 import { fmtDate, fmtNumber } from '../lib/format';
@@ -100,12 +102,17 @@ const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () 
     );
 };
 
-const PlannedMealRow = ({ meal, logged, onLog }: { meal: PlannedMeal; logged: boolean; onLog?: () => void }) => (
-    <li className="flex gap-3 px-4 py-3">
-        <span className="w-12 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-brand">{meal.time}</span>
-        <div className="min-w-0 flex-1">
+// The photo and, under it, the time; the time stays a direct child of the row.
+const PlannedMealRow = ({ meal, photo, logged, onLog }: { meal: PlannedMeal; photo: Cover; logged: boolean; onLog?: () => void }) => (
+    <li className="grid grid-cols-[4rem_minmax(0,1fr)_auto] grid-rows-[auto_1fr] gap-x-3 px-4 py-3">
+        <span className="relative col-start-1 row-start-1 block h-16 w-16 overflow-hidden rounded-2xl bg-ink-3 shadow-md shadow-black/20">
+            <Photo photo={photo} />
+            <span aria-hidden className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10" />
+        </span>
+        <span className="col-start-1 row-start-2 pt-1 text-center text-xs font-bold tabular-nums text-brand">{meal.time}</span>
+        <div className="col-start-2 row-span-2 row-start-1 min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">{t(`mealPlan.slot.${meal.slot}`)}</p>
-            <p className="font-semibold">{meal.name}</p>
+            <p className="font-semibold leading-snug">{meal.name}</p>
             {meal.foods.length > 0 && (
                 <ul className="mt-1 space-y-0.5 text-sm text-white/70">
                     {meal.foods.map((f, i) => <li key={i} className="flex gap-1.5"><span aria-hidden className="text-white/35">•</span>{f}</li>)}
@@ -115,10 +122,10 @@ const PlannedMealRow = ({ meal, logged, onLog }: { meal: PlannedMeal; logged: bo
         </div>
         {onLog && (
             logged ? (
-                <span className="flex h-9 shrink-0 items-center gap-1 self-center rounded-full bg-good/15 px-3 text-xs font-semibold text-good"><Check size={14} /> {t('mealPlan.logged')}</span>
+                <span className="col-start-3 row-span-2 row-start-1 flex h-9 shrink-0 items-center gap-1 self-center rounded-full bg-good/15 px-3 text-xs font-semibold text-good"><Check size={14} /> {t('mealPlan.logged')}</span>
             ) : (
                 <button onClick={onLog} aria-label={t('mealPlan.logLabel', { name: meal.name })}
-                    className="flex h-9 shrink-0 items-center gap-1 self-center rounded-full bg-brand-soft px-3 text-xs font-semibold text-brand hover:bg-brand hover:text-snow">
+                    className="col-start-3 row-span-2 row-start-1 flex h-9 shrink-0 items-center gap-1 self-center rounded-full bg-brand-soft px-3 text-xs font-semibold text-brand hover:bg-brand hover:text-snow">
                     <Plus size={14} /> {t('mealPlan.log')}
                 </button>
             )
@@ -139,13 +146,15 @@ export const MealPlanSection = ({ context }: { context: CoachContext }) => {
     if (!plan) {
         return (
             <>
-                <button onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 p-4 text-left text-snow shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><UtensilsCrossed size={22} /></span>
-                    <span className="min-w-0 flex-1">
+                <button onClick={() => setOpen(true)} className="relative flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 p-4 text-left text-snow shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
+                    <Photo photo={foodPhoto('plato-1')} />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-700/95 via-emerald-600/80 to-teal-600/40" />
+                    <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/20 backdrop-blur"><UtensilsCrossed size={22} /></span>
+                    <span className="relative min-w-0 flex-1">
                         <span className="block font-bold">{t('mealPlan.ctaTitle')}</span>
                         <span className="block text-sm text-snow/90">{t('mealPlan.ctaText')}</span>
                     </span>
-                    <Sparkles className="shrink-0" />
+                    <Sparkles className="relative shrink-0" />
                 </button>
                 {sheet}
             </>
@@ -153,6 +162,7 @@ export const MealPlanSection = ({ context }: { context: CoachContext }) => {
     }
 
     const menu = plan.days[day]?.meals ?? [];
+    const photos = mealPhotos(menu, day);
     const logged = loggedKeys(meals, new Date());
 
     const log = (meal: PlannedMeal, index: number) => {
@@ -173,11 +183,13 @@ export const MealPlanSection = ({ context }: { context: CoachContext }) => {
 
     return (
         <div className="card overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-line p-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400"><UtensilsCrossed size={20} /></span>
-                <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{plan.name || t('mealPlan.defaultName')}</p>
-                    <p className="text-xs text-white/50">{t('mealPlan.createdOn', { date: fmtDate(plan.createdAt) })}</p>
+            <div className="relative flex min-h-[6.5rem] items-end gap-3 overflow-hidden bg-emerald-700 p-4 text-snow">
+                <Photo photo={foodPhoto('plato-1')} />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-emerald-900/10" />
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-snow shadow-lg shadow-black/30"><UtensilsCrossed size={20} /></span>
+                <div className="relative min-w-0 flex-1">
+                    <p className="truncate font-bold">{plan.name || t('mealPlan.defaultName')}</p>
+                    <p className="text-xs text-snow/75">{t('mealPlan.createdOn', { date: fmtDate(plan.createdAt) })}</p>
                 </div>
             </div>
 
@@ -194,7 +206,7 @@ export const MealPlanSection = ({ context }: { context: CoachContext }) => {
             <p className="px-4 pt-3 text-sm font-semibold">{day === today ? t('mealPlan.todayMenu') : weekdayLong(day)}</p>
             <ol className="divide-y divide-line">
                 {menu.map((meal, i) => (
-                    <PlannedMealRow key={i} meal={meal} logged={logged.has(planKey(plan, day, i))} onLog={day === today ? () => log(meal, i) : undefined} />
+                    <PlannedMealRow key={i} meal={meal} photo={photos[i]} logged={logged.has(planKey(plan, day, i))} onLog={day === today ? () => log(meal, i) : undefined} />
                 ))}
             </ol>
             <p className="border-t border-line px-4 py-3 text-sm font-semibold tabular-nums">{t('mealPlan.dayTotal', { line: macrosLine(dayTotals(menu)) })}</p>

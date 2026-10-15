@@ -15,6 +15,7 @@ import { pickImage, resizeImage } from '../lib/image';
 import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { fmtDate, fmtNumber, fmtWeight, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
+import { foodHero } from '../data/photos';
 import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { localDay } from '../lib/activity';
@@ -564,7 +565,7 @@ export default function Nutrition() {
 
     return (
         <div className="space-y-6 pb-4">
-            <PageHeader tone="emerald" title={t('nav.nutrition')} subtitle={t('nutrition.subtitle')}>
+            <PageHeader tone="emerald" photo={foodHero()} title={t('nav.nutrition')} subtitle={t('nutrition.subtitle')}>
                 <div className="grid grid-cols-3 gap-2">
                     <HeroStat value={targets ? fmtNumber(Math.max(0, targets.kcal - totals.kcal)) : fmtNumber(totals.kcal)} label={targets ? t('nutrition.heroLeft') : t('nutrition.heroEaten')} />
                     <HeroStat value={`${fmtNumber(totals.protein)} g`} label={t('macro.protein')} />

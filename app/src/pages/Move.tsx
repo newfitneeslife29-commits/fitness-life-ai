@@ -3,7 +3,8 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { HealthCard } from '../components/HealthCard';
-import { Chips, Section, Sheet } from '../components/ui';
+import { Chips, Photo, Section, Sheet } from '../components/ui';
+import { kindPhoto, moveHero, movePhoto } from '../data/photos';
 import { getWalkPlan, WALK_PLANS } from '../data/walking';
 import { l10n, locale, t } from '../i18n';
 import { localDay } from '../lib/activity';
@@ -20,9 +21,9 @@ import type { CardioKind, CardioSession, Unit } from '../store/types';
 // (recorded with GPS or typed in) and walking plans.
 
 const KINDS: { kind: CardioKind; icon: ReactNode; gradient: string }[] = [
-    { kind: 'walk', icon: <Footprints size={26} />, gradient: 'from-emerald-500 to-teal-500 shadow-emerald-500/30' },
-    { kind: 'bike', icon: <Bike size={26} />, gradient: 'from-sky-500 to-indigo-500 shadow-sky-500/30' },
-    { kind: 'run', icon: <Zap size={26} />, gradient: 'from-orange-500 to-rose-500 shadow-orange-500/30' },
+    { kind: 'walk', icon: <Footprints size={22} />, gradient: 'from-emerald-500 to-teal-500 shadow-emerald-500/30' },
+    { kind: 'bike', icon: <Bike size={22} />, gradient: 'from-sky-500 to-indigo-500 shadow-sky-500/30' },
+    { kind: 'run', icon: <Zap size={22} />, gradient: 'from-orange-500 to-rose-500 shadow-orange-500/30' },
 ];
 
 const dayShort = (d: Date) => d.toLocaleDateString(locale(), { weekday: 'narrow' });
@@ -152,13 +153,15 @@ const WalkPlanCard = () => {
     if (!plan || !status || !def) {
         return (
             <>
-                <button onClick={() => setChoosing(true)} className="flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-lime-500 to-emerald-500 p-4 text-left text-snow shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/15"><Route size={22} /></span>
-                    <span className="min-w-0 flex-1">
+                <button onClick={() => setChoosing(true)} className="relative flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-lime-500 to-emerald-500 p-4 text-left text-snow shadow-lg shadow-emerald-500/25 active:scale-[0.99]">
+                    <Photo photo={movePhoto('correr-7')} />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-700/95 via-emerald-600/80 to-lime-500/35" />
+                    <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/20 backdrop-blur"><Route size={22} /></span>
+                    <span className="relative min-w-0 flex-1">
                         <span className="block font-bold">{t('walkPlan.ctaTitle')}</span>
                         <span className="block text-sm text-snow/90">{t('walkPlan.ctaText')}</span>
                     </span>
-                    <ChevronRight className="shrink-0" />
+                    <ChevronRight className="relative shrink-0" />
                 </button>
                 {picker}
             </>
@@ -167,12 +170,14 @@ const WalkPlanCard = () => {
 
     return (
         <div className="card overflow-hidden">
-            <div className="bg-gradient-to-r from-lime-500/20 to-emerald-500/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400">{t('walkPlan.week', { n: status.week + 1, of: def.weeks.length })}</p>
-                <p className="text-lg font-bold">{l10n(def.name)}</p>
-                <div className="mt-2 flex gap-1.5" aria-label={t('walkPlan.doneOf', { n: status.doneThisWeek, of: status.spec.walks })}>
+            <div className="relative flex min-h-[9rem] flex-col justify-end overflow-hidden bg-emerald-800 p-4 text-snow">
+                <Photo photo={movePhoto('correr-7')} />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-emerald-900/10" />
+                <p className="relative text-xs font-semibold uppercase tracking-wide text-emerald-300">{t('walkPlan.week', { n: status.week + 1, of: def.weeks.length })}</p>
+                <p className="relative text-lg font-bold">{l10n(def.name)}</p>
+                <div className="relative mt-2 flex gap-1.5" aria-label={t('walkPlan.doneOf', { n: status.doneThisWeek, of: status.spec.walks })}>
                     {Array.from({ length: status.spec.walks }, (_, i) => (
-                        <span key={i} className={`h-2 flex-1 rounded-full ${i < status.doneThisWeek ? 'bg-emerald-400' : 'bg-ink-4'}`} />
+                        <span key={i} className={`h-2 flex-1 rounded-full ${i < status.doneThisWeek ? 'bg-emerald-400' : 'bg-snow/25'}`} />
                     ))}
                 </div>
             </div>
@@ -344,10 +349,12 @@ export default function Move() {
     };
     return (
         <div className="space-y-6 pb-4">
-            <header className="bleed-top relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow">
-                <div aria-hidden className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-snow/10 blur-2xl" />
+            <header className="bleed-top relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-700 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-snow shadow-lg shadow-teal-600/25">
+                <Photo photo={moveHero()} />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-700/85 via-teal-600/45 to-sky-700/15" />
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20" />
                 <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="relative -ml-2 rounded-lg p-2 text-snow/80 hover:bg-snow/10"><ChevronLeft size={22} /></button>
-                <h1 className="relative mt-1 text-3xl font-extrabold tracking-tight">{t('move.title')}</h1>
+                <h1 className="relative mt-10 text-3xl font-extrabold tracking-tight drop-shadow">{t('move.title')}</h1>
                 <p className="relative text-sm text-snow/85">{t('move.subtitle')}</p>
             </header>
 
@@ -370,9 +377,12 @@ export default function Move() {
                 <div className="grid grid-cols-3 gap-2">
                     {KINDS.map(k => (
                         <button key={k.kind} onClick={() => start(k.kind)} disabled={!!active}
-                            className={`flex flex-col items-center gap-2 rounded-2xl bg-gradient-to-br p-4 text-snow shadow-lg active:scale-95 disabled:opacity-40 ${k.gradient}`}>
-                            {k.icon}
-                            <span className="text-sm font-bold">{t(`cardio.kind.${k.kind}`)}</span>
+                            className={`relative flex h-32 flex-col items-start justify-between overflow-hidden rounded-2xl bg-gradient-to-br p-3 text-left text-snow shadow-lg active:scale-95 disabled:opacity-40 ${k.gradient}`}>
+                            <Photo photo={kindPhoto(k.kind)} />
+                            <span aria-hidden className={`absolute inset-0 bg-gradient-to-br opacity-35 ${k.gradient}`} />
+                            <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                            <span className={`relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-md ${k.gradient}`}>{k.icon}</span>
+                            <span className="relative flex w-full items-center justify-between text-sm font-bold">{t(`cardio.kind.${k.kind}`)} <Play size={14} fill="currentColor" /></span>
                         </button>
                     ))}
                 </div>

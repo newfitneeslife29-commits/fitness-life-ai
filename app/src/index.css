@@ -46,6 +46,12 @@
   /* A coloured header inside the page frame (already padded by .pt-safe):
      its colour runs up under the status bar instead of leaving a gap. */
   .bleed-top { margin-top: calc(-1 * env(safe-area-inset-top)); }
+  /* The tab colour over a header photo: solid behind the title, fading so
+     the photo shows on the right (old Android WebViews need the prefix). */
+  .photo-tint {
+    -webkit-mask-image: linear-gradient(105deg, #000 30%, rgba(0, 0, 0, .3) 100%);
+    mask-image: linear-gradient(105deg, #000 30%, rgba(0, 0, 0, .3) 100%);
+  }
 }
 
 /* Welcome screen and launch intro. Reduced motion shortens them (rule above). */
