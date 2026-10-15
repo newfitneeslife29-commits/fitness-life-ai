@@ -3,6 +3,12 @@ import path from 'node:path';
 
 const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', name);
 
+// New users get a tour of the app once; tests skip it, except the one about it.
+test.beforeEach(async ({ page }, info) => {
+    if (info.title.startsWith('tour:')) return;
+    await page.addInitScript(() => localStorage.setItem('fitness-life:guide-seen', '1'));
+});
+
 // Full journey on a phone viewport against the production build.
 
 interface PlanAnswers { days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
@@ -253,7 +259,9 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
 
 test('switch language in onboarding and settings', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('radio', { name: 'English' }).click();
+    await page.getByRole('button', { name: 'Idioma: Español' }).click();
+    await page.getByRole('radio', { name: /English/ }).click();
+    await expect(page.getByText('Language changed to English')).toBeVisible();
     await page.getByRole('button', { name: 'Start for free' }).click();
     await page.getByRole('button', { name: 'Continue without an account' }).click();
     await expect(page.getByRole('heading', { name: 'Your strength plan in 1 minute' })).toBeVisible();
@@ -273,7 +281,9 @@ test('switch language in onboarding and settings', async ({ page }) => {
     await expect(page.getByRole('link', { name: 'Nutrition', exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: 'Settings', exact: true }).click();
-    await page.getByRole('radio', { name: 'Português' }).click();
+    await page.getByRole('button', { name: /English/ }).click();
+    await page.getByRole('radio', { name: /Português/ }).click();
+    await expect(page.getByText('Idioma alterado para Português')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Início', exact: true })).toBeVisible();
     await page.reload();
     await page.getByRole('link', { name: 'Início', exact: true }).click();
@@ -318,7 +328,7 @@ test('light and dark mode follow the phone and can be chosen in settings', async
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.
 // Free users get no AI (the server answers 402); Premium users get 300 uses a month.
-const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { premium?: boolean; reports?: Record<string, unknown>[] } = {}) => {
+const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { premium?: boolean; reports?: Record<string, unknown>[]; feedback?: Record<string, unknown>[] } = {}) => {
     // RevenueCat is not reachable in tests: the paywall falls back to the default price.
     await page.route('https://api.revenuecat.com/**', route => route.abort());
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
@@ -382,6 +392,10 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
             }
             return route.fulfill({ headers: cors, json: { text: 'Prueba pechuga de pollo (150 g, unos 45 g de proteína) con arroz y verduras.' } });
         }
+        if (url.includes('/rest/v1/app_feedback') && req.method() === 'POST') {
+            opts.feedback?.push(req.postDataJSON());
+            return route.fulfill({ status: 201, headers: cors, body: '' });
+        }
         if (url.includes('/rest/v1/ai_reports') && req.method() === 'POST') {
             opts.reports?.push(req.postDataJSON());
             return route.fulfill({ status: 201, headers: cors, body: '' });
@@ -389,6 +403,60 @@ const mockAi = async (page: Page, calls: Record<string, unknown>[], opts: { prem
         return route.fulfill({ status: 404, headers: cors, body: '' });
     });
 };
+
+test('tour: new users see the app guide once, and Ajustes has it, feedback, privacy and every language', async ({ page }) => {
+    const feedback: Record<string, unknown>[] = [];
+    await mockAi(page, [], { feedback });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+
+    // The tour, right after setting up the plan.
+    const tour = page.getByRole('dialog', { name: 'Guía de la app' });
+    await expect(tour.getByRole('heading', { name: '¡Bienvenido a Fitness Life!' })).toBeVisible();
+    await tour.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(tour.getByRole('heading', { name: 'Inicio: tu entreno de hoy' })).toBeVisible();
+    for (let i = 0; i < 7; i++) await tour.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(tour.getByRole('heading', { name: 'Ajustes' })).toBeVisible();
+    await tour.getByRole('button', { name: '¡A entrenar!' }).click();
+    await expect(tour).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: '0 de 3 entrenos esta semana' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Guía de la app' })).toHaveCount(0);
+
+    // Ajustes → the guide again, any time.
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('link', { name: /Guía de la app/ }).click();
+    await expect(page.getByRole('heading', { name: '¡Bienvenido a Fitness Life!' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar' }).click();
+
+    // Privacy policy, inside the app.
+    await page.getByRole('link', { name: /Política de privacidad/ }).click();
+    await expect(page.getByRole('heading', { name: 'Política de privacidad' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tus comentarios' })).toBeVisible();
+    await page.getByRole('button', { name: 'Volver' }).click();
+
+    // Feedback straight from the app.
+    await page.getByRole('link', { name: /Enviar comentarios/ }).click();
+    await page.getByRole('radio', { name: 'Un problema' }).click();
+    await page.getByRole('radio', { name: '4 de 5 estrellas' }).click();
+    await page.getByRole('textbox', { name: 'Tu mensaje' }).fill('El temporizador no suena con el móvil en silencio');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+    await expect(page.getByText('¡Gracias! Recibimos tu mensaje')).toBeVisible();
+    expect(feedback[0]).toMatchObject({ kind: 'problem', rating: 4, message: 'El temporizador no suena con el móvil en silencio', lang: 'es', platform: 'web' });
+
+    // Every language, with a notice in the new one.
+    await page.getByRole('button', { name: /Español/ }).click();
+    const languages = page.getByRole('dialog', { name: 'Idioma' });
+    await expect(languages.getByRole('radio')).toHaveCount(15);
+    await languages.getByRole('textbox', { name: 'Buscar idioma' }).fill('fren');
+    await languages.getByRole('radio', { name: /Français/ }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+    await expect(page.getByRole('button', { name: /Français/ })).toBeVisible();
+    await page.getByRole('button', { name: /Français/ }).click();
+    await page.getByRole('radio', { name: /Español/ }).click();
+    await expect(page.getByText('Idioma cambiado a Español')).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+});
 
 test('nutrition: targets, meals by hand and with AI, and the AI coach (Premium)', async ({ page }) => {
     const calls: Record<string, unknown>[] = [];

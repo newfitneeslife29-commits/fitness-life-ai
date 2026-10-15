@@ -16,9 +16,15 @@ export interface Author {
     avatarUrl: string | null;
 }
 
+// What a post is about; the feed can show only one kind.
+export type PostKind = 'general' | 'tip' | 'experience' | 'question' | 'achievement';
+export const POST_KINDS: PostKind[] = ['tip', 'experience', 'question', 'achievement', 'general'];
+const isKind = (v: unknown): v is PostKind => POST_KINDS.includes(v as PostKind);
+
 export interface Post {
     id: string;
     userId: string;
+    kind: PostKind;
     body: string;
     imageUrl: string | null;
     imagePath: string | null;
@@ -54,21 +60,35 @@ const myId = async () => {
 const reader = getSessionClient;
 
 const POST_COLUMNS = 'id, body, image_path, created_at, user_id, author:community_profiles!community_posts_user_id_fkey(name, avatar_path, updated_at), community_likes(count), community_comments(count)';
+// Until the server has post kinds (its database updated), ask without them.
+let withKinds = true;
+const noKindColumn = (e: { code?: string; message?: string } | null) =>
+    Boolean(e && withKinds && (e.code === '42703' || e.code === 'PGRST204' || /\bkind\b/.test(e.message ?? '')));
 
 // All posts, one person's (`user`), or (`following`) those of the people
 // followed, matched on the server: their ids in the address would make it
 // too long for many follows.
-export const fetchFeed = async (before?: string, opts: { following?: boolean; user?: string } = {}): Promise<Post[]> => {
+export const fetchFeed = async (before?: string, opts: { following?: boolean; user?: string; kind?: PostKind } = {}): Promise<Post[]> => {
     const supabase = await reader();
-    let query = (opts.following ? supabase.rpc('community_following_posts').select(POST_COLUMNS) : supabase.from('community_posts').select(POST_COLUMNS))
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
-    if (before) query = query.lt('created_at', before);
-    if (opts.user) query = query.eq('user_id', opts.user);
-    const { data, error } = await query;
+    const ask = () => {
+        const columns = withKinds ? `kind, ${POST_COLUMNS}` : POST_COLUMNS;
+        let query = (opts.following ? supabase.rpc('community_following_posts').select(columns) : supabase.from('community_posts').select(columns))
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE);
+        if (before) query = query.lt('created_at', before);
+        if (opts.user) query = query.eq('user_id', opts.user);
+        if (opts.kind && withKinds) query = query.eq('kind', opts.kind);
+        return query;
+    };
+    let { data, error } = await ask();
+    if (noKindColumn(error)) {
+        withKinds = false;
+        if (opts.kind) return []; // no kinds on the server yet: nothing of this kind
+        ({ data, error } = await ask());
+    }
     if (error) throw error;
     const rows = (data ?? []) as unknown as {
-        id: string; body: string; image_path: string | null; created_at: string; user_id: string;
+        id: string; kind?: string; body: string; image_path: string | null; created_at: string; user_id: string;
         author: ProfileRow; community_likes: { count: number }[]; community_comments: { count: number }[];
     }[];
     const me = await myId();
@@ -79,7 +99,7 @@ export const fetchFeed = async (before?: string, opts: { following?: boolean; us
     }
     const blocked = new Set(getState().blockedUsers ?? []);
     return rows.filter(r => !blocked.has(r.user_id)).map(r => ({
-        id: r.id, userId: r.user_id, body: r.body, imagePath: r.image_path, imageUrl: publicUrl(r.image_path), createdAt: r.created_at,
+        id: r.id, userId: r.user_id, kind: isKind(r.kind) ? r.kind : 'general', body: r.body, imagePath: r.image_path, imageUrl: publicUrl(r.image_path), createdAt: r.created_at,
         author: authorOf(r.author), likes: r.community_likes[0]?.count ?? 0, comments: r.community_comments[0]?.count ?? 0, liked: liked.has(r.id),
     }));
 };
@@ -91,7 +111,7 @@ const requireMember = async () => {
     return { supabase: await getSupabase(), id };
 };
 
-export const createPost = async (body: string, photo: Blob | null) => {
+export const createPost = async (body: string, photo: Blob | null, kind: PostKind = 'general') => {
     const { supabase, id } = await requireMember();
     const postId = uid();
     let imagePath: string | null = null;
@@ -100,7 +120,12 @@ export const createPost = async (body: string, photo: Blob | null) => {
         const { error } = await supabase.storage.from(BUCKET).upload(imagePath, photo, { contentType: 'image/jpeg', upsert: false });
         if (error) throw error;
     }
-    const { error } = await supabase.from('community_posts').insert({ id: postId, user_id: id, body: body.trim(), image_path: imagePath });
+    const row: { id: string; user_id: string; body: string; image_path: string | null; kind?: PostKind } = { id: postId, user_id: id, body: body.trim(), image_path: imagePath };
+    let { error } = await supabase.from('community_posts').insert(withKinds ? { ...row, kind } : row);
+    if (noKindColumn(error)) {
+        withKinds = false;
+        ({ error } = await supabase.from('community_posts').insert(row));
+    }
     if (error) {
         if (imagePath) await supabase.storage.from(BUCKET).remove([imagePath]);
         throw error;

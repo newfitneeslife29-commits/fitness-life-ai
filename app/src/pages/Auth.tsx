@@ -48,6 +48,9 @@ export default function AuthScreen({ initialMode = 'signUp', onDone, onSkip, onB
     const [busy, setBusy] = useState<'email' | OAuthProvider | 'loading' | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    // A new account waiting for its e-mail to be confirmed: signs in by itself
+    // as soon as it's confirmed (when the user comes back to the app).
+    const [pending, setPending] = useState<{ email: string; password: string } | null>(null);
     const [providers, setProviders] = useState<Providers>({ google: false, apple: false, facebook: false });
 
     useEffect(() => {
@@ -61,6 +64,32 @@ export default function AuthScreen({ initialMode = 'signUp', onDone, onSkip, onB
         void waitForSync().then(onDone);
     }, [account?.id]);
 
+    useEffect(() => {
+        if (!pending || account) return;
+        let trying = false;
+        const attempt = async () => {
+            if (trying || document.visibilityState !== 'visible') return;
+            trying = true;
+            try {
+                await signInWithEmail(pending.email, pending.password);
+                setPending(null);
+                toast(t('auth.welcome'), 3000);
+            } catch {
+                // Not confirmed yet: try again on the next return or tick.
+            } finally {
+                trying = false;
+            }
+        };
+        document.addEventListener('visibilitychange', attempt);
+        window.addEventListener('focus', attempt);
+        const timer = window.setInterval(attempt, 20_000);
+        return () => {
+            document.removeEventListener('visibilitychange', attempt);
+            window.removeEventListener('focus', attempt);
+            window.clearInterval(timer);
+        };
+    }, [pending, account]);
+
     const fail = (e: unknown) => setError(t(`auth.err.${e instanceof AuthFailure ? e.code : 'failed'}`));
 
     const submit = async (e: FormEvent) => {
@@ -70,8 +99,12 @@ export default function AuthScreen({ initialMode = 'signUp', onDone, onSkip, onB
         setBusy('email');
         try {
             if (mode === 'signIn') await signInWithEmail(email, password);
-            else if ((await signUpWithEmail(email, password)) === 'confirm') {
-                setNotice(t('auth.confirmSent', { email: email.trim() }));
+            else if ((await signUpWithEmail(email, password)) === 'signedIn') toast(t('auth.welcome'), 3000);
+            else {
+                // The account exists; the project asks to confirm the e-mail
+                // before the first sign-in. Sign in by itself once it is.
+                setNotice(t('auth.confirmAuto', { email: email.trim() }));
+                setPending({ email, password });
                 setMode('signIn');
             }
         } catch (err) {

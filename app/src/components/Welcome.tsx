@@ -1,11 +1,12 @@
 import { ArrowRight, Camera, Dumbbell, LogIn, Sparkles, Upload } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import { exercisePhotos } from '../data/exercises';
-import { getLang, LANGS, t, type Lang } from '../i18n';
+import { t } from '../i18n';
 import { LEGAL_URL } from '../lib/premium';
 import { MARK_PATH } from '../lib/appIcons';
 import { actions, useStore } from '../store/store';
 import { GetTheAppBar } from './GetTheApp';
+import { LanguageButton } from './LanguagePicker';
 import { toast } from './feedback';
 
 // The brand mark (same shape as the app icon).
@@ -63,15 +64,7 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
                     <Logo size={32} />
                     <span className="font-bold tracking-tight">Fitness Life</span>
                 </div>
-                <div role="radiogroup" aria-label={t('settings.language')} className="flex rounded-full bg-ink/85 p-1">
-                    {LANGS.map(l => (
-                        <button key={l.code} role="radio" aria-checked={getLang() === l.code} aria-label={l.label}
-                            onClick={() => actions.setLanguage(l.code as Lang)}
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${getLang() === l.code ? 'bg-brand text-ink' : 'text-white/70'}`}>
-                            {l.code}
-                        </button>
-                    ))}
-                </div>
+                <LanguageButton />
             </header>
 
             <div className="relative z-10 mx-auto mt-auto w-full max-w-lg px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">

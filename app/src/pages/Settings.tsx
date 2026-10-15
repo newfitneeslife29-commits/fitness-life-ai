@@ -1,14 +1,15 @@
-import { Camera, ChevronRight, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Languages, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
+import { LanguageRow } from '../components/LanguagePicker';
 import { TrainingReminder } from '../components/TrainingReminder';
 import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Chips, PageHeader, Section, Sheet } from '../components/ui';
 import { programName } from '../data/programs';
 import { programFor } from '../lib/plan';
-import { getLang, LANGS, locale, t, tp, type Lang } from '../i18n';
+import { locale, t, tp } from '../i18n';
 import { authAvailable, deleteAccount, signOut } from '../lib/auth';
 import { ACHIEVEMENTS } from '../lib/achievements';
 import { useUnlocked } from '../lib/useAchievements';
@@ -24,6 +25,7 @@ import { appIconTiming, getAppIcon, setAppIcon } from '../lib/appIcon';
 import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
+import { appVersion, checkForUpdate, useUpdate } from '../lib/updates';
 import { actions, getSaveError, useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
 import type { Goal, Level, Setup } from '../store/types';
@@ -97,11 +99,7 @@ export default function Settings() {
             <PremiumCard />
 
             <Section title={t('settings.language')}>
-                <div className="card flex items-center gap-3 p-4">
-                    <Languages size={20} className="shrink-0 text-brand" />
-                    <Chips<Lang> label={t('settings.language')} value={getLang()} onChange={lang => actions.setLanguage(lang)}
-                        options={LANGS.map(l => ({ value: l.code, label: l.label }))} />
-                </div>
+                <LanguageRow />
             </Section>
 
             <Section title={t('settings.appearance')}>
@@ -185,6 +183,8 @@ export default function Settings() {
                     )}
                 </div>
             </Section>
+
+            <HelpSection />
 
             <Section title={t('settings.data')}>
                 <div className="card space-y-3 p-4">
@@ -437,6 +437,58 @@ function AppIconPicker() {
                     ))}
                 </div>
                 <p className="mt-3 text-xs text-white/50">{t(`appIcon.hint.${appIconTiming}`)}</p>
+            </div>
+        </Section>
+    );
+}
+
+const NavRow = ({ to, icon, title, hint }: { to: string; icon: ReactNode; title: string; hint: string }) => (
+    <Link to={to} className="flex items-center gap-3 p-4 hover:bg-ink-3">
+        <span className="shrink-0 text-brand">{icon}</span>
+        <span className="min-w-0 flex-1">
+            <span className="block font-medium">{title}</span>
+            <span className="block text-sm text-white/55">{hint}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
+// The guide, feedback, privacy, and which version this is (with a check for a newer one).
+function HelpSection() {
+    const update = useUpdate();
+    const [version, setVersion] = useState<string | null>(null);
+    const [checking, setChecking] = useState(false);
+    useEffect(() => {
+        let live = true;
+        void appVersion().then(v => live && setVersion(v));
+        return () => { live = false; };
+    }, []);
+    const check = async () => {
+        setChecking(true);
+        const found = await checkForUpdate(true);
+        setChecking(false);
+        if (!found) toast(t('update.upToDate'));
+    };
+    return (
+        <Section title={t('settings.help')}>
+            <div className="card divide-y divide-line overflow-hidden">
+                <NavRow to="/guia" icon={<BookOpen size={20} />} title={t('guide.title')} hint={t('guide.hint')} />
+                <NavRow to="/comentarios" icon={<MessageSquareHeart size={20} />} title={t('feedback.title')} hint={t('feedback.hint')} />
+                <NavRow to="/privacidad" icon={<ShieldCheck size={20} />} title={t('privacy.title')} hint={t('privacy.hint')} />
+                <div className="flex items-center gap-3 p-4">
+                    <RefreshCw size={20} className="shrink-0 text-brand" />
+                    <div className="min-w-0 flex-1">
+                        <p className="font-medium">{version ? t('update.version', { version }) : 'Fitness Life'}</p>
+                        <p className="text-sm text-white/55">{update ? t('update.title') : t('update.hint')}</p>
+                    </div>
+                    {update ? (
+                        <button onClick={() => void update.apply().catch(() => toast(t('update.failed'), 4000))} className="btn-primary shrink-0 px-4 py-2 text-sm">{t('update.now')}</button>
+                    ) : (
+                        <button onClick={() => void check()} disabled={checking} className="btn-ghost shrink-0 px-3 py-2 text-sm">
+                            {checking ? t('update.checking') : t('update.check')}
+                        </button>
+                    )}
+                </div>
             </div>
         </Section>
     );

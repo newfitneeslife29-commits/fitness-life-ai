@@ -1,14 +1,15 @@
-import { Camera, ImageIcon, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
+import { Camera, HeartHandshake, ImageIcon, MessageSquarePlus, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
 import { acceptRules, PostList } from '../components/community/Posts';
+import { KIND_STYLE, weeklyTopic } from '../components/community/kinds';
 import { StoriesBar, StoryComposer, StoryViewer } from '../components/community/Stories';
 import { Section, Sheet } from '../components/ui';
-import { t } from '../i18n';
+import { t, type Key } from '../i18n';
 import { authAvailable } from '../lib/auth';
-import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, type Post, type StoryGroup } from '../lib/community';
+import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, POST_KINDS, type Post, type PostKind, type StoryGroup } from '../lib/community';
 import { pickImage, resizeImage } from '../lib/image';
 import { useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
@@ -18,9 +19,13 @@ import { errorText } from '../lib/errorText';
 
 type Tab = 'all' | 'following';
 
-const Composer = ({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) => {
+const Composer = ({ open, onClose, onPosted, initialKind = 'general' }: { open: boolean; onClose: () => void; onPosted: () => void; initialKind?: PostKind }) => {
     const profile = useStore(s => s.profile)!;
     const [body, setBody] = useState('');
+    const [kind, setKind] = useState<PostKind>(initialKind);
+    useEffect(() => {
+        if (open) setKind(initialKind);
+    }, [open, initialKind]);
     const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
     const [busy, setBusy] = useState(false);
 
@@ -51,7 +56,7 @@ const Composer = ({ open, onClose, onPosted }: { open: boolean; onClose: () => v
         if (!(await acceptRules())) return;
         setBusy(true);
         try {
-            await createPost(body, photo?.blob ?? null);
+            await createPost(body, photo?.blob ?? null, kind);
             toast(t('community.posted'));
             onPosted();
             onClose();
@@ -64,10 +69,18 @@ const Composer = ({ open, onClose, onPosted }: { open: boolean; onClose: () => v
 
     return (
         <Sheet open={open} onClose={onClose} title={t('community.newPost')}>
+            <div className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="radiogroup" aria-label={t('community.kindLabel')}>
+                {POST_KINDS.map(k => (
+                    <button key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${kind === k ? 'bg-brand text-snow' : 'bg-ink-3 text-white/65'}`}>
+                        {KIND_STYLE[k].icon(15)} {t(`community.kind.${k}`)}
+                    </button>
+                ))}
+            </div>
             <div className="flex gap-3">
                 <Avatar src={profile.avatar} name={profile.name} size={40} />
                 <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={1000} rows={4} autoFocus
-                    aria-label={t('community.placeholder')} placeholder={t('community.placeholder')}
+                    aria-label={t('community.placeholder')} placeholder={t(`community.placeholder.${kind}`)}
                     className="min-w-0 flex-1 resize-none rounded-xl border border-line bg-ink px-3 py-2.5 outline-none focus:border-brand" />
             </div>
             {photo ? (
@@ -102,7 +115,9 @@ export default function Community() {
     const [posts, setPosts] = useState<Post[] | null>(null);
     const [failed, setFailed] = useState<string | false>(false);
     const [more, setMore] = useState(false);
-    const [composing, setComposing] = useState(false);
+    const [composing, setComposing] = useState<PostKind | null>(null);
+    const [filter, setFilter] = useState<PostKind | 'all'>('all');
+    const topic = weeklyTopic();
     const [stories, setStories] = useState<StoryGroup[] | null>(null);
     const [storyAt, setStoryAt] = useState<number | null>(null);
     const [addingStory, setAddingStory] = useState(false);
@@ -118,7 +133,7 @@ export default function Community() {
         setFailed(false);
         const n = ++request.current;
         try {
-            const page = await fetchFeed(undefined, { following: tab === 'following' });
+            const page = await fetchFeed(undefined, { following: tab === 'following', kind: filter === 'all' ? undefined : filter });
             if (n !== request.current) return;
             setPosts(page);
             setMore(page.length >= PAGE_SIZE);
@@ -129,7 +144,7 @@ export default function Community() {
             setFailed(errorText(e));
             setPosts(p => p ?? []);
         }
-    }, [tab]);
+    }, [tab, filter]);
 
     useEffect(() => {
         if (!authAvailable()) return;
@@ -143,7 +158,7 @@ export default function Community() {
         if (!last) return;
         try {
             const n = request.current;
-            const page = await fetchFeed(last.createdAt, { following: tab === 'following' });
+            const page = await fetchFeed(last.createdAt, { following: tab === 'following', kind: filter === 'all' ? undefined : filter });
             if (n !== request.current) return;
             setPosts(p => [...(p ?? []), ...page]);
             setMore(page.length >= PAGE_SIZE);
@@ -194,6 +209,25 @@ export default function Community() {
                     onAdd={() => setAddingStory(true)} onOpen={setStoryAt} />
             </Section>
 
+            <Section>
+                <div className="card relative overflow-hidden p-4">
+                    <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-fuchsia-500/20 blur-2xl" />
+                    <p className="relative flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand">
+                        {KIND_STYLE[topic.kind].icon(14)} {t('community.topicTitle')}
+                    </p>
+                    <p className="relative mt-1.5 text-lg font-bold leading-snug">{t(`community.topic.${topic.n}` as Key)}</p>
+                    <p className="relative mt-1 text-sm text-white/60">{t('community.topicText')}</p>
+                    {member ? (
+                        <button onClick={() => setComposing(topic.kind)} className="btn-primary relative mt-3 w-full"><MessageSquarePlus size={18} /> {t('community.topicShare')}</button>
+                    ) : (
+                        <Link to="/cuenta" className="btn-primary relative mt-3 w-full">{t('community.topicJoin')}</Link>
+                    )}
+                    <p className="relative mt-3 flex items-start gap-2 border-t border-line pt-3 text-xs text-white/55">
+                        <HeartHandshake size={16} className="mt-px shrink-0 text-brand" /> {t('community.values')}
+                    </p>
+                </div>
+            </Section>
+
             {requests > 0 && (
                 <Section>
                     <Link to={`/comunidad/u/${me}`} className="card flex items-center gap-3 border-amber-400/40 bg-amber-400/10 p-3">
@@ -205,7 +239,7 @@ export default function Community() {
 
             <Section>
                 {member ? (
-                    <button onClick={() => setComposing(true)} className="card flex w-full items-center gap-3 p-3 text-left hover:bg-ink-3">
+                    <button onClick={() => setComposing('general')} className="card flex w-full items-center gap-3 p-3 text-left hover:bg-ink-3">
                         <Avatar src={profile.avatar} name={profile.name} size={42} />
                         <span className="min-w-0 flex-1 rounded-full bg-ink-3 px-4 py-2.5 text-sm text-white/50">{t('community.placeholder')}</span>
                         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand to-fuchsia-500 text-snow"><Camera size={18} /></span>
@@ -235,6 +269,17 @@ export default function Community() {
             )}
 
             <Section>
+                <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1" role="tablist" aria-label={t('community.filter')}>
+                    {(['all', ...POST_KINDS] as const).map(k => (
+                        <button key={k} role="tab" aria-selected={filter === k} onClick={() => { if (k !== filter) { setFilter(k); setPosts(null); } }}
+                            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${filter === k ? 'border-brand bg-brand-soft text-brand-strong' : 'border-line text-white/60'}`}>
+                            {k !== 'all' && KIND_STYLE[k].icon(14)} {t(k === 'all' ? 'community.filter.all' : `community.filter.${k}`)}
+                        </button>
+                    ))}
+                </div>
+            </Section>
+
+            <Section>
                 {posts === null ? (
                     <div className="space-y-3" role="status" aria-label={t('community.loading')}>
                         {[0, 1].map(i => (
@@ -247,7 +292,10 @@ export default function Community() {
                 ) : posts.length === 0 ? (
                     <div className="card p-8 text-center">
                         <ShieldAlert size={28} className="mx-auto mb-2 text-white/30" />
-                        <p className="text-sm text-white/60">{failed ? t('community.loadFailed') : tab === 'following' ? t('community.followingEmpty') : t('community.empty')}</p>
+                        <p className="text-sm text-white/60">{failed ? t('community.loadFailed') : tab === 'following' ? t('community.followingEmpty') : filter !== 'all' ? t(`community.emptyKind.${filter}`) : t('community.empty')}</p>
+                        {!failed && member && filter !== 'all' && (
+                            <button className="btn-primary mt-3" onClick={() => setComposing(filter)}><MessageSquarePlus size={16} /> {t('community.shareFirst')}</button>
+                        )}
                         {failed && <p className="mt-1 break-words text-xs text-white/35">{failed}</p>}
                         {failed && <button className="btn-ghost mt-3" onClick={() => void load()}><RefreshCw size={16} /> {t('community.retry')}</button>}
                     </div>
@@ -259,7 +307,7 @@ export default function Community() {
                 )}
             </Section>
 
-            <Composer open={composing} onClose={() => setComposing(false)} onPosted={() => void load()} />
+            <Composer open={composing !== null} initialKind={composing ?? 'general'} onClose={() => setComposing(null)} onPosted={() => void load()} />
             <StoryComposer open={addingStory} onClose={() => setAddingStory(false)} onPosted={loadStories} />
             {storyAt !== null && stories && (
                 <StoryViewer groups={stories} start={storyAt} onClose={() => { setStoryAt(null); setStories(s => (s ? [...s] : s)); }} onChanged={loadStories} />

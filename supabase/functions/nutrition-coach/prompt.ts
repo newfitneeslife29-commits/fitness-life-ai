@@ -1,4 +1,10 @@
-export type Lang = 'es' | 'en' | 'pt';
+// The app's languages. Answers come in the language the app is set to.
+export const LANGUAGE = {
+  es: 'Spanish', en: 'English', pt: 'Brazilian Portuguese', fr: 'French', de: 'German', it: 'Italian',
+  nl: 'Dutch', pl: 'Polish', tr: 'Turkish', ru: 'Russian', ja: 'Japanese', ko: 'Korean',
+  zh: 'Simplified Chinese', hi: 'Hindi', id: 'Indonesian',
+} as const;
+export type Lang = keyof typeof LANGUAGE;
 export type Goal = 'musculo' | 'fuerza' | 'grasa' | 'salud';
 export type Sex = 'hombre' | 'mujer';
 export type Activity = 'sedentario' | 'ligero' | 'moderado' | 'alto';
@@ -25,7 +31,6 @@ export interface CoachContext {
   targetWeightKg: number | null;
 }
 
-const LANGUAGE: Record<Lang, string> = { es: 'Spanish', en: 'English', pt: 'Brazilian Portuguese' };
 const GOAL: Record<Goal, string> = { musculo: 'build muscle', fuerza: 'get stronger', grasa: 'lose fat', salud: 'get fit and healthy' };
 const ACTIVITY: Record<Activity, string> = {
   sedentario: 'mostly sitting', ligero: 'lightly active', moderado: 'on their feet a lot', alto: 'physical job or daily sport',
@@ -110,7 +115,12 @@ export interface TrainerContext {
   history: string;
 }
 
-const ROUTINE_BUTTON: Record<Lang, string> = { es: 'Crear rutina con IA', en: 'Create routine with AI', pt: 'Criar rotina com IA' };
+const ROUTINE_BUTTON: Partial<Record<Lang, string>> = { es: 'Crear rutina con IA', en: 'Create routine with AI', pt: 'Criar rotina com IA' };
+// Other languages: the app shows the button translated, so describe it.
+const routineButton = (lang: Lang) => {
+  const name = ROUTINE_BUTTON[lang];
+  return name ? `"${name}"` : `the "${ROUTINE_BUTTON.en}" button (shown in ${LANGUAGE[lang]})`;
+};
 const LEVEL = { principiante: 'beginner', intermedio: 'intermediate', avanzado: 'advanced' } as const;
 const SETUP = { gimnasio: 'a full gym', mancuernas: 'dumbbells and a bench', casa: 'bodyweight only, at home' } as const;
 
@@ -118,7 +128,7 @@ export const trainerSystem = (lang: Lang) => `You are the personal trainer insid
 
 Answer in ${LANGUAGE[lang]}. Write for a phone screen: short paragraphs or a few "-" bullet points, with no headings, tables or Markdown emphasis. Most answers fit in under 150 words. Be encouraging and concrete: name exercises, sets, reps, rest and weights when it helps, based on the user's plan and recent workouts below.
 
-The app already gives the user a plan and suggests weights with double progression (add reps up to the top of the range, then add weight). Build on that instead of contradicting it. When the user asks for a full new routine, give it briefly and mention they can tap "${ROUTINE_BUTTON[lang]}" on this screen to save one in the app.
+The app already gives the user a plan and suggests weights with double progression (add reps up to the top of the range, then add weight). Build on that instead of contradicting it. When the user asks for a full new routine, give it briefly and mention they can tap ${routineButton(lang)} on this screen to save one in the app.
 
 Many users train at home with no equipment: give them the same priority and care as gym users. Make home training effective: progress with more reps, a slower tempo (3 seconds down), pauses, one-leg or one-arm versions and shorter rests, and use circuits when they want to burn fat. Household items (a backpack with books, water bottles, a sturdy chair or step) are optional extras, never required.
 

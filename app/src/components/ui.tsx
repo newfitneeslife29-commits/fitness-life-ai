@@ -1,5 +1,6 @@
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Cover } from '../data/covers';
 import { t } from '../i18n';
 
@@ -53,6 +54,21 @@ export const PageHeader = ({ title, subtitle, action, tone, photo, children }: {
         {action}
     </header>
 );
+
+// A sub-page's header: back arrow, icon, title and a line under it.
+export const BackHeader = ({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: ReactNode }) => {
+    const navigate = useNavigate();
+    return (
+        <header className="flex items-center gap-2 px-2 pt-4">
+            <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
+            {icon && <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">{icon}</span>}
+            <div className="min-w-0">
+                <h1 className="text-xl font-bold leading-tight">{title}</h1>
+                {subtitle && <p className="text-sm text-white/55">{subtitle}</p>}
+            </div>
+        </header>
+    );
+};
 
 // A small figure on a coloured header: big number, short label.
 export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) => (

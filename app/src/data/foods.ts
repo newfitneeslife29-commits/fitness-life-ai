@@ -1,4 +1,4 @@
-import { l10n, type Lang } from '../i18n';
+import { l10n, type L10n } from '../i18n';
 import type { Macros } from '../store/types';
 
 // Food table: typical nutrition values per 100 g (USDA FoodData Central and
@@ -16,9 +16,9 @@ export const FOOD_EMOJI: Record<FoodCategory, string> = {
 export interface Food {
     id: string;
     category: FoodCategory;
-    name: Record<Lang, string>;
+    name: L10n;
     per100: Macros & { fiber: number };
-    portion: { grams: number; label: Record<Lang, string> };
+    portion: { grams: number; label: L10n };
     alcohol?: boolean; // calories also come from alcohol
 }
 

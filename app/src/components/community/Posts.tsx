@@ -5,6 +5,7 @@ import { Avatar } from '../Avatar';
 import { confirm, toast } from '../feedback';
 import { Sheet } from '../ui';
 import { locale, t } from '../../i18n';
+import { KindBadge } from './kinds';
 import { addComment, deleteComment, deletePost, fetchComments, report, setLike, type Comment, type Post } from '../../lib/community';
 import { actions, getState, useStore } from '../../store/store';
 
@@ -143,7 +144,7 @@ export const PostCard = ({ post, me, member, onLike, onComments, onMenu }: {
                     </span>
                     <span className="min-w-0">
                         <span className="block truncate font-semibold">{name}{post.userId === me && <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-bold text-brand-strong">{t('community.you')}</span>}</span>
-                        <span className="block text-xs text-white/45">{timeAgo(post.createdAt)}</span>
+                        <span className="flex items-center gap-2 text-xs text-white/45">{timeAgo(post.createdAt)} <KindBadge kind={post.kind} /></span>
                     </span>
                 </Link>
                 <button onClick={onMenu} aria-label={t('community.options')} className="rounded-full p-2 text-white/50 hover:bg-ink-3 hover:text-white"><MoreHorizontal size={18} /></button>

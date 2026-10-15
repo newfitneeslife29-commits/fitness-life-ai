@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { useSyncExternalStore } from 'react';
-import { detectLang, setLang, t, type Lang } from '../i18n';
+import { detectLang, loadLang, setLang, t, type Lang } from '../i18n';
 import { uid } from '../lib/id';
 import { routineName } from '../lib/names';
 import { applyTheme, type Theme } from '../lib/theme';
@@ -60,7 +60,7 @@ const mirrorSoon = () => {
 };
 
 let state: AppState = typeof localStorage === 'undefined' ? EMPTY : load();
-// First run: follow the phone's language (es/pt, otherwise English) and appearance.
+// First run: follow the phone's language (if the app has it, otherwise English) and appearance.
 setLang(state.lang ?? detectLang());
 applyTheme(state.theme ?? 'system');
 const listeners = new Set<() => void>();
@@ -120,9 +120,12 @@ if (typeof window !== 'undefined') {
     window.addEventListener('storage', e => {
         if (e.key !== STORAGE_KEY) return;
         state = load();
-        setLang(state.lang ?? detectLang());
-        applyTheme(state.theme ?? 'system');
-        listeners.forEach(l => l());
+        const lang = state.lang ?? detectLang();
+        void loadLang(lang).catch(() => {}).finally(() => {
+            setLang(lang);
+            applyTheme(state.theme ?? 'system');
+            listeners.forEach(l => l());
+        });
     });
 }
 
@@ -174,7 +177,10 @@ export const actions = {
         set(s => ({ ...s, theme }));
     },
 
-    setLanguage(lang: Lang) {
+    // Loads the language's words first (they're a separate file for most
+    // languages). Throws when they can't be fetched (offline on the web).
+    async setLanguage(lang: Lang) {
+        await loadLang(lang);
         set(s => ({ ...s, lang }));
     },
 
