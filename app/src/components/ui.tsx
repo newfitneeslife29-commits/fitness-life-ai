@@ -1,5 +1,6 @@
 import { ChevronLeft, X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import type { Cover } from '../data/covers';
 import { t } from '../i18n';
@@ -156,7 +157,9 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
         return () => window.removeEventListener('keydown', onKey);
     }, [open, onClose]);
     if (!open) return null;
-    return (
+    // On <body>: a sheet opened from inside a layer (the welcome header) would
+    // otherwise sit under the layers that come after it.
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
             <div aria-hidden className="absolute inset-0 animate-fade bg-black/70" onClick={onClose} />
             <div className="relative flex max-h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl border border-line bg-ink-2 sm:rounded-3xl">
@@ -166,7 +169,8 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
                 </div>
                 <div className="overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">{children}</div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };
 
