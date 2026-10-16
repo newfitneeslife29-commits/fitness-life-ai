@@ -1,5 +1,7 @@
 import { en } from './en';
-import type { Dict } from './index';
+import type { Dict } from '.';
 
-// Placeholder until translated.
-export const hi: Dict = { ...en };
+// Keys not translated yet show the English text.
+export const hi: Dict = {
+    ...en,
+};
