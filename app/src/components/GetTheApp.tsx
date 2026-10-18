@@ -9,7 +9,7 @@ import { Logo } from './Welcome';
 // hides it for a week. A store without a link (not published yet) is left out.
 
 // The App Store id is the number in App Store Connect → App information → Apple ID.
-export const APP_STORE_ID = '';
+export const APP_STORE_ID = '6822443646';
 export const APP_STORE_URL = APP_STORE_ID ? `https://apps.apple.com/app/id${APP_STORE_ID}` : '';
 export const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.fitnesslife.app';
 
