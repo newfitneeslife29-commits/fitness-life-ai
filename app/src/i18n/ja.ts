@@ -1319,7 +1319,7 @@ export const ja: Dict = {
     'privacy.s3.title': "AIアシスタント",
     'privacy.s3.body': "コーチやトレーナーへの質問、ルーティンや食事プランの作成、AIによる食事の推定を行うと、あなたの質問、最近の会話、データの概要（目標、年齢、身長、体重、プラン、最近のワークアウトまたは今日食べたもの）を当社のサーバーに送信し、回答の作成のためにAnthropic（Claude）に転送します。食事の写真を使った場合、写真は送信されますが保存されません。これらのリクエストの内容は保存しません。回答を報告した場合は、確認のためにその回答、あなたの質問、理由を保存します。",
     'privacy.s4.title': "コミュニティとプロフィール写真",
-    'privacy.s4.body': "コミュニティに投稿した場合、投稿、ストーリー、コメント、いいね、フォロワー、アップロードした写真を当社のサーバーに保存します。それらの横には、あなたの名前とプロフィール写真が表示されます。プロフィールを非公開にしている場合、あなたが承認した人だけがあなたを見ることができます。",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "フィードバック",
     'privacy.s5.body': "設定からフィードバックを送信した場合、メッセージ、その種類（アイデア、問題、その他）、評価、言語、アプリのバージョン、スマホの種類を保存します。返信のためにメールアドレスの入力を選んだ場合は、それも保存します。これらはアプリの改善のためにのみ使用します。",
     'privacy.s6.title': "健康、歩数、睡眠、位置情報",
@@ -1594,4 +1594,11 @@ export const ja: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

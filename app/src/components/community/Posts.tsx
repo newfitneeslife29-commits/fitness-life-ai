@@ -149,7 +149,12 @@ export const PostCard = ({ post, me, member, onLike, onComments, onMenu }: {
                 </Link>
                 <button onClick={onMenu} aria-label={t('community.options')} className="rounded-full p-2 text-white/50 hover:bg-ink-3 hover:text-white"><MoreHorizontal size={18} /></button>
             </header>
-            {post.body && <p className={`whitespace-pre-wrap break-words px-4 pt-3 leading-relaxed text-white/90 ${!post.imageUrl && post.body.length < 90 ? 'text-xl font-semibold' : 'text-[15px]'}`}>{post.body}</p>}
+            {post.body && <p className={`whitespace-pre-wrap break-words px-4 pt-3 leading-relaxed text-white/90 ${!post.imageUrl && !post.videoUrl && post.body.length < 90 ? 'text-xl font-semibold' : 'text-[15px]'}`}>{post.body}</p>}
+            {post.videoUrl && (
+                <div className="mt-3 bg-black">
+                    <video src={post.videoUrl} controls playsInline preload="metadata" aria-label={t('community.videoAlt', { name })} className="max-h-[32rem] w-full" />
+                </div>
+            )}
             {post.imageUrl && (
                 <div className="relative mt-3 bg-ink" onDoubleClick={doubleTap}>
                     <img src={post.imageUrl} alt={t('community.photoAlt', { name })} loading="lazy" className="max-h-[32rem] w-full object-cover" />

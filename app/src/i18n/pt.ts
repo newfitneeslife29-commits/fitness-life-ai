@@ -1320,7 +1320,7 @@ export const pt: Dict = {
     'privacy.s3.title': "Assistente de IA",
     'privacy.s3.body': "Quando você pergunta ao coach ou ao treinador, cria uma rotina ou um plano de refeições, ou calcula uma refeição com IA, enviamos sua pergunta, a conversa recente e um resumo dos seus dados (objetivo, idade, altura, peso, plano e últimos treinos ou o que comeu hoje) ao nosso servidor, que os encaminha à Anthropic (Claude) para gerar a resposta. Se você usar uma foto da refeição, ela é enviada e não é guardada. Não guardamos o conteúdo dessas consultas. Se você denunciar uma resposta, guardamos essa resposta, sua pergunta e o motivo para revisá-la.",
     'privacy.s4.title': "Comunidade e foto de perfil",
-    'privacy.s4.body': "Se você publicar na comunidade, guardamos suas publicações, stories, comentários, curtidas, seguidores e as fotos que você envia no nosso servidor. Seu nome e sua foto de perfil aparecem junto a eles. Se seu perfil for privado, só as pessoas que você aceitar podem ver você.",
+    'privacy.s4.body': "Se você publicar na comunidade, guardamos suas publicações, stories, comentários, curtidas, seguidores e as fotos e vídeos que você envia no nosso servidor. Seu nome e sua foto de perfil aparecem junto a eles. Se seu perfil for privado, só as pessoas que você aceitar podem ver você.",
     'privacy.s5.title': "Seus comentários",
     'privacy.s5.body': "Se você nos enviar um comentário pelos Ajustes, guardamos sua mensagem, o tipo (ideia, problema ou outro), sua avaliação, o idioma, a versão do app e o tipo de celular, e o e-mail se você decidir deixá-lo para que possamos responder. Só usamos isso para melhorar o app.",
     'privacy.s6.title': "Saúde, passos, sono e localização",
@@ -1600,4 +1600,12 @@ export const pt: Dict = {
     'freePlans.log': "Comi",
     'freePlans.logged': "Anotado",
     'freePlans.note': "Alterne os dias como quiser e troque alimentos por outros parecidos. Quer um plano semanal feito só para você? Experimente com IA no Premium.",
+    // Short videos in posts
+    'community.video': "Vídeo",
+    'community.videoHint': "Vídeos de até {s} segundos",
+    'community.videoTooLong': "O vídeo tem mais de {s} segundos. Corte-o na galeria e escolha de novo.",
+    'community.videoTooBig': "O vídeo é grande demais (máximo 50 MB). Grave um mais curto ou com menor qualidade.",
+    'community.videoFailed': "Não foi possível abrir esse vídeo. Tente outro em formato MP4.",
+    'community.removeVideo': "Remover vídeo",
+    'community.videoAlt': "Vídeo de {name}",
 };

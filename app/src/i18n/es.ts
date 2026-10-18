@@ -1320,7 +1320,7 @@ export const es = {
     'privacy.s3.title': "Asistente de IA",
     'privacy.s3.body': "Cuando preguntas al coach o al entrenador, creas una rutina o un plan de comidas, o calculas una comida con IA, enviamos tu pregunta, la conversación reciente y un resumen de tus datos (objetivo, edad, altura, peso, plan y últimos entrenos o lo comido hoy) a nuestro servidor, que lo reenvía a Anthropic (Claude) para generar la respuesta. Si usas una foto de tu comida, se envía y no se guarda. No guardamos el contenido de esas consultas. Si reportas una respuesta, guardamos esa respuesta, tu pregunta y el motivo para revisarla.",
     'privacy.s4.title': "Comunidad y foto de perfil",
-    'privacy.s4.body': "Si publicas en la comunidad, guardamos tus publicaciones, historias, comentarios, me gusta, seguidores y las fotos que subes en nuestro servidor. Tu nombre y tu foto de perfil se muestran junto a ellos. Si tu perfil es privado, solo te ven las personas que aceptas.",
+    'privacy.s4.body': "Si publicas en la comunidad, guardamos tus publicaciones, historias, comentarios, me gusta, seguidores y las fotos y vídeos que subes en nuestro servidor. Tu nombre y tu foto de perfil se muestran junto a ellos. Si tu perfil es privado, solo te ven las personas que aceptas.",
     'privacy.s5.title': "Tus comentarios",
     'privacy.s5.body': "Si nos envías un comentario desde Ajustes, guardamos tu mensaje, el tipo (idea, problema u otro), tu valoración, el idioma, la versión de la app y el tipo de teléfono, y el correo si decides dejarlo para que te respondamos. Solo lo usamos para mejorar la app.",
     'privacy.s6.title': "Salud, pasos, sueño y ubicación",
@@ -1600,4 +1600,12 @@ export const es = {
     'freePlans.log': "Lo comí",
     'freePlans.logged': "Apuntado",
     'freePlans.note': "Alterna los días como quieras y cambia alimentos por otros parecidos. ¿Quieres un plan semanal hecho solo para ti? Pruébalo con IA en Premium.",
+    // Short videos in posts
+    'community.video': "Vídeo",
+    'community.videoHint': "Vídeos de hasta {s} segundos",
+    'community.videoTooLong': "El vídeo dura más de {s} segundos. Recórtalo en tu galería y vuelve a elegirlo.",
+    'community.videoTooBig': "El vídeo pesa demasiado (máximo 50 MB). Grábalo más corto o con menos calidad.",
+    'community.videoFailed': "No se pudo abrir ese vídeo. Prueba con otro en formato MP4.",
+    'community.removeVideo': "Quitar vídeo",
+    'community.videoAlt': "Vídeo de {name}",
 };

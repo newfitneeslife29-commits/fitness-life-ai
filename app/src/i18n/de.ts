@@ -1319,7 +1319,7 @@ export const de: Dict = {
     'privacy.s3.title': "KI-Assistent",
     'privacy.s3.body': "Wenn du den Coach oder den Trainer fragst, eine Routine oder einen Ernährungsplan erstellst oder eine Mahlzeit mit KI schätzen lässt, senden wir deine Frage, die letzte Unterhaltung und eine Zusammenfassung deiner Daten (Ziel, Alter, Größe, Gewicht, Plan und letzte Workouts oder was du heute gegessen hast) an unseren Server, der sie an Anthropic (Claude) weiterleitet, um die Antwort zu schreiben. Wenn du ein Foto deiner Mahlzeit verwendest, wird es gesendet und nicht gespeichert. Den Inhalt dieser Anfragen speichern wir nicht. Wenn du eine Antwort meldest, speichern wir diese Antwort, deine Frage und den Grund, um sie zu prüfen.",
     'privacy.s4.title': "Community und Profilfoto",
-    'privacy.s4.body': "Wenn du in der Community postest, speichern wir deine Beiträge, Storys, Kommentare, Likes, Follower und die Fotos, die du hochlädst, auf unserem Server. Dein Name und dein Profilfoto werden daneben angezeigt. Wenn dein Profil privat ist, können dich nur die Leute sehen, die du annimmst.",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "Dein Feedback",
     'privacy.s5.body': "Wenn du uns aus den Einstellungen Feedback schickst, speichern wir deine Nachricht, ihre Art (Idee, Problem oder Sonstiges), deine Bewertung, die Sprache, die App-Version und die Art deines Handys sowie deine E-Mail, falls du sie angibst, damit wir dir antworten können. Wir nutzen es nur, um die App zu verbessern.",
     'privacy.s6.title': "Gesundheit, Schritte, Schlaf und Standort",
@@ -1594,4 +1594,11 @@ export const de: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

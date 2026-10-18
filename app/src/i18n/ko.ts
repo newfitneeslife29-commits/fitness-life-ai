@@ -1319,7 +1319,7 @@ export const ko: Dict = {
     'privacy.s3.title': "AI 어시스턴트",
     'privacy.s3.body': "코치나 트레이너에게 질문하거나, 루틴 또는 식단 플랜을 만들거나, AI로 식사를 추정하면 질문, 최근 대화, 데이터 요약(목표, 나이, 키, 체중, 플랜, 최근 운동 또는 오늘 먹은 음식)을 저희 서버로 보내고, 서버는 답변 작성을 위해 이를 Anthropic(Claude)에 전달해요. 식사 사진을 사용하면 사진이 전송되지만 보관하지 않아요. 이러한 요청의 내용은 보관하지 않아요. 답변을 신고하면 검토를 위해 해당 답변, 질문, 신고 사유를 보관해요.",
     'privacy.s4.title': "커뮤니티와 프로필 사진",
-    'privacy.s4.body': "커뮤니티에 게시하면 게시물, 스토리, 댓글, 좋아요, 팔로워, 업로드한 사진을 저희 서버에 보관해요. 그 옆에는 이름과 프로필 사진이 표시돼요. 프로필이 비공개라면 내가 수락한 사람만 나를 볼 수 있어요.",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "의견 보내기",
     'privacy.s5.body': "설정에서 의견을 보내면 메시지, 유형(아이디어, 문제 또는 기타), 평점, 언어, 앱 버전, 휴대폰 종류를 보관하고, 답장을 위해 이메일을 남기기로 선택하면 이메일도 보관해요. 이 정보는 앱 개선에만 사용해요.",
     'privacy.s6.title': "건강, 걸음 수, 수면, 위치",
@@ -1594,4 +1594,11 @@ export const ko: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

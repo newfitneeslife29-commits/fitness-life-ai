@@ -1319,7 +1319,7 @@ export const zh: Dict = {
     'privacy.s3.title': "AI 助手",
     'privacy.s3.body': "当你向教练或私人教练提问、创建训练计划或饮食计划，或用 AI 估算餐食时，我们会将你的问题、最近的对话以及你的数据摘要（目标、年龄、身高、体重、计划和最近的训练或你今天吃的东西）发送到我们的服务器，由服务器转发给 Anthropic（Claude）来生成回答。如果你使用餐食照片，照片会被发送但不会被保存。我们不会保存这些请求的内容。如果你举报某条回答，我们会保存该回答、你的问题和举报原因，以便审核。",
     'privacy.s4.title': "社区和头像",
-    'privacy.s4.body': "如果你在社区发布内容，我们会在我们的服务器上保存你的动态、快拍、评论、点赞、粉丝以及你上传的照片。你的名字和头像会显示在旁边。如果你的主页是私密的，只有你通过的人才能看到你。",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "你的反馈",
     'privacy.s5.body': "如果你通过设置向我们发送反馈，我们会保存你的消息、类型（建议、问题或其他）、你的评分、语言、App 版本和手机类型；如果你选择留下电子邮箱以便我们回复，也会保存你的电子邮箱。我们只用它来改进 App。",
     'privacy.s6.title': "健康、步数、睡眠和位置",
@@ -1594,4 +1594,11 @@ export const zh: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

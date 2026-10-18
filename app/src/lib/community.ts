@@ -9,6 +9,11 @@ import { getSessionClient, getSupabase, SUPABASE_URL } from './supabase';
 // photos: the public "community" bucket, one folder per user.
 
 const BUCKET = 'community';
+const VIDEO_BUCKET = 'community-videos';
+// Short videos only: the app checks the length before uploading.
+export const VIDEO_MAX_SECONDS = 30;
+export const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+const videoUrl = (path: string | null) => (path ? `${SUPABASE_URL}/storage/v1/object/public/${VIDEO_BUCKET}/${path}` : null);
 export const PAGE_SIZE = 20;
 
 export interface Author {
@@ -28,6 +33,8 @@ export interface Post {
     body: string;
     imageUrl: string | null;
     imagePath: string | null;
+    videoUrl: string | null;
+    videoPath: string | null;
     createdAt: string;
     author: Author;
     likes: number;
@@ -63,7 +70,7 @@ const POST_COLUMNS = 'id, body, image_path, created_at, user_id, author:communit
 // Until the server has post kinds (its database updated), ask without them.
 let withKinds = true;
 const noKindColumn = (e: { code?: string; message?: string } | null) =>
-    Boolean(e && withKinds && (e.code === '42703' || e.code === 'PGRST204' || /\bkind\b/.test(e.message ?? '')));
+    Boolean(e && withKinds && (e.code === '42703' || e.code === 'PGRST204' || /\b(kind|video_path)\b/.test(e.message ?? '')));
 
 // All posts, one person's (`user`), or (`following`) those of the people
 // followed, matched on the server: their ids in the address would make it
@@ -71,7 +78,7 @@ const noKindColumn = (e: { code?: string; message?: string } | null) =>
 export const fetchFeed = async (before?: string, opts: { following?: boolean; user?: string; kind?: PostKind } = {}): Promise<Post[]> => {
     const supabase = await reader();
     const ask = () => {
-        const columns = withKinds ? `kind, ${POST_COLUMNS}` : POST_COLUMNS;
+        const columns = withKinds ? `kind, video_path, ${POST_COLUMNS}` : POST_COLUMNS;
         let query = (opts.following ? supabase.rpc('community_following_posts').select(columns) : supabase.from('community_posts').select(columns))
             .order('created_at', { ascending: false })
             .limit(PAGE_SIZE);
@@ -88,7 +95,7 @@ export const fetchFeed = async (before?: string, opts: { following?: boolean; us
     }
     if (error) throw error;
     const rows = (data ?? []) as unknown as {
-        id: string; kind?: string; body: string; image_path: string | null; created_at: string; user_id: string;
+        id: string; kind?: string; video_path?: string | null; body: string; image_path: string | null; created_at: string; user_id: string;
         author: ProfileRow; community_likes: { count: number }[]; community_comments: { count: number }[];
     }[];
     const me = await myId();
@@ -99,7 +106,7 @@ export const fetchFeed = async (before?: string, opts: { following?: boolean; us
     }
     const blocked = new Set(getState().blockedUsers ?? []);
     return rows.filter(r => !blocked.has(r.user_id)).map(r => ({
-        id: r.id, userId: r.user_id, kind: isKind(r.kind) ? r.kind : 'general', body: r.body, imagePath: r.image_path, imageUrl: publicUrl(r.image_path), createdAt: r.created_at,
+        id: r.id, userId: r.user_id, kind: isKind(r.kind) ? r.kind : 'general', body: r.body, imagePath: r.image_path, imageUrl: publicUrl(r.image_path), videoPath: r.video_path ?? null, videoUrl: videoUrl(r.video_path ?? null), createdAt: r.created_at,
         author: authorOf(r.author), likes: r.community_likes[0]?.count ?? 0, comments: r.community_comments[0]?.count ?? 0, liked: liked.has(r.id),
     }));
 };
@@ -111,23 +118,33 @@ const requireMember = async () => {
     return { supabase: await getSupabase(), id };
 };
 
-export const createPost = async (body: string, photo: Blob | null, kind: PostKind = 'general') => {
+const VIDEO_EXT: Record<string, string> = { 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' };
+
+export const createPost = async (body: string, photo: Blob | null, kind: PostKind = 'general', video: Blob | null = null) => {
     const { supabase, id } = await requireMember();
     const postId = uid();
     let imagePath: string | null = null;
+    let videoPath: string | null = null;
     if (photo) {
         imagePath = `${id}/posts/${postId}.jpg`;
         const { error } = await supabase.storage.from(BUCKET).upload(imagePath, photo, { contentType: 'image/jpeg', upsert: false });
         if (error) throw error;
     }
-    const row: { id: string; user_id: string; body: string; image_path: string | null; kind?: PostKind } = { id: postId, user_id: id, body: body.trim(), image_path: imagePath };
-    let { error } = await supabase.from('community_posts').insert(withKinds ? { ...row, kind } : row);
-    if (noKindColumn(error)) {
+    if (video) {
+        const type = VIDEO_EXT[video.type] ? video.type : 'video/mp4';
+        videoPath = `${id}/posts/${postId}.${VIDEO_EXT[type]}`;
+        const { error } = await supabase.storage.from(VIDEO_BUCKET).upload(videoPath, video, { contentType: type, upsert: false });
+        if (error) throw error;
+    }
+    const row: { id: string; user_id: string; body: string; image_path: string | null; kind?: PostKind; video_path?: string } = { id: postId, user_id: id, body: body.trim(), image_path: imagePath };
+    let { error } = await supabase.from('community_posts').insert(withKinds ? { ...row, kind, ...(videoPath ? { video_path: videoPath } : {}) } : row);
+    if (noKindColumn(error) && !videoPath) {
         withKinds = false;
         ({ error } = await supabase.from('community_posts').insert(row));
     }
     if (error) {
         if (imagePath) await supabase.storage.from(BUCKET).remove([imagePath]);
+        if (videoPath) await supabase.storage.from(VIDEO_BUCKET).remove([videoPath]);
         throw error;
     }
 };
@@ -137,6 +154,7 @@ export const deletePost = async (post: Post) => {
     const { error } = await supabase.from('community_posts').delete().eq('id', post.id);
     if (error) throw error;
     if (post.imagePath) await supabase.storage.from(BUCKET).remove([post.imagePath]);
+    if (post.videoPath) await supabase.storage.from(VIDEO_BUCKET).remove([post.videoPath]);
 };
 
 export const setLike = async (postId: string, like: boolean) => {

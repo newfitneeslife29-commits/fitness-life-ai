@@ -1,4 +1,4 @@
-import { Camera, HeartHandshake, ImageIcon, MessageSquarePlus, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
+import { Camera, Clapperboard, HeartHandshake, ImageIcon, MessageSquarePlus, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -9,7 +9,7 @@ import { StoriesBar, StoryComposer, StoryViewer } from '../components/community/
 import { Section, Sheet } from '../components/ui';
 import { t, type Key } from '../i18n';
 import { authAvailable } from '../lib/auth';
-import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, POST_KINDS, type Post, type PostKind, type StoryGroup } from '../lib/community';
+import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, POST_KINDS, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, type Post, type PostKind, type StoryGroup } from '../lib/community';
 import { pickImage, resizeImage } from '../lib/image';
 import { useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
@@ -27,6 +27,8 @@ const Composer = ({ open, onClose, onPosted, initialKind = 'general' }: { open: 
         if (open) setKind(initialKind);
     }, [open, initialKind]);
     const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+    const [video, setVideo] = useState<{ blob: Blob; url: string } | null>(null);
+    const videoInput = useRef<HTMLInputElement>(null);
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
@@ -36,13 +38,38 @@ const Composer = ({ open, onClose, onPosted, initialKind = 'general' }: { open: 
             if (p) URL.revokeObjectURL(p.url);
             return null;
         });
+        setVideo(v => {
+            if (v) URL.revokeObjectURL(v.url);
+            return null;
+        });
     }, [open]);
+
+    // A short video from the gallery or the camera: 30 s and 50 MB at most.
+    const chooseVideo = async (file: File) => {
+        if (file.size > VIDEO_MAX_BYTES) return toast(t('community.videoTooBig'), 4000);
+        const url = URL.createObjectURL(file);
+        const seconds = await new Promise<number>(resolve => {
+            const v = document.createElement('video');
+            v.preload = 'metadata';
+            v.onloadedmetadata = () => resolve(v.duration);
+            v.onerror = () => resolve(NaN);
+            v.src = url;
+        });
+        if (Number.isNaN(seconds)) { URL.revokeObjectURL(url); return toast(t('community.videoFailed'), 4000); }
+        if (Number.isFinite(seconds) && seconds > VIDEO_MAX_SECONDS + 0.5) {
+            URL.revokeObjectURL(url);
+            return toast(t('community.videoTooLong', { s: VIDEO_MAX_SECONDS }), 4000);
+        }
+        setPhoto(p => { if (p) URL.revokeObjectURL(p.url); return null; });
+        setVideo(v => { if (v) URL.revokeObjectURL(v.url); return { blob: file, url }; });
+    };
 
     const choose = async (camera: boolean) => {
         const file = await pickImage({ camera });
         if (!file) return;
         try {
             const blob = await resizeImage(file, 1440, { quality: 0.82 });
+            setVideo(v => { if (v) URL.revokeObjectURL(v.url); return null; });
             setPhoto(p => {
                 if (p) URL.revokeObjectURL(p.url);
                 return { blob, url: URL.createObjectURL(blob) };
@@ -56,7 +83,7 @@ const Composer = ({ open, onClose, onPosted, initialKind = 'general' }: { open: 
         if (!(await acceptRules())) return;
         setBusy(true);
         try {
-            await createPost(body, photo?.blob ?? null, kind);
+            await createPost(body, photo?.blob ?? null, kind, video?.blob ?? null);
             toast(t('community.posted'));
             onPosted();
             onClose();
@@ -89,15 +116,25 @@ const Composer = ({ open, onClose, onPosted, initialKind = 'general' }: { open: 
                     <button onClick={() => setPhoto(p => { if (p) URL.revokeObjectURL(p.url); return null; })} aria-label={t('meal.removePhoto')}
                         className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-snow"><X size={16} /></button>
                 </div>
+            ) : video ? (
+                <div className="relative mt-3 overflow-hidden rounded-2xl bg-black">
+                    <video src={video.url} controls playsInline className="max-h-72 w-full" />
+                    <button onClick={() => setVideo(v => { if (v) URL.revokeObjectURL(v.url); return null; })} aria-label={t('community.removeVideo')}
+                        className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-snow"><X size={16} /></button>
+                </div>
             ) : (
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button className="btn-ghost" onClick={() => choose(true)}><Camera size={18} /> {t('meal.photo')}</button>
-                    <button className="btn-ghost" onClick={() => choose(false)}><ImageIcon size={18} /> {t('meal.gallery')}</button>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button className="btn-ghost px-2" onClick={() => choose(true)}><Camera size={18} /> {t('meal.photo')}</button>
+                    <button className="btn-ghost px-2" onClick={() => choose(false)}><ImageIcon size={18} /> {t('meal.gallery')}</button>
+                    <button className="btn-ghost px-2" onClick={() => videoInput.current?.click()}><Clapperboard size={18} /> {t('community.video')}</button>
                 </div>
             )}
+            <input ref={videoInput} type="file" accept="video/mp4,video/quicktime,video/webm,video/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) void chooseVideo(f); e.target.value = ''; }} />
+            {!photo && !video && <p className="mt-1.5 text-center text-[11px] text-white/40">{t('community.videoHint', { s: VIDEO_MAX_SECONDS })}</p>}
             <div className="mt-3 flex items-center justify-between">
                 <span className="text-xs tabular-nums text-white/40">{body.length}/1000</span>
-                <button className="btn-primary px-6" disabled={busy || (!body.trim() && !photo)} onClick={publish}>
+                <button className="btn-primary px-6" disabled={busy || (!body.trim() && !photo && !video)} onClick={publish}>
                     <Send size={16} /> {busy ? t('community.posting') : t('community.publish')}
                 </button>
             </div>

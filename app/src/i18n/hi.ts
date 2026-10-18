@@ -1319,7 +1319,7 @@ export const hi: Dict = {
     'privacy.s3.title': "AI असिस्टेंट",
     'privacy.s3.body': "जब आप कोच या ट्रेनर से पूछते हैं, रूटीन या मील प्लान बनाते हैं, या AI से किसी मील का अनुमान लगाते हैं, तो हम आपका सवाल, हाल की बातचीत और आपके डेटा का सारांश (लक्ष्य, उम्र, लंबाई, वज़न, प्लान और हाल के वर्कआउट या आज आपने क्या खाया) अपने सर्वर पर भेजते हैं, जो जवाब लिखने के लिए उसे Anthropic (Claude) को आगे भेजता है। अगर आप अपने मील की फ़ोटो इस्तेमाल करते हैं, तो वह भेजी जाती है और रखी नहीं जाती। हम उन रिक्वेस्ट का कंटेंट नहीं रखते। अगर आप किसी जवाब को रिपोर्ट करते हैं, तो उसकी समीक्षा के लिए हम वह जवाब, आपका सवाल और कारण रखते हैं।",
     'privacy.s4.title': "कम्युनिटी और प्रोफ़ाइल फ़ोटो",
-    'privacy.s4.body': "अगर आप कम्युनिटी में पोस्ट करते हैं, तो हम आपकी पोस्ट, स्टोरीज़, कमेंट, लाइक, फ़ॉलोअर्स और आपकी अपलोड की गई फ़ोटो अपने सर्वर पर रखते हैं। उनके साथ आपका नाम और प्रोफ़ाइल फ़ोटो दिखाई देती है। अगर आपकी प्रोफ़ाइल प्राइवेट है, तो सिर्फ़ वही लोग आपको देख सकते हैं जिन्हें आप स्वीकार करते हैं।",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "आपका फ़ीडबैक",
     'privacy.s5.body': "अगर आप सेटिंग्स से हमें फ़ीडबैक भेजते हैं, तो हम आपका मैसेज, उसका प्रकार (आइडिया, समस्या या अन्य), आपकी रेटिंग, भाषा, ऐप का वर्ज़न और फ़ोन का प्रकार रखते हैं, और आपका ई-मेल भी, अगर आप उसे देना चुनते हैं ताकि हम जवाब दे सकें। हम इसका इस्तेमाल सिर्फ़ ऐप को बेहतर बनाने के लिए करते हैं।",
     'privacy.s6.title': "हेल्थ, कदम, नींद और लोकेशन",
@@ -1594,4 +1594,11 @@ export const hi: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

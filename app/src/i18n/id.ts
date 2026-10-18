@@ -1319,7 +1319,7 @@ export const id: Dict = {
     'privacy.s3.title': "Asisten AI",
     'privacy.s3.body': "Saat kamu bertanya ke pelatih nutrisi atau personal trainer, membuat rutinitas atau rencana makan, atau memperkirakan makanan dengan AI, kami mengirim pertanyaanmu, percakapan terakhir, dan ringkasan datamu (tujuan, usia, tinggi badan, berat badan, rencana, dan workout terakhir atau apa yang kamu makan hari ini) ke server kami, yang meneruskannya ke Anthropic (Claude) untuk menulis jawabannya. Kalau kamu memakai foto makananmu, foto itu dikirim dan tidak disimpan. Kami tidak menyimpan isi permintaan tersebut. Kalau kamu melaporkan sebuah jawaban, kami menyimpan jawaban itu, pertanyaanmu, dan alasannya untuk ditinjau.",
     'privacy.s4.title': "Komunitas dan foto profil",
-    'privacy.s4.body': "Kalau kamu memposting di komunitas, kami menyimpan postingan, story, komentar, suka, pengikut, dan foto yang kamu unggah di server kami. Nama dan foto profilmu ditampilkan di sampingnya. Kalau profilmu privat, hanya orang yang kamu terima yang bisa melihatmu.",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
     'privacy.s5.title': "Masukanmu",
     'privacy.s5.body': "Kalau kamu mengirim masukan dari Pengaturan, kami menyimpan pesanmu, jenisnya (ide, masalah, atau lainnya), penilaianmu, bahasa, versi aplikasi, dan jenis HP, serta email kamu jika kamu memilih untuk mencantumkannya agar kami bisa membalas. Kami hanya menggunakannya untuk meningkatkan aplikasi.",
     'privacy.s6.title': "Kesehatan, langkah, tidur, dan lokasi",
@@ -1594,4 +1594,11 @@ export const id: Dict = {
     'freePlans.log': "I ate it", // TO TRANSLATE
     'freePlans.logged': "Logged", // TO TRANSLATE
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
+    'community.video': "Video", // TO TRANSLATE
+    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
+    'community.removeVideo': "Remove video", // TO TRANSLATE
+    'community.videoAlt': "Video by {name}", // TO TRANSLATE
 };

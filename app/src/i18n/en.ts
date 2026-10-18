@@ -1319,7 +1319,7 @@ export const en: Dict = {
     'privacy.s3.title': "AI assistant",
     'privacy.s3.body': "When you ask the coach or the trainer, create a routine or a meal plan, or estimate a meal with AI, we send your question, the recent conversation and a summary of your data (goal, age, height, weight, plan and recent workouts or what you ate today) to our server, which forwards it to Anthropic (Claude) to write the answer. If you use a photo of your meal, it is sent and not kept. We don't keep the content of those requests. If you report an answer, we keep that answer, your question and the reason, to review it.",
     'privacy.s4.title': "Community and profile photo",
-    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.",
+    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.",
     'privacy.s5.title': "Your feedback",
     'privacy.s5.body': "If you send us feedback from Settings, we keep your message, its type (idea, problem or other), your rating, the language, the app version and the kind of phone, plus your e-mail if you choose to leave it so we can reply. We only use it to improve the app.",
     'privacy.s6.title': "Health, steps, sleep and location",
@@ -1599,4 +1599,12 @@ export const en: Dict = {
     'freePlans.log': "I ate it",
     'freePlans.logged': "Logged",
     'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.",
+    // Short videos in posts
+    'community.video': "Video",
+    'community.videoHint': "Videos up to {s} seconds",
+    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.",
+    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.",
+    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.",
+    'community.removeVideo': "Remove video",
+    'community.videoAlt': "Video by {name}",
 };
