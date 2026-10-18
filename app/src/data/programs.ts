@@ -394,7 +394,7 @@ export const adaptDays = (program: Program, limitations: Limitation[] = []): Pro
             const options = limitations.flatMap(l => AVOID[l][slot.exerciseId] ?? []);
             const swap = options.find(id => {
                 const e = getExercise(id);
-                return e && ALLOWED[program.setup].includes(e.equipment) && !ids.includes(id) && !avoided(id, limitations);
+                return e && !e.kind && ALLOWED[program.setup].includes(e.equipment) && !ids.includes(id) && !avoided(id, limitations);
             });
             if (!swap) return slot;
             ids[i] = swap;

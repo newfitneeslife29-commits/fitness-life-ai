@@ -1466,4 +1466,16 @@ export const ja: Dict = {
     'community.topic.10': "どんなルーティンをしていますか？改善のアイデアを聞いてみよう。",
     'community.topic.11': "よく眠って回復するためのコツ。",
     'community.topic.12': "始めたころの失敗と、そこから学んだこと。",
+    'about.err.age': "Enter an age between 13 and 100", // TO TRANSLATE
+    'about.err.weight': "Enter a weight between {min} and {max} {unit}", // TO TRANSLATE
+    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)", // TO TRANSLATE
+    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11", // TO TRANSLATE
+    'about.err.sex': "Also choose male or female to continue", // TO TRANSLATE
+    'gear.question': "Do you have a cardio machine at home?", // TO TRANSLATE
+    'gear.hint': "We'll add it at the end of your workouts to burn more calories.", // TO TRANSLATE
+    'gear.none': "None", // TO TRANSLATE
+    'gear.bici': "Stationary bike", // TO TRANSLATE
+    'gear.cinta': "Treadmill", // TO TRANSLATE
+    'gear.eliptica': "Elliptical", // TO TRANSLATE
+    'gear.updated': "Plan updated with your machines", // TO TRANSLATE
 };

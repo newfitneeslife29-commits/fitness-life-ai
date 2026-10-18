@@ -1467,4 +1467,18 @@ export const es = {
     'community.topic.10': "¿Qué rutina sigues? Pide ideas para mejorarla.",
     'community.topic.11': "Tu truco para dormir mejor y recuperarte.",
     'community.topic.12': "Un error que cometiste al empezar y qué aprendiste.",
+    // About you: what's wrong with a value
+    'about.err.age': "Escribe una edad entre 13 y 100 años",
+    'about.err.weight': "Escribe un peso entre {min} y {max} {unit}",
+    'about.err.heightCm': "Escribe tu altura en cm, entre 120 y 230 (por ejemplo 175)",
+    'about.err.heightFt': "Escribe pies y pulgadas (por ejemplo 5 ft 9 in); las pulgadas van de 0 a 11",
+    'about.err.sex': "Elige también hombre o mujer para continuar",
+    // Cardio machines at home
+    'gear.question': "¿Tienes alguna máquina de cardio en casa?",
+    'gear.hint': "La añadimos al final de tus rutinas para quemar más calorías.",
+    'gear.none': "Ninguna",
+    'gear.bici': "Bicicleta estática",
+    'gear.cinta': "Caminadora",
+    'gear.eliptica': "Elíptica",
+    'gear.updated': "Plan actualizado con tus máquinas",
 };

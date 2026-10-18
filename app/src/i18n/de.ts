@@ -1466,4 +1466,16 @@ export const de: Dict = {
     'community.topic.10': "Welcher Routine folgst du? Hol dir Ideen, um sie zu verbessern.",
     'community.topic.11': "Dein Trick, um besser zu schlafen und dich zu erholen.",
     'community.topic.12': "Ein Fehler, den du am Anfang gemacht hast, und was du daraus gelernt hast.",
+    'about.err.age': "Enter an age between 13 and 100", // TO TRANSLATE
+    'about.err.weight': "Enter a weight between {min} and {max} {unit}", // TO TRANSLATE
+    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)", // TO TRANSLATE
+    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11", // TO TRANSLATE
+    'about.err.sex': "Also choose male or female to continue", // TO TRANSLATE
+    'gear.question': "Do you have a cardio machine at home?", // TO TRANSLATE
+    'gear.hint': "We'll add it at the end of your workouts to burn more calories.", // TO TRANSLATE
+    'gear.none': "None", // TO TRANSLATE
+    'gear.bici': "Stationary bike", // TO TRANSLATE
+    'gear.cinta': "Treadmill", // TO TRANSLATE
+    'gear.eliptica': "Elliptical", // TO TRANSLATE
+    'gear.updated': "Plan updated with your machines", // TO TRANSLATE
 };

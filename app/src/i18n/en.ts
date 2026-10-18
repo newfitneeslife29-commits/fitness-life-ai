@@ -1466,4 +1466,18 @@ export const en: Dict = {
     'community.topic.10': "What routine do you follow? Ask for ideas to improve it.",
     'community.topic.11': "Your trick for sleeping better and recovering.",
     'community.topic.12': "A mistake you made when starting out, and what you learned.",
+    // About you: what's wrong with a value
+    'about.err.age': "Enter an age between 13 and 100",
+    'about.err.weight': "Enter a weight between {min} and {max} {unit}",
+    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)",
+    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11",
+    'about.err.sex': "Also choose male or female to continue",
+    // Cardio machines at home
+    'gear.question': "Do you have a cardio machine at home?",
+    'gear.hint': "We'll add it at the end of your workouts to burn more calories.",
+    'gear.none': "None",
+    'gear.bici': "Stationary bike",
+    'gear.cinta': "Treadmill",
+    'gear.eliptica': "Elliptical",
+    'gear.updated': "Plan updated with your machines",
 };

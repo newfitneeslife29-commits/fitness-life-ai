@@ -1,10 +1,20 @@
 import { EXERCISES, getExercise } from '../data/exercises';
 import { adaptDays, ALLOWED, avoided, dayKeyOf, getProgram, pickProgram, prescribe, type Program, type ProgramDay } from '../data/programs';
 import { l10n } from '../i18n';
-import type { Limitation, Plan, Profile, Routine } from '../store/types';
+import type { HomeGear, Limitation, Plan, Profile, Routine, RoutineExercise } from '../store/types';
 import { uid } from './id';
 
-export type PlanProfile = Pick<Profile, 'goal' | 'level' | 'daysPerWeek' | 'setup'> & Partial<Pick<Profile, 'limitations' | 'programId'>>;
+export type PlanProfile = Pick<Profile, 'goal' | 'level' | 'daysPerWeek' | 'setup'> & Partial<Pick<Profile, 'limitations' | 'programId' | 'homeGear'>>;
+
+// A cardio machine at home closes each workout (one machine per day, in turn):
+// 10–15 minutes, a little longer to lose fat.
+const GEAR_EXERCISE: Record<HomeGear, string> = { bici: 'bicicleta-estatica', cinta: 'caminadora', eliptica: 'eliptica' };
+const cardioFinisher = (profile: PlanProfile, dayIndex: number): RoutineExercise[] => {
+    const gear = profile.setup === 'gimnasio' ? [] : profile.homeGear ?? [];
+    if (!gear.length) return [];
+    const minutes = profile.goal === 'grasa' ? [15, 20] : profile.level === 'principiante' ? [8, 12] : [10, 15];
+    return [{ exerciseId: GEAR_EXERCISE[gear[dayIndex % gear.length]], sets: 1, repMin: minutes[0] * 60, repMax: minutes[1] * 60, restSec: 0 }];
+};
 
 // The program the user picked from the list, or the one that fits them.
 export const programFor = (profile: PlanProfile): Program =>
@@ -48,7 +58,7 @@ const rotateAccessories = (days: ProgramDay[], program: Program, limitations: Li
             if (slot.role !== 'accessory') return slot;
             const ex = getExercise(slot.exerciseId);
             if (!ex) return slot;
-            const options = [ex, ...EXERCISES.filter(e => e.id !== ex.id && e.muscle === ex.muscle && !!e.timed === !!ex.timed
+            const options = [ex, ...EXERCISES.filter(e => e.id !== ex.id && !e.kind && e.muscle === ex.muscle && !!e.timed === !!ex.timed
                 && ALLOWED[program.setup].includes(e.equipment) && !avoided(e.id, limitations) && !used.has(e.id)
                 && !mainLifts.has(e.id) && (e.equipment !== 'barra' || ex.equipment === 'barra')
                 // Weighted stays weighted, bodyweight stays bodyweight.
@@ -73,11 +83,11 @@ export const buildPlan = (profile: PlanProfile, week = 1): { plan: Plan; routine
         name: l10n(day.name),
         dayKey: dayKeyOf(program.id, i),
         source: 'plan',
-        exercises: day.slots.map(slot => {
+        exercises: [...day.slots.map(slot => {
             const timed = !!getExercise(slot.exerciseId)?.timed;
             const p = waveFor(prescribe(profile.goal, profile.level, slot.role, timed), slot.role, timed, week, program.beginner);
             return { exerciseId: slot.exerciseId, sets: p.sets, repMin: p.repMin, repMax: p.repMax, restSec: p.restSec };
-        }),
+        }), ...cardioFinisher(profile, i)],
     }));
     return {
         routines,

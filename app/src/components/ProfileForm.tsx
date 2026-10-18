@@ -4,7 +4,7 @@ import { fmtNumber, parseDecimal, typedNumber } from '../lib/format';
 import { ageOf, weeksToGoal } from '../lib/nutrition';
 import { displayToKg, kgToDisplay } from '../lib/progression';
 import { actions, getState } from '../store/store';
-import type { Activity, Limitation, Profile, Sex, Unit, WeightGoal } from '../store/types';
+import type { Activity, HomeGear, Limitation, Profile, Sex, Unit, WeightGoal } from '../store/types';
 import { toast } from './feedback';
 import { Choice, Chips, Sheet } from './ui';
 
@@ -44,30 +44,84 @@ export interface About {
     weightKg: number;
 }
 
+// Height in cm; "1,80" typed in the cm box means metres. NaN when it can't be read.
+const heightOf = (d: AboutDraft, unit: Unit) => {
+    if (unit === 'lbs') {
+        const ft = parseDecimal(d.heightFt || '0');
+        const inches = parseDecimal(d.heightIn || '0');
+        return inches >= 12 ? NaN : Math.round((ft * 12 + inches) * CM_PER_IN);
+    }
+    const cm = parseDecimal(d.heightCm);
+    return Math.round(cm > 0 && cm < 3 ? cm * 100 : cm);
+};
+
+// Each field that is filled in but can't be right, with what's expected.
+export const aboutErrors = (d: AboutDraft, unit: Unit) => {
+    const age = parseDecimal(d.age);
+    const height = heightOf(d, unit);
+    const weightKg = displayToKg(parseDecimal(d.weight), unit);
+    const heightTyped = unit === 'lbs' ? Boolean(d.heightFt.trim() || d.heightIn.trim()) : Boolean(d.heightCm.trim());
+    return {
+        age: d.age.trim() !== '' && !(age >= 13 && age <= 100),
+        height: heightTyped && !(height >= 120 && height <= 230),
+        weight: d.weight.trim() !== '' && !(weightKg >= 30 && weightKg <= 300),
+    };
+};
+
 // Null while something is missing or not believable.
 export const parseAbout = (d: AboutDraft, unit: Unit, now = new Date()): About | null => {
     const age = Math.round(parseDecimal(d.age));
-    const heightCm = unit === 'lbs'
-        ? Math.round((parseDecimal(d.heightFt || '0') * 12 + parseDecimal(d.heightIn || '0')) * CM_PER_IN)
-        : Math.round(parseDecimal(d.heightCm));
+    const heightCm = heightOf(d, unit);
     const weightKg = displayToKg(parseDecimal(d.weight), unit);
     if (!d.sex || !(age >= 13 && age <= 100) || !(heightCm >= 120 && heightCm <= 230) || !(weightKg >= 30 && weightKg <= 300)) return null;
     return { sex: d.sex, birthYear: now.getFullYear() - age, heightCm, weightKg: Math.round(weightKg * 10) / 10 };
 };
 
-const Field = ({ id, label, suffix, value, onChange, width = 'w-full' }: { id: string; label: string; suffix: string; value: string; onChange: (v: string) => void; width?: string }) => (
+// Only digits and one decimal separator ("80kg" → "80", "1.80 m" → "1.80").
+const numeric = (raw: string) => {
+    const kept = raw.replace(/[^0-9.,]/g, '');
+    const i = kept.search(/[.,]/);
+    return i < 0 ? kept : kept.slice(0, i + 1) + kept.slice(i + 1).replace(/[.,]/g, '');
+};
+
+const Field = ({ id, label, suffix, value, onChange, width = 'w-full', error }: { id: string; label: string; suffix: string; value: string; onChange: (v: string) => void; width?: string; error?: string }) => (
     <div className={width}>
         <label className="label mb-1 block" htmlFor={id}>{label}</label>
-        <div className="flex items-center rounded-xl border border-line bg-ink-2 focus-within:border-brand">
-            <input id={id} inputMode="decimal" value={value} onChange={e => onChange(e.target.value)}
+        <div className={`flex items-center rounded-xl border bg-ink-2 focus-within:border-brand ${error ? 'border-red-500' : 'border-line'}`}>
+            <input id={id} inputMode="decimal" value={value} onChange={e => onChange(numeric(e.target.value))} aria-invalid={Boolean(error)}
+                aria-describedby={error ? `${id}-error` : undefined}
                 className="min-w-0 flex-1 bg-transparent px-4 py-3 text-lg outline-none" />
             <span className="pr-4 text-sm text-white/50">{suffix}</span>
         </div>
+        {error && <p id={`${id}-error`} className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
 );
 
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+// Switching kg ↔ lb converts what's already typed (80 kg stays 80 kg, as 176,4 lb).
+const convertDraft = (d: AboutDraft, from: Unit, to: Unit): AboutDraft => {
+    if (from === to) return d;
+    const next = { ...d };
+    const w = parseDecimal(d.weight);
+    if (d.weight.trim() && w > 0) next.weight = typedNumber(round1(kgToDisplay(displayToKg(w, from), to)));
+    const cm = heightOf(d, from);
+    if (cm > 0) {
+        const inches = Math.round(cm / CM_PER_IN);
+        next.heightCm = String(cm);
+        next.heightFt = String(Math.floor(inches / 12));
+        next.heightIn = String(inches % 12);
+    }
+    return next;
+};
+
 export const AboutFields = ({ value, onChange, unit, onUnit }: { value: AboutDraft; onChange: (d: AboutDraft) => void; unit: Unit; onUnit?: (u: Unit) => void }) => {
     const set = (patch: Partial<AboutDraft>) => onChange({ ...value, ...patch });
+    const errors = aboutErrors(value, unit);
+    const changeUnit = (u: Unit) => {
+        onChange(convertDraft(value, unit, u));
+        onUnit?.(u);
+    };
     return (
         <div className="space-y-5">
             <div>
@@ -84,21 +138,28 @@ export const AboutFields = ({ value, onChange, unit, onUnit }: { value: AboutDra
             {onUnit && (
                 <div>
                     <p className="label mb-2">{t('settings.units')}</p>
-                    <Chips label={t('settings.units')} value={unit} onChange={onUnit} options={[{ value: 'kg', label: t('unit.kgLong') }, { value: 'lbs', label: t('unit.lbLong') }]} />
+                    <Chips label={t('settings.units')} value={unit} onChange={changeUnit} options={[{ value: 'kg', label: t('unit.kgLong') }, { value: 'lbs', label: t('unit.lbLong') }]} />
                 </div>
             )}
             <div className="flex gap-3">
-                <Field id="about-age" label={t('about.age')} suffix={t('about.years')} value={value.age} onChange={age => set({ age })} />
-                <Field id="about-weight" label={t('about.weight')} suffix={unit} value={value.weight} onChange={weight => set({ weight })} />
+                <Field id="about-age" label={t('about.age')} suffix={t('about.years')} value={value.age} onChange={age => set({ age })}
+                    error={errors.age ? t('about.err.age') : undefined} />
+                <Field id="about-weight" label={t('about.weight')} suffix={unit} value={value.weight} onChange={weight => set({ weight })}
+                    error={errors.weight ? t('about.err.weight', { min: unit === 'lbs' ? 66 : 30, max: unit === 'lbs' ? 660 : 300, unit }) : undefined} />
             </div>
             {unit === 'lbs' ? (
-                <div className="flex gap-3">
-                    <Field id="about-ft" label={t('about.height')} suffix="ft" value={value.heightFt} onChange={heightFt => set({ heightFt })} />
-                    <Field id="about-in" label="&nbsp;" suffix="in" value={value.heightIn} onChange={heightIn => set({ heightIn })} />
+                <div>
+                    <div className="flex gap-3">
+                        <Field id="about-ft" label={t('about.height')} suffix="ft" value={value.heightFt} onChange={heightFt => set({ heightFt })} />
+                        <Field id="about-in" label="&nbsp;" suffix="in" value={value.heightIn} onChange={heightIn => set({ heightIn })} />
+                    </div>
+                    {errors.height && <p className="mt-1 text-xs text-red-400" role="alert">{t('about.err.heightFt')}</p>}
                 </div>
             ) : (
-                <Field id="about-height" label={t('about.height')} suffix="cm" value={value.heightCm} onChange={heightCm => set({ heightCm })} />
+                <Field id="about-height" label={t('about.height')} suffix="cm" value={value.heightCm} onChange={heightCm => set({ heightCm })}
+                    error={errors.height ? t('about.err.heightCm') : undefined} />
             )}
+            {!value.sex && (value.age || value.weight) && <p className="text-xs text-white/50">{t('about.err.sex')}</p>}
         </div>
     );
 };
@@ -107,6 +168,23 @@ export const ActivityChoice = ({ value, onChange }: { value: Activity; onChange:
     <Choice label={t('activity.question')} value={value} onChange={onChange} options={(['sedentario', 'ligero', 'moderado', 'alto'] as const).map(a => ({
         value: a, label: t(`activity.${a}`), hint: t(`activity.${a}.hint`),
     }))} />
+);
+
+const GEAR: HomeGear[] = ['bici', 'cinta', 'eliptica'];
+
+// Cardio machines at home: several can be picked; "None" clears them.
+export const HomeGearChips = ({ value, onChange }: { value: HomeGear[]; onChange: (g: HomeGear[]) => void }) => (
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t('gear.question')}>
+        <button role="checkbox" aria-checked={value.length === 0} onClick={() => onChange([])}
+            className={`chip ${value.length === 0 ? 'chip-on' : 'hover:text-white'}`}>{t('gear.none')}</button>
+        {GEAR.map(g => {
+            const on = value.includes(g);
+            return (
+                <button key={g} role="checkbox" aria-checked={on} onClick={() => onChange(on ? value.filter(x => x !== g) : [...value, g])}
+                    className={`chip ${on ? 'chip-on' : 'hover:text-white'}`}>{t(`gear.${g}`)}</button>
+            );
+        })}
+    </div>
 );
 
 const LIMITATIONS: Limitation[] = ['rodillas', 'espalda', 'hombros', 'munecas'];

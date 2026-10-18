@@ -5,7 +5,7 @@ import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
 import { LanguageRow } from '../components/LanguagePicker';
 import { TrainingReminder } from '../components/TrainingReminder';
-import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
+import { detailsMissing, HomeGearChips, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Chips, PageHeader, Section, Sheet } from '../components/ui';
 import { programName } from '../data/programs';
 import { programFor } from '../lib/plan';
@@ -143,6 +143,16 @@ export default function Settings() {
                         <Chips<Setup> label={t('settings.setup')} value={profile.setup} onChange={setup => actions.updateProfile({ setup })}
                             options={[{ value: 'gimnasio', label: t('setup.gimnasio.short') }, { value: 'mancuernas', label: t('setup.mancuernas.short') }, { value: 'casa', label: t('setup.casa.short') }]} />
                     </div>
+                    {profile.setup !== 'gimnasio' && (
+                        <div>
+                            <p className="label mb-2">{t('gear.question')}</p>
+                            <HomeGearChips value={profile.homeGear ?? []} onChange={homeGear => {
+                                actions.updateProfile({ homeGear });
+                                actions.regeneratePlan();
+                                toast(t('gear.updated'));
+                            }} />
+                        </div>
+                    )}
                     <div>
                         <p className="label mb-2">{t('settings.units')}</p>
                         <Chips label={t('settings.units')} value={profile.unit} onChange={unit => actions.updateProfile({ unit })}

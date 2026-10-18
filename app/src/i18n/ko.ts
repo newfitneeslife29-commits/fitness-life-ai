@@ -1466,4 +1466,16 @@ export const ko: Dict = {
     'community.topic.10': "어떤 루틴을 하고 있나요? 개선 아이디어를 물어보세요.",
     'community.topic.11': "잘 자고 회복하는 나만의 비법.",
     'community.topic.12': "처음 시작할 때 했던 실수와 그로부터 배운 점.",
+    'about.err.age': "Enter an age between 13 and 100", // TO TRANSLATE
+    'about.err.weight': "Enter a weight between {min} and {max} {unit}", // TO TRANSLATE
+    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)", // TO TRANSLATE
+    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11", // TO TRANSLATE
+    'about.err.sex': "Also choose male or female to continue", // TO TRANSLATE
+    'gear.question': "Do you have a cardio machine at home?", // TO TRANSLATE
+    'gear.hint': "We'll add it at the end of your workouts to burn more calories.", // TO TRANSLATE
+    'gear.none': "None", // TO TRANSLATE
+    'gear.bici': "Stationary bike", // TO TRANSLATE
+    'gear.cinta': "Treadmill", // TO TRANSLATE
+    'gear.eliptica': "Elliptical", // TO TRANSLATE
+    'gear.updated': "Plan updated with your machines", // TO TRANSLATE
 };

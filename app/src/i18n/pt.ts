@@ -1467,4 +1467,18 @@ export const pt: Dict = {
     'community.topic.10': "Que rotina você segue? Peça ideias para melhorá-la.",
     'community.topic.11': "Seu truque para dormir melhor e se recuperar.",
     'community.topic.12': "Um erro que você cometeu no começo e o que aprendeu.",
+    // About you: what's wrong with a value
+    'about.err.age': "Digite uma idade entre 13 e 100 anos",
+    'about.err.weight': "Digite um peso entre {min} e {max} {unit}",
+    'about.err.heightCm': "Digite sua altura em cm, entre 120 e 230 (por exemplo 175)",
+    'about.err.heightFt': "Digite pés e polegadas (por exemplo 5 ft 9 in); as polegadas vão de 0 a 11",
+    'about.err.sex': "Escolha também homem ou mulher para continuar",
+    // Cardio machines at home
+    'gear.question': "Você tem alguma máquina de cardio em casa?",
+    'gear.hint': "Vamos adicioná-la no final dos seus treinos para queimar mais calorias.",
+    'gear.none': "Nenhuma",
+    'gear.bici': "Bicicleta ergométrica",
+    'gear.cinta': "Esteira",
+    'gear.eliptica': "Elíptico",
+    'gear.updated': "Plano atualizado com suas máquinas",
 };
