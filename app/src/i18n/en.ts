@@ -1190,6 +1190,7 @@ export const en: Dict = {
     'cardio.kind.run': "Run",
     'cardio.kind.bike': "Bike",
     'cardio.gpsNote': "Measures distance with GPS, even with the screen locked. Your route stays on your phone.",
+    'cardio.gpsNoteOpen': "Measures distance with GPS while the app is open: the screen stays on. Your route stays on your phone.",
     'cardio.inProgress': "{kind} in progress: tap to see it",
     'cardio.trackingTitle': "Fitness Life is measuring your route",
     'cardio.trackingMessage': "Distance and time of your walk or ride",

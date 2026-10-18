@@ -1190,6 +1190,7 @@ export const id: Dict = {
     'cardio.kind.run': "Lari",
     'cardio.kind.bike': "Sepeda",
     'cardio.gpsNote': "Mengukur jarak dengan GPS, bahkan saat layar terkunci. Rutemu tetap di HP.",
+    'cardio.gpsNoteOpen': "Mengukur jarak dengan GPS selama aplikasi terbuka: layar tetap menyala. Rutemu tetap di HP.",
     'cardio.inProgress': "{kind} sedang berjalan: ketuk untuk melihat",
     'cardio.trackingTitle': "Fitness Life sedang mengukur rutemu",
     'cardio.trackingMessage': "Jarak dan waktu jalan kaki atau bersepedamu",

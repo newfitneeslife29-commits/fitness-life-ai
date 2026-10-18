@@ -1,15 +1,20 @@
 import { useEffect } from 'react';
 import { t } from '../i18n';
+import { Capacitor } from '@capacitor/core';
 import { addPoint } from './cardio';
-import { isNative } from './native';
+import { isNative, keepAwake } from './native';
 import { actions, getState, useStore } from '../store/store';
 
-// GPS for the walk or ride being recorded. In the apps it keeps going with
-// the screen locked (Android shows a notification while it does); on the web
-// it works while the page is open. Points only update the distance on the
-// phone: the route itself is never stored or sent.
+// GPS for the walk or ride being recorded. On iPhone it keeps going with the
+// screen locked. On Android and the web it works while the app is open, with
+// the screen kept on (a background location service would need a Google Play
+// declaration with a video). Points only update the distance on the phone:
+// the route itself is never stored or sent.
 
 let running = false;
+
+// The GPS keeps going with the screen locked (iPhone only).
+export const tracksInBackground = () => isNative() && Capacitor.getPlatform() !== 'android';
 
 const onFix = (lat: number, lon: number, accuracy: number, at: number) =>
     actions.updateCardio(a => addPoint(a, { lat, lon, accuracy, at }));
@@ -26,11 +31,12 @@ const fail = (denied: boolean) => {
 export const startTracking = async () => {
     if (running || !getState().cardioActive) return;
     running = true;
-    if (!isNative()) {
+    if (!tracksInBackground()) {
         if (!('geolocation' in navigator)) {
             running = false;
             return fail(false);
         }
+        void keepAwake(true);
         webWatch = navigator.geolocation.watchPosition(
             p => onFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp),
             e => fail(e.code === e.PERMISSION_DENIED),
@@ -62,6 +68,7 @@ export const stopTracking = async () => {
     if (webWatch !== null) {
         navigator.geolocation.clearWatch(webWatch);
         webWatch = null;
+        void keepAwake(false);
         return;
     }
     try {

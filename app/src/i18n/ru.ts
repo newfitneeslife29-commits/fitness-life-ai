@@ -1190,6 +1190,7 @@ export const ru: Dict = {
     'cardio.kind.run': "Бег",
     'cardio.kind.bike': "Велосипед",
     'cardio.gpsNote': "Измеряет расстояние по GPS, даже при заблокированном экране. Маршрут остаётся на телефоне.",
+    'cardio.gpsNoteOpen': "Измеряет расстояние по GPS, пока приложение открыто: экран остаётся включённым. Маршрут остаётся на телефоне.",
     'cardio.inProgress': "{kind}: идёт запись — нажми, чтобы открыть",
     'cardio.trackingTitle': "Fitness Life записывает твой маршрут",
     'cardio.trackingMessage': "Расстояние и время прогулки или поездки",

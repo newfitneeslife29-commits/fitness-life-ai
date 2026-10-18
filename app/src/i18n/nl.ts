@@ -1190,6 +1190,7 @@ export const nl: Dict = {
     'cardio.kind.run': "Hardlopen",
     'cardio.kind.bike': "Fietsen",
     'cardio.gpsNote': "Meet de afstand met gps, ook als het scherm vergrendeld is. Je route blijft op je telefoon.",
+    'cardio.gpsNoteOpen': "Meet de afstand met gps zolang de app open is: het scherm blijft aan. Je route blijft op je telefoon.",
     'cardio.inProgress': "{kind} bezig: tik om te bekijken",
     'cardio.trackingTitle': "Fitness Life meet je route",
     'cardio.trackingMessage': "Afstand en tijd van je wandeling of rit",
