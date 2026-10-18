@@ -1585,4 +1585,18 @@ export const en: Dict = {
     'privacy.s11.title': "Online trainers",
     'privacy.s11.body': "If you apply to be a trainer, we keep the form details. If approved, your name, specialty, description, experience, languages, country, price, contact and profile photo are shown to users. You can withdraw it any time and it's deleted with your account.",
     'mom.habits': "Everyday tips",
+    // Free nutrition plans
+    'freePlans.title': "Free nutrition plans",
+    'freePlans.subtitle': "Sample days with simple food, adjusted to you",
+    'freePlans.card': "4 ready-to-follow plans",
+    'freePlans.cardHint': "Lose fat, build muscle, eat healthy and vegetarian",
+    'freePlans.forYou': "For you",
+    'freePlans.fits': "Fits your {kcal} kcal a day: follow the amounts as they are.",
+    'freePlans.scale': "For your {kcal} kcal a day, eat ×{factor} the amounts. Each meal below is already adjusted.",
+    'freePlans.noTarget': "About {kcal} kcal a day. Log your weight to adjust the amounts to you.",
+    'freePlans.day': "Day {n}",
+    'freePlans.dayShort': "D{n}",
+    'freePlans.log': "I ate it",
+    'freePlans.logged': "Logged",
+    'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.",
 };

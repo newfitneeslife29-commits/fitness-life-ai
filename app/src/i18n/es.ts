@@ -1586,4 +1586,18 @@ export const es = {
     'privacy.s11.title': "Entrenadores online",
     'privacy.s11.body': "Si solicitas ser entrenador, guardamos los datos del formulario. Si la aprobamos, tu nombre, especialidad, descripción, experiencia, idiomas, país, precio, contacto y foto de perfil se muestran a los usuarios. Puedes retirarla cuando quieras y se borra al eliminar la cuenta.",
     'mom.habits': "Consejos para tu día a día",
+    // Free nutrition plans
+    'freePlans.title': "Planes de nutrición gratis",
+    'freePlans.subtitle': "Días de ejemplo con comida sencilla, ajustados a ti",
+    'freePlans.card': "4 planes listos para seguir",
+    'freePlans.cardHint': "Perder grasa, ganar músculo, comer sano y vegetariano",
+    'freePlans.forYou': "Para ti",
+    'freePlans.fits': "Encaja con tus {kcal} kcal diarias: sigue las cantidades tal cual.",
+    'freePlans.scale': "Para tus {kcal} kcal diarias, come ×{factor} las cantidades. Ya lo ajustamos en cada comida.",
+    'freePlans.noTarget': "Unas {kcal} kcal al día. Registra tu peso para ajustar las cantidades a ti.",
+    'freePlans.day': "Día {n}",
+    'freePlans.dayShort': "D{n}",
+    'freePlans.log': "Lo comí",
+    'freePlans.logged': "Apuntado",
+    'freePlans.note': "Alterna los días como quieras y cambia alimentos por otros parecidos. ¿Quieres un plan semanal hecho solo para ti? Pruébalo con IA en Premium.",
 };

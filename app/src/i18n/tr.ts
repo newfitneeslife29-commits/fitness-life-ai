@@ -1581,4 +1581,17 @@ export const tr: Dict = {
     'privacy.s11.title': "Online trainers", // TO TRANSLATE
     'privacy.s11.body': "If you apply to be a trainer, we keep the form details. If approved, your name, specialty, description, experience, languages, country, price, contact and profile photo are shown to users. You can withdraw it any time and it's deleted with your account.", // TO TRANSLATE
     'mom.habits': "Everyday tips", // TO TRANSLATE
+    'freePlans.title': "Free nutrition plans", // TO TRANSLATE
+    'freePlans.subtitle': "Sample days with simple food, adjusted to you", // TO TRANSLATE
+    'freePlans.card': "4 ready-to-follow plans", // TO TRANSLATE
+    'freePlans.cardHint': "Lose fat, build muscle, eat healthy and vegetarian", // TO TRANSLATE
+    'freePlans.forYou': "For you", // TO TRANSLATE
+    'freePlans.fits': "Fits your {kcal} kcal a day: follow the amounts as they are.", // TO TRANSLATE
+    'freePlans.scale': "For your {kcal} kcal a day, eat ×{factor} the amounts. Each meal below is already adjusted.", // TO TRANSLATE
+    'freePlans.noTarget': "About {kcal} kcal a day. Log your weight to adjust the amounts to you.", // TO TRANSLATE
+    'freePlans.day': "Day {n}", // TO TRANSLATE
+    'freePlans.dayShort': "D{n}", // TO TRANSLATE
+    'freePlans.log': "I ate it", // TO TRANSLATE
+    'freePlans.logged': "Logged", // TO TRANSLATE
+    'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
 };

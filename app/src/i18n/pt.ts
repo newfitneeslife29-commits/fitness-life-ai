@@ -1586,4 +1586,18 @@ export const pt: Dict = {
     'privacy.s11.title': "Treinadores online",
     'privacy.s11.body': "Se você se candidatar a treinador, guardamos os dados do formulário. Se aprovada, seu nome, especialidade, descrição, experiência, idiomas, país, preço, contato e foto de perfil são mostrados aos usuários. Você pode retirá-la quando quiser e ela é apagada ao excluir a conta.",
     'mom.habits': "Dicas para o dia a dia",
+    // Free nutrition plans
+    'freePlans.title': "Planos de nutrição grátis",
+    'freePlans.subtitle': "Dias de exemplo com comida simples, ajustados a você",
+    'freePlans.card': "4 planos prontos para seguir",
+    'freePlans.cardHint': "Perder gordura, ganhar músculo, comer saudável e vegetariano",
+    'freePlans.forYou': "Para você",
+    'freePlans.fits': "Combina com suas {kcal} kcal diárias: siga as quantidades como estão.",
+    'freePlans.scale': "Para suas {kcal} kcal diárias, coma ×{factor} as quantidades. Já ajustamos em cada refeição.",
+    'freePlans.noTarget': "Cerca de {kcal} kcal por dia. Registre seu peso para ajustar as quantidades a você.",
+    'freePlans.day': "Dia {n}",
+    'freePlans.dayShort': "D{n}",
+    'freePlans.log': "Comi",
+    'freePlans.logged': "Anotado",
+    'freePlans.note': "Alterne os dias como quiser e troque alimentos por outros parecidos. Quer um plano semanal feito só para você? Experimente com IA no Premium.",
 };

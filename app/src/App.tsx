@@ -31,6 +31,7 @@ import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
 import Feedback from './pages/Feedback';
+import FreePlans from './pages/FreePlans';
 import Mom from './pages/Mom';
 import TrainerApply from './pages/TrainerApply';
 import Trainers from './pages/Trainers';
@@ -183,6 +184,7 @@ export default function App() {
                 <Route path="/programas" element={<Shell><Programs /></Shell>} />
                 <Route path="/entrenador" element={<Shell><Trainer /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
+                <Route path="/nutricion/planes" element={<Shell><FreePlans /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
