@@ -49,7 +49,7 @@ export const waveFor = (p: Prescription, role: 'main' | 'accessory', timed: bool
 // joints. Main lifts stay, so their weights keep progressing.
 const rotateAccessories = (days: ProgramDay[], program: Program, limitations: Limitation[], week: number): ProgramDay[] => {
     const turn = Math.floor((week - 1) / (program.beginner ? 2 : 1));
-    if (turn === 0) return days;
+    if (turn === 0 || program.mom) return days;
     // Big lifts of the program stay main lifts: never an accessory elsewhere.
     const mainLifts = new Set(days.flatMap(d => d.slots.filter(s => s.role === 'main').map(s => s.exerciseId)));
     return days.map(day => {
@@ -57,7 +57,7 @@ const rotateAccessories = (days: ProgramDay[], program: Program, limitations: Li
         const slots = day.slots.map(slot => {
             if (slot.role !== 'accessory') return slot;
             const ex = getExercise(slot.exerciseId);
-            if (!ex) return slot;
+            if (!ex || ex.kind) return slot;
             const options = [ex, ...EXERCISES.filter(e => e.id !== ex.id && !e.kind && e.muscle === ex.muscle && !!e.timed === !!ex.timed
                 && ALLOWED[program.setup].includes(e.equipment) && !avoided(e.id, limitations) && !used.has(e.id)
                 && !mainLifts.has(e.id) && (e.equipment !== 'barra' || ex.equipment === 'barra')

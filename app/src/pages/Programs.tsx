@@ -86,7 +86,7 @@ export default function Programs() {
     const [filter, setFilter] = useState<Filter>(profile.setup);
     const [open, setOpen] = useState<Program | null>(null);
     const recommended = pickProgram(profile);
-    const shown = PROGRAMS.filter(p => filter === 'todos' || p.setup === filter);
+    const shown = PROGRAMS.filter(p => !p.mom && (filter === 'todos' || p.setup === filter));
     const groups: [string, Program[]][] = [
         [t('programs.beginner'), shown.filter(p => p.beginner)],
         [t('programs.free'), shown.filter(p => !p.beginner && !p.premium && !p.women)],

@@ -1478,4 +1478,107 @@ export const zh: Dict = {
     'gear.cinta': "Treadmill", // TO TRANSLATE
     'gear.eliptica': "Elliptical", // TO TRANSLATE
     'gear.updated': "Plan updated with your machines", // TO TRANSLATE
+    'mom.card': "Pregnancy & postpartum", // TO TRANSLATE
+    'mom.cardHint': "Exercise, core and nutrition for you", // TO TRANSLATE
+    'mom.title': "Pregnancy & postpartum", // TO TRANSLATE
+    'mom.subtitle': "Move safely, rebuild your core and eat well at every stage", // TO TRANSLATE
+    'mom.stage': "Your stage", // TO TRANSLATE
+    'mom.stage.embarazo': "Pregnancy", // TO TRANSLATE
+    'mom.stage.posparto': "Postpartum", // TO TRANSLATE
+    'mom.stage.diastasis': "Diastasis & core", // TO TRANSLATE
+    'mom.intro.embarazo': "If your pregnancy is going well, moving helps with back pain, sleep and labour. In the 1st trimester carry on as before if you feel good; from the 2nd avoid lying on your back for long; in the 3rd go lighter and focus on mobility.", // TO TRANSLATE
+    'mom.intro.posparto': "The first weeks are for reconnecting with your body: breathing, pelvic floor and walks. With medical clearance (about 6 weeks, 8 or more after a C-section) build your strength back step by step.", // TO TRANSLATE
+    'mom.intro.diastasis': "Diastasis is the gap between the abdominal muscles after pregnancy. You work on it from the inside: breathing, deep abs and pelvic floor, without the belly doming. If a ridge appears down the middle during a move, go back to the previous one.", // TO TRANSLATE
+    'mom.programs': "Programs", // TO TRANSLATE
+    'mom.free': "Free", // TO TRANSLATE
+    'mom.locked': "This program is part of Premium, with a plan that moves forward every week.", // TO TRANSLATE
+    'mom.start': "Use this program", // TO TRANSLATE
+    'mom.confirm.title': "Start “{name}”?", // TO TRANSLATE
+    'mom.confirm.message': "It will change your training plan. Your own routines stay. Check with your doctor before starting.", // TO TRANSLATE
+    'mom.nutrition': "Nutrition for you", // TO TRANSLATE
+    'mom.moreTips': "{n} more tips with Premium", // TO TRANSLATE
+    'mom.safety.title': "Before you start", // TO TRANSLATE
+    'mom.safety.text': "Talk to your doctor or midwife before exercising in pregnancy or after giving birth. This section is general information and doesn't replace a professional.", // TO TRANSLATE
+    'mom.safety.stop': "Stop and get checked if you notice pain, bleeding, dizziness, shortness of breath, fluid leaking, contractions, pelvic pain or urine leaks.", // TO TRANSLATE
+    'mom.safety.physio': "A pelvic floor physiotherapist can check your diastasis and pelvic floor: the best ally after giving birth.", // TO TRANSLATE
+    'mom.food.embarazo.1': "No need to eat for two: in the 2nd trimester add about 340 kcal a day and in the 3rd about 450 (a yogurt with fruit and nuts, for example).", // TO TRANSLATE
+    'mom.food.embarazo.2': "Folic acid and iron: beans and lentils, leafy greens, eggs and well-cooked meat. Take the supplements your doctor prescribes.", // TO TRANSLATE
+    'mom.food.embarazo.3': "Avoid alcohol, large fish (swordfish, bluefin tuna), raw meat, fish or eggs, uncooked cured meats and unpasteurised milk or cheese.", // TO TRANSLATE
+    'mom.food.embarazo.4': "Protein: about 70–100 g a day spread over your meals (eggs, yogurt, chicken, legumes, small oily fish).", // TO TRANSLATE
+    'mom.food.embarazo.5': "Omega-3 (DHA) for your baby's brain: sardines, salmon or mackerel twice a week.", // TO TRANSLATE
+    'mom.food.embarazo.6': "Calcium and vitamin D: three servings a day of dairy or fortified plant milk, and a little sunshine.", // TO TRANSLATE
+    'mom.food.embarazo.7': "Nausea: small, frequent meals, something dry when you wake up (crackers, toast), ginger, and avoiding strong smells.", // TO TRANSLATE
+    'mom.food.embarazo.8': "Heartburn: eat dinner 2–3 hours before bed, eat slowly and avoid fried and spicy food.", // TO TRANSLATE
+    'mom.food.embarazo.9': "A sample day: oats with fruit and yogurt · wholegrain toast with avocado and egg · lentils with rice and salad · fruit and nuts · baked salmon with potato and vegetables.", // TO TRANSLATE
+    'mom.food.posparto.1': "If you're breastfeeding you need about 450–500 extra kcal a day: this isn't the time for strict diets.", // TO TRANSLATE
+    'mom.food.posparto.2': "Drink a glass of water every time you feed your baby.", // TO TRANSLATE
+    'mom.food.posparto.3': "Keep easy one-handed food nearby: fruit, yogurt, nuts, omelette, wholegrain sandwiches.", // TO TRANSLATE
+    'mom.food.posparto.4': "Protein at every meal to help your body heal: 1.2–1.5 g per kilo of body weight a day.", // TO TRANSLATE
+    'mom.food.posparto.5': "Iron after birth (especially if you bled a lot): lean red meat, or legumes with some vitamin C like orange or pepper.", // TO TRANSLATE
+    'mom.food.posparto.6': "Fibre and water against constipation: vegetables, fruit with skin, legumes and oats.", // TO TRANSLATE
+    'mom.food.posparto.7': "Lose weight calmly: half a kilo a week at most, so your milk and energy aren't affected.", // TO TRANSLATE
+    'mom.food.posparto.8': "A sample day: toast with egg and fruit · yogurt with oats · rice with chicken and vegetables · hummus with carrots · fish with sweet potato and salad.", // TO TRANSLATE
+    'mom.food.posparto.9': "Sleep when your baby sleeps whenever you can: rest also helps keep hunger in check.", // TO TRANSLATE
+    'mom.food.diastasis.1': "Avoid classic crunches, long planks and lifting while holding your breath as long as your belly domes.", // TO TRANSLATE
+    'mom.food.diastasis.2': "To get out of bed, roll onto your side and push up with your arms instead of sitting straight up.", // TO TRANSLATE
+    'mom.food.diastasis.3': "Breathe out on the effort: when lifting your baby, standing up or pushing the stroller.", // TO TRANSLATE
+    'mom.food.diastasis.4': "How to check it: lying down with knees bent, lift your head slightly and measure the gap above your belly button with your fingers. More than two fingers: see a physiotherapist.", // TO TRANSLATE
+    'mom.food.diastasis.5': "Move on to the next program once your belly stops doming in the current exercises for two weeks.", // TO TRANSLATE
+    'mom.food.diastasis.6': "Enough protein and vitamin C (fruit, peppers, broccoli) help your tissues repair.", // TO TRANSLATE
+    'mom.food.diastasis.7': "Posture: ribs stacked over your pelvis, without pushing your belly out or sucking it in hard all day.", // TO TRANSLATE
+    'trainers.card': "Online trainers", // TO TRANSLATE
+    'trainers.cardHint': "Real coaches to guide you", // TO TRANSLATE
+    'trainers.title': "Online trainers", // TO TRANSLATE
+    'trainers.subtitle': "Real coaches reviewed by our team", // TO TRANSLATE
+    'trainers.note': "Each coach is independent: we review their application, but you agree the price, payment and plan directly with them.", // TO TRANSLATE
+    'trainers.verified': "Reviewed by Fitness Life", // TO TRANSLATE
+    'trainers.years_one': "{n} year of experience", // TO TRANSLATE
+    'trainers.years_other': "{n} years of experience", // TO TRANSLATE
+    'trainers.more': "More", // TO TRANSLATE
+    'trainers.less': "Less", // TO TRANSLATE
+    'trainers.contact': "Contact", // TO TRANSLATE
+    'trainers.empty': "Coaches are coming soon", // TO TRANSLATE
+    'trainers.emptyHint': "We're reviewing the first applications. Meanwhile, your AI trainer can help.", // TO TRANSLATE
+    'trainers.applyTitle': "Become an online trainer", // TO TRANSLATE
+    'trainers.applyHint': "Offer your services to the Fitness Life community", // TO TRANSLATE
+    'trainers.ai': "Or ask your AI trainer", // TO TRANSLATE
+    'apply.subtitle': "Tell us about you; we review every application", // TO TRANSLATE
+    'apply.needAccount': "You need an account to send your application.", // TO TRANSLATE
+    'apply.name': "Professional name", // TO TRANSLATE
+    'apply.specialty': "Specialty", // TO TRANSLATE
+    'apply.specialtyHint': "E.g. fat loss, strength, postpartum, running", // TO TRANSLATE
+    'apply.bio': "About you", // TO TRANSLATE
+    'apply.bioHint': "How you work and what you offer (at least 20 characters)", // TO TRANSLATE
+    'apply.years': "Years of experience", // TO TRANSLATE
+    'apply.country': "Country", // TO TRANSLATE
+    'apply.certifications': "Certifications", // TO TRANSLATE
+    'apply.certificationsHint': "Your degrees or certificates; we may ask you to show them", // TO TRANSLATE
+    'apply.languages': "Languages", // TO TRANSLATE
+    'apply.price': "Price", // TO TRANSLATE
+    'apply.priceHint': "E.g. $30/month", // TO TRANSLATE
+    'apply.contact': "Contact", // TO TRANSLATE
+    'apply.contactHint': "Your website, e-mail, WhatsApp (with country code) or @Instagram", // TO TRANSLATE
+    'apply.review': "We review every application before publishing it. By sending it you agree that, if approved, these details and your profile photo are shown to users.", // TO TRANSLATE
+    'apply.send': "Send application", // TO TRANSLATE
+    'apply.update': "Save changes", // TO TRANSLATE
+    'apply.sent': "Application sent. We'll let you know once it's reviewed.", // TO TRANSLATE
+    'apply.withdraw': "Withdraw application", // TO TRANSLATE
+    'apply.withdrawTitle': "Withdraw your application?", // TO TRANSLATE
+    'apply.withdrawMessage': "You'll stop appearing as a trainer. You can apply again any time.", // TO TRANSLATE
+    'apply.withdrawn': "Application withdrawn", // TO TRANSLATE
+    'apply.status.pending': "Under review", // TO TRANSLATE
+    'apply.status.pending.hint': "We'll review it within a few days. Any change sends it back to review.", // TO TRANSLATE
+    'apply.status.approved': "Approved! You're listed in Online trainers", // TO TRANSLATE
+    'apply.status.approved.hint': "If you change your details, they'll be reviewed again.", // TO TRANSLATE
+    'apply.status.rejected': "Not approved", // TO TRANSLATE
+    'apply.status.rejected.hint': "Check your details and certifications and send it again.", // TO TRANSLATE
+    'apply.err.name': "Enter your professional name.", // TO TRANSLATE
+    'apply.err.specialty': "Enter your specialty.", // TO TRANSLATE
+    'apply.err.bio': "Tell us a bit more about you (at least 20 characters).", // TO TRANSLATE
+    'apply.err.contact': "Add how people can contact you.", // TO TRANSLATE
+    'apply.err.failed': "Couldn't send it. Check your connection and try again.", // TO TRANSLATE
+    'settings.trainer': "Are you a trainer?", // TO TRANSLATE
+    'privacy.s11.title': "Online trainers", // TO TRANSLATE
+    'privacy.s11.body': "If you apply to be a trainer, we keep the form details. If approved, your name, specialty, description, experience, languages, country, price, contact and profile photo are shown to users. You can withdraw it any time and it's deleted with your account.", // TO TRANSLATE
+    'mom.habits': "Everyday tips", // TO TRANSLATE
 };

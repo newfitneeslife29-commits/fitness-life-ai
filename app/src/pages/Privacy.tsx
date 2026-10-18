@@ -1,4 +1,4 @@
-import { Activity, Bot, CircleSlash, CreditCard, ExternalLink, Mail, MessageSquareHeart, ShieldCheck, Smartphone, Trash2, UsersRound, Cloud } from 'lucide-react';
+import { Activity, Bot, Dumbbell, CircleSlash, CreditCard, ExternalLink, Mail, MessageSquareHeart, ShieldCheck, Smartphone, Trash2, UsersRound, Cloud } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BackHeader, Section } from '../components/ui';
 import { getLang, t, type Key } from '../i18n';
@@ -7,7 +7,7 @@ import { LEGAL_URL } from '../lib/premium';
 const SECTIONS: [number, ReactNode][] = [
     [1, <Smartphone size={18} />], [2, <Cloud size={18} />], [3, <Bot size={18} />], [4, <UsersRound size={18} />],
     [5, <MessageSquareHeart size={18} />], [6, <Activity size={18} />], [7, <CreditCard size={18} />],
-    [8, <CircleSlash size={18} />], [9, <Trash2 size={18} />], [10, <Mail size={18} />],
+    [8, <CircleSlash size={18} />], [11, <Dumbbell size={18} />], [9, <Trash2 size={18} />], [10, <Mail size={18} />],
 ];
 const ANCHOR = { es: 'privacidad', pt: 'privacidade' } as Record<string, string>;
 

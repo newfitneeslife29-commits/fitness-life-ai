@@ -1,4 +1,4 @@
-import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Play, Plus, Sparkles } from 'lucide-react';
+import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Play, Plus, Sparkles, Baby, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
@@ -114,6 +114,8 @@ export default function Routines() {
                 <div className="grid grid-cols-2 gap-2">
                     <Explore to="/entrenador" icon={<Bot size={20} />} title={t('trainer.title')} hint={t('trainer.routinesHint')} color="from-violet-500 to-indigo-600 shadow-violet-500/30" photo={namedCover('espalda-5')} />
                     <Explore to="/mujeres" icon={<Sparkles size={20} />} title={t('women.card')} hint={t('women.cardHint')} color="from-pink-500 to-rose-500 shadow-pink-500/30" photo={namedCover('gluteos-1')} />
+                    <Explore to="/mama" icon={<Baby size={20} />} title={t('mom.card')} hint={t('mom.cardHint')} color="from-rose-400 to-violet-500 shadow-rose-400/30" photo={namedCover('core-1')} />
+                    <Explore to="/entrenadores" icon={<Users size={20} />} title={t('trainers.card')} hint={t('trainers.cardHint')} color="from-sky-500 to-indigo-600 shadow-sky-500/30" photo={namedCover('hombros-1')} />
                     <Explore to="/programas" icon={<Layers size={20} />} title={t('programs.title')} hint={t('programs.hint')} color="from-brand to-amber-500 shadow-brand/30" photo={namedCover('pecho-2')} />
                     <Explore to="/aprende" icon={<GraduationCap size={20} />} title={t('learn.cardTitle')} hint={t('learn.cardHint')} color="from-sky-500 to-blue-600 shadow-sky-500/30" photo={namedCover('isquios-1')} />
                     <Explore to="/ejercicios" icon={<Dumbbell size={20} />} title={t('routines.library')} hint={t('routines.libraryHint')} color="from-emerald-500 to-teal-600 shadow-emerald-500/30" photo={namedCover('gemelos-1')} />

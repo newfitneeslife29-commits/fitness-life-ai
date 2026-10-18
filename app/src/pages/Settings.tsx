@@ -1,4 +1,4 @@
-import { BookOpen, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -484,6 +484,7 @@ function HelpSection() {
             <div className="card divide-y divide-line overflow-hidden">
                 <NavRow to="/guia" icon={<BookOpen size={20} />} title={t('guide.title')} hint={t('guide.hint')} />
                 <NavRow to="/comentarios" icon={<MessageSquareHeart size={20} />} title={t('feedback.title')} hint={t('feedback.hint')} />
+                <NavRow to="/entrenadores/aplicar" icon={<UserPlus size={20} />} title={t('settings.trainer')} hint={t('trainers.applyTitle')} />
                 <NavRow to="/privacidad" icon={<ShieldCheck size={20} />} title={t('privacy.title')} hint={t('privacy.hint')} />
                 <div className="flex items-center gap-3 p-4">
                     <RefreshCw size={20} className="shrink-0 text-brand" />

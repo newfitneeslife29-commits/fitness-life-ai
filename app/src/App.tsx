@@ -31,6 +31,9 @@ import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
 import Feedback from './pages/Feedback';
+import Mom from './pages/Mom';
+import TrainerApply from './pages/TrainerApply';
+import Trainers from './pages/Trainers';
 import Privacy from './pages/Privacy';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
 import { AUTH_LINK_FAILED_EVENT, authAvailable, initAuth } from './lib/auth';
@@ -185,6 +188,9 @@ export default function App() {
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
+                <Route path="/mama" element={<Shell><Mom /></Shell>} />
+                <Route path="/entrenadores" element={<Shell><Trainers /></Shell>} />
+                <Route path="/entrenadores/aplicar" element={<Shell><TrainerApply /></Shell>} />
                 <Route path="/privacidad" element={<Shell><Privacy /></Shell>} />
                 <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />

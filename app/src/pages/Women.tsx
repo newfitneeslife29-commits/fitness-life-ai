@@ -1,4 +1,4 @@
-import { Bot, Check, ChevronLeft, Footprints, HeartPulse, Info, Moon, Salad } from 'lucide-react';
+import { Baby, Bot, Check, ChevronLeft, Footprints, HeartPulse, Info, Moon, Salad } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -114,6 +114,16 @@ export default function Women() {
                     <button onClick={start} className="btn-primary mt-3 w-full">{t('women.start')}</button>
                 )}
                 <Link to="/entrenador" className="btn-ghost mt-2 w-full"><Bot size={18} /> {t('women.ai')}</Link>
+            </Section>
+
+            <Section>
+                <Link to="/mama" className="card flex items-center gap-3 border-rose-400/30 bg-gradient-to-r from-rose-500/15 to-violet-500/10 p-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-snow"><Baby size={22} /></span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('mom.card')}</span>
+                        <span className="block text-sm text-white/60">{t('mom.cardHint')}</span>
+                    </span>
+                </Link>
             </Section>
 
             <Section title={t('women.tips')}>
