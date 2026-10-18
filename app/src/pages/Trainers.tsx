@@ -1,0 +1,100 @@
+import { BadgeCheck, ChevronDown, Globe2, GraduationCap, Info, Languages, MessageCircle, RefreshCw, UserPlus, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Avatar } from '../components/Avatar';
+import { BackHeader, Section } from '../components/ui';
+import { t, tp } from '../i18n';
+import { errorText } from '../lib/errorText';
+import { contactLink, fetchTrainers, trainersAvailable, type Trainer } from '../lib/trainers';
+
+const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
+    const [open, setOpen] = useState(false);
+    const link = contactLink(trainer.contact);
+    return (
+        <article className="card overflow-hidden">
+            <div className="flex gap-3 p-4">
+                <span className="rounded-full bg-gradient-to-tr from-amber-400 via-brand to-fuchsia-500 p-[2px]">
+                    <span className="block rounded-full bg-ink-2 p-[2px]"><Avatar src={trainer.avatarUrl} name={trainer.name} size={56} /></span>
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1.5 font-bold">{trainer.name} <BadgeCheck size={16} className="shrink-0 text-sky-400" aria-label={t('trainers.verified')} /></p>
+                    <p className="text-sm font-medium text-brand">{trainer.specialty}</p>
+                    <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/55">
+                        {trainer.experienceYears > 0 && <span>{tp('trainers.years', trainer.experienceYears)}</span>}
+                        {trainer.country && <span className="flex items-center gap-1"><Globe2 size={12} /> {trainer.country}</span>}
+                        {trainer.languages && <span className="flex items-center gap-1"><Languages size={12} /> {trainer.languages}</span>}
+                    </p>
+                </div>
+                {trainer.price && <span className="h-fit shrink-0 rounded-full bg-good/15 px-2.5 py-1 text-xs font-bold text-good">{trainer.price}</span>}
+            </div>
+            <p className={`px-4 text-sm leading-relaxed text-white/75 ${open ? '' : 'line-clamp-3'}`}>{trainer.bio}</p>
+            {open && trainer.certifications && (
+                <p className="mt-2 flex gap-2 px-4 text-sm text-white/65"><GraduationCap size={16} className="mt-0.5 shrink-0 text-brand" /> {trainer.certifications}</p>
+            )}
+            <div className="flex gap-2 p-4 pt-3">
+                <button onClick={() => setOpen(o => !o)} className="btn-ghost flex-1 py-2 text-sm">
+                    <ChevronDown size={16} className={`transition ${open ? 'rotate-180' : ''}`} /> {t(open ? 'trainers.less' : 'trainers.more')}
+                </button>
+                {link
+                    ? <a href={link} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 py-2 text-sm"><MessageCircle size={16} /> {t('trainers.contact')}</a>
+                    : <span className="flex-1 select-all rounded-xl bg-ink-3 px-3 py-2 text-center text-sm">{trainer.contact}</span>}
+            </div>
+        </article>
+    );
+};
+
+// Real trainers who coach online, reviewed by the Fitness Life team.
+export default function Trainers() {
+    const navigate = useNavigate();
+    const [trainers, setTrainers] = useState<Trainer[] | null>(null);
+    const [failed, setFailed] = useState<string | null>(null);
+    const load = () => {
+        setFailed(null);
+        setTrainers(null);
+        fetchTrainers().then(setTrainers).catch(e => { setFailed(errorText(e)); setTrainers([]); });
+    };
+    useEffect(() => { if (trainersAvailable()) load(); }, []);
+
+    return (
+        <div className="space-y-5 pb-4">
+            <BackHeader title={t('trainers.title')} subtitle={t('trainers.subtitle')} icon={<Users size={20} />} />
+            <Section>
+                <p className="flex gap-2 rounded-2xl border border-sky-400/25 bg-sky-500/10 p-3 text-xs text-white/70">
+                    <Info size={16} className="mt-0.5 shrink-0 text-sky-400" /> {t('trainers.note')}
+                </p>
+            </Section>
+            <Section>
+                {!trainersAvailable() ? (
+                    <p className="card p-6 text-center text-sm text-white/60">{t('community.unavailable')}</p>
+                ) : trainers === null ? (
+                    <div className="space-y-3" role="status" aria-label={t('community.loading')}>
+                        {[0, 1].map(i => <div key={i} className="card h-36 animate-pulse" />)}
+                    </div>
+                ) : trainers.length === 0 ? (
+                    <div className="card p-6 text-center">
+                        <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand"><Users size={22} /></span>
+                        <p className="font-semibold">{t(failed ? 'community.loadFailed' : 'trainers.empty')}</p>
+                        {failed ? (
+                            <>
+                                <p className="mt-1 break-words text-xs text-white/40">{failed}</p>
+                                <button className="btn-ghost mt-3" onClick={load}><RefreshCw size={16} /> {t('community.retry')}</button>
+                            </>
+                        ) : <p className="mt-1 text-sm text-white/60">{t('trainers.emptyHint')}</p>}
+                    </div>
+                ) : (
+                    <div className="space-y-3">{trainers.map(tr => <TrainerCard key={tr.id} trainer={tr} />)}</div>
+                )}
+            </Section>
+            <Section>
+                <button onClick={() => navigate('/entrenadores/aplicar')} className="card flex w-full items-center gap-3 p-4 text-left hover:bg-ink-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-amber-500 text-snow"><UserPlus size={20} /></span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('trainers.applyTitle')}</span>
+                        <span className="block text-sm text-white/55">{t('trainers.applyHint')}</span>
+                    </span>
+                </button>
+                <Link to="/entrenador" className="mt-2 block text-center text-sm text-white/55 underline">{t('trainers.ai')}</Link>
+            </Section>
+        </div>
+    );
+}

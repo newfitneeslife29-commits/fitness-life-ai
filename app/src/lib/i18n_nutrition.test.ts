@@ -38,9 +38,14 @@ describe('translations', () => {
         }
     });
 
-    it('has two photos for every exercise', () => {
+    it('has two photos for every exercise (a few gentle moves are described in words)', () => {
+        const wordsOnly = ['respiracion-diafragmatica', 'suelo-pelvico', 'deslizamiento-talon', 'toques-talon', 'bird-dog'];
         for (const ex of EXERCISES) {
             const photos = exercisePhotos(ex.id);
+            if (wordsOnly.includes(ex.id)) {
+                expect(ex.kind, ex.id).toBe('gentle');
+                continue;
+            }
             expect(photos, ex.id).not.toBeNull();
             for (const src of photos ?? []) expect(existsSync(`public/${src.replace('./', '')}`), src).toBe(true);
         }

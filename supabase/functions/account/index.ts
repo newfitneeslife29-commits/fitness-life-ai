@@ -23,12 +23,14 @@ Deno.serve(async req => {
   if (body.action !== 'delete') return json({ error: 'unknown action' }, 400);
 
   try {
-    // Community photos (profile picture and posts) live in the user's folder.
-    const bucket = admin.storage.from('community');
-    for (const folder of [user.id, `${user.id}/posts`]) {
-      const { data: files } = await bucket.list(folder, { limit: 1000 });
-      const paths = (files ?? []).filter(f => f.id).map(f => `${folder}/${f.name}`);
-      if (paths.length) await bucket.remove(paths);
+    // Community photos and videos (profile picture and posts) live in the user's folder.
+    for (const name of ['community', 'community-videos']) {
+      const bucket = admin.storage.from(name);
+      for (const folder of [user.id, `${user.id}/posts`, `${user.id}/stories`]) {
+        const { data: files } = await bucket.list(folder, { limit: 1000 });
+        const paths = (files ?? []).filter(f => f.id).map(f => `${folder}/${f.name}`);
+        if (paths.length) await bucket.remove(paths);
+      }
     }
     // Posts, likes and comments go with the account (foreign keys cascade).
     for (const table of ['user_data', 'ai_usage']) {

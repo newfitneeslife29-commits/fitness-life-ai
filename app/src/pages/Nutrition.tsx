@@ -8,7 +8,7 @@ import { Recipes } from '../components/Recipes';
 import { WaterCard } from '../components/Water';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
-import { HeroStat, PageHeader, Section, Sheet } from '../components/ui';
+import { HeroStat, PageHeader, Photo, Section, Sheet } from '../components/ui';
 import { getLang, locale, t } from '../i18n';
 import { aiAvailable, askCoach, estimateMeal, estimateMealPhoto, refreshUsage, type CoachContext, type MealEstimate } from '../lib/ai';
 import { pickImage, resizeImage } from '../lib/image';
@@ -584,6 +584,19 @@ export default function Nutrition() {
 
             <Section title={t('water.title')}>
                 <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
+            </Section>
+
+            <Section title={t('freePlans.title')}>
+                <Link to="/nutricion/planes" className="card relative flex min-h-[7.5rem] items-end overflow-hidden p-4 text-snow active:scale-[0.99]">
+                    <Photo photo={{ src: './food/plato-7.webp', position: '50% 50%' }} />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-800/90 via-emerald-700/60 to-transparent" />
+                    <span className="relative min-w-0 flex-1">
+                        <span className="mb-1 inline-block rounded-full bg-snow/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">{t('mom.free')}</span>
+                        <span className="block text-lg font-bold">{t('freePlans.card')}</span>
+                        <span className="block text-sm text-snow/85">{t('freePlans.cardHint')}</span>
+                    </span>
+                    <ChevronRight className="relative shrink-0" />
+                </Link>
             </Section>
 
             <Section title={t('mealPlan.section')}>

@@ -54,7 +54,8 @@ export default function Premium() {
     // Store prices once loaded; until then (or if a plan is missing there) the USD defaults.
     const plans = offer?.length ? offer : PLAN_IDS.map(fallbackPlan);
     const plan = plans.find(p => p.id === planId) ?? plans[0];
-    const [termsAnchor, privacyAnchor] = LEGAL_ANCHORS[getLang()];
+    const lang = getLang();
+    const [termsAnchor, privacyAnchor] = LEGAL_ANCHORS[lang === 'es' || lang === 'pt' ? lang : 'en'];
 
     useEffect(() => {
         if (!available) return;

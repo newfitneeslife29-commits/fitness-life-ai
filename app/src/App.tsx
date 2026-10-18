@@ -1,8 +1,10 @@
 import { Apple, House, LineChart, ListChecks, Settings as SettingsIcon, Timer, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { AppGuide, guideSeen } from './components/AppGuide';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FeedbackHost, toast } from './components/feedback';
 import { OfflineNotice } from './components/OfflineNotice';
+import { UpdateBanner } from './components/UpdateBanner';
 import { LaunchSplash } from './components/Welcome';
 import { t } from './i18n';
 import { localDay } from './lib/activity';
@@ -28,6 +30,13 @@ import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
+import AboutUs from './pages/AboutUs';
+import Feedback from './pages/Feedback';
+import FreePlans from './pages/FreePlans';
+import Mom from './pages/Mom';
+import TrainerApply from './pages/TrainerApply';
+import Trainers from './pages/Trainers';
+import Privacy from './pages/Privacy';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
 import { AUTH_LINK_FAILED_EVENT, authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
@@ -89,6 +98,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
     return (
         // Extra bottom room while the "workout in progress" banner is showing.
         <div className={`pt-safe mx-auto min-h-dvh max-w-lg ${hasActive ? 'pb-[calc(9rem+env(safe-area-inset-bottom))]' : 'pb-nav'}`}>
+            <UpdateBanner className="relative z-10 mx-4 mt-3" />
             <OfflineNotice className="relative z-10 mx-4 mt-3" />
             <div key={pathname} className="animate-fade"><ErrorBoundary>{children}</ErrorBoundary></div>
             <ActiveBanner />
@@ -114,6 +124,9 @@ export default function App() {
     const lang = useStore(s => s.lang); // remount everything when the language changes
     const navigate = useNavigate();
     const askAccount = useStore(s => !s.account && !s.authPrompted) && authAvailable();
+    // New users: the tour of the app, once, right after setting up their plan.
+    const [tour, setTour] = useState(() => !guideSeen());
+    const newUser = useStore(s => s.sessions.length === 0);
     useEffect(() => {
         initNative(() => navigate(-1));
     }, [navigate]);
@@ -154,9 +167,11 @@ export default function App() {
             <FeedbackHost />
             <PasswordRecovery />
             {splash}
+            {tour && newUser && <AppGuide onClose={() => setTour(false)} />}
             <Routes key={lang}>
                 <Route path="/entreno" element={<ErrorBoundary><Workout /></ErrorBoundary>} />
                 <Route path="/cardio" element={<ErrorBoundary><Cardio /></ErrorBoundary>} />
+                <Route path="/guia" element={<AppGuide page onClose={() => navigate(-1)} />} />
                 <Route path="/cuenta" element={<AuthScreen initialMode="signIn" onDone={() => navigate('/ajustes', { replace: true })} onBack={() => navigate(-1)} />} />
                 <Route path="/" element={<Shell><Today /></Shell>} />
                 <Route path="/rutinas" element={<Shell><Routines /></Shell>} />
@@ -170,11 +185,18 @@ export default function App() {
                 <Route path="/programas" element={<Shell><Programs /></Shell>} />
                 <Route path="/entrenador" element={<Shell><Trainer /></Shell>} />
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
+                <Route path="/nutricion/planes" element={<Shell><FreePlans /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
+                <Route path="/mama" element={<Shell><Mom /></Shell>} />
+                <Route path="/entrenadores" element={<Shell><Trainers /></Shell>} />
+                <Route path="/entrenadores/aplicar" element={<Shell><TrainerApply /></Shell>} />
+                <Route path="/sobre-nosotros" element={<Shell><AboutUs /></Shell>} />
+                <Route path="/privacidad" element={<Shell><Privacy /></Shell>} />
+                <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="/actividad" element={<Shell><Activity /></Shell>} />
                 <Route path="/movimiento" element={<Shell><Move /></Shell>} />

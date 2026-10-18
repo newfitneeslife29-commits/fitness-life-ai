@@ -1,5 +1,7 @@
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Cover } from '../data/covers';
 import { t } from '../i18n';
 
@@ -53,6 +55,29 @@ export const PageHeader = ({ title, subtitle, action, tone, photo, children }: {
         {action}
     </header>
 );
+
+// A photo behind the top of a page, fading into the background (Comunidad, Ajustes…).
+export const PageBackdrop = ({ src, position = '50% 35%' }: { src: string; position?: string }) => (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[26rem] overflow-hidden">
+        <img src={src} alt="" className="h-full w-full object-cover opacity-45" style={{ objectPosition: position }} />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(var(--ink)/0.2)_0%,rgb(var(--ink)/0.7)_50%,rgb(var(--ink))_100%)]" />
+    </div>
+);
+
+// A sub-page's header: back arrow, icon, title and a line under it.
+export const BackHeader = ({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: ReactNode }) => {
+    const navigate = useNavigate();
+    return (
+        <header className="flex items-center gap-2 px-2 pt-4">
+            <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white"><ChevronLeft size={22} /></button>
+            {icon && <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">{icon}</span>}
+            <div className="min-w-0">
+                <h1 className="text-xl font-bold leading-tight">{title}</h1>
+                {subtitle && <p className="text-sm text-white/55">{subtitle}</p>}
+            </div>
+        </header>
+    );
+};
 
 // A small figure on a coloured header: big number, short label.
 export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) => (
@@ -140,7 +165,9 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
         return () => window.removeEventListener('keydown', onKey);
     }, [open, onClose]);
     if (!open) return null;
-    return (
+    // On <body>: a sheet opened from inside a layer (the welcome header) would
+    // otherwise sit under the layers that come after it.
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
             <div aria-hidden className="absolute inset-0 animate-fade bg-black/70" onClick={onClose} />
             <div className="relative flex max-h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl border border-line bg-ink-2 sm:rounded-3xl">
@@ -150,7 +177,8 @@ export const Sheet = ({ open, onClose, title, children }: { open: boolean; onClo
                 </div>
                 <div className="overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">{children}</div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };
 

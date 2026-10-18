@@ -11,9 +11,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      // Registered by hand in main.tsx, and only on the web: inside the
-      // iOS/Android apps a service worker would only serve stale files.
+      // A new version waits until the user taps "Update" (src/lib/updates.ts).
+      registerType: 'prompt',
+      // Registered by hand in src/lib/updates.ts, and only on the web: inside
+      // the iOS/Android apps a service worker would only serve stale files.
       injectRegister: false,
       includeAssets: ['icon.svg'],
       // Exercise photos are precached too, so how-to images work offline.

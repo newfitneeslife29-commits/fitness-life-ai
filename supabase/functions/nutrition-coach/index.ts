@@ -26,7 +26,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
   chatSystem, contextNote, ESTIMATE_SCHEMA, estimateSystem, MEAL_DAY_SCHEMA, MEAL_OUTLINE_SCHEMA, mealDaySystem, mealOutlineSystem, photoSystem, routineSchema, routineSystem,
-  trainerNote, trainerSystem, type CoachContext, type Lang, type Macros, type TrainerContext,
+  trainerNote, trainerSystem, LANGUAGE, type CoachContext, type Lang, type Macros, type TrainerContext,
 } from './prompt.ts';
 import { cleanMealPlan } from './mealplan.ts';
 import { hasEntitlement } from './subscription.ts';
@@ -64,7 +64,7 @@ const macros = (v: unknown): Macros => {
   const m = (v ?? {}) as Record<string, unknown>;
   return { kcal: num(m.kcal), protein: num(m.protein), carbs: num(m.carbs), fat: num(m.fat) };
 };
-const langOf = (v: unknown): Lang => (v === 'en' || v === 'pt' ? v : 'es');
+const langOf = (v: unknown): Lang => (typeof v === 'string' && Object.hasOwn(LANGUAGE, v) ? v as Lang : 'es');
 
 const contextOf = (v: unknown): CoachContext => {
   const c = (v ?? {}) as Record<string, unknown>;

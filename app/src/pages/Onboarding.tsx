@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { AboutFields, ActivityChoice, emptyAbout, GoalFields, LimitationChips, parseAbout, parseGoal, type GoalDraft } from '../components/ProfileForm';
+import { AboutFields, ActivityChoice, emptyAbout, GoalFields, HomeGearChips, LimitationChips, parseAbout, parseGoal, type GoalDraft } from '../components/ProfileForm';
 import { Choice } from '../components/ui';
 import { Welcome } from '../components/Welcome';
 import { authAvailable } from '../lib/auth';
@@ -11,7 +11,19 @@ import { adaptDays, pickProgram, programDescription, programName } from '../data
 import { getLang, l10n, t } from '../i18n';
 import { fmtNumber } from '../lib/format';
 import { actions, useStore } from '../store/store';
-import type { Activity, Goal, Level, Limitation, Setup, Unit } from '../store/types';
+import type { Activity, Goal, HomeGear, Level, Limitation, Setup, Unit } from '../store/types';
+
+// One photo per question (public/covers, public/move, public/food).
+const BACKDROPS = [
+    { src: './covers/mujer-barra.webp', position: '59% 35%' },
+    { src: './covers/pecho-2.webp', position: '56% 40%' },
+    { src: './move/correr-1.webp', position: '50% 40%' },
+    { src: './covers/espalda-2.webp', position: '51% 30%' },
+    { src: './covers/piernas-1.webp', position: '61% 30%' },
+    { src: './covers/mujer-disco.webp', position: '52% 30%' },
+    { src: './food/plato-3.webp', position: '50% 50%' },
+    { src: './covers/hombros-1.webp', position: '46% 30%' },
+];
 
 // Name and goal → about you → day to day and injuries → experience → days →
 // where → weight goal → the plan.
@@ -36,6 +48,7 @@ export default function Onboarding() {
     const [level, setLevel] = useState<Level>('principiante');
     const [days, setDays] = useState(3);
     const [setup, setSetup] = useState<Setup>('gimnasio');
+    const [homeGear, setHomeGear] = useState<HomeGear[]>([]);
     const [weightGoal, setWeightGoal] = useState<GoalDraft>({ dir: 'subir', target: '' });
 
     // The weight goal starts from the training goal: losing fat → lose weight.
@@ -53,7 +66,7 @@ export default function Onboarding() {
     const blocked = (step === 1 && !parsed) || (step === 6 && goalValue === undefined);
 
     const profileDraft = {
-        name: name.trim(), goal, level, daysPerWeek: days, setup, unit, activity, limitations,
+        name: name.trim(), goal, level, daysPerWeek: days, setup, homeGear: setup === 'gimnasio' ? [] : homeGear, unit, activity, limitations,
         sex: parsed?.sex, birthYear: parsed?.birthYear, heightCm: parsed?.heightCm, weightGoal: goalValue ?? null,
     };
     const targets = parsed ? autoTargets(profileDraft, parsed.weightKg) : null;
@@ -73,15 +86,21 @@ export default function Onboarding() {
         return <AuthScreen key={stage} initialMode={stage} onDone={next} onSkip={next} onBack={() => setStage('welcome')} />;
     }
 
+    const backdrop = BACKDROPS[step % BACKDROPS.length];
     return (
-        <main className="pt-safe mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <div className="flex items-center gap-1.5 pt-6" aria-label={t('onboarding.step', { n: step + 1, total: STEPS })}>
+        <main className="pt-safe relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-hidden px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            {/* A photo behind the top of each question, fading into the page. */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-80">
+                <img key={backdrop.src} src={backdrop.src} alt="" className="h-full w-full animate-fade object-cover opacity-60" style={{ objectPosition: backdrop.position }} />
+                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(var(--ink)/0.35)_0%,rgb(var(--ink)/0.75)_55%,rgb(var(--ink))_100%)]" />
+            </div>
+            <div className="relative z-10 flex items-center gap-1.5 pt-6" aria-label={t('onboarding.step', { n: step + 1, total: STEPS })}>
                 {Array.from({ length: STEPS }, (_, i) => (
                     <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-brand' : 'bg-ink-4'}`} />
                 ))}
             </div>
 
-            <div className="flex-1 animate-fade py-8" key={step}>
+            <div className="relative z-10 flex-1 animate-fade py-8" key={step}>
                 {step === 0 && (
                     <>
                         <p className="label mb-2">Fitness Life</p>
@@ -146,6 +165,13 @@ export default function Onboarding() {
                             { value: 'mancuernas', label: t('setup.mancuernas'), hint: t('setup.mancuernas.hint') },
                             { value: 'casa', label: t('setup.casa'), hint: t('setup.casa.hint') },
                         ]} />
+                        {setup !== 'gimnasio' && (
+                            <div className="mt-8">
+                                <p className="label mb-2">{t('gear.question')}</p>
+                                <p className="mb-3 text-sm text-white/55">{t('gear.hint')}</p>
+                                <HomeGearChips value={homeGear} onChange={setHomeGear} />
+                            </div>
+                        )}
                     </>
                 )}
                 {step === 6 && (
@@ -177,7 +203,7 @@ export default function Onboarding() {
                 )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="relative z-10 flex gap-3">
                 <button className="btn-ghost" onClick={() => (step > 0 ? setStep(s => s - 1) : setStage('welcome'))} aria-label={t('common.back')}><ArrowLeft size={18} /></button>
                 {last ? (
                     <button className="btn-primary flex-1" onClick={finish}><Check size={18} /> {t('onboarding.start')}</button>

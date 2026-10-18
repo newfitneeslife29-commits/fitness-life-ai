@@ -4,6 +4,8 @@ import type { Theme } from '../lib/theme';
 export type Goal = 'fuerza' | 'musculo' | 'grasa' | 'salud';
 export type Level = 'principiante' | 'intermedio' | 'avanzado';
 export type Setup = 'gimnasio' | 'mancuernas' | 'casa';
+// Cardio machines someone has at home (added to their home plan).
+export type HomeGear = 'bici' | 'cinta' | 'eliptica';
 export type Unit = 'kg' | 'lbs';
 export type Sex = 'hombre' | 'mujer';
 // Daily activity outside training, for the calorie estimate.
@@ -24,6 +26,7 @@ export interface Profile {
     level: Level;
     daysPerWeek: number; // 2..6
     setup: Setup;
+    homeGear?: HomeGear[];
     unit: Unit;
     createdAt: string;
     avatar?: string; // profile picture, a small JPEG data URL

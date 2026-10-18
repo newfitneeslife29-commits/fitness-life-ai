@@ -1,21 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
-import { registerSW } from 'virtual:pwa-register';
 import '@fontsource-variable/inter';
 import './index.css';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { getLang, loadLang } from './i18n';
 import { restoreTabIcon } from './lib/appIcon';
-import { isNative } from './lib/native';
+import { startUpdateChecks } from './lib/updates';
 import { hydrateFromNative } from './store/store';
 
-if (!isNative() && 'serviceWorker' in navigator) registerSW({ immediate: true });
+startUpdateChecks();
 restoreTabIcon();
 
 // In the apps, restore saved data before the first render (the splash screen
 // is still up), so a returning user never sees the onboarding by mistake.
-void hydrateFromNative().finally(() => {
+// A language that isn't bundled loads before the first render too (if it
+// can't, the app shows English).
+void hydrateFromNative().then(() => loadLang(getLang())).catch(() => {}).finally(() => {
     ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>
             <ErrorBoundary>

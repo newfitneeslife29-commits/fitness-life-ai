@@ -26,6 +26,8 @@ export interface Program {
     premium?: boolean;
     // Women's section: made to lose weight or to keep it while toning.
     women?: 'bajar' | 'mantener';
+    // Pregnancy and postpartum section (gentle: exercises never rotate).
+    mom?: 'embarazo' | 'posparto' | 'diastasis';
 }
 
 const m = (exerciseId: string): ProgramSlot => ({ exerciseId, role: 'main' });
@@ -283,6 +285,80 @@ export const PROGRAMS: Program[] = [
             { name: { es: 'Core B', en: 'Core B', pt: 'Core B' }, slots: [m('puente-gluteo'), m('remo-invertido'), a('elevacion-piernas'), a('plancha-lateral'), a('escaladores'), a('superman')] },
         ],
     },
+
+    // Pregnancy and after giving birth: core and pelvic floor first, no
+    // crunches or lying on the back for long late in pregnancy, gentle strength.
+    {
+        id: 'mom-pregnancy-home',
+        name: { es: 'Embarazo activo en casa', en: 'Active pregnancy at home', pt: 'Gravidez ativa em casa' },
+        description: { es: 'Fuerza suave, movilidad de cadera y respiración para sentirte bien en cada trimestre. Sin material.', en: 'Gentle strength, hip mobility and breathing to feel good in every trimester. No equipment.', pt: 'Força suave, mobilidade de quadril e respiração para se sentir bem em cada trimestre. Sem equipamento.' },
+        setup: 'casa', mom: 'embarazo', beginner: true,
+        days: [
+            { name: { es: 'Piernas y respiración', en: 'Legs and breathing', pt: 'Pernas e respiração' }, slots: [m('sentadilla-libre'), m('puente-gluteo'), a('circulos-cadera'), a('respiracion-diafragmatica'), a('suelo-pelvico')] },
+            { name: { es: 'Espalda, brazos y movilidad', en: 'Back, arms and mobility', pt: 'Costas, braços e mobilidade' }, slots: [m('flexiones-inclinadas'), m('bird-dog'), a('gato-camello'), a('estiramiento-psoas'), a('postura-nino')] },
+        ],
+    },
+    {
+        id: 'mom-pregnancy-gym',
+        name: { es: 'Embarazo en el gimnasio', en: 'Pregnancy at the gym', pt: 'Gravidez na academia' },
+        description: { es: 'Máquinas guiadas y poleas para mantener la fuerza con seguridad, sentada o de pie.', en: 'Guided machines and cables to keep your strength safely, seated or standing.', pt: 'Máquinas guiadas e polias para manter a força com segurança, sentada ou em pé.' },
+        setup: 'gimnasio', mom: 'embarazo', premium: true, beginner: true,
+        days: [
+            { name: { es: 'Tren inferior', en: 'Lower body', pt: 'Inferiores' }, slots: [m('prensa'), m('abductores-maquina'), a('curl-femoral'), a('circulos-cadera'), a('suelo-pelvico')] },
+            { name: { es: 'Tren superior y core', en: 'Upper body and core', pt: 'Superiores e core' }, slots: [m('remo-maquina'), m('press-pecho-maquina'), a('jalon-pecho'), a('pallof'), a('respiracion-diafragmatica')] },
+        ],
+    },
+    {
+        id: 'mom-postpartum-start',
+        name: { es: 'Posparto: primeras semanas', en: 'Postpartum: first weeks', pt: 'Pós-parto: primeiras semanas' },
+        description: { es: 'Para las primeras 6 semanas (o hasta que tu médico te dé el alta): reconecta core y suelo pélvico con calma.', en: 'For the first 6 weeks (or until your doctor clears you): reconnect your core and pelvic floor calmly.', pt: 'Para as primeiras 6 semanas (ou até o médico liberar): reconecte o core e o assoalho pélvico com calma.' },
+        setup: 'casa', mom: 'posparto', beginner: true,
+        days: [
+            { name: { es: 'Reconexión del core', en: 'Core reconnection', pt: 'Reconexão do core' }, slots: [m('respiracion-diafragmatica'), m('suelo-pelvico'), a('basculacion-pelvica'), a('deslizamiento-talon'), a('postura-nino')] },
+            { name: { es: 'Movilidad y postura', en: 'Mobility and posture', pt: 'Mobilidade e postura' }, slots: [m('respiracion-diafragmatica'), m('gato-camello'), a('bird-dog'), a('circulos-cadera'), a('suelo-pelvico')] },
+        ],
+    },
+    {
+        id: 'mom-postpartum-home',
+        name: { es: 'Posparto: vuelve a tu fuerza en casa', en: 'Postpartum: rebuild strength at home', pt: 'Pós-parto: recupere a força em casa' },
+        description: { es: 'Desde las 6–8 semanas y con el alta médica: glúteos, piernas, espalda y core profundo, subiendo poco a poco.', en: 'From 6–8 weeks and with medical clearance: glutes, legs, back and deep core, building up step by step.', pt: 'A partir de 6–8 semanas e com liberação médica: glúteos, pernas, costas e core profundo, aumentando aos poucos.' },
+        setup: 'casa', mom: 'posparto', premium: true, beginner: true,
+        days: [
+            { name: { es: 'Glúteos y core', en: 'Glutes and core', pt: 'Glúteos e core' }, slots: [m('sentadilla-libre'), m('puente-gluteo'), a('puente-gluteo-una-pierna'), a('dead-bug'), a('toques-talon')] },
+            { name: { es: 'Tren superior y postura', en: 'Upper body and posture', pt: 'Superiores e postura' }, slots: [m('flexiones-inclinadas'), m('bird-dog'), a('superman'), a('plancha-lateral'), a('suelo-pelvico')] },
+            { name: { es: 'Cuerpo completo suave', en: 'Gentle full body', pt: 'Corpo inteiro suave' }, slots: [m('zancadas-libres'), m('patada-gluteo'), a('flexiones-inclinadas'), a('deslizamiento-talon'), a('respiracion-diafragmatica')] },
+        ],
+    },
+    {
+        id: 'mom-postpartum-gym',
+        name: { es: 'Posparto en el gimnasio', en: 'Postpartum at the gym', pt: 'Pós-parto na academia' },
+        description: { es: 'Con el alta médica: máquinas y poleas para recuperar fuerza sin presión sobre el abdomen ni el suelo pélvico.', en: 'With medical clearance: machines and cables to regain strength without pressure on your belly or pelvic floor.', pt: 'Com liberação médica: máquinas e polias para recuperar a força sem pressão no abdômen nem no assoalho pélvico.' },
+        setup: 'gimnasio', mom: 'posparto', premium: true, beginner: true,
+        days: [
+            { name: { es: 'Piernas y glúteos', en: 'Legs and glutes', pt: 'Pernas e glúteos' }, slots: [m('prensa'), m('hip-thrust'), a('abductores-maquina'), a('curl-femoral'), a('dead-bug')] },
+            { name: { es: 'Espalda, pecho y core', en: 'Back, chest and core', pt: 'Costas, peito e core' }, slots: [m('jalon-pecho'), m('remo-maquina'), a('press-pecho-maquina'), a('pallof'), a('bird-dog')] },
+        ],
+    },
+    {
+        id: 'mom-diastasis',
+        name: { es: 'Diástasis: core profundo', en: 'Diastasis: deep core', pt: 'Diástase: core profundo' },
+        description: { es: 'Ejercicios que cierran la línea alba sin abombar la tripa: respiración, transverso y suelo pélvico. Sin abdominales clásicos.', en: 'Moves that help close the abdominal gap without doming the belly: breathing, deep abs and pelvic floor. No classic crunches.', pt: 'Exercícios que ajudam a fechar a linha alba sem estufar a barriga: respiração, transverso e assoalho pélvico. Sem abdominais clássicos.' },
+        setup: 'casa', mom: 'diastasis', beginner: true,
+        days: [
+            { name: { es: 'Core profundo A', en: 'Deep core A', pt: 'Core profundo A' }, slots: [m('respiracion-diafragmatica'), m('basculacion-pelvica'), a('deslizamiento-talon'), a('suelo-pelvico')] },
+            { name: { es: 'Core profundo B', en: 'Deep core B', pt: 'Core profundo B' }, slots: [m('respiracion-diafragmatica'), m('toques-talon'), a('bird-dog'), a('gato-camello')] },
+        ],
+    },
+    {
+        id: 'mom-diastasis-plus',
+        name: { es: 'Diástasis: core fuerte en casa y gym', en: 'Diastasis: strong core, home and gym', pt: 'Diástase: core forte em casa e academia' },
+        description: { es: 'El siguiente paso cuando ya no se abomba la tripa: dead bug, plancha lateral, Pallof y glúteos para un core que sostiene.', en: 'The next step once your belly no longer domes: dead bug, side plank, Pallof and glutes for a core that holds you up.', pt: 'O próximo passo quando a barriga já não estufa: dead bug, prancha lateral, Pallof e glúteos para um core que sustenta.' },
+        setup: 'gimnasio', mom: 'diastasis', premium: true, beginner: true,
+        days: [
+            { name: { es: 'Core y glúteos', en: 'Core and glutes', pt: 'Core e glúteos' }, slots: [m('dead-bug'), m('hip-thrust'), a('pallof'), a('toques-talon'), a('suelo-pelvico')] },
+            { name: { es: 'Core y espalda', en: 'Core and back', pt: 'Core e costas' }, slots: [m('bird-dog'), m('remo-polea'), a('plancha-lateral'), a('deslizamiento-talon'), a('respiracion-diafragmatica')] },
+        ],
+    },
 ];
 
 export const getProgram = (id: string) => PROGRAMS.find(p => p.id === id);
@@ -394,7 +470,7 @@ export const adaptDays = (program: Program, limitations: Limitation[] = []): Pro
             const options = limitations.flatMap(l => AVOID[l][slot.exerciseId] ?? []);
             const swap = options.find(id => {
                 const e = getExercise(id);
-                return e && ALLOWED[program.setup].includes(e.equipment) && !ids.includes(id) && !avoided(id, limitations);
+                return e && !e.kind && ALLOWED[program.setup].includes(e.equipment) && !ids.includes(id) && !avoided(id, limitations);
             });
             if (!swap) return slot;
             ids[i] = swap;

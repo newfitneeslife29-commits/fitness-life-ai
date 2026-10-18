@@ -17,6 +17,9 @@ export interface Exercise {
     stepKg: number;
     // Timed holds (plank...): "reps" are seconds.
     timed?: boolean;
+    // Cardio machines (added to home plans that have one) and gentle moves
+    // for pregnancy and after giving birth: never swapped in elsewhere.
+    kind?: 'cardio' | 'gentle';
     tip: L10n;
 }
 
@@ -48,7 +51,7 @@ export const equipmentLabel = (e: Equipment) => l10n(EQUIPMENT[e]);
 
 const x = (
     id: string, es: string, en: string, pt: string, muscle: Muscle, equipment: Equipment, stepKg: number,
-    tip: [string, string, string], extra: { secondary?: Muscle[]; timed?: boolean } = {},
+    tip: [string, string, string], extra: { secondary?: Muscle[]; timed?: boolean; kind?: 'cardio' | 'gentle' } = {},
 ): Exercise => ({ id, name: { es, en, pt }, muscle, equipment, stepKg, tip: { es: tip[0], en: tip[1], pt: tip[2] }, ...extra });
 
 export const EXERCISES: Exercise[] = [
@@ -408,6 +411,75 @@ export const EXERCISES: Exercise[] = [
         'On your back, legs straight and slightly raised; kick up and down keeping your lower back on the floor.',
         'Deitado de costas, pernas esticadas e um pouco elevadas; bata para cima e para baixo com a lombar no chão.',
     ], { timed: true }),
+
+    // Cardio machines at home (timed: the "reps" are seconds).
+    x('bicicleta-estatica', 'Bicicleta estática', 'Stationary bike', 'Bicicleta ergométrica', 'cuadriceps', 'maquina', 0, [
+        'Ajusta el sillín a la altura de la cadera. Pedalea a un ritmo en el que puedas hablar, con algún tramo más rápido si te sientes bien.',
+        'Set the seat at hip height. Pedal at a pace where you can still talk, with a few faster stretches if you feel good.',
+        'Ajuste o selim na altura do quadril. Pedale num ritmo em que ainda dê para conversar, com alguns trechos mais rápidos se estiver bem.',
+    ], { secondary: ['gluteos', 'gemelos'], timed: true, kind: 'cardio' }),
+    x('caminadora', 'Caminadora', 'Treadmill walk', 'Esteira', 'gluteos', 'maquina', 0, [
+        'Camina a paso rápido sin agarrarte a las barras. Sube un poco la inclinación para trabajar más glúteos sin correr.',
+        'Walk briskly without holding the rails. Add a little incline to work your glutes more without running.',
+        'Caminhe em ritmo rápido sem segurar nas barras. Aumente um pouco a inclinação para trabalhar mais os glúteos sem correr.',
+    ], { secondary: ['cuadriceps', 'gemelos'], timed: true, kind: 'cardio' }),
+    x('eliptica', 'Elíptica', 'Elliptical', 'Elíptico', 'cuadriceps', 'maquina', 0, [
+        'Espalda recta y talones apoyados. Empuja y tira de los brazos para mover todo el cuerpo sin impacto en las rodillas.',
+        'Back straight and heels down. Push and pull the handles to move your whole body with no impact on your knees.',
+        'Costas retas e calcanhares apoiados. Empurre e puxe os braços para mover o corpo todo sem impacto nos joelhos.',
+    ], { secondary: ['gluteos', 'hombros'], timed: true, kind: 'cardio' }),
+
+    // Gentle moves for pregnancy and after giving birth (core, pelvic floor, mobility).
+    x('respiracion-diafragmatica', 'Respiración 360° con activación del core', '360° breathing with core activation', 'Respiração 360° com ativação do core', 'core', 'peso corporal', 0, [
+        'Tumbada boca arriba o sentada: inhala llevando el aire a las costillas y la espalda; al soltar el aire, sube suave el suelo pélvico y lleva el ombligo hacia dentro.',
+        'Lying on your back or seated: breathe in, filling your ribs and back; as you breathe out, gently lift your pelvic floor and draw your belly button in.',
+        'Deitada de barriga para cima ou sentada: inspire levando o ar às costelas e às costas; ao soltar o ar, suba suavemente o assoalho pélvico e leve o umbigo para dentro.',
+    ], { timed: true, kind: 'gentle' }),
+    x('suelo-pelvico', 'Ejercicios de suelo pélvico (Kegel)', 'Pelvic floor exercises (Kegels)', 'Exercícios de assoalho pélvico (Kegel)', 'core', 'peso corporal', 0, [
+        'Contrae como si cortaras el pis, mantén 3–5 segundos y suelta del todo otros 5. Sin apretar glúteos ni aguantar la respiración.',
+        'Squeeze as if stopping the flow of urine, hold 3–5 seconds and fully relax for 5. Don\'t squeeze your glutes or hold your breath.',
+        'Contraia como se fosse segurar o xixi, mantenha 3–5 segundos e solte totalmente por mais 5. Sem apertar os glúteos nem prender a respiração.',
+    ], { kind: 'gentle' }),
+    x('basculacion-pelvica', 'Basculación pélvica', 'Pelvic tilt', 'Báscula pélvica', 'core', 'peso corporal', 0, [
+        'Boca arriba con rodillas dobladas: al soltar el aire, pega la zona lumbar al suelo inclinando la pelvis; vuelve despacio. Sube a puente solo si no hay molestias.',
+        'On your back, knees bent: as you breathe out, flatten your lower back to the floor by tilting your pelvis; return slowly. Lift into a bridge only if it feels fine.',
+        'De barriga para cima com joelhos dobrados: ao soltar o ar, cole a lombar no chão inclinando a pelve; volte devagar. Suba em ponte só se não houver incômodo.',
+    ], { secondary: ['gluteos'], kind: 'gentle' }),
+    x('deslizamiento-talon', 'Deslizamiento de talón', 'Heel slides', 'Deslizamento de calcanhar', 'core', 'peso corporal', 0, [
+        'Boca arriba, activa el core al soltar el aire y desliza un talón por el suelo hasta estirar la pierna; vuelve sin que la tripa se abombe. Ideal para la diástasis.',
+        'On your back, brace your core as you breathe out and slide one heel along the floor until the leg is straight; come back without your belly doming. Great for diastasis.',
+        'De barriga para cima, ative o core ao soltar o ar e deslize um calcanhar pelo chão até esticar a perna; volte sem a barriga estufar. Ótimo para a diástase.',
+    ], { kind: 'gentle' }),
+    x('toques-talon', 'Toques de talón', 'Toe taps', 'Toques de calcanhar', 'core', 'peso corporal', 0, [
+        'Boca arriba con las piernas en mesa (rodillas a 90°). Baja un pie a tocar el suelo y vuelve, alternando, con la zona lumbar quieta y la tripa plana.',
+        'On your back with legs in tabletop (knees at 90°). Lower one foot to tap the floor and return, alternating, keeping your lower back still and belly flat.',
+        'De barriga para cima com as pernas em mesa (joelhos a 90°). Desça um pé até tocar o chão e volte, alternando, com a lombar parada e a barriga plana.',
+    ], { kind: 'gentle' }),
+    x('bird-dog', 'Cuadrupedia (bird dog)', 'Bird dog', 'Perdigueiro (bird dog)', 'core', 'peso corporal', 0, [
+        'A cuatro patas, estira un brazo y la pierna contraria hasta la línea del cuerpo, sin girar la cadera. Vuelve despacio y cambia.',
+        'On all fours, reach one arm and the opposite leg out in line with your body without turning your hips. Come back slowly and switch.',
+        'De quatro apoios, estique um braço e a perna oposta na linha do corpo, sem girar o quadril. Volte devagar e troque.',
+    ], { secondary: ['gluteos', 'espalda'], kind: 'gentle' }),
+    x('gato-camello', 'Gato–camello', 'Cat–cow', 'Gato–camelo', 'espalda', 'peso corporal', 0, [
+        'A cuatro patas, redondea la espalda al soltar el aire y luego arquéala suave al inhalar. Movimiento lento que alivia la zona lumbar.',
+        'On all fours, round your back as you breathe out, then gently arch it as you breathe in. A slow move that eases the lower back.',
+        'De quatro apoios, arredonde as costas ao soltar o ar e arqueie suavemente ao inspirar. Movimento lento que alivia a lombar.',
+    ], { secondary: ['core'], timed: true, kind: 'gentle' }),
+    x('postura-nino', 'Postura del niño', 'Child\'s pose', 'Postura da criança', 'espalda', 'peso corporal', 0, [
+        'Rodillas separadas (deja sitio a la tripa si estás embarazada), glúteos hacia los talones y brazos estirados. Respira hondo hacia la espalda.',
+        'Knees apart (make room for your belly if pregnant), hips back toward your heels and arms reaching forward. Breathe deep into your back.',
+        'Joelhos afastados (deixe espaço para a barriga se estiver grávida), glúteos em direção aos calcanhares e braços esticados. Respire fundo nas costas.',
+    ], { timed: true, kind: 'gentle' }),
+    x('circulos-cadera', 'Movilidad de cadera de pie', 'Standing hip circles', 'Mobilidade de quadril em pé', 'gluteos', 'peso corporal', 0, [
+        'De pie, apoyada en una pared si lo necesitas, sube una rodilla y dibuja círculos amplios con la cadera hacia fuera. Cambia de lado.',
+        'Standing, holding a wall if you need to, lift one knee and draw wide circles out to the side with your hip. Switch sides.',
+        'Em pé, apoiada na parede se precisar, suba um joelho e desenhe círculos amplos para fora com o quadril. Troque de lado.',
+    ], { timed: true, kind: 'gentle' }),
+    x('estiramiento-psoas', 'Estiramiento de flexor de cadera', 'Kneeling hip flexor stretch', 'Alongamento do flexor do quadril', 'cuadriceps', 'peso corporal', 0, [
+        'Una rodilla en el suelo y el otro pie delante. Aprieta el glúteo de atrás y lleva la cadera un poco hacia delante, sin arquear la espalda.',
+        'One knee down, the other foot in front. Squeeze the back glute and shift your hips slightly forward without arching your back.',
+        'Um joelho no chão e o outro pé à frente. Contraia o glúteo de trás e leve o quadril um pouco para a frente, sem arquear as costas.',
+    ], { secondary: ['gluteos'], timed: true, kind: 'gentle' }),
 ];
 
 const BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
@@ -420,14 +492,16 @@ export const exerciseName = (id: string) => {
 export const exerciseTip = (ex: Exercise) => l10n(ex.tip);
 
 // Two photos per exercise (start and end position), bundled in public/exercises.
+// A few gentle moves have no photo; their tip says how to do them.
+const NO_PHOTO = new Set(['respiracion-diafragmatica', 'suelo-pelvico', 'deslizamiento-talon', 'toques-talon', 'bird-dog']);
 export const exercisePhotos = (id: string): [string, string] | null =>
-    BY_ID.has(id) ? [`./exercises/${id}-0.webp`, `./exercises/${id}-1.webp`] : null;
+    BY_ID.has(id) && !NO_PHOTO.has(id) ? [`./exercises/${id}-0.webp`, `./exercises/${id}-1.webp`] : null;
 
 // Same muscle first, then anything that shares a secondary muscle.
 export const alternativesFor = (id: string): Exercise[] => {
     const ex = getExercise(id);
     if (!ex) return [];
-    return EXERCISES.filter(e => e.id !== id && (e.muscle === ex.muscle || e.secondary?.includes(ex.muscle)))
+    return EXERCISES.filter(e => e.id !== id && e.kind !== 'cardio' && (e.muscle === ex.muscle || e.secondary?.includes(ex.muscle)))
         .sort((a, b) => Number(b.muscle === ex.muscle) - Number(a.muscle === ex.muscle));
 };
 
@@ -440,7 +514,7 @@ export const busyAlternatives = (id: string, exclude: string[] = [], limit = 4):
     const shared = (e: Exercise) => (e.secondary ?? []).filter(m => ex.secondary?.includes(m)).length;
     const rank = (e: Exercise) => FREE_WEIGHTS.indexOf(e.equipment) * 10 - shared(e);
     return EXERCISES
-        .filter(e => e.id !== id && !exclude.includes(e.id) && e.muscle === ex.muscle && e.equipment !== ex.equipment
+        .filter(e => e.id !== id && !e.kind && !exclude.includes(e.id) && e.muscle === ex.muscle && e.equipment !== ex.equipment
             && FREE_WEIGHTS.includes(e.equipment) && !!e.timed === !!ex.timed)
         .sort((a, b) => rank(a) - rank(b))
         .slice(0, limit);
