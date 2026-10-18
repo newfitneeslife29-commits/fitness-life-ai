@@ -1190,6 +1190,7 @@ export const ko: Dict = {
     'cardio.kind.run': "달리기",
     'cardio.kind.bike': "자전거",
     'cardio.gpsNote': "화면이 잠겨 있어도 GPS로 거리를 측정해요. 경로는 휴대폰에만 남아요.",
+    'cardio.gpsNoteOpen': "앱이 열려 있는 동안 GPS로 거리를 측정해요. 화면은 켜진 상태로 유지돼요. 경로는 휴대폰에만 남아요.",
     'cardio.inProgress': "{kind} 진행 중: 탭해서 보기",
     'cardio.trackingTitle': "Fitness Life가 경로를 측정하고 있어요",
     'cardio.trackingMessage': "걷기 또는 라이딩의 거리와 시간",

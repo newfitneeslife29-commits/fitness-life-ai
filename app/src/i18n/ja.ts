@@ -1190,6 +1190,7 @@ export const ja: Dict = {
     'cardio.kind.run': "ランニング",
     'cardio.kind.bike': "サイクリング",
     'cardio.gpsNote': "画面をロックしていても、GPSで距離を測定します。ルートはスマホ内に保存されます。",
+    'cardio.gpsNoteOpen': "アプリを開いている間、GPSで距離を測定します（画面はオンのままです）。ルートはスマホ内に保存されます。",
     'cardio.inProgress': "{kind}中：タップして表示",
     'cardio.trackingTitle': "Fitness Lifeがルートを測定中",
     'cardio.trackingMessage': "ウォーキングまたはサイクリングの距離と時間",

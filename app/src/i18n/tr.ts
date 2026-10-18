@@ -1190,6 +1190,7 @@ export const tr: Dict = {
     'cardio.kind.run': "Koşu",
     'cardio.kind.bike': "Bisiklet",
     'cardio.gpsNote': "Ekran kilitliyken bile mesafeyi GPS ile ölçer. Rotan telefonunda kalır.",
+    'cardio.gpsNoteOpen': "Uygulama açıkken mesafeyi GPS ile ölçer: ekran açık kalır. Rotan telefonunda kalır.",
     'cardio.inProgress': "{kind} devam ediyor: görmek için dokun",
     'cardio.trackingTitle': "Fitness Life rotanı ölçüyor",
     'cardio.trackingMessage': "Yürüyüşünün veya bisiklet sürüşünün mesafesi ve süresi",

@@ -1190,6 +1190,7 @@ export const zh: Dict = {
     'cardio.kind.run': "跑步",
     'cardio.kind.bike': "骑行",
     'cardio.gpsNote': "用 GPS 测量距离，锁屏时也能记录。你的路线只保存在手机上。",
+    'cardio.gpsNoteOpen': "应用打开时用 GPS 测量距离，屏幕会保持常亮。你的路线只保存在手机上。",
     'cardio.inProgress': "{kind}进行中：点击查看",
     'cardio.trackingTitle': "Fitness Life 正在记录你的路线",
     'cardio.trackingMessage': "你步行或骑行的距离和时间",

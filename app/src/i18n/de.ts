@@ -1190,6 +1190,7 @@ export const de: Dict = {
     'cardio.kind.run': "Laufen",
     'cardio.kind.bike': "Radfahren",
     'cardio.gpsNote': "Misst die Strecke per GPS, auch bei gesperrtem Bildschirm. Deine Route bleibt auf deinem Handy.",
+    'cardio.gpsNoteOpen': "Misst die Strecke per GPS, solange die App geöffnet ist: Der Bildschirm bleibt an. Deine Route bleibt auf deinem Handy.",
     'cardio.inProgress': "{kind} läuft: Tippe, um es anzusehen",
     'cardio.trackingTitle': "Fitness Life misst deine Route",
     'cardio.trackingMessage': "Strecke und Zeit deines Spaziergangs oder deiner Radtour",

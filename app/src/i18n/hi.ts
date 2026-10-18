@@ -1190,6 +1190,7 @@ export const hi: Dict = {
     'cardio.kind.run': "रन",
     'cardio.kind.bike': "साइकिल",
     'cardio.gpsNote': "GPS से दूरी मापता है, स्क्रीन लॉक होने पर भी। आपका रूट आपके फ़ोन पर ही रहता है।",
+    'cardio.gpsNoteOpen': "ऐप खुला रहने तक GPS से दूरी मापता है: स्क्रीन चालू रहती है। आपका रूट आपके फ़ोन पर ही रहता है।",
     'cardio.inProgress': "{kind} चल रही है: देखने के लिए टैप करें",
     'cardio.trackingTitle': "Fitness Life आपका रूट माप रहा है",
     'cardio.trackingMessage': "आपकी वॉक या राइड की दूरी और समय",

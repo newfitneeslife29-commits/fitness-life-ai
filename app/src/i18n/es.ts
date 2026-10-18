@@ -1191,6 +1191,7 @@ export const es = {
     'cardio.kind.run': "Correr",
     'cardio.kind.bike': "Bicicleta",
     'cardio.gpsNote': "Mide la distancia con el GPS, también con la pantalla bloqueada. Tu ruta no sale del teléfono.",
+    'cardio.gpsNoteOpen': "Mide la distancia con el GPS mientras la app está abierta: la pantalla se queda encendida. Tu ruta no sale del teléfono.",
     'cardio.inProgress': "{kind} en curso: toca para verla",
     'cardio.trackingTitle': "Fitness Life está midiendo tu recorrido",
     'cardio.trackingMessage': "Distancia y tiempo de tu caminata o paseo en bici",

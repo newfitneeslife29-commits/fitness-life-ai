@@ -1190,6 +1190,7 @@ export const fr: Dict = {
     'cardio.kind.run': "Course",
     'cardio.kind.bike': "Vélo",
     'cardio.gpsNote': "Mesure la distance par GPS, même écran verrouillé. Ton parcours reste sur ton téléphone.",
+    'cardio.gpsNoteOpen': "Mesure la distance par GPS tant que l'app est ouverte : l'écran reste allumé. Ton parcours reste sur ton téléphone.",
     'cardio.inProgress': "{kind} en cours : touche pour voir",
     'cardio.trackingTitle': "Fitness Life mesure ton parcours",
     'cardio.trackingMessage': "Distance et durée de ta marche ou de ta sortie vélo",
