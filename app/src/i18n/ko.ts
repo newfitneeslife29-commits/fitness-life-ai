@@ -1319,7 +1319,7 @@ export const ko: Dict = {
     'privacy.s3.title': "AI 어시스턴트",
     'privacy.s3.body': "코치나 트레이너에게 질문하거나, 루틴 또는 식단 플랜을 만들거나, AI로 식사를 추정하면 질문, 최근 대화, 데이터 요약(목표, 나이, 키, 체중, 플랜, 최근 운동 또는 오늘 먹은 음식)을 저희 서버로 보내고, 서버는 답변 작성을 위해 이를 Anthropic(Claude)에 전달해요. 식사 사진을 사용하면 사진이 전송되지만 보관하지 않아요. 이러한 요청의 내용은 보관하지 않아요. 답변을 신고하면 검토를 위해 해당 답변, 질문, 신고 사유를 보관해요.",
     'privacy.s4.title': "커뮤니티와 프로필 사진",
-    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
+    'privacy.s4.body': "커뮤니티에 글을 올리면 게시물, 스토리, 댓글, 좋아요, 팔로워, 그리고 업로드한 사진과 영상을 저희 서버에 보관해요. 이름과 프로필 사진이 함께 표시돼요. 프로필이 비공개이면 내가 수락한 사람만 볼 수 있어요.",
     'privacy.s5.title': "의견 보내기",
     'privacy.s5.body': "설정에서 의견을 보내면 메시지, 유형(아이디어, 문제 또는 기타), 평점, 언어, 앱 버전, 휴대폰 종류를 보관하고, 답장을 위해 이메일을 남기기로 선택하면 이메일도 보관해요. 이 정보는 앱 개선에만 사용해요.",
     'privacy.s6.title': "건강, 걸음 수, 수면, 위치",
@@ -1466,160 +1466,160 @@ export const ko: Dict = {
     'community.topic.10': "어떤 루틴을 하고 있나요? 개선 아이디어를 물어보세요.",
     'community.topic.11': "잘 자고 회복하는 나만의 비법.",
     'community.topic.12': "처음 시작할 때 했던 실수와 그로부터 배운 점.",
-    'about.err.age': "Enter an age between 13 and 100", // TO TRANSLATE
-    'about.err.weight': "Enter a weight between {min} and {max} {unit}", // TO TRANSLATE
-    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)", // TO TRANSLATE
-    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11", // TO TRANSLATE
-    'about.err.sex': "Also choose male or female to continue", // TO TRANSLATE
-    'gear.question': "Do you have a cardio machine at home?", // TO TRANSLATE
-    'gear.hint': "We'll add it at the end of your workouts to burn more calories.", // TO TRANSLATE
-    'gear.none': "None", // TO TRANSLATE
-    'gear.bici': "Stationary bike", // TO TRANSLATE
-    'gear.cinta': "Treadmill", // TO TRANSLATE
-    'gear.eliptica': "Elliptical", // TO TRANSLATE
-    'gear.updated': "Plan updated with your machines", // TO TRANSLATE
-    'mom.card': "Pregnancy & postpartum", // TO TRANSLATE
-    'mom.cardHint': "Exercise, core and nutrition for you", // TO TRANSLATE
-    'mom.title': "Pregnancy & postpartum", // TO TRANSLATE
-    'mom.subtitle': "Move safely, rebuild your core and eat well at every stage", // TO TRANSLATE
-    'mom.stage': "Your stage", // TO TRANSLATE
-    'mom.stage.embarazo': "Pregnancy", // TO TRANSLATE
-    'mom.stage.posparto': "Postpartum", // TO TRANSLATE
-    'mom.stage.diastasis': "Diastasis & core", // TO TRANSLATE
-    'mom.intro.embarazo': "If your pregnancy is going well, moving helps with back pain, sleep and labour. In the 1st trimester carry on as before if you feel good; from the 2nd avoid lying on your back for long; in the 3rd go lighter and focus on mobility.", // TO TRANSLATE
-    'mom.intro.posparto': "The first weeks are for reconnecting with your body: breathing, pelvic floor and walks. With medical clearance (about 6 weeks, 8 or more after a C-section) build your strength back step by step.", // TO TRANSLATE
-    'mom.intro.diastasis': "Diastasis is the gap between the abdominal muscles after pregnancy. You work on it from the inside: breathing, deep abs and pelvic floor, without the belly doming. If a ridge appears down the middle during a move, go back to the previous one.", // TO TRANSLATE
-    'mom.programs': "Programs", // TO TRANSLATE
-    'mom.free': "Free", // TO TRANSLATE
-    'mom.locked': "This program is part of Premium, with a plan that moves forward every week.", // TO TRANSLATE
-    'mom.start': "Use this program", // TO TRANSLATE
-    'mom.confirm.title': "Start “{name}”?", // TO TRANSLATE
-    'mom.confirm.message': "It will change your training plan. Your own routines stay. Check with your doctor before starting.", // TO TRANSLATE
-    'mom.nutrition': "Nutrition for you", // TO TRANSLATE
-    'mom.moreTips': "{n} more tips with Premium", // TO TRANSLATE
-    'mom.safety.title': "Before you start", // TO TRANSLATE
-    'mom.safety.text': "Talk to your doctor or midwife before exercising in pregnancy or after giving birth. This section is general information and doesn't replace a professional.", // TO TRANSLATE
-    'mom.safety.stop': "Stop and get checked if you notice pain, bleeding, dizziness, shortness of breath, fluid leaking, contractions, pelvic pain or urine leaks.", // TO TRANSLATE
-    'mom.safety.physio': "A pelvic floor physiotherapist can check your diastasis and pelvic floor: the best ally after giving birth.", // TO TRANSLATE
-    'mom.food.embarazo.1': "No need to eat for two: in the 2nd trimester add about 340 kcal a day and in the 3rd about 450 (a yogurt with fruit and nuts, for example).", // TO TRANSLATE
-    'mom.food.embarazo.2': "Folic acid and iron: beans and lentils, leafy greens, eggs and well-cooked meat. Take the supplements your doctor prescribes.", // TO TRANSLATE
-    'mom.food.embarazo.3': "Avoid alcohol, large fish (swordfish, bluefin tuna), raw meat, fish or eggs, uncooked cured meats and unpasteurised milk or cheese.", // TO TRANSLATE
-    'mom.food.embarazo.4': "Protein: about 70–100 g a day spread over your meals (eggs, yogurt, chicken, legumes, small oily fish).", // TO TRANSLATE
-    'mom.food.embarazo.5': "Omega-3 (DHA) for your baby's brain: sardines, salmon or mackerel twice a week.", // TO TRANSLATE
-    'mom.food.embarazo.6': "Calcium and vitamin D: three servings a day of dairy or fortified plant milk, and a little sunshine.", // TO TRANSLATE
-    'mom.food.embarazo.7': "Nausea: small, frequent meals, something dry when you wake up (crackers, toast), ginger, and avoiding strong smells.", // TO TRANSLATE
-    'mom.food.embarazo.8': "Heartburn: eat dinner 2–3 hours before bed, eat slowly and avoid fried and spicy food.", // TO TRANSLATE
-    'mom.food.embarazo.9': "A sample day: oats with fruit and yogurt · wholegrain toast with avocado and egg · lentils with rice and salad · fruit and nuts · baked salmon with potato and vegetables.", // TO TRANSLATE
-    'mom.food.posparto.1': "If you're breastfeeding you need about 450–500 extra kcal a day: this isn't the time for strict diets.", // TO TRANSLATE
-    'mom.food.posparto.2': "Drink a glass of water every time you feed your baby.", // TO TRANSLATE
-    'mom.food.posparto.3': "Keep easy one-handed food nearby: fruit, yogurt, nuts, omelette, wholegrain sandwiches.", // TO TRANSLATE
-    'mom.food.posparto.4': "Protein at every meal to help your body heal: 1.2–1.5 g per kilo of body weight a day.", // TO TRANSLATE
-    'mom.food.posparto.5': "Iron after birth (especially if you bled a lot): lean red meat, or legumes with some vitamin C like orange or pepper.", // TO TRANSLATE
-    'mom.food.posparto.6': "Fibre and water against constipation: vegetables, fruit with skin, legumes and oats.", // TO TRANSLATE
-    'mom.food.posparto.7': "Lose weight calmly: half a kilo a week at most, so your milk and energy aren't affected.", // TO TRANSLATE
-    'mom.food.posparto.8': "A sample day: toast with egg and fruit · yogurt with oats · rice with chicken and vegetables · hummus with carrots · fish with sweet potato and salad.", // TO TRANSLATE
-    'mom.food.posparto.9': "Sleep when your baby sleeps whenever you can: rest also helps keep hunger in check.", // TO TRANSLATE
-    'mom.food.diastasis.1': "Avoid classic crunches, long planks and lifting while holding your breath as long as your belly domes.", // TO TRANSLATE
-    'mom.food.diastasis.2': "To get out of bed, roll onto your side and push up with your arms instead of sitting straight up.", // TO TRANSLATE
-    'mom.food.diastasis.3': "Breathe out on the effort: when lifting your baby, standing up or pushing the stroller.", // TO TRANSLATE
-    'mom.food.diastasis.4': "How to check it: lying down with knees bent, lift your head slightly and measure the gap above your belly button with your fingers. More than two fingers: see a physiotherapist.", // TO TRANSLATE
-    'mom.food.diastasis.5': "Move on to the next program once your belly stops doming in the current exercises for two weeks.", // TO TRANSLATE
-    'mom.food.diastasis.6': "Enough protein and vitamin C (fruit, peppers, broccoli) help your tissues repair.", // TO TRANSLATE
-    'mom.food.diastasis.7': "Posture: ribs stacked over your pelvis, without pushing your belly out or sucking it in hard all day.", // TO TRANSLATE
-    'trainers.card': "Online trainers", // TO TRANSLATE
-    'trainers.cardHint': "Real coaches to guide you", // TO TRANSLATE
-    'trainers.title': "Online trainers", // TO TRANSLATE
-    'trainers.subtitle': "Real coaches reviewed by our team", // TO TRANSLATE
-    'trainers.note': "Each coach is independent: we review their application, but you agree the price, payment and plan directly with them.", // TO TRANSLATE
-    'trainers.verified': "Reviewed by Fitness Life", // TO TRANSLATE
-    'trainers.years_one': "{n} year of experience", // TO TRANSLATE
-    'trainers.years_other': "{n} years of experience", // TO TRANSLATE
-    'trainers.more': "More", // TO TRANSLATE
-    'trainers.less': "Less", // TO TRANSLATE
-    'trainers.contact': "Contact", // TO TRANSLATE
-    'trainers.empty': "Coaches are coming soon", // TO TRANSLATE
-    'trainers.emptyHint': "We're reviewing the first applications. Meanwhile, your AI trainer can help.", // TO TRANSLATE
-    'trainers.applyTitle': "Become an online trainer", // TO TRANSLATE
-    'trainers.applyHint': "Offer your services to the Fitness Life community", // TO TRANSLATE
-    'trainers.ai': "Or ask your AI trainer", // TO TRANSLATE
-    'apply.subtitle': "Tell us about you; we review every application", // TO TRANSLATE
-    'apply.needAccount': "You need an account to send your application.", // TO TRANSLATE
-    'apply.name': "Professional name", // TO TRANSLATE
-    'apply.specialty': "Specialty", // TO TRANSLATE
-    'apply.specialtyHint': "E.g. fat loss, strength, postpartum, running", // TO TRANSLATE
-    'apply.bio': "About you", // TO TRANSLATE
-    'apply.bioHint': "How you work and what you offer (at least 20 characters)", // TO TRANSLATE
-    'apply.years': "Years of experience", // TO TRANSLATE
-    'apply.country': "Country", // TO TRANSLATE
-    'apply.certifications': "Certifications", // TO TRANSLATE
-    'apply.certificationsHint': "Your degrees or certificates; we may ask you to show them", // TO TRANSLATE
-    'apply.languages': "Languages", // TO TRANSLATE
-    'apply.price': "Price", // TO TRANSLATE
-    'apply.priceHint': "E.g. $30/month", // TO TRANSLATE
-    'apply.contact': "Contact", // TO TRANSLATE
-    'apply.contactHint': "Your website, e-mail, WhatsApp (with country code) or @Instagram", // TO TRANSLATE
-    'apply.review': "We review every application before publishing it. By sending it you agree that, if approved, these details and your profile photo are shown to users.", // TO TRANSLATE
-    'apply.send': "Send application", // TO TRANSLATE
-    'apply.update': "Save changes", // TO TRANSLATE
-    'apply.sent': "Application sent. We'll let you know once it's reviewed.", // TO TRANSLATE
-    'apply.withdraw': "Withdraw application", // TO TRANSLATE
-    'apply.withdrawTitle': "Withdraw your application?", // TO TRANSLATE
-    'apply.withdrawMessage': "You'll stop appearing as a trainer. You can apply again any time.", // TO TRANSLATE
-    'apply.withdrawn': "Application withdrawn", // TO TRANSLATE
-    'apply.status.pending': "Under review", // TO TRANSLATE
-    'apply.status.pending.hint': "We'll review it within a few days. Any change sends it back to review.", // TO TRANSLATE
-    'apply.status.approved': "Approved! You're listed in Online trainers", // TO TRANSLATE
-    'apply.status.approved.hint': "If you change your details, they'll be reviewed again.", // TO TRANSLATE
-    'apply.status.rejected': "Not approved", // TO TRANSLATE
-    'apply.status.rejected.hint': "Check your details and certifications and send it again.", // TO TRANSLATE
-    'apply.err.name': "Enter your professional name.", // TO TRANSLATE
-    'apply.err.specialty': "Enter your specialty.", // TO TRANSLATE
-    'apply.err.bio': "Tell us a bit more about you (at least 20 characters).", // TO TRANSLATE
-    'apply.err.contact': "Add how people can contact you.", // TO TRANSLATE
-    'apply.err.failed': "Couldn't send it. Check your connection and try again.", // TO TRANSLATE
-    'settings.trainer': "Are you a trainer?", // TO TRANSLATE
-    'privacy.s11.title': "Online trainers", // TO TRANSLATE
-    'privacy.s11.body': "If you apply to be a trainer, we keep the form details. If approved, your name, specialty, description, experience, languages, country, price, contact and profile photo are shown to users. You can withdraw it any time and it's deleted with your account.", // TO TRANSLATE
-    'mom.habits': "Everyday tips", // TO TRANSLATE
-    'freePlans.title': "Free nutrition plans", // TO TRANSLATE
-    'freePlans.subtitle': "Sample days with simple food, adjusted to you", // TO TRANSLATE
-    'freePlans.card': "4 ready-to-follow plans", // TO TRANSLATE
-    'freePlans.cardHint': "Lose fat, build muscle, eat healthy and vegetarian", // TO TRANSLATE
-    'freePlans.forYou': "For you", // TO TRANSLATE
-    'freePlans.fits': "Fits your {kcal} kcal a day: follow the amounts as they are.", // TO TRANSLATE
-    'freePlans.scale': "For your {kcal} kcal a day, eat ×{factor} the amounts. Each meal below is already adjusted.", // TO TRANSLATE
-    'freePlans.noTarget': "About {kcal} kcal a day. Log your weight to adjust the amounts to you.", // TO TRANSLATE
-    'freePlans.day': "Day {n}", // TO TRANSLATE
-    'freePlans.dayShort': "D{n}", // TO TRANSLATE
-    'freePlans.log': "I ate it", // TO TRANSLATE
-    'freePlans.logged': "Logged", // TO TRANSLATE
-    'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
-    'community.video': "Video", // TO TRANSLATE
-    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
-    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
-    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
-    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
-    'community.removeVideo': "Remove video", // TO TRANSLATE
-    'community.videoAlt': "Video by {name}", // TO TRANSLATE
-    'settings.subtitle': "Your profile, your plan and the app your way", // TO TRANSLATE
-    'aboutUs.title': "About us", // TO TRANSLATE
-    'aboutUs.hint': "Our mission, vision and values", // TO TRANSLATE
-    'aboutUs.intro': "An app made to make training and eating well easy, for everyone, anywhere.", // TO TRANSLATE
-    'aboutUs.mission': "Mission", // TO TRANSLATE
-    'aboutUs.missionText': "To help everyone get fit and feel good with a clear plan made for them: what to train, how much weight to use, what to eat and how to rest, at home or at the gym, simply and at a fair price.", // TO TRANSLATE
-    'aboutUs.vision': "Vision", // TO TRANSLATE
-    'aboutUs.visionText': "To be the fitness app people trust most around the world: a trainer, a nutritionist and a community that stay with you at every stage of life, from your first workout to after becoming a parent.", // TO TRANSLATE
-    'aboutUs.values': "Our values", // TO TRANSLATE
-    'aboutUs.value.simple': "Simplicity", // TO TRANSLATE
-    'aboutUs.value.simple.text': "We tell you what to do today; you just train.", // TO TRANSLATE
-    'aboutUs.value.honest': "Honesty", // TO TRANSLATE
-    'aboutUs.value.honest.text': "Science-based advice, no miracle promises.", // TO TRANSLATE
-    'aboutUs.value.privacy': "Privacy", // TO TRANSLATE
-    'aboutUs.value.privacy.text': "Your data is yours: no ads and no selling data.", // TO TRANSLATE
-    'aboutUs.value.community': "Community", // TO TRANSLATE
-    'aboutUs.value.community.text': "We help each other and celebrate every win, however small.", // TO TRANSLATE
-    'aboutUs.value.everyone': "For everyone", // TO TRANSLATE
-    'aboutUs.value.everyone.text': "Any age, body, level and language; with or without a gym.", // TO TRANSLATE
-    'aboutUs.today': "Today Fitness Life is available in {languages} languages, on iPhone, Android and the web, and we keep improving every week with your feedback.", // TO TRANSLATE
-    'aboutUs.write': "Write to us", // TO TRANSLATE
+    'about.err.age': "13세에서 100세 사이의 나이를 입력하세요",
+    'about.err.weight': "{min}에서 {max} {unit} 사이의 체중을 입력하세요",
+    'about.err.heightCm': "키를 cm 단위로 120에서 230 사이로 입력하세요 (예: 175)",
+    'about.err.heightFt': "피트와 인치를 입력하세요 (예: 5 ft 9 in). 인치는 0에서 11까지예요",
+    'about.err.sex': "계속하려면 남성 또는 여성도 선택하세요",
+    'gear.question': "집에 유산소 운동 기구가 있나요?",
+    'gear.hint': "칼로리를 더 태울 수 있도록 운동 끝에 추가해 드려요.",
+    'gear.none': "없음",
+    'gear.bici': "실내 자전거",
+    'gear.cinta': "러닝머신",
+    'gear.eliptica': "일립티컬",
+    'gear.updated': "내 기구에 맞춰 플랜을 업데이트했어요",
+    'mom.card': "임신 & 산후",
+    'mom.cardHint': "나를 위한 운동, 코어, 영양",
+    'mom.title': "임신 & 산후",
+    'mom.subtitle': "안전하게 움직이고, 코어를 다시 키우고, 단계별로 잘 먹어요",
+    'mom.stage': "나의 단계",
+    'mom.stage.embarazo': "임신",
+    'mom.stage.posparto': "산후",
+    'mom.stage.diastasis': "복직근 이개 & 코어",
+    'mom.intro.embarazo': "임신 경과가 순조롭다면 운동은 허리 통증, 수면, 출산에 도움이 돼요. 임신 1기에는 몸 상태가 좋으면 예전처럼 하세요. 2기부터는 오래 누워서 등을 대고 있는 자세를 피하고, 3기에는 강도를 낮추고 가동성에 집중하세요.",
+    'mom.intro.posparto': "처음 몇 주는 내 몸과 다시 연결되는 시간이에요. 호흡, 골반저근, 걷기를 해 보세요. 의사의 허락을 받은 뒤(약 6주, 제왕절개는 8주 이상) 근력을 단계적으로 되찾으세요.",
+    'mom.intro.diastasis': "복직근 이개는 임신 후 복근 사이가 벌어진 상태예요. 호흡, 심부 복근, 골반저근처럼 몸 안쪽부터 운동하고, 배가 볼록하게 솟아오르지 않게 하세요. 동작 중 가운데에 능선처럼 올라오는 것이 보이면 이전 동작으로 돌아가세요.",
+    'mom.programs': "프로그램",
+    'mom.free': "무료",
+    'mom.locked': "이 프로그램은 Premium 기능이며, 매주 한 단계씩 나아가는 플랜이 포함돼요.",
+    'mom.start': "이 프로그램 사용하기",
+    'mom.confirm.title': "“{name}” 프로그램을 시작할까요?",
+    'mom.confirm.message': "운동 플랜이 바뀌어요. 내가 만든 루틴은 그대로 남아요. 시작하기 전에 의사와 상담하세요.",
+    'mom.nutrition': "나를 위한 영양",
+    'mom.moreTips': "Premium에서 팁 {n}개 더 보기",
+    'mom.safety.title': "시작하기 전에",
+    'mom.safety.text': "임신 중이나 출산 후에 운동하기 전에 의사나 조산사와 상담하세요. 이 섹션은 일반적인 정보이며 전문가의 진단을 대신하지 않아요.",
+    'mom.safety.stop': "통증, 출혈, 어지러움, 숨 가쁨, 양수 누출, 자궁 수축, 골반 통증, 소변 새는 증상이 느껴지면 운동을 멈추고 진료를 받으세요.",
+    'mom.safety.physio': "골반저근 물리치료사가 복직근 이개와 골반저근을 확인해 줄 수 있어요. 출산 후 가장 든든한 도우미예요.",
+    'mom.food.embarazo.1': "두 사람 몫을 먹을 필요는 없어요. 임신 2기에는 하루 약 340 kcal, 3기에는 약 450 kcal를 더하세요 (예: 과일과 견과류를 곁들인 요거트).",
+    'mom.food.embarazo.2': "엽산과 철분: 콩류와 렌틸콩, 잎채소, 달걀, 푹 익힌 고기. 의사가 처방한 보충제를 복용하세요.",
+    'mom.food.embarazo.3': "술, 대형 생선(황새치, 참다랑어), 날고기·생선·날달걀, 가열하지 않은 육가공품, 저온 살균하지 않은 우유나 치즈는 피하세요.",
+    'mom.food.embarazo.4': "단백질: 하루 약 70–100 g을 끼니마다 나누어 드세요 (달걀, 요거트, 닭고기, 콩류, 작은 등푸른 생선).",
+    'mom.food.embarazo.5': "아기의 뇌를 위한 오메가3(DHA): 정어리, 연어, 고등어를 주 2회 드세요.",
+    'mom.food.embarazo.6': "칼슘과 비타민 D: 유제품이나 강화 식물성 우유를 하루 세 번 드시고, 햇볕도 조금 쬐세요.",
+    'mom.food.embarazo.7': "입덧: 조금씩 자주 먹기, 일어나자마자 마른 음식(크래커, 토스트), 생강, 강한 냄새 피하기.",
+    'mom.food.embarazo.8': "속쓰림: 잠자리에 들기 2–3시간 전에 저녁을 먹고, 천천히 먹고, 튀김과 매운 음식은 피하세요.",
+    'mom.food.embarazo.9': "하루 식단 예시: 과일과 요거트를 곁들인 오트밀 · 아보카도와 달걀을 올린 통곡물 토스트 · 렌틸콩, 밥, 샐러드 · 과일과 견과류 · 감자와 채소를 곁들인 구운 연어.",
+    'mom.food.posparto.1': "모유 수유 중이라면 하루 약 450–500 kcal를 더 드셔야 해요. 엄격한 다이어트를 할 때가 아니에요.",
+    'mom.food.posparto.2': "아기에게 수유할 때마다 물을 한 잔씩 마시세요.",
+    'mom.food.posparto.3': "한 손으로 먹기 쉬운 음식을 가까이 두세요: 과일, 요거트, 견과류, 오믈렛, 통곡물 샌드위치.",
+    'mom.food.posparto.4': "몸이 회복되도록 끼니마다 단백질을 드세요: 하루 체중 1 kg당 1.2–1.5 g.",
+    'mom.food.posparto.5': "출산 후 철분 (특히 출혈이 많았다면): 기름기 적은 붉은 고기, 또는 오렌지나 파프리카 같은 비타민 C와 함께 먹는 콩류.",
+    'mom.food.posparto.6': "변비에는 식이섬유와 물: 채소, 껍질째 먹는 과일, 콩류, 오트밀.",
+    'mom.food.posparto.7': "천천히 감량하세요: 모유량과 에너지에 영향이 없도록 일주일에 최대 0.5 kg까지만요.",
+    'mom.food.posparto.8': "하루 식단 예시: 달걀과 과일을 곁들인 토스트 · 오트밀을 넣은 요거트 · 닭고기와 채소를 곁들인 밥 · 당근과 후무스 · 고구마와 샐러드를 곁들인 생선.",
+    'mom.food.posparto.9': "가능하면 아기가 잘 때 같이 자세요. 쉬는 것도 식욕 조절에 도움이 돼요.",
+    'mom.food.diastasis.1': "배가 볼록하게 솟아오르는 동안에는 일반 크런치, 오래 버티는 플랭크, 숨을 참고 들어 올리는 동작을 피하세요.",
+    'mom.food.diastasis.2': "침대에서 일어날 때는 곧바로 앉지 말고 옆으로 돌아누운 뒤 팔로 밀며 일어나세요.",
+    'mom.food.diastasis.3': "힘을 줄 때 숨을 내쉬세요: 아기를 안아 올릴 때, 일어설 때, 유모차를 밀 때.",
+    'mom.food.diastasis.4': "확인 방법: 무릎을 세우고 누워 머리를 살짝 들고, 배꼽 위쪽의 벌어진 틈을 손가락으로 재 보세요. 손가락 두 개보다 넓으면 물리치료사를 만나세요.",
+    'mom.food.diastasis.5': "현재 운동에서 2주 동안 배가 솟아오르지 않으면 다음 프로그램으로 넘어가세요.",
+    'mom.food.diastasis.6': "충분한 단백질과 비타민 C(과일, 파프리카, 브로콜리)는 조직이 회복되는 데 도움이 돼요.",
+    'mom.food.diastasis.7': "자세: 갈비뼈를 골반 위에 쌓듯 정렬하고, 배를 내밀거나 하루 종일 세게 집어넣지 마세요.",
+    'trainers.card': "온라인 트레이너",
+    'trainers.cardHint': "나를 이끌어 줄 실제 코치",
+    'trainers.title': "온라인 트레이너",
+    'trainers.subtitle': "저희 팀이 검토한 실제 코치",
+    'trainers.note': "코치는 모두 독립적으로 활동해요. 저희는 지원서를 검토하지만 가격, 결제, 플랜은 코치와 직접 정하세요.",
+    'trainers.verified': "Fitness Life 검토 완료",
+    'trainers.years_one': "경력 {n}년",
+    'trainers.years_other': "경력 {n}년",
+    'trainers.more': "더 보기",
+    'trainers.less': "접기",
+    'trainers.contact': "연락하기",
+    'trainers.empty': "코치가 곧 찾아와요",
+    'trainers.emptyHint': "첫 지원서를 검토하고 있어요. 그동안은 AI 트레이너가 도와드려요.",
+    'trainers.applyTitle': "온라인 트레이너 되기",
+    'trainers.applyHint': "Fitness Life 커뮤니티에 내 서비스를 소개하세요",
+    'trainers.ai': "또는 AI 트레이너에게 물어보기",
+    'apply.subtitle': "나에 대해 알려 주세요. 모든 지원서를 검토해요",
+    'apply.needAccount': "지원서를 보내려면 계정이 필요해요.",
+    'apply.name': "활동 이름",
+    'apply.specialty': "전문 분야",
+    'apply.specialtyHint': "예: 체지방 감량, 근력, 산후, 러닝",
+    'apply.bio': "자기소개",
+    'apply.bioHint': "어떻게 지도하는지, 무엇을 제공하는지 적어 주세요 (20자 이상)",
+    'apply.years': "경력(년)",
+    'apply.country': "국가",
+    'apply.certifications': "자격증",
+    'apply.certificationsHint': "학위나 자격증을 적어 주세요. 확인을 위해 제시를 요청드릴 수 있어요",
+    'apply.languages': "사용 언어",
+    'apply.price': "가격",
+    'apply.priceHint': "예: 월 $30",
+    'apply.contact': "연락처",
+    'apply.contactHint': "웹사이트, 이메일, WhatsApp(국가 번호 포함) 또는 @Instagram",
+    'apply.review': "모든 지원서는 게시하기 전에 검토해요. 지원서를 보내면, 승인될 경우 이 정보와 프로필 사진이 사용자에게 표시되는 데 동의하는 것으로 간주돼요.",
+    'apply.send': "지원서 보내기",
+    'apply.update': "변경 사항 저장",
+    'apply.sent': "지원서를 보냈어요. 검토가 끝나면 알려 드릴게요.",
+    'apply.withdraw': "지원 철회",
+    'apply.withdrawTitle': "지원을 철회할까요?",
+    'apply.withdrawMessage': "더 이상 트레이너로 표시되지 않아요. 언제든 다시 지원할 수 있어요.",
+    'apply.withdrawn': "지원을 철회했어요",
+    'apply.status.pending': "검토 중",
+    'apply.status.pending.hint': "며칠 안에 검토해요. 내용을 변경하면 다시 검토 대기 상태가 돼요.",
+    'apply.status.approved': "승인되었어요! 온라인 트레이너 목록에 등록되었어요",
+    'apply.status.approved.hint': "정보를 변경하면 다시 검토해요.",
+    'apply.status.rejected': "승인되지 않았어요",
+    'apply.status.rejected.hint': "정보와 자격증을 확인한 뒤 다시 보내 주세요.",
+    'apply.err.name': "활동 이름을 입력하세요.",
+    'apply.err.specialty': "전문 분야를 입력하세요.",
+    'apply.err.bio': "자기소개를 조금 더 적어 주세요 (20자 이상).",
+    'apply.err.contact': "연락 방법을 추가하세요.",
+    'apply.err.failed': "보내지 못했어요. 연결 상태를 확인하고 다시 시도하세요.",
+    'settings.trainer': "트레이너이신가요?",
+    'privacy.s11.title': "온라인 트레이너",
+    'privacy.s11.body': "트레이너로 지원하면 양식에 입력한 정보를 보관해요. 승인되면 이름, 전문 분야, 소개, 경력, 사용 언어, 국가, 가격, 연락처, 프로필 사진이 사용자에게 표시돼요. 언제든 철회할 수 있으며 계정을 삭제하면 함께 삭제돼요.",
+    'mom.habits': "일상 속 팁",
+    'freePlans.title': "무료 식단 플랜",
+    'freePlans.subtitle': "간단한 음식으로 구성된, 나에게 맞춘 하루 식단 예시",
+    'freePlans.card': "바로 따라 할 수 있는 플랜 4개",
+    'freePlans.cardHint': "체지방 감량, 근육 증가, 건강식, 채식",
+    'freePlans.forYou': "나를 위한 플랜",
+    'freePlans.fits': "하루 {kcal} kcal에 딱 맞아요. 양을 그대로 따르세요.",
+    'freePlans.scale': "하루 {kcal} kcal 기준으로는 ×{factor}배 양으로 드세요. 아래 각 식사는 이미 조정되어 있어요.",
+    'freePlans.noTarget': "하루 약 {kcal} kcal예요. 체중을 기록하면 양을 나에게 맞게 조정해요.",
+    'freePlans.day': "{n}일차",
+    'freePlans.dayShort': "{n}일",
+    'freePlans.log': "먹었어요",
+    'freePlans.logged': "기록됨",
+    'freePlans.note': "원하는 대로 날짜를 바꿔 가며 드시고, 비슷한 음식으로 바꿔도 돼요. 나만을 위한 주간 플랜이 필요하세요? Premium에서 AI로 만들어 보세요.",
+    'community.video': "영상",
+    'community.videoHint': "최대 {s}초 영상",
+    'community.videoTooLong': "영상이 {s}초보다 길어요. 갤러리에서 잘라낸 뒤 다시 선택하세요.",
+    'community.videoTooBig': "영상이 너무 커요 (최대 50 MB). 더 짧게 또는 낮은 화질로 촬영하세요.",
+    'community.videoFailed': "이 영상을 열 수 없어요. MP4 형식의 다른 영상을 시도하세요.",
+    'community.removeVideo': "영상 삭제",
+    'community.videoAlt': "{name} 님의 영상",
+    'settings.subtitle': "내 프로필, 내 플랜, 내 방식대로 쓰는 앱",
+    'aboutUs.title': "소개",
+    'aboutUs.hint': "우리의 미션, 비전, 가치",
+    'aboutUs.intro': "누구나 어디서든 쉽게 운동하고 잘 먹을 수 있도록 만든 앱이에요.",
+    'aboutUs.mission': "미션",
+    'aboutUs.missionText': "집에서든 헬스장에서든 무엇을 운동할지, 어느 정도 무게를 쓸지, 무엇을 먹고 어떻게 쉴지, 나를 위한 명확한 플랜으로 모두가 건강해지고 기분 좋게 지낼 수 있도록 돕는 것. 간단하게, 합리적인 가격으로요.",
+    'aboutUs.vision': "비전",
+    'aboutUs.visionText': "전 세계 사람들이 가장 신뢰하는 피트니스 앱이 되는 것. 첫 운동부터 부모가 된 이후까지, 삶의 모든 단계에서 함께하는 트레이너, 영양사, 그리고 커뮤니티예요.",
+    'aboutUs.values': "우리의 가치",
+    'aboutUs.value.simple': "단순함",
+    'aboutUs.value.simple.text': "오늘 할 일은 저희가 알려 드려요. 여러분은 운동만 하세요.",
+    'aboutUs.value.honest': "정직",
+    'aboutUs.value.honest.text': "기적을 약속하지 않는, 과학에 기반한 조언.",
+    'aboutUs.value.privacy': "개인정보 보호",
+    'aboutUs.value.privacy.text': "내 데이터는 나의 것이에요. 광고도, 데이터 판매도 없어요.",
+    'aboutUs.value.community': "커뮤니티",
+    'aboutUs.value.community.text': "서로 돕고, 아무리 작은 성과도 함께 축하해요.",
+    'aboutUs.value.everyone': "모두를 위해",
+    'aboutUs.value.everyone.text': "나이, 체형, 수준, 언어에 상관없이. 헬스장이 있든 없든.",
+    'aboutUs.today': "오늘날 Fitness Life는 {languages}개 언어로, iPhone, Android, 웹에서 이용할 수 있어요. 여러분의 의견으로 매주 계속 개선하고 있어요.",
+    'aboutUs.write': "문의하기",
 };

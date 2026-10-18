@@ -1319,7 +1319,7 @@ export const tr: Dict = {
     'privacy.s3.title': "AI asistanı",
     'privacy.s3.body': "Koça veya antrenöre soru sorduğunda, rutin ya da beslenme planı oluşturduğunda veya AI ile bir öğünü tahmin ettiğinde; sorunu, son sohbeti ve verilerinin bir özetini (hedef, yaş, boy, kilo, plan ve son antrenmanlar veya bugün yediklerin) sunucumuza göndeririz; sunucumuz da yanıtı yazması için bunu Anthropic'e (Claude) iletir. Yemeğinin fotoğrafını kullanırsan, fotoğraf gönderilir ve saklanmaz. Bu isteklerin içeriğini saklamayız. Bir yanıtı bildirirsen, incelemek için o yanıtı, sorunu ve gerekçeni saklarız.",
     'privacy.s4.title': "Topluluk ve profil fotoğrafı",
-    'privacy.s4.body': "If you post in the community, we keep your posts, stories, comments, likes, followers and the photos and videos you upload on our server. Your name and profile photo are shown next to them. If your profile is private, only the people you accept can see you.", // TO TRANSLATE
+    'privacy.s4.body': "Toplulukta paylaşım yaparsan gönderilerini, hikayelerini, yorumlarını, beğenilerini, takipçilerini ve yüklediğin fotoğraf ile videoları sunucumuzda saklarız. Adın ve profil fotoğrafın bunların yanında gösterilir. Profilin gizliyse seni yalnızca kabul ettiğin kişiler görebilir.",
     'privacy.s5.title': "Geri bildirimin",
     'privacy.s5.body': "Ayarlar'dan bize geri bildirim gönderirsen mesajını, türünü (fikir, sorun veya diğer), puanını, dili, uygulama sürümünü ve telefonun türünü, ayrıca sana yanıt verebilmemiz için bırakmayı seçersen e-postanı saklarız. Bunları yalnızca uygulamayı geliştirmek için kullanırız.",
     'privacy.s6.title': "Sağlık, adımlar, uyku ve konum",
@@ -1466,160 +1466,160 @@ export const tr: Dict = {
     'community.topic.10': "Hangi rutini uyguluyorsun? Geliştirmek için fikir iste.",
     'community.topic.11': "Daha iyi uyumak ve toparlanmak için püf noktan.",
     'community.topic.12': "Başlarken yaptığın bir hata ve ondan öğrendiğin.",
-    'about.err.age': "Enter an age between 13 and 100", // TO TRANSLATE
-    'about.err.weight': "Enter a weight between {min} and {max} {unit}", // TO TRANSLATE
-    'about.err.heightCm': "Enter your height in cm, between 120 and 230 (e.g. 175)", // TO TRANSLATE
-    'about.err.heightFt': "Enter feet and inches (e.g. 5 ft 9 in); inches go from 0 to 11", // TO TRANSLATE
-    'about.err.sex': "Also choose male or female to continue", // TO TRANSLATE
-    'gear.question': "Do you have a cardio machine at home?", // TO TRANSLATE
-    'gear.hint': "We'll add it at the end of your workouts to burn more calories.", // TO TRANSLATE
-    'gear.none': "None", // TO TRANSLATE
-    'gear.bici': "Stationary bike", // TO TRANSLATE
-    'gear.cinta': "Treadmill", // TO TRANSLATE
-    'gear.eliptica': "Elliptical", // TO TRANSLATE
-    'gear.updated': "Plan updated with your machines", // TO TRANSLATE
-    'mom.card': "Pregnancy & postpartum", // TO TRANSLATE
-    'mom.cardHint': "Exercise, core and nutrition for you", // TO TRANSLATE
-    'mom.title': "Pregnancy & postpartum", // TO TRANSLATE
-    'mom.subtitle': "Move safely, rebuild your core and eat well at every stage", // TO TRANSLATE
-    'mom.stage': "Your stage", // TO TRANSLATE
-    'mom.stage.embarazo': "Pregnancy", // TO TRANSLATE
-    'mom.stage.posparto': "Postpartum", // TO TRANSLATE
-    'mom.stage.diastasis': "Diastasis & core", // TO TRANSLATE
-    'mom.intro.embarazo': "If your pregnancy is going well, moving helps with back pain, sleep and labour. In the 1st trimester carry on as before if you feel good; from the 2nd avoid lying on your back for long; in the 3rd go lighter and focus on mobility.", // TO TRANSLATE
-    'mom.intro.posparto': "The first weeks are for reconnecting with your body: breathing, pelvic floor and walks. With medical clearance (about 6 weeks, 8 or more after a C-section) build your strength back step by step.", // TO TRANSLATE
-    'mom.intro.diastasis': "Diastasis is the gap between the abdominal muscles after pregnancy. You work on it from the inside: breathing, deep abs and pelvic floor, without the belly doming. If a ridge appears down the middle during a move, go back to the previous one.", // TO TRANSLATE
-    'mom.programs': "Programs", // TO TRANSLATE
-    'mom.free': "Free", // TO TRANSLATE
-    'mom.locked': "This program is part of Premium, with a plan that moves forward every week.", // TO TRANSLATE
-    'mom.start': "Use this program", // TO TRANSLATE
-    'mom.confirm.title': "Start “{name}”?", // TO TRANSLATE
-    'mom.confirm.message': "It will change your training plan. Your own routines stay. Check with your doctor before starting.", // TO TRANSLATE
-    'mom.nutrition': "Nutrition for you", // TO TRANSLATE
-    'mom.moreTips': "{n} more tips with Premium", // TO TRANSLATE
-    'mom.safety.title': "Before you start", // TO TRANSLATE
-    'mom.safety.text': "Talk to your doctor or midwife before exercising in pregnancy or after giving birth. This section is general information and doesn't replace a professional.", // TO TRANSLATE
-    'mom.safety.stop': "Stop and get checked if you notice pain, bleeding, dizziness, shortness of breath, fluid leaking, contractions, pelvic pain or urine leaks.", // TO TRANSLATE
-    'mom.safety.physio': "A pelvic floor physiotherapist can check your diastasis and pelvic floor: the best ally after giving birth.", // TO TRANSLATE
-    'mom.food.embarazo.1': "No need to eat for two: in the 2nd trimester add about 340 kcal a day and in the 3rd about 450 (a yogurt with fruit and nuts, for example).", // TO TRANSLATE
-    'mom.food.embarazo.2': "Folic acid and iron: beans and lentils, leafy greens, eggs and well-cooked meat. Take the supplements your doctor prescribes.", // TO TRANSLATE
-    'mom.food.embarazo.3': "Avoid alcohol, large fish (swordfish, bluefin tuna), raw meat, fish or eggs, uncooked cured meats and unpasteurised milk or cheese.", // TO TRANSLATE
-    'mom.food.embarazo.4': "Protein: about 70–100 g a day spread over your meals (eggs, yogurt, chicken, legumes, small oily fish).", // TO TRANSLATE
-    'mom.food.embarazo.5': "Omega-3 (DHA) for your baby's brain: sardines, salmon or mackerel twice a week.", // TO TRANSLATE
-    'mom.food.embarazo.6': "Calcium and vitamin D: three servings a day of dairy or fortified plant milk, and a little sunshine.", // TO TRANSLATE
-    'mom.food.embarazo.7': "Nausea: small, frequent meals, something dry when you wake up (crackers, toast), ginger, and avoiding strong smells.", // TO TRANSLATE
-    'mom.food.embarazo.8': "Heartburn: eat dinner 2–3 hours before bed, eat slowly and avoid fried and spicy food.", // TO TRANSLATE
-    'mom.food.embarazo.9': "A sample day: oats with fruit and yogurt · wholegrain toast with avocado and egg · lentils with rice and salad · fruit and nuts · baked salmon with potato and vegetables.", // TO TRANSLATE
-    'mom.food.posparto.1': "If you're breastfeeding you need about 450–500 extra kcal a day: this isn't the time for strict diets.", // TO TRANSLATE
-    'mom.food.posparto.2': "Drink a glass of water every time you feed your baby.", // TO TRANSLATE
-    'mom.food.posparto.3': "Keep easy one-handed food nearby: fruit, yogurt, nuts, omelette, wholegrain sandwiches.", // TO TRANSLATE
-    'mom.food.posparto.4': "Protein at every meal to help your body heal: 1.2–1.5 g per kilo of body weight a day.", // TO TRANSLATE
-    'mom.food.posparto.5': "Iron after birth (especially if you bled a lot): lean red meat, or legumes with some vitamin C like orange or pepper.", // TO TRANSLATE
-    'mom.food.posparto.6': "Fibre and water against constipation: vegetables, fruit with skin, legumes and oats.", // TO TRANSLATE
-    'mom.food.posparto.7': "Lose weight calmly: half a kilo a week at most, so your milk and energy aren't affected.", // TO TRANSLATE
-    'mom.food.posparto.8': "A sample day: toast with egg and fruit · yogurt with oats · rice with chicken and vegetables · hummus with carrots · fish with sweet potato and salad.", // TO TRANSLATE
-    'mom.food.posparto.9': "Sleep when your baby sleeps whenever you can: rest also helps keep hunger in check.", // TO TRANSLATE
-    'mom.food.diastasis.1': "Avoid classic crunches, long planks and lifting while holding your breath as long as your belly domes.", // TO TRANSLATE
-    'mom.food.diastasis.2': "To get out of bed, roll onto your side and push up with your arms instead of sitting straight up.", // TO TRANSLATE
-    'mom.food.diastasis.3': "Breathe out on the effort: when lifting your baby, standing up or pushing the stroller.", // TO TRANSLATE
-    'mom.food.diastasis.4': "How to check it: lying down with knees bent, lift your head slightly and measure the gap above your belly button with your fingers. More than two fingers: see a physiotherapist.", // TO TRANSLATE
-    'mom.food.diastasis.5': "Move on to the next program once your belly stops doming in the current exercises for two weeks.", // TO TRANSLATE
-    'mom.food.diastasis.6': "Enough protein and vitamin C (fruit, peppers, broccoli) help your tissues repair.", // TO TRANSLATE
-    'mom.food.diastasis.7': "Posture: ribs stacked over your pelvis, without pushing your belly out or sucking it in hard all day.", // TO TRANSLATE
-    'trainers.card': "Online trainers", // TO TRANSLATE
-    'trainers.cardHint': "Real coaches to guide you", // TO TRANSLATE
-    'trainers.title': "Online trainers", // TO TRANSLATE
-    'trainers.subtitle': "Real coaches reviewed by our team", // TO TRANSLATE
-    'trainers.note': "Each coach is independent: we review their application, but you agree the price, payment and plan directly with them.", // TO TRANSLATE
-    'trainers.verified': "Reviewed by Fitness Life", // TO TRANSLATE
-    'trainers.years_one': "{n} year of experience", // TO TRANSLATE
-    'trainers.years_other': "{n} years of experience", // TO TRANSLATE
-    'trainers.more': "More", // TO TRANSLATE
-    'trainers.less': "Less", // TO TRANSLATE
-    'trainers.contact': "Contact", // TO TRANSLATE
-    'trainers.empty': "Coaches are coming soon", // TO TRANSLATE
-    'trainers.emptyHint': "We're reviewing the first applications. Meanwhile, your AI trainer can help.", // TO TRANSLATE
-    'trainers.applyTitle': "Become an online trainer", // TO TRANSLATE
-    'trainers.applyHint': "Offer your services to the Fitness Life community", // TO TRANSLATE
-    'trainers.ai': "Or ask your AI trainer", // TO TRANSLATE
-    'apply.subtitle': "Tell us about you; we review every application", // TO TRANSLATE
-    'apply.needAccount': "You need an account to send your application.", // TO TRANSLATE
-    'apply.name': "Professional name", // TO TRANSLATE
-    'apply.specialty': "Specialty", // TO TRANSLATE
-    'apply.specialtyHint': "E.g. fat loss, strength, postpartum, running", // TO TRANSLATE
-    'apply.bio': "About you", // TO TRANSLATE
-    'apply.bioHint': "How you work and what you offer (at least 20 characters)", // TO TRANSLATE
-    'apply.years': "Years of experience", // TO TRANSLATE
-    'apply.country': "Country", // TO TRANSLATE
-    'apply.certifications': "Certifications", // TO TRANSLATE
-    'apply.certificationsHint': "Your degrees or certificates; we may ask you to show them", // TO TRANSLATE
-    'apply.languages': "Languages", // TO TRANSLATE
-    'apply.price': "Price", // TO TRANSLATE
-    'apply.priceHint': "E.g. $30/month", // TO TRANSLATE
-    'apply.contact': "Contact", // TO TRANSLATE
-    'apply.contactHint': "Your website, e-mail, WhatsApp (with country code) or @Instagram", // TO TRANSLATE
-    'apply.review': "We review every application before publishing it. By sending it you agree that, if approved, these details and your profile photo are shown to users.", // TO TRANSLATE
-    'apply.send': "Send application", // TO TRANSLATE
-    'apply.update': "Save changes", // TO TRANSLATE
-    'apply.sent': "Application sent. We'll let you know once it's reviewed.", // TO TRANSLATE
-    'apply.withdraw': "Withdraw application", // TO TRANSLATE
-    'apply.withdrawTitle': "Withdraw your application?", // TO TRANSLATE
-    'apply.withdrawMessage': "You'll stop appearing as a trainer. You can apply again any time.", // TO TRANSLATE
-    'apply.withdrawn': "Application withdrawn", // TO TRANSLATE
-    'apply.status.pending': "Under review", // TO TRANSLATE
-    'apply.status.pending.hint': "We'll review it within a few days. Any change sends it back to review.", // TO TRANSLATE
-    'apply.status.approved': "Approved! You're listed in Online trainers", // TO TRANSLATE
-    'apply.status.approved.hint': "If you change your details, they'll be reviewed again.", // TO TRANSLATE
-    'apply.status.rejected': "Not approved", // TO TRANSLATE
-    'apply.status.rejected.hint': "Check your details and certifications and send it again.", // TO TRANSLATE
-    'apply.err.name': "Enter your professional name.", // TO TRANSLATE
-    'apply.err.specialty': "Enter your specialty.", // TO TRANSLATE
-    'apply.err.bio': "Tell us a bit more about you (at least 20 characters).", // TO TRANSLATE
-    'apply.err.contact': "Add how people can contact you.", // TO TRANSLATE
-    'apply.err.failed': "Couldn't send it. Check your connection and try again.", // TO TRANSLATE
-    'settings.trainer': "Are you a trainer?", // TO TRANSLATE
-    'privacy.s11.title': "Online trainers", // TO TRANSLATE
-    'privacy.s11.body': "If you apply to be a trainer, we keep the form details. If approved, your name, specialty, description, experience, languages, country, price, contact and profile photo are shown to users. You can withdraw it any time and it's deleted with your account.", // TO TRANSLATE
-    'mom.habits': "Everyday tips", // TO TRANSLATE
-    'freePlans.title': "Free nutrition plans", // TO TRANSLATE
-    'freePlans.subtitle': "Sample days with simple food, adjusted to you", // TO TRANSLATE
-    'freePlans.card': "4 ready-to-follow plans", // TO TRANSLATE
-    'freePlans.cardHint': "Lose fat, build muscle, eat healthy and vegetarian", // TO TRANSLATE
-    'freePlans.forYou': "For you", // TO TRANSLATE
-    'freePlans.fits': "Fits your {kcal} kcal a day: follow the amounts as they are.", // TO TRANSLATE
-    'freePlans.scale': "For your {kcal} kcal a day, eat ×{factor} the amounts. Each meal below is already adjusted.", // TO TRANSLATE
-    'freePlans.noTarget': "About {kcal} kcal a day. Log your weight to adjust the amounts to you.", // TO TRANSLATE
-    'freePlans.day': "Day {n}", // TO TRANSLATE
-    'freePlans.dayShort': "D{n}", // TO TRANSLATE
-    'freePlans.log': "I ate it", // TO TRANSLATE
-    'freePlans.logged': "Logged", // TO TRANSLATE
-    'freePlans.note': "Alternate the days as you like and swap foods for similar ones. Want a weekly plan made just for you? Try it with AI in Premium.", // TO TRANSLATE
-    'community.video': "Video", // TO TRANSLATE
-    'community.videoHint': "Videos up to {s} seconds", // TO TRANSLATE
-    'community.videoTooLong': "The video is longer than {s} seconds. Trim it in your gallery and pick it again.", // TO TRANSLATE
-    'community.videoTooBig': "The video is too large (50 MB max). Record a shorter one or at lower quality.", // TO TRANSLATE
-    'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
-    'community.removeVideo': "Remove video", // TO TRANSLATE
-    'community.videoAlt': "Video by {name}", // TO TRANSLATE
-    'settings.subtitle': "Your profile, your plan and the app your way", // TO TRANSLATE
-    'aboutUs.title': "About us", // TO TRANSLATE
-    'aboutUs.hint': "Our mission, vision and values", // TO TRANSLATE
-    'aboutUs.intro': "An app made to make training and eating well easy, for everyone, anywhere.", // TO TRANSLATE
-    'aboutUs.mission': "Mission", // TO TRANSLATE
-    'aboutUs.missionText': "To help everyone get fit and feel good with a clear plan made for them: what to train, how much weight to use, what to eat and how to rest, at home or at the gym, simply and at a fair price.", // TO TRANSLATE
-    'aboutUs.vision': "Vision", // TO TRANSLATE
-    'aboutUs.visionText': "To be the fitness app people trust most around the world: a trainer, a nutritionist and a community that stay with you at every stage of life, from your first workout to after becoming a parent.", // TO TRANSLATE
-    'aboutUs.values': "Our values", // TO TRANSLATE
-    'aboutUs.value.simple': "Simplicity", // TO TRANSLATE
-    'aboutUs.value.simple.text': "We tell you what to do today; you just train.", // TO TRANSLATE
-    'aboutUs.value.honest': "Honesty", // TO TRANSLATE
-    'aboutUs.value.honest.text': "Science-based advice, no miracle promises.", // TO TRANSLATE
-    'aboutUs.value.privacy': "Privacy", // TO TRANSLATE
-    'aboutUs.value.privacy.text': "Your data is yours: no ads and no selling data.", // TO TRANSLATE
-    'aboutUs.value.community': "Community", // TO TRANSLATE
-    'aboutUs.value.community.text': "We help each other and celebrate every win, however small.", // TO TRANSLATE
-    'aboutUs.value.everyone': "For everyone", // TO TRANSLATE
-    'aboutUs.value.everyone.text': "Any age, body, level and language; with or without a gym.", // TO TRANSLATE
-    'aboutUs.today': "Today Fitness Life is available in {languages} languages, on iPhone, Android and the web, and we keep improving every week with your feedback.", // TO TRANSLATE
-    'aboutUs.write': "Write to us", // TO TRANSLATE
+    'about.err.age': "13 ile 100 arasında bir yaş gir",
+    'about.err.weight': "{min} ile {max} {unit} arasında bir kilo gir",
+    'about.err.heightCm': "Boyunu cm olarak, 120 ile 230 arasında gir (ör. 175)",
+    'about.err.heightFt': "Fit ve inç gir (ör. 5 ft 9 in); inç 0 ile 11 arasında olmalı",
+    'about.err.sex': "Devam etmek için ayrıca erkek veya kadın seç",
+    'gear.question': "Evde kardiyo aletin var mı?",
+    'gear.hint': "Daha çok kalori yakman için antrenmanlarının sonuna ekleyeceğiz.",
+    'gear.none': "Yok",
+    'gear.bici': "Sabit bisiklet",
+    'gear.cinta': "Koşu bandı",
+    'gear.eliptica': "Eliptik bisiklet",
+    'gear.updated': "Plan aletlerine göre güncellendi",
+    'mom.card': "Hamilelik ve doğum sonrası",
+    'mom.cardHint': "Senin için egzersiz, merkez bölge ve beslenme",
+    'mom.title': "Hamilelik ve doğum sonrası",
+    'mom.subtitle': "Her dönemde güvenle hareket et, merkez bölgeni yeniden güçlendir ve iyi beslen",
+    'mom.stage': "Dönemin",
+    'mom.stage.embarazo': "Hamilelik",
+    'mom.stage.posparto': "Doğum sonrası",
+    'mom.stage.diastasis': "Diyastaz ve merkez bölge",
+    'mom.intro.embarazo': "Hamileliğin sorunsuz ilerliyorsa hareket etmek sırt ağrısına, uykuna ve doğuma iyi gelir. İlk trimesterde kendini iyi hissediyorsan eskisi gibi devam et; 2. trimesterden itibaren uzun süre sırtüstü yatmaktan kaçın; 3. trimesterde daha hafif çalış ve hareketliliğe odaklan.",
+    'mom.intro.posparto': "İlk haftalar vücudunla yeniden bağ kurmak içindir: nefes, pelvik taban ve yürüyüşler. Doktorundan onay aldıktan sonra (yaklaşık 6 hafta, sezaryenden sonra 8 hafta veya daha fazla) gücünü adım adım geri kazan.",
+    'mom.intro.diastasis': "Diyastaz, hamilelikten sonra karın kasları arasında oluşan boşluktur. Üzerinde içeriden çalışırsın: nefes, derin karın kasları ve pelvik taban; karnın kabarmamalı. Bir hareket sırasında ortada çıkıntı oluşursa bir önceki harekete dön.",
+    'mom.programs': "Programlar",
+    'mom.free': "Ücretsiz",
+    'mom.locked': "Bu program Premium'a dahildir ve her hafta ilerleyen bir plan sunar.",
+    'mom.start': "Bu programı kullan",
+    'mom.confirm.title': "“{name}” başlatılsın mı?",
+    'mom.confirm.message': "Antrenman planın değişecek. Kendi rutinlerin duruyor. Başlamadan önce doktoruna danış.",
+    'mom.nutrition': "Senin için beslenme",
+    'mom.moreTips': "Premium ile {n} ipucu daha",
+    'mom.safety.title': "Başlamadan önce",
+    'mom.safety.text': "Hamilelikte veya doğumdan sonra egzersiz yapmadan önce doktoruna ya da ebene danış. Bu bölüm genel bilgi niteliğindedir ve bir uzmanın yerini tutmaz.",
+    'mom.safety.stop': "Ağrı, kanama, baş dönmesi, nefes darlığı, sıvı gelmesi, kasılma, pelvik ağrı veya idrar kaçırma fark edersen dur ve kontrol ettir.",
+    'mom.safety.physio': "Pelvik taban fizyoterapisti diyastazını ve pelvik tabanını değerlendirebilir: doğumdan sonra en iyi destekçin.",
+    'mom.food.embarazo.1': "İki kişilik yemek gerekmez: 2. trimesterde günde yaklaşık 340 kcal, 3. trimesterde yaklaşık 450 kcal ekle (örneğin meyveli ve kuruyemişli bir yoğurt).",
+    'mom.food.embarazo.2': "Folik asit ve demir: kuru baklagiller ve mercimek, yeşil yapraklı sebzeler, yumurta ve iyi pişmiş et. Doktorunun yazdığı takviyeleri kullan.",
+    'mom.food.embarazo.3': "Alkolden, büyük balıklardan (kılıç balığı, mavi yüzgeçli ton), çiğ et, balık veya yumurtadan, pişmemiş şarküteri ürünlerinden ve pastörize edilmemiş süt ya da peynirden uzak dur.",
+    'mom.food.embarazo.4': "Protein: öğünlerine yayılmış günde yaklaşık 70–100 g (yumurta, yoğurt, tavuk, baklagiller, küçük yağlı balıklar).",
+    'mom.food.embarazo.5': "Bebeğinin beyni için omega-3 (DHA): haftada iki kez sardalya, somon veya uskumru.",
+    'mom.food.embarazo.6': "Kalsiyum ve D vitamini: günde üç porsiyon süt ürünü veya zenginleştirilmiş bitkisel süt, bir de biraz güneş.",
+    'mom.food.embarazo.7': "Bulantı: küçük ve sık öğünler, uyanınca kuru bir şey (kraker, tost), zencefil ve keskin kokulardan kaçınmak.",
+    'mom.food.embarazo.8': "Mide yanması: akşam yemeğini yatmadan 2–3 saat önce ye, yavaş ye ve kızartma ile acılı yiyeceklerden kaçın.",
+    'mom.food.embarazo.9': "Örnek bir gün: meyveli ve yoğurtlu yulaf · avokadolu ve yumurtalı tam buğday ekmeği tostu · pilavlı mercimek ve salata · meyve ve kuruyemiş · patates ve sebzeli fırında somon.",
+    'mom.food.posparto.1': "Emziriyorsan günde yaklaşık 450–500 kcal fazlaya ihtiyacın var: bu, sıkı diyetlerin zamanı değil.",
+    'mom.food.posparto.2': "Bebeğini her emzirişinde bir bardak su iç.",
+    'mom.food.posparto.3': "Tek elle yenebilen kolay yiyecekleri yakınında tut: meyve, yoğurt, kuruyemiş, omlet, tam buğdaylı sandviçler.",
+    'mom.food.posparto.4': "Vücudunun iyileşmesine yardımcı olmak için her öğünde protein: günde vücut ağırlığının kilosu başına 1,2–1,5 g.",
+    'mom.food.posparto.5': "Doğumdan sonra demir (özellikle çok kanama olduysa): yağsız kırmızı et veya portakal ya da biber gibi biraz C vitamini ile birlikte baklagiller.",
+    'mom.food.posparto.6': "Kabızlığa karşı lif ve su: sebze, kabuklu meyve, baklagiller ve yulaf.",
+    'mom.food.posparto.7': "Kiloyu sakin ver: en fazla haftada yarım kilo, böylece sütün ve enerjin etkilenmez.",
+    'mom.food.posparto.8': "Örnek bir gün: yumurtalı tost ve meyve · yulaflı yoğurt · tavuklu ve sebzeli pilav · havuçla humus · tatlı patates ve salata ile balık.",
+    'mom.food.posparto.9': "Fırsat buldukça bebeğin uyurken uyu: dinlenmek açlığı kontrol altında tutmaya da yardımcı olur.",
+    'mom.food.diastasis.1': "Karnın kabarıyorsa klasik mekik hareketlerinden, uzun plank'lerden ve nefesini tutarak kaldırmaktan kaçın.",
+    'mom.food.diastasis.2': "Yataktan çıkarken dik oturmak yerine yana dön ve kollarınla kendini yukarı it.",
+    'mom.food.diastasis.3': "Efor sırasında nefes ver: bebeğini kaldırırken, ayağa kalkarken veya bebek arabasını iterken.",
+    'mom.food.diastasis.4': "Nasıl kontrol edilir: dizlerin bükülü şekilde sırtüstü yat, başını hafifçe kaldır ve göbeğinin üstündeki boşluğu parmaklarınla ölç. İki parmaktan fazlaysa bir fizyoterapiste git.",
+    'mom.food.diastasis.5': "Karnın mevcut egzersizlerde iki hafta boyunca kabarmayınca bir sonraki programa geç.",
+    'mom.food.diastasis.6': "Yeterli protein ve C vitamini (meyve, biber, brokoli) dokularının onarılmasına yardımcı olur.",
+    'mom.food.diastasis.7': "Duruş: kaburgalar leğenin üzerinde hizalı, karnını dışarı itmeden ya da gün boyu sertçe içeri çekmeden.",
+    'trainers.card': "Online antrenörler",
+    'trainers.cardHint': "Sana rehberlik edecek gerçek koçlar",
+    'trainers.title': "Online antrenörler",
+    'trainers.subtitle': "Ekibimizin incelediği gerçek koçlar",
+    'trainers.note': "Her koç bağımsızdır: başvurusunu inceleriz, ancak fiyatı, ödemeyi ve planı doğrudan onunla kararlaştırırsın.",
+    'trainers.verified': "Fitness Life tarafından incelendi",
+    'trainers.years_one': "{n} yıl deneyim",
+    'trainers.years_other': "{n} yıl deneyim",
+    'trainers.more': "Daha fazla",
+    'trainers.less': "Daha az",
+    'trainers.contact': "İletişim",
+    'trainers.empty': "Koçlar çok yakında geliyor",
+    'trainers.emptyHint': "İlk başvuruları inceliyoruz. Bu arada AI antrenörün sana yardımcı olabilir.",
+    'trainers.applyTitle': "Online antrenör ol",
+    'trainers.applyHint': "Hizmetlerini Fitness Life topluluğuna sun",
+    'trainers.ai': "Ya da AI antrenörüne sor",
+    'apply.subtitle': "Bize kendinden bahset; her başvuruyu inceliyoruz",
+    'apply.needAccount': "Başvurunu göndermek için bir hesabın olmalı.",
+    'apply.name': "Mesleki ad",
+    'apply.specialty': "Uzmanlık alanı",
+    'apply.specialtyHint': "Ör. yağ yakımı, güç, doğum sonrası, koşu",
+    'apply.bio': "Hakkında",
+    'apply.bioHint': "Nasıl çalıştığın ve neler sunduğun (en az 20 karakter)",
+    'apply.years': "Deneyim yılı",
+    'apply.country': "Ülke",
+    'apply.certifications': "Sertifikalar",
+    'apply.certificationsHint': "Diploma veya sertifikaların; göstermeni isteyebiliriz",
+    'apply.languages': "Diller",
+    'apply.price': "Fiyat",
+    'apply.priceHint': "Ör. ayda 30 $",
+    'apply.contact': "İletişim",
+    'apply.contactHint': "Web siten, e-postan, WhatsApp (ülke koduyla) veya @Instagram",
+    'apply.review': "Her başvuruyu yayınlamadan önce inceliyoruz. Göndererek, onaylanırsa bu bilgilerin ve profil fotoğrafının kullanıcılara gösterilmesini kabul edersin.",
+    'apply.send': "Başvuruyu gönder",
+    'apply.update': "Değişiklikleri kaydet",
+    'apply.sent': "Başvuru gönderildi. İncelendiğinde sana haber vereceğiz.",
+    'apply.withdraw': "Başvuruyu geri çek",
+    'apply.withdrawTitle': "Başvurun geri çekilsin mi?",
+    'apply.withdrawMessage': "Antrenör olarak görünmeyeceksin. İstediğin zaman tekrar başvurabilirsin.",
+    'apply.withdrawn': "Başvuru geri çekildi",
+    'apply.status.pending': "İnceleniyor",
+    'apply.status.pending.hint': "Birkaç gün içinde inceleyeceğiz. Yapacağın her değişiklik başvuruyu tekrar incelemeye gönderir.",
+    'apply.status.approved': "Onaylandı! Online antrenörler listesindesin",
+    'apply.status.approved.hint': "Bilgilerini değiştirirsen yeniden incelenir.",
+    'apply.status.rejected': "Onaylanmadı",
+    'apply.status.rejected.hint': "Bilgilerini ve sertifikalarını kontrol et, tekrar gönder.",
+    'apply.err.name': "Mesleki adını gir.",
+    'apply.err.specialty': "Uzmanlık alanını gir.",
+    'apply.err.bio': "Bize kendinden biraz daha bahset (en az 20 karakter).",
+    'apply.err.contact': "İnsanların sana nasıl ulaşabileceğini ekle.",
+    'apply.err.failed': "Gönderilemedi. Bağlantını kontrol edip tekrar dene.",
+    'settings.trainer': "Antrenör müsün?",
+    'privacy.s11.title': "Online antrenörler",
+    'privacy.s11.body': "Antrenör olmak için başvurursan form bilgilerini saklarız. Onaylanırsa adın, uzmanlık alanın, açıklaman, deneyimin, dillerin, ülken, fiyatın, iletişim bilgin ve profil fotoğrafın kullanıcılara gösterilir. İstediğin zaman geri çekebilirsin ve hesabınla birlikte silinir.",
+    'mom.habits': "Günlük ipuçları",
+    'freePlans.title': "Ücretsiz beslenme planları",
+    'freePlans.subtitle': "Basit yiyeceklerle, sana göre ayarlanmış örnek günler",
+    'freePlans.card': "Hemen uygulayabileceğin 4 plan",
+    'freePlans.cardHint': "Yağ ver, kas yap, sağlıklı ve vejetaryen beslen",
+    'freePlans.forYou': "Senin için",
+    'freePlans.fits': "Günlük {kcal} kcal hedefine uyuyor: miktarları olduğu gibi uygula.",
+    'freePlans.scale': "Günlük {kcal} kcal için miktarların ×{factor} katını ye. Aşağıdaki her öğün zaten buna göre ayarlı.",
+    'freePlans.noTarget': "Günde yaklaşık {kcal} kcal. Miktarları sana göre ayarlamak için kilonu kaydet.",
+    'freePlans.day': "{n}. gün",
+    'freePlans.dayShort': "G{n}",
+    'freePlans.log': "Yedim",
+    'freePlans.logged': "Kaydedildi",
+    'freePlans.note': "Günleri istediğin gibi değiştir ve yiyecekleri benzerleriyle takas et. Tam sana göre hazırlanmış haftalık bir plan mı istiyorsun? Premium'da AI ile dene.",
+    'community.video': "Video",
+    'community.videoHint': "En fazla {s} saniyelik videolar",
+    'community.videoTooLong': "Video {s} saniyeden uzun. Galerinde kısaltıp tekrar seç.",
+    'community.videoTooBig': "Video çok büyük (en fazla 50 MB). Daha kısa veya daha düşük kalitede bir video çek.",
+    'community.videoFailed': "Bu video açılamadı. MP4 biçiminde başka bir video dene.",
+    'community.removeVideo': "Videoyu kaldır",
+    'community.videoAlt': "Video: {name}",
+    'settings.subtitle': "Profilin, planın ve uygulama senin tarzında",
+    'aboutUs.title': "Hakkımızda",
+    'aboutUs.hint': "Misyonumuz, vizyonumuz ve değerlerimiz",
+    'aboutUs.intro': "Herkes için, her yerde, antrenman yapmayı ve iyi beslenmeyi kolaylaştırmak için yapılmış bir uygulama.",
+    'aboutUs.mission': "Misyon",
+    'aboutUs.missionText': "Herkesin kendisi için hazırlanmış net bir planla forma girmesine ve kendini iyi hissetmesine yardımcı olmak: ne çalışacağını, ne kadar ağırlık kullanacağını, ne yiyeceğini ve nasıl dinleneceğini; evde ya da salonda, basit ve adil bir fiyatla.",
+    'aboutUs.vision': "Vizyon",
+    'aboutUs.visionText': "Dünyada insanların en çok güvendiği fitness uygulaması olmak: ilk antrenmanından ebeveyn olduktan sonrasına kadar hayatın her döneminde yanında olan bir antrenör, bir diyetisyen ve bir topluluk.",
+    'aboutUs.values': "Değerlerimiz",
+    'aboutUs.value.simple': "Sadelik",
+    'aboutUs.value.simple.text': "Bugün ne yapacağını biz söyleriz; sen sadece antrenman yaparsın.",
+    'aboutUs.value.honest': "Dürüstlük",
+    'aboutUs.value.honest.text': "Bilime dayalı tavsiyeler, mucize vaatleri yok.",
+    'aboutUs.value.privacy': "Gizlilik",
+    'aboutUs.value.privacy.text': "Verilerin senindir: reklam yok, veri satışı yok.",
+    'aboutUs.value.community': "Topluluk",
+    'aboutUs.value.community.text': "Birbirimize yardım ediyor, ne kadar küçük olursa olsun her başarıyı kutluyoruz.",
+    'aboutUs.value.everyone': "Herkes için",
+    'aboutUs.value.everyone.text': "Her yaş, vücut, seviye ve dil; salonlu ya da salonsuz.",
+    'aboutUs.today': "Fitness Life bugün {languages} dilde iPhone, Android ve web'de kullanılabiliyor ve geri bildirimlerinle her hafta gelişmeye devam ediyoruz.",
+    'aboutUs.write': "Bize yaz",
 };
