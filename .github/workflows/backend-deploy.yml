@@ -82,8 +82,55 @@ jobs:
         with:
           version: latest
 
+      # Asks Supabase directly, so a failure says why: wrong or revoked token,
+      # wrong Project ID, or a paused project (free projects pause after a
+      # week without use; this wakes them up).
+      - name: Check the token and the project
+        run: |
+          api() { curl -sS -o /tmp/api.json -w "%{http_code}" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "$@"; }
+          status=$(api https://api.supabase.com/v1/projects)
+          if [ "$status" = 401 ] || [ "$status" = 403 ]; then
+            echo "::error::Supabase rejected SUPABASE_ACCESS_TOKEN (HTTP $status): it was deleted or copied wrong. Create a new one (Supabase → avatar → Account preferences → Access Tokens) and update the secret."
+            exit 1
+          elif [ "$status" != 200 ]; then
+            echo "::error::Supabase answered HTTP $status when listing projects: $(head -c 300 /tmp/api.json)"
+            exit 1
+          fi
+          # Project IDs are public (they are in the app's address), names too.
+          projects=$(jq -r '[.[] | "\(.name) = \(.id) (\(.status))"] | join(", ")' /tmp/api.json)
+          state=$(jq -r --arg ref "$SUPABASE_PROJECT_REF" '.[] | select(.id == $ref) | .status' /tmp/api.json)
+          if [ -z "$state" ]; then
+            echo "::error::The token works, but its account has no project with ID $SUPABASE_PROJECT_REF. Its projects: ${projects:-none}. Put the right ID in the SUPABASE_PROJECT_REF variable."
+            exit 1
+          fi
+          echo "::notice::Project $SUPABASE_PROJECT_REF is $state."
+          if [ "$state" = INACTIVE ] || [ "$state" = PAUSED ]; then
+            status=$(api -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/restore")
+            if [ "$status" -ge 300 ]; then
+              echo "::error::The project is paused and could not be restored (HTTP $status: $(head -c 300 /tmp/api.json)). Open it in supabase.com and press Restore."
+              exit 1
+            fi
+            echo "::notice::The project was paused: restoring it."
+          fi
+          # Wait until it's up (a restore takes a few minutes).
+          for attempt in $(seq 1 60); do
+            api "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF" > /dev/null
+            state=$(jq -r .status /tmp/api.json)
+            [ "$state" = ACTIVE_HEALTHY ] && break
+            echo "Status: $state"
+            sleep 15
+          done
+          if [ "$state" != ACTIVE_HEALTHY ]; then
+            echo "::error::Project $SUPABASE_PROJECT_REF is $state, not running. Open it in supabase.com to see why."
+            exit 1
+          fi
+
       - name: Link the project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" 2>&1 | tee /tmp/link.log || {
+            echo "::error::supabase link failed: $(tail -c 400 /tmp/link.log | tr '\n' ' ')"
+            exit 1
+          }
 
       # Without an account the app signs in anonymously; with one, by e-mail,
       # Google or Apple. Sign-in comes back to the web app or, in the phone
