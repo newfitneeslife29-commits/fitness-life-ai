@@ -30,6 +30,7 @@ import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
+import AboutUs from './pages/AboutUs';
 import Feedback from './pages/Feedback';
 import FreePlans from './pages/FreePlans';
 import Mom from './pages/Mom';
@@ -193,6 +194,7 @@ export default function App() {
                 <Route path="/mama" element={<Shell><Mom /></Shell>} />
                 <Route path="/entrenadores" element={<Shell><Trainers /></Shell>} />
                 <Route path="/entrenadores/aplicar" element={<Shell><TrainerApply /></Shell>} />
+                <Route path="/sobre-nosotros" element={<Shell><AboutUs /></Shell>} />
                 <Route path="/privacidad" element={<Shell><Privacy /></Shell>} />
                 <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />

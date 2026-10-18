@@ -1601,4 +1601,25 @@ export const ko: Dict = {
     'community.videoFailed': "Couldn't open that video. Try another one in MP4 format.", // TO TRANSLATE
     'community.removeVideo': "Remove video", // TO TRANSLATE
     'community.videoAlt': "Video by {name}", // TO TRANSLATE
+    'settings.subtitle': "Your profile, your plan and the app your way", // TO TRANSLATE
+    'aboutUs.title': "About us", // TO TRANSLATE
+    'aboutUs.hint': "Our mission, vision and values", // TO TRANSLATE
+    'aboutUs.intro': "An app made to make training and eating well easy, for everyone, anywhere.", // TO TRANSLATE
+    'aboutUs.mission': "Mission", // TO TRANSLATE
+    'aboutUs.missionText': "To help everyone get fit and feel good with a clear plan made for them: what to train, how much weight to use, what to eat and how to rest, at home or at the gym, simply and at a fair price.", // TO TRANSLATE
+    'aboutUs.vision': "Vision", // TO TRANSLATE
+    'aboutUs.visionText': "To be the fitness app people trust most around the world: a trainer, a nutritionist and a community that stay with you at every stage of life, from your first workout to after becoming a parent.", // TO TRANSLATE
+    'aboutUs.values': "Our values", // TO TRANSLATE
+    'aboutUs.value.simple': "Simplicity", // TO TRANSLATE
+    'aboutUs.value.simple.text': "We tell you what to do today; you just train.", // TO TRANSLATE
+    'aboutUs.value.honest': "Honesty", // TO TRANSLATE
+    'aboutUs.value.honest.text': "Science-based advice, no miracle promises.", // TO TRANSLATE
+    'aboutUs.value.privacy': "Privacy", // TO TRANSLATE
+    'aboutUs.value.privacy.text': "Your data is yours: no ads and no selling data.", // TO TRANSLATE
+    'aboutUs.value.community': "Community", // TO TRANSLATE
+    'aboutUs.value.community.text': "We help each other and celebrate every win, however small.", // TO TRANSLATE
+    'aboutUs.value.everyone': "For everyone", // TO TRANSLATE
+    'aboutUs.value.everyone.text': "Any age, body, level and language; with or without a gym.", // TO TRANSLATE
+    'aboutUs.today': "Today Fitness Life is available in {languages} languages, on iPhone, Android and the web, and we keep improving every week with your feedback.", // TO TRANSLATE
+    'aboutUs.write': "Write to us", // TO TRANSLATE
 };

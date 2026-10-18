@@ -1,4 +1,4 @@
-import { BookOpen, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -6,7 +6,7 @@ import { Avatar } from '../components/Avatar';
 import { LanguageRow } from '../components/LanguagePicker';
 import { TrainingReminder } from '../components/TrainingReminder';
 import { detailsMissing, HomeGearChips, ProfileDetailsSheet } from '../components/ProfileForm';
-import { Chips, PageHeader, Section, Sheet } from '../components/ui';
+import { Chips, PageBackdrop, PageHeader, Section, Sheet } from '../components/ui';
 import { programName } from '../data/programs';
 import { programFor } from '../lib/plan';
 import { locale, t, tp } from '../i18n';
@@ -91,30 +91,14 @@ export default function Settings() {
     };
 
     return (
-        <div className="space-y-6">
-            <PageHeader title={t('nav.settings')} />
+        <div className="relative">
+        <PageBackdrop src="./covers/espalda-3.webp" position="51% 30%" />
+        <div className="relative space-y-6">
+            <PageHeader title={t('nav.settings')} subtitle={t('settings.subtitle')} />
 
             <ProfileHero />
             {authAvailable() && <AccountCard />}
             <PremiumCard />
-
-            <Section title={t('settings.language')}>
-                <LanguageRow />
-            </Section>
-
-            <Section title={t('settings.appearance')}>
-                <div className="card grid grid-cols-3 gap-1 p-1" role="radiogroup" aria-label={t('settings.appearance')}>
-                    {([['system', Monitor], ['light', Sun], ['dark', Moon]] as const).map(([value, Icon]) => (
-                        <button key={value} role="radio" aria-checked={theme === value} onClick={() => actions.setTheme(value as Theme)}
-                            className={`flex flex-col items-center gap-1 rounded-xl py-3 text-sm font-medium transition ${theme === value ? 'bg-brand-soft text-brand-strong' : 'text-white/60 hover:text-white'}`}>
-                            <Icon size={20} />
-                            {t(`theme.${value}`)}
-                        </button>
-                    ))}
-                </div>
-            </Section>
-
-            <AppIconPicker />
 
             <Section title={t('settings.profile')}>
                 <div className="card space-y-5 p-4">
@@ -194,6 +178,24 @@ export default function Settings() {
                 </div>
             </Section>
 
+            <Section title={t('settings.language')}>
+                <LanguageRow />
+            </Section>
+
+            <Section title={t('settings.appearance')}>
+                <div className="card grid grid-cols-3 gap-1 p-1" role="radiogroup" aria-label={t('settings.appearance')}>
+                    {([['system', Monitor], ['light', Sun], ['dark', Moon]] as const).map(([value, Icon]) => (
+                        <button key={value} role="radio" aria-checked={theme === value} onClick={() => actions.setTheme(value as Theme)}
+                            className={`flex flex-col items-center gap-1 rounded-xl py-3 text-sm font-medium transition ${theme === value ? 'bg-brand-soft text-brand-strong' : 'text-white/60 hover:text-white'}`}>
+                            <Icon size={20} />
+                            {t(`theme.${value}`)}
+                        </button>
+                    ))}
+                </div>
+            </Section>
+
+            <AppIconPicker />
+
             <HelpSection />
 
             <Section title={t('settings.data')}>
@@ -216,6 +218,7 @@ export default function Settings() {
                 <p>{t('settings.footer')}</p>
                 <p>{t('settings.photoCredit')}</p>
             </div>
+        </div>
         </div>
     );
 }
@@ -485,6 +488,7 @@ function HelpSection() {
                 <NavRow to="/guia" icon={<BookOpen size={20} />} title={t('guide.title')} hint={t('guide.hint')} />
                 <NavRow to="/comentarios" icon={<MessageSquareHeart size={20} />} title={t('feedback.title')} hint={t('feedback.hint')} />
                 <NavRow to="/entrenadores/aplicar" icon={<UserPlus size={20} />} title={t('settings.trainer')} hint={t('trainers.applyTitle')} />
+                <NavRow to="/sobre-nosotros" icon={<Info size={20} />} title={t('aboutUs.title')} hint={t('aboutUs.hint')} />
                 <NavRow to="/privacidad" icon={<ShieldCheck size={20} />} title={t('privacy.title')} hint={t('privacy.hint')} />
                 <div className="flex items-center gap-3 p-4">
                     <RefreshCw size={20} className="shrink-0 text-brand" />

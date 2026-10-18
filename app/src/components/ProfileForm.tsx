@@ -84,7 +84,7 @@ const numeric = (raw: string) => {
     return i < 0 ? kept : kept.slice(0, i + 1) + kept.slice(i + 1).replace(/[.,]/g, '');
 };
 
-const Field = ({ id, label, suffix, value, onChange, width = 'w-full', error }: { id: string; label: string; suffix: string; value: string; onChange: (v: string) => void; width?: string; error?: string }) => (
+const Field = ({ id, label, suffix, value, onChange, width = 'min-w-0 flex-1', error }: { id: string; label: string; suffix: string; value: string; onChange: (v: string) => void; width?: string; error?: string }) => (
     <div className={width}>
         <label className="label mb-1 block" htmlFor={id}>{label}</label>
         <div className={`flex items-center rounded-xl border bg-ink-2 focus-within:border-brand ${error ? 'border-red-500' : 'border-line'}`}>

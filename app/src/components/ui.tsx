@@ -56,6 +56,14 @@ export const PageHeader = ({ title, subtitle, action, tone, photo, children }: {
     </header>
 );
 
+// A photo behind the top of a page, fading into the background (Comunidad, Ajustes…).
+export const PageBackdrop = ({ src, position = '50% 35%' }: { src: string; position?: string }) => (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[26rem] overflow-hidden">
+        <img src={src} alt="" className="h-full w-full object-cover opacity-45" style={{ objectPosition: position }} />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(var(--ink)/0.2)_0%,rgb(var(--ink)/0.7)_50%,rgb(var(--ink))_100%)]" />
+    </div>
+);
+
 // A sub-page's header: back arrow, icon, title and a line under it.
 export const BackHeader = ({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: ReactNode }) => {
     const navigate = useNavigate();

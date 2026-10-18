@@ -6,7 +6,7 @@ import { toast } from '../components/feedback';
 import { acceptRules, PostList } from '../components/community/Posts';
 import { KIND_STYLE, weeklyTopic } from '../components/community/kinds';
 import { StoriesBar, StoryComposer, StoryViewer } from '../components/community/Stories';
-import { Section, Sheet } from '../components/ui';
+import { PageBackdrop, Photo, Section, Sheet } from '../components/ui';
 import { t, type Key } from '../i18n';
 import { authAvailable } from '../lib/auth';
 import { createPost, fetchFeed, fetchFollowRequests, fetchStories, PAGE_SIZE, POST_KINDS, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, type Post, type PostKind, type StoryGroup } from '../lib/community';
@@ -206,6 +206,8 @@ export default function Community() {
 
     const header = (
         <header className="bleed-top relative overflow-hidden bg-gradient-to-br from-brand via-rose-500 to-fuchsia-600 px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] text-snow">
+            <Photo photo={{ src: './move/correr-3.webp', position: '50% 40%' }} />
+            <div aria-hidden className="photo-tint absolute inset-0 bg-gradient-to-br from-brand/85 via-rose-500/75 to-fuchsia-600/80" />
             <div aria-hidden className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-snow/15 blur-2xl" />
             <div aria-hidden className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-amber-300/25 blur-2xl" />
             <div className="relative flex items-start gap-3">
@@ -240,6 +242,9 @@ export default function Community() {
     return (
         <div className="space-y-5 pb-4">
             {header}
+            <div className="relative">
+            <PageBackdrop src="./covers/espalda-1.webp" position="49% 35%" />
+            <div className="relative space-y-5">
 
             <Section>
                 <StoriesBar groups={stories} member={member} myAvatar={profile.avatar} myName={profile.name}
@@ -344,6 +349,8 @@ export default function Community() {
                 )}
             </Section>
 
+            </div>
+            </div>
             <Composer open={composing !== null} initialKind={composing ?? 'general'} onClose={() => setComposing(null)} onPosted={() => void load()} />
             <StoryComposer open={addingStory} onClose={() => setAddingStory(false)} onPosted={loadStories} />
             {storyAt !== null && stories && (
