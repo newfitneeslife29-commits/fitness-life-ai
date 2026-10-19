@@ -1766,4 +1766,5 @@ export const hi: Dict = {
     'admin.badPrice': "The minimum price is 1.",
     'workout.activeTime': "सक्रिय समय",
     'workout.activePaused': "रुका हुआ · आराम",
+    'workout.restTime': "आराम",
 };

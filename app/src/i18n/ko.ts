@@ -1766,4 +1766,5 @@ export const ko: Dict = {
     'admin.badPrice': "The minimum price is 1.",
     'workout.activeTime': "운동 시간",
     'workout.activePaused': "일시정지 · 휴식",
+    'workout.restTime': "휴식",
 };

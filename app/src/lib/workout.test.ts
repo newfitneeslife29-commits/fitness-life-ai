@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Routine, Session } from '../store/types';
-import { activeSeconds, createActiveWorkout, endRest, finishWorkout, isBurnWorkout } from './workout';
+import { activeSeconds, createActiveWorkout, endRest, finishWorkout, isBurnWorkout, restSeconds } from './workout';
 
 const routine: Routine = {
     id: 'r1',
@@ -80,6 +80,10 @@ describe('active clock', () => {
         expect(skipped.restEndsAt).toBeNull();
         expect(skipped.restedMs).toBe(10_000);
         expect(activeSeconds(skipped, at(200))).toBe(190);
+        // The rest time counts what the active time leaves out.
+        expect(restSeconds(resting, at(120))).toBe(30);
+        expect(restSeconds(resting, at(170))).toBe(60);
+        expect(restSeconds(skipped, at(200))).toBe(10);
     });
 
     it('is on for cardio and fat-burning workouts', () => {

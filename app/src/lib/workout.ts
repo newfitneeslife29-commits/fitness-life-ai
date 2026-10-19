@@ -65,6 +65,10 @@ export const endRest = (a: ActiveWorkout, now = Date.now()): ActiveWorkout =>
 export const activeSeconds = (a: ActiveWorkout, now = Date.now()) =>
     Math.max(0, Math.floor((now - Date.parse(a.startedAt) - (a.restedMs ?? 0) - restSoFar(a, now)) / 1000));
 
+// Seconds spent resting: the rests that ended plus the one in progress.
+export const restSeconds = (a: ActiveWorkout, now = Date.now()) =>
+    Math.floor(((a.restedMs ?? 0) + restSoFar(a, now)) / 1000);
+
 // Programs made to burn fat (their days are "programId:index").
 const BURN_PROGRAMS = ['premium-home-burn', 'women-home-lose', 'women-db-lose', 'women-gym-lose'];
 
@@ -97,5 +101,7 @@ export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session 
         startedAt: active.startedAt,
         endedAt: now.toISOString(),
         sets,
+        activeSec: activeSeconds(active, now.getTime()),
+        restSec: restSeconds(active, now.getTime()),
     };
 };

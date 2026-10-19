@@ -1766,4 +1766,5 @@ export const zh: Dict = {
     'admin.badPrice': "The minimum price is 1.",
     'workout.activeTime': "运动时间",
     'workout.activePaused': "已暂停 · 休息",
+    'workout.restTime': "休息",
 };

@@ -1774,4 +1774,5 @@ export const pt: Dict = {
     'apply.err.hasClients': "Você tem clientes ativos. Peça que cancelem ou espere terminarem antes de sair.",
     'workout.activeTime': "Tempo ativo",
     'workout.activePaused': "Pausado · descanso",
+    'workout.restTime': "Descanso",
 };

@@ -1774,4 +1774,5 @@ export const es = {
     'apply.err.hasClients': "Tienes clientes activos. Pídeles que cancelen o espera a que terminen antes de retirarte.",
     'workout.activeTime': "Tiempo activo",
     'workout.activePaused': "En pausa · descanso",
+    'workout.restTime': "Descanso",
 };

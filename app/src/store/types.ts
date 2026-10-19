@@ -111,6 +111,9 @@ export interface Session {
     sets: LoggedSet[];
     notes?: string;
     dayKey?: string; // see Routine.dayKey; 'free' for a free workout
+    // Seconds working and resting (sessions saved since the active clock).
+    activeSec?: number;
+    restSec?: number;
 }
 
 export interface BodyWeight {

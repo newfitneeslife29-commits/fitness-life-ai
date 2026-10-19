@@ -1773,4 +1773,5 @@ export const en: Dict = {
     'apply.err.hasClients': "You have active clients. Ask them to cancel or wait until they end before withdrawing.",
     'workout.activeTime': "Active time",
     'workout.activePaused': "Paused · rest",
+    'workout.restTime': "Rest",
 };

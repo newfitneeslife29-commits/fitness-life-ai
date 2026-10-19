@@ -1595,14 +1595,25 @@ test('guided: fat burning keeps an active clock that only stops in the rests', a
     const paused = page.getByRole('timer', { name: /^En pausa · descanso/ });
     await expect(paused).toBeVisible();
     const frozen = await paused.getAttribute('aria-label');
+    // Meanwhile the rest time runs.
+    const resting = page.getByRole('timer', { name: /^Descanso: / });
+    const restBefore = await resting.getAttribute('aria-label');
     await page.waitForTimeout(2200);
     await expect(paused).toHaveAttribute('aria-label', frozen!);
+    expect(await resting.getAttribute('aria-label')).not.toBe(restBefore);
 
     // After the rest it carries on from where it stopped.
     await page.getByRole('button', { name: 'Saltar' }).click();
     await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
     await page.getByRole('button', { name: 'Ver como lista' }).click();
     await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
+    await expect(page.getByRole('timer', { name: /^Descanso: 0:0[1-9]/ })).toBeVisible();
+
+    // The summary keeps both times.
+    await page.getByRole('button', { name: 'Terminar' }).first().click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Tiempo activo')).toBeVisible();
+    await expect(page.getByText('Descanso', { exact: true })).toBeVisible();
 });
 
 test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {
