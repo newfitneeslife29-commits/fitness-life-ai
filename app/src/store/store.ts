@@ -8,7 +8,7 @@ import { applyTheme, type Theme } from '../lib/theme';
 import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
-import { activeExerciseFrom, createActiveWorkout, finishWorkout } from '../lib/workout';
+import { activeExerciseFrom, createActiveWorkout, endRest, finishWorkout } from '../lib/workout';
 import type { Account, ActiveCardio, ActiveWorkout, AiUsage, AppState, CardioKind, CardioSession, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Recipe, SleepEntry, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // The device holds the working copy of everything. With an account, a copy
@@ -261,7 +261,7 @@ export const actions = {
                 })),
             } : next;
             const rest = a.exercises[exIndex].restSec;
-            return { ...filled, restEndsAt: Date.now() + rest * 1000, restTotalSec: rest };
+            return { ...endRest(filled), restEndsAt: Date.now() + rest * 1000, restTotalSec: rest };
         });
     },
 
@@ -278,7 +278,7 @@ export const actions = {
                 ? ex.sets.map((w, j) => (j === open ? { ...w, ...copy } : w))
                 : [...ex.sets, { id: uid(), ...copy }];
             return {
-                ...a,
+                ...endRest(a),
                 exercises: a.exercises.map((e, i) => (i === exIndex ? { ...e, sets } : e)),
                 restEndsAt: Date.now() + ex.restSec * 1000,
                 restTotalSec: ex.restSec,
@@ -332,7 +332,7 @@ export const actions = {
     },
 
     skipRest() {
-        updateActive(a => ({ ...a, restEndsAt: null }));
+        updateActive(a => endRest(a));
     },
 
     saveRoutine(routine: { id?: string; name: string; exercises: RoutineExercise[] }): string {

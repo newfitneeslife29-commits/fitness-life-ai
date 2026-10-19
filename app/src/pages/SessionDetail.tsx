@@ -8,7 +8,7 @@ import { exerciseName, getExercise } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementDescription, achievementTitle, unlockedAchievements } from '../lib/achievements';
-import { fmtDate, fmtNumber, fmtVolume, fmtWeight } from '../lib/format';
+import { fmtClock, fmtDate, fmtNumber, fmtVolume, fmtWeight } from '../lib/format';
 import { shareText } from '../lib/native';
 import { kgToDisplay, newRecords, volume } from '../lib/progression';
 import { durationMin } from '../lib/stats';
@@ -93,6 +93,12 @@ export default function SessionDetail() {
                     <Stat value={fmtVolume(volume(session.sets), unit)} label={t('stat.volume')} />
                     <Stat value={session.sets.length} label={t('stat.sets')} />
                 </div>
+                {session.activeSec !== undefined && (
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                        <Stat value={fmtClock(session.activeSec)} label={t('workout.activeTime')} />
+                        <Stat value={fmtClock(session.restSec ?? 0)} label={t('workout.restTime')} />
+                    </div>
+                )}
             </Section>
 
             {medals.length > 0 && (

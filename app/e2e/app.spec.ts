@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }, info) => {
 
 // Full journey on a phone viewport against the production build.
 
-interface PlanAnswers { days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
+interface PlanAnswers { goal?: RegExp; days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
 
 const onboard = async (page: Page, opts: PlanAnswers = {}) => {
     await page.goto('/');
@@ -25,7 +25,7 @@ const onboard = async (page: Page, opts: PlanAnswers = {}) => {
 const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByLabel('¿Cómo te llamas? (opcional)').fill('Sebas');
-    await page.getByRole('radio', { name: /Ganar músculo/ }).click();
+    await page.getByRole('radio', { name: opts.goal ?? /Ganar músculo/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     // About you: nothing goes on until it is filled in.
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
@@ -1369,61 +1369,251 @@ test('workout: switch to pounds, adjust with the − / + buttons, and the next s
     await expect(page.getByRole('radio', { name: 'lb', exact: true })).toHaveAttribute('aria-checked', 'true');
 });
 
-test('online trainers: languages, hiring through the app, and the owner sets the price', async ({ page }) => {
+test('online trainers: languages, price in the app, and the owner sets the price and commission', async ({ page }) => {
     const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
     await mockAccount(page, cloud);
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
     const ana = {
         id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
         certifications: 'NSCA', languages: 'es,en', country: 'España', price: '30 $/mes', contact: '+34600111222', status: 'pending',
-        app_price: '', payment_url: '', profile: null,
+        app_price: '', payment_url: '', price_cents: 0, currency: 'usd', fee_percent: 25, payouts_ready: false, profile: null,
     };
     const updates: Record<string, unknown>[] = [];
-    await page.route(/http:\/\/ai\.test\/rest\/v1\/(rpc\/trainers_listed|app_admins|trainer_applications)/, async route => {
+    await page.route(/http:\/\/ai\.test\/rest\/v1\/(rpc\/(trainers_listed|trainer_links|trainer_client_counts)|app_admins|trainer_applications)/, async route => {
         const req = route.request();
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
         if (url.includes('trainers_listed')) {
             return route.fulfill({ headers: cors, json: [
-                { ...ana, status: undefined, app_price: '49 $/mes', payment_url: 'https://buy.stripe.com/test', contact: '', avatar_path: null, profile_updated_at: null },
-                { ...ana, id: 't2', user_id: 'leo', name: 'Leo Fit', languages: 'pt', app_price: '', payment_url: '', avatar_path: null, profile_updated_at: null },
+                { ...ana, status: undefined, price_cents: 4900, hire_in_app: true, contact: '', avatar_path: null, profile_updated_at: null },
+                { ...ana, id: 't2', user_id: 'leo', name: 'Leo Fit', languages: 'pt', hire_in_app: false, avatar_path: null, profile_updated_at: null },
             ] });
         }
+        if (url.includes('trainer_links') || url.includes('trainer_client_counts')) return route.fulfill({ headers: cors, json: [] });
         if (url.includes('app_admins')) return route.fulfill({ headers: cors, json: { user_id: '00000000-0000-0000-0000-0000000000aa' } });
         if (req.method() === 'PATCH') {
             updates.push(req.postDataJSON());
             return route.fulfill({ status: 204, headers: cors });
         }
-        return route.fulfill({ headers: cors, json: [ana] });
+        // My own application (none) or every application for the owner.
+        return route.fulfill({ headers: cors, json: url.includes('user_id=eq.') ? [] : [ana] });
     });
     await signUpWithAccount(page);
     await expect(page.getByText(/Copia en la nube/)).toBeVisible();
     await page.goto('/#/entrenadores');
 
-    // Each trainer shows the languages they speak; filter by one.
+    // Each trainer shows the languages they speak and the monthly price; filter by language.
     const anaCard = page.getByRole('article', { name: 'Ana Coach' });
     await expect(anaCard.getByText('Español')).toBeVisible();
     await expect(anaCard.getByText('English')).toBeVisible();
-    await expect(anaCard.getByText('49 $/mes')).toBeVisible();
-    // Hired through the app: pay with the link, the contact stays private.
-    await expect(anaCard.getByRole('link', { name: 'Contratar' })).toHaveAttribute('href', 'https://buy.stripe.com/test');
+    await expect(anaCard.getByText(/49.*\/mes/)).toBeVisible();
+    // Hired in the app; the contact stays private.
+    await expect(anaCard.getByRole('button', { name: 'Contratar' })).toBeVisible();
+    await expect(anaCard.getByText(/Pago mensual seguro con Stripe/)).toBeVisible();
     await expect(page.getByRole('article', { name: 'Leo Fit' }).getByRole('link', { name: 'Contactar' })).toBeVisible();
     await page.getByRole('radio', { name: /Português/ }).click();
     await expect(page.getByRole('article', { name: 'Ana Coach' })).toHaveCount(0);
     await expect(page.getByRole('article', { name: 'Leo Fit' })).toBeVisible();
 
-    // The owner approves an application and sets the price and payment link.
+    // The owner approves an application and sets the monthly price and commission.
     await page.getByRole('button', { name: /Gestionar entrenadores/ }).click();
     const app = page.getByRole('article', { name: 'Ana Coach' });
     await expect(app.getByText('30 $/mes')).toBeVisible(); // what the trainer asks for
-    await app.getByLabel('Precio en la app').fill('49 $/mes');
-    await app.getByLabel('Enlace de pago (Stripe)').fill('http://not-secure');
+    await expect(app.getByText(/Aún no conectó sus cobros/)).toBeVisible();
+    await app.getByLabel('Precio al mes').fill('49');
+    await app.getByLabel('Comisión %').fill('20');
+    await expect(app.getByText(/El entrenador recibe 39,20/)).toBeVisible();
+    await app.getByLabel('Enlace de pago manual (opcional)').fill('http://not-secure');
     await app.getByRole('button', { name: 'Aprobar y publicar' }).click();
     await expect(page.getByText('El enlace de pago debe empezar por https://')).toBeVisible();
-    await app.getByLabel('Enlace de pago (Stripe)').fill('https://buy.stripe.com/test');
+    await app.getByLabel('Enlace de pago manual (opcional)').fill('');
     await app.getByRole('button', { name: 'Aprobar y publicar' }).click();
     await expect(page.getByText('Entrenador publicado')).toBeVisible();
-    expect(updates).toEqual([{ status: 'approved', app_price: '49 $/mes', payment_url: 'https://buy.stripe.com/test' }]);
+    expect(updates).toEqual([expect.objectContaining({ status: 'approved', price_cents: 4900, currency: 'usd', fee_percent: 20, payment_url: '' })]);
+    expect(updates[0].app_price).toMatch(/49.*\/mes/);
+});
+
+test('hire a trainer in the app: pay with Stripe, chat, and cancel', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    let hired = false;
+    let canceled = false;
+    const messages: Record<string, unknown>[] = [];
+    const calls: Record<string, unknown>[] = [];
+    const link = () => ({
+        id: 'h1', role: 'client', status: 'active', trainer_id: 't1', trainer_name: 'Ana Coach', trainer_avatar: null, trainer_avatar_updated: null,
+        client_name: 'Sebas', client_avatar: null, client_avatar_updated: null, amount_cents: 4900, currency: 'usd', fee_percent: 25,
+        current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: canceled, open: true, unread: 0, last_message_at: null, created_at: '2026-10-19T10:00:00Z',
+    });
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/(rpc\/(trainers_listed|trainer_links|trainer_mark_read)|app_admins|trainer_applications|trainer_messages)|functions\/v1\/trainer-pay)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (url.includes('trainers_listed')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
+                certifications: '', languages: 'es', country: 'España', app_price: '', payment_url: '', contact: '', avatar_path: null, profile_updated_at: null,
+                price_cents: 4900, currency: 'usd', hire_in_app: true,
+            }] });
+        }
+        if (url.includes('trainer_links')) return route.fulfill({ headers: cors, json: hired ? [link()] : [] });
+        if (url.includes('trainer_mark_read')) return route.fulfill({ status: 204, headers: cors });
+        if (url.includes('app_admins')) return route.fulfill({ headers: cors, json: null });
+        if (url.includes('trainer_applications')) return route.fulfill({ headers: cors, json: [] });
+        if (url.includes('trainer_messages')) {
+            if (req.method() === 'POST') {
+                const body = req.postDataJSON() as { link_id: string; body: string };
+                const row = { id: messages.length + 1, sender_id: ME, body: body.body, created_at: new Date().toISOString() };
+                messages.push({ ...row, link_id: body.link_id });
+                return route.fulfill({ status: 201, headers: cors, json: row });
+            }
+            return route.fulfill({ headers: cors, json: [...messages].reverse() });
+        }
+        // The trainer-pay function.
+        const body = req.postDataJSON() as Record<string, unknown>;
+        calls.push(body);
+        if (body.action === 'checkout') return route.fulfill({ headers: cors, json: { url: 'https://checkout.stripe.com/c/pay/cs_test_1' } });
+        if (body.action === 'sync') {
+            hired = true;
+            return route.fulfill({ headers: cors, json: { hired: 'h1' } });
+        }
+        if (body.action === 'cancel') {
+            canceled = true;
+            return route.fulfill({ headers: cors, json: { ok: true } });
+        }
+        return route.fulfill({ status: 400, headers: cors, json: { error: 'unknown action' } });
+    });
+    // Stripe Checkout: the payment goes through and Stripe sends the person back.
+    await page.route('https://checkout.stripe.com/**', route => route.fulfill({
+        contentType: 'text/html',
+        body: '<script>location.replace("http://localhost:4321/stripe-return.html?to=hired&app=web")</script>',
+    }));
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores');
+
+    await page.getByRole('article', { name: 'Ana Coach' }).getByRole('button', { name: 'Contratar' }).click();
+    // Back from Stripe: the hire is saved and its chat opens.
+    await expect(page.getByRole('heading', { name: 'Ana Coach' })).toBeVisible();
+    expect(calls[0]).toEqual(expect.objectContaining({ action: 'checkout', trainerId: 't1', platform: 'web', lang: 'es' }));
+    expect(calls.map(c => c.action)).toContain('sync');
+    await expect(page.getByText(/Aún no hay mensajes/)).toBeVisible();
+    await expect(page.getByText(/Se renueva el/)).toBeVisible();
+
+    await page.getByLabel('Escribe un mensaje…').fill('¡Hola Ana! Quiero ganar fuerza.');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+    await expect(page.getByText('¡Hola Ana! Quiero ganar fuerza.')).toBeVisible();
+    expect(messages[0]).toEqual(expect.objectContaining({ link_id: 'h1', body: '¡Hola Ana! Quiero ganar fuerza.' }));
+
+    // Cancel: the trainer stays until the end of the paid month.
+    await page.getByRole('button', { name: 'Opciones' }).click();
+    await page.getByRole('button', { name: 'Cancelar suscripción' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Cancelar suscripción' }).click();
+    await expect(page.getByText('Suscripción cancelada. No se te volverá a cobrar.')).toBeVisible();
+    await expect(page.getByText(/Termina el/)).toBeVisible();
+    expect(calls.at(-1)).toEqual(expect.objectContaining({ action: 'cancel', linkId: 'h1' }));
+
+    // The trainers page lists the hire under "My trainers".
+    await page.goto('/#/entrenadores');
+    await expect(page.getByRole('button', { name: /Ana Coach.*Activo/ })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Ana Coach' }).getByRole('button', { name: 'Abrir chat' })).toBeVisible();
+});
+
+test('trainer dashboard: connect payouts with Stripe and see clients', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    let connected = false;
+    const calls: Record<string, unknown>[] = [];
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/(rpc\/trainer_links|trainer_applications)|functions\/v1\/trainer-pay)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (url.includes('trainer_applications')) {
+            return route.fulfill({ headers: cors, json: {
+                id: 't1', user_id: '00000000-0000-0000-0000-0000000000aa', name: 'Sebas Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.',
+                experience_years: 10, certifications: '', languages: 'es', price: '', contact: '+34600111222', country: 'México', status: 'approved',
+                app_price: '', payment_url: '', price_cents: 4900, currency: 'usd', fee_percent: 25, payouts_ready: connected, profile: null,
+            } });
+        }
+        if (url.includes('trainer_links')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 'h9', role: 'trainer', status: 'active', trainer_id: 't1', trainer_name: 'Sebas Coach', trainer_avatar: null, trainer_avatar_updated: null,
+                client_name: 'Carla', client_avatar: null, client_avatar_updated: null, amount_cents: 4900, currency: 'usd', fee_percent: 25,
+                current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: false, open: true, unread: 2, last_message_at: null, created_at: '2026-10-01T10:00:00Z',
+            }] });
+        }
+        const body = req.postDataJSON() as Record<string, unknown>;
+        calls.push(body);
+        if (body.action === 'status') return route.fulfill({ headers: cors, json: { connected, ready: connected, detailsSubmitted: connected } });
+        if (body.action === 'connect') {
+            connected = true;
+            return route.fulfill({ headers: cors, json: { url: 'https://connect.stripe.com/setup/e/acct_1/test' } });
+        }
+        return route.fulfill({ status: 400, headers: cors, json: { error: 'unknown action' } });
+    });
+    // Stripe's set-up pages, then back to the app.
+    await page.route('https://connect.stripe.com/**', route => route.fulfill({
+        contentType: 'text/html',
+        body: '<script>location.replace("http://localhost:4321/stripe-return.html?to=connected&app=web")</script>',
+    }));
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores/panel');
+
+    await expect(page.getByText(/49.*\/mes/)).toBeVisible();
+    await expect(page.getByText(/Recibes 36,75.*\(75 %\)/)).toBeVisible();
+    await expect(page.getByText('Carla')).toBeVisible();
+    await expect(page.getByLabel('2 sin leer')).toBeVisible();
+
+    await page.getByLabel('País de tu cuenta bancaria').selectOption('MX');
+    await page.getByRole('button', { name: 'Conectar mis cobros' }).click();
+    await expect(page.getByText(/Cobros activos/)).toBeVisible();
+    expect(calls).toContainEqual(expect.objectContaining({ action: 'connect', country: 'MX', platform: 'web' }));
+    await expect(page.getByRole('button', { name: /Ver mis ganancias/ })).toBeVisible();
+});
+
+test('guided: fat burning keeps an active clock that only stops in the rests', async ({ page }) => {
+    await onboard(page, { goal: /Perder grasa/, setup: /En casa sin material/ });
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await page.getByRole('button', { name: '¡Empezar!' }).click();
+    await page.getByRole('button', { name: '¡Empezar ya!' }).click();
+
+    // Working: the clock is on screen and running.
+    const running = page.getByRole('timer', { name: /^Tiempo activo/ });
+    await expect(running).toBeVisible();
+    const before = await running.getAttribute('aria-label');
+    await expect(running).not.toHaveAttribute('aria-label', before!, { timeout: 3000 });
+
+    // Resting: it stops and says so.
+    const set = page.getByRole('button', { name: 'Serie hecha' });
+    if (await set.isVisible()) await set.click();
+    else await page.getByRole('button', { name: 'Terminar' }).click();
+    const paused = page.getByRole('timer', { name: /^En pausa · descanso/ });
+    await expect(paused).toBeVisible();
+    const frozen = await paused.getAttribute('aria-label');
+    // Meanwhile the rest time runs.
+    const resting = page.getByRole('timer', { name: /^Descanso: / });
+    const restBefore = await resting.getAttribute('aria-label');
+    await page.waitForTimeout(2200);
+    await expect(paused).toHaveAttribute('aria-label', frozen!);
+    expect(await resting.getAttribute('aria-label')).not.toBe(restBefore);
+
+    // After the rest it carries on from where it stopped.
+    await page.getByRole('button', { name: 'Saltar' }).click();
+    await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
+    await expect(page.getByRole('timer', { name: /^Descanso: 0:0[1-9]/ })).toBeVisible();
+
+    // The summary keeps both times.
+    await page.getByRole('button', { name: 'Terminar' }).first().click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Tiempo activo')).toBeVisible();
+    await expect(page.getByText('Descanso', { exact: true })).toBeVisible();
 });
 
 test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {

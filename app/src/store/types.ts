@@ -111,6 +111,9 @@ export interface Session {
     sets: LoggedSet[];
     notes?: string;
     dayKey?: string; // see Routine.dayKey; 'free' for a free workout
+    // Seconds working and resting (sessions saved since the active clock).
+    activeSec?: number;
+    restSec?: number;
 }
 
 export interface BodyWeight {
@@ -145,6 +148,8 @@ export interface ActiveWorkout {
     // Epoch ms when the current rest ends; null when not resting.
     restEndsAt: number | null;
     restTotalSec: number;
+    // Time spent in rests that already ended (ms): the active clock leaves it out.
+    restedMs?: number;
 }
 
 export interface Macros {

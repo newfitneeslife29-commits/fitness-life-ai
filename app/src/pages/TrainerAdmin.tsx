@@ -1,27 +1,39 @@
-import { Check, ChevronDown, CreditCard, ExternalLink, RefreshCw, ShieldCheck, X } from 'lucide-react';
+import { BadgeCheck, Check, ChevronDown, CircleAlert, CreditCard, ExternalLink, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { t } from '../i18n';
 import { errorText } from '../lib/errorText';
-import { contactLink, fetchApplications, isTrainerAdmin, reviewApplication, trainerLanguages, type Trainer } from '../lib/trainers';
+import {
+    contactLink, CURRENCIES, fetchApplications, fetchClientCounts, formatMoney, isTrainerAdmin, reviewApplication, trainerLanguages, trainerShareCents, type Trainer,
+} from '../lib/trainers';
 
 const input = 'w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand';
 const STATUS_TONE = { pending: 'bg-amber-400/15 text-amber-500', approved: 'bg-good/15 text-good', rejected: 'bg-red-500/15 text-red-400' } as const;
 const validLink = (url: string) => url.trim() === '' || /^https:\/\/\S+$/.test(url.trim());
+// "49", "49.5" or "49,50" → cents.
+const toCents = (v: string) => {
+    const n = Number(v.replace(',', '.').replace(/[^\d.]/g, ''));
+    return Number.isFinite(n) ? Math.min(Math.round(n * 100), 1_000_000) : 0;
+};
 
-const Application = ({ app, onSaved }: { app: Trainer; onSaved: () => void }) => {
+const Application = ({ app, clients, onSaved }: { app: Trainer; clients: number; onSaved: () => void }) => {
     const [open, setOpen] = useState(app.status === 'pending');
-    const [price, setPrice] = useState(app.appPrice);
+    const [amount, setAmount] = useState(app.priceCents > 0 ? String(app.priceCents / 100) : '');
+    const [currency, setCurrency] = useState(app.currency || 'usd');
+    const [fee, setFee] = useState(String(app.feePercent));
     const [link, setLink] = useState(app.paymentUrl);
     const [busy, setBusy] = useState(false);
     const contact = contactLink(app.contact);
+    const cents = toCents(amount);
+    const feePercent = Math.min(90, Math.max(0, Math.round(Number(fee) || 0)));
     const save = async (status: Trainer['status']) => {
         if (!validLink(link)) { toast(t('admin.badLink'), 3500); return; }
+        if (status === 'approved' && amount.trim() !== '' && cents < 100) { toast(t('admin.badPrice'), 3500); return; }
         setBusy(true);
         try {
-            await reviewApplication(app.id, { status, appPrice: price, paymentUrl: link });
+            await reviewApplication(app.id, { status, priceCents: cents, currency, feePercent, paymentUrl: link });
             toast(t(status === 'approved' ? 'admin.approved' : status === 'rejected' ? 'admin.rejected' : 'admin.saved'));
             onSaved();
         } catch (e) {
@@ -63,10 +75,32 @@ const Application = ({ app, onSaved }: { app: Trainer; onSaved: () => void }) =>
                     </dl>
 
                     <div className="space-y-3 rounded-2xl bg-ink-3/60 p-3">
-                        <label className="block">
-                            <span className="label mb-1 block">{t('admin.price')}</span>
-                            <input className={input} value={price} maxLength={60} placeholder={t('admin.pricePlaceholder')} onChange={e => setPrice(e.target.value)} />
-                        </label>
+                        <p className={`flex items-start gap-2 text-sm ${app.payoutsReady ? 'text-good' : 'text-amber-500'}`}>
+                            {app.payoutsReady ? <BadgeCheck size={16} className="mt-0.5 shrink-0" /> : <CircleAlert size={16} className="mt-0.5 shrink-0" />}
+                            {t(app.payoutsReady ? 'admin.payoutsReady' : 'admin.payoutsMissing')}
+                        </p>
+                        {clients > 0 && <p className="flex items-center gap-2 text-sm text-white/70"><Users size={16} className="shrink-0" /> {t('admin.clients', { n: clients })}</p>}
+                        <div className="flex gap-2">
+                            <label className="block min-w-0 flex-1">
+                                <span className="label mb-1 block">{t('admin.amount')}</span>
+                                <input className={input} value={amount} inputMode="decimal" placeholder="49" onChange={e => setAmount(e.target.value)} />
+                            </label>
+                            <label className="block w-28">
+                                <span className="label mb-1 block">{t('admin.currency')}</span>
+                                <select className={input} value={currency} onChange={e => setCurrency(e.target.value)}>
+                                    {CURRENCIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                                </select>
+                            </label>
+                            <label className="block w-24">
+                                <span className="label mb-1 block">{t('admin.fee')}</span>
+                                <input className={input} value={fee} inputMode="numeric" onChange={e => setFee(e.target.value.replace(/\D/g, '').slice(0, 2))} />
+                            </label>
+                        </div>
+                        {cents > 0 && (
+                            <p className="text-xs text-white/60">
+                                {t('admin.split', { share: formatMoney(trainerShareCents(cents, feePercent), currency), fee: formatMoney(cents - trainerShareCents(cents, feePercent), currency) })}
+                            </p>
+                        )}
                         <label className="block">
                             <span className="label mb-1 block">{t('admin.link')}</span>
                             <input className={input} value={link} inputMode="url" placeholder="https://buy.stripe.com/…" onChange={e => setLink(e.target.value)} />
@@ -96,9 +130,11 @@ export default function TrainerAdmin() {
     const [allowed, setAllowed] = useState<boolean | null>(null);
     const [apps, setApps] = useState<Trainer[] | null>(null);
     const [failed, setFailed] = useState<string | null>(null);
+    const [counts, setCounts] = useState<Record<string, number>>({});
     const load = () => {
         setFailed(null);
         fetchApplications().then(setApps).catch(e => { setFailed(errorText(e)); setApps([]); });
+        void fetchClientCounts().then(setCounts);
     };
     useEffect(() => {
         void isTrainerAdmin().then(ok => { setAllowed(ok); if (ok) load(); }, () => setAllowed(false));
@@ -129,7 +165,7 @@ export default function TrainerAdmin() {
                         <Section key={g.status} title={`${t(`admin.group.${g.status}`)} (${g.items.length})`}>
                             {g.items.length === 0
                                 ? <p className="text-sm text-white/45">{t('admin.none')}</p>
-                                : <div className="space-y-2">{g.items.map(a => <Application key={a.id} app={a} onSaved={load} />)}</div>}
+                                : <div className="space-y-2">{g.items.map(a => <Application key={a.id} app={a} clients={counts[a.id] ?? 0} onSaved={load} />)}</div>}
                         </Section>
                     ))}
                 </>

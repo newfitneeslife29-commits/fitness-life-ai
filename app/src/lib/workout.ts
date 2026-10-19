@@ -1,5 +1,5 @@
 import { getExercise } from '../data/exercises';
-import type { ActiveExercise, ActiveWorkout, Routine, RoutineExercise, Session, Unit, WorkingSet } from '../store/types';
+import type { ActiveExercise, ActiveWorkout, Goal, Routine, RoutineExercise, Session, Unit, WorkingSet } from '../store/types';
 import { uid } from './id';
 import { stepForUnit, suggestNext, type Suggestion } from './progression';
 import { routineName } from './names';
@@ -50,6 +50,34 @@ export const createActiveWorkout = (routine: Routine | null, sessions: Session[]
     restTotalSec: 0,
 });
 
+// The rest in progress, in ms so far (up to its end).
+const restSoFar = (a: Pick<ActiveWorkout, 'restEndsAt' | 'restTotalSec'>, now: number) => {
+    if (!a.restEndsAt) return 0;
+    const start = a.restEndsAt - a.restTotalSec * 1000;
+    return Math.max(0, Math.min(now, a.restEndsAt) - start);
+};
+
+// Closes the rest in progress: its time joins the rested total.
+export const endRest = (a: ActiveWorkout, now = Date.now()): ActiveWorkout =>
+    a.restEndsAt ? { ...a, restEndsAt: null, restedMs: (a.restedMs ?? 0) + restSoFar(a, now) } : a;
+
+// Seconds of work: the whole session minus the rests.
+export const activeSeconds = (a: ActiveWorkout, now = Date.now()) =>
+    Math.max(0, Math.floor((now - Date.parse(a.startedAt) - (a.restedMs ?? 0) - restSoFar(a, now)) / 1000));
+
+// Seconds spent resting: the rests that ended plus the one in progress.
+export const restSeconds = (a: ActiveWorkout, now = Date.now()) =>
+    Math.floor(((a.restedMs ?? 0) + restSoFar(a, now)) / 1000);
+
+// Programs made to burn fat (their days are "programId:index").
+const BURN_PROGRAMS = ['premium-home-burn', 'women-home-lose', 'women-db-lose', 'women-gym-lose'];
+
+// Cardio and fat-burning workouts show the active clock all the time.
+export const isBurnWorkout = (a: ActiveWorkout, goal?: Goal) =>
+    goal === 'grasa'
+    || BURN_PROGRAMS.includes(a.dayKey?.split(':')[0] ?? '')
+    || a.exercises.some(e => getExercise(e.exerciseId)?.kind === 'cardio');
+
 // Only completed sets are kept. A workout with none is discarded (null).
 export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session | null => {
     const sets = active.exercises.flatMap(ex =>
@@ -73,5 +101,7 @@ export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session 
         startedAt: active.startedAt,
         endedAt: now.toISOString(),
         sets,
+        activeSec: activeSeconds(active, now.getTime()),
+        restSec: restSeconds(active, now.getTime()),
     };
 };

@@ -3,12 +3,15 @@ name: Deploy backend
 # Run by hand (Actions → Deploy backend → Run workflow) after adding the
 # secrets and variables below. Sets up sign-in (anonymous, e-mail, Google),
 # applies the database migrations, stores the function secrets in Supabase
-# and deploys the AI nutrition coach and the account function.
+# and deploys the AI nutrition coach, the account function and trainer
+# hiring (Stripe).
 #
 # Secrets:   SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
 #            SUPABASE_DB_PASSWORD (optional fallback for the migration),
 #            REVENUECAT_SECRET_KEY (optional until Premium is set up),
-#            GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (optional: "Continue with Google")
+#            GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (optional: "Continue with Google"),
+#            STRIPE_SECRET_KEY (optional: hire trainers in the app; Stripe →
+#            Developers → API keys → Secret key, sk_live_…; needs Stripe Connect on)
 # Variables: SUPABASE_PROJECT_REF,
 #            ADMIN_EMAIL (optional: the e-mail of your account in the app; it can
 #            approve trainers and set their price from the app),
@@ -32,6 +35,7 @@ jobs:
       REVENUECAT_SECRET_KEY: ${{ secrets.REVENUECAT_SECRET_KEY }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       AUTH_CONFIRM_EMAIL: ${{ vars.AUTH_CONFIRM_EMAIL }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
       # The published web app (GitHub Pages): where sign-in comes back to.
@@ -46,6 +50,7 @@ jobs:
           TOKEN_AS_VARIABLE: ${{ vars.SUPABASE_ACCESS_TOKEN != '' }}
           PASSWORD_AS_VARIABLE: ${{ vars.SUPABASE_DB_PASSWORD != '' }}
           ANTHROPIC_AS_VARIABLE: ${{ vars.ANTHROPIC_API_KEY != '' }}
+          STRIPE_AS_VARIABLE: ${{ vars.STRIPE_SECRET_KEY != '' }}
         run: |
           # What each value looks like, without ever printing it.
           looks_like() {
@@ -55,13 +60,17 @@ jobs:
             elif [[ "$v" == sk-ant-* ]]; then echo "an Anthropic API key (sk-ant-…)"
             elif [[ "$v" == eyJ* || "$v" == sb_publishable_* ]]; then echo "a Supabase anon/publishable key"
             elif [[ "$v" == sb_secret_* ]]; then echo "a Supabase SECRET key (do not use it here)"
+            elif [[ "$v" == sk_live_* ]]; then echo "a Stripe secret key (sk_live_…)"
+            elif [[ "$v" == sk_test_* ]]; then echo "a Stripe TEST secret key (sk_test_…)"
+            elif [[ "$v" == pk_* ]]; then echo "a Stripe PUBLISHABLE key (pk_…, not the secret one)"
+            elif [[ "$v" == rk_* ]]; then echo "a Stripe restricted key (rk_…)"
             elif [[ "$v" == http* ]]; then echo "a URL"
             elif [[ "$v" =~ ^[a-z]{20}$ ]]; then echo "a 20-letter Project ID"
             else echo "something else"
             fi
           }
           echo "What each value looks like:"
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY; do
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ANTHROPIC_API_KEY STRIPE_SECRET_KEY; do
             echo "  $name → $(looks_like "${!name}")"
           done
           problems=0
@@ -78,6 +87,13 @@ jobs:
           [ "$TOKEN_AS_VARIABLE" = true ] && fail "SUPABASE_ACCESS_TOKEN is in the Variables tab: delete it there, it must be a Secret."
           [ "$PASSWORD_AS_VARIABLE" = true ] && fail "SUPABASE_DB_PASSWORD is in the Variables tab: delete it there, it must be a Secret."
           [ "$ANTHROPIC_AS_VARIABLE" = true ] && fail "ANTHROPIC_API_KEY is in the Variables tab: delete it there, it must be a Secret."
+          [ "$STRIPE_AS_VARIABLE" = true ] && fail "STRIPE_SECRET_KEY is in the Variables tab: delete it there, it must be a Secret."
+          if [ -n "$STRIPE_SECRET_KEY" ]; then
+            [[ "$STRIPE_SECRET_KEY" =~ ^[[:space:]] || "$STRIPE_SECRET_KEY" =~ [[:space:]]$ ]] && fail "STRIPE_SECRET_KEY has spaces or line breaks at the start or end: paste it again."
+            [[ "$STRIPE_SECRET_KEY" != sk_live_* && "$STRIPE_SECRET_KEY" != sk_test_* ]] && fail "STRIPE_SECRET_KEY must be the Secret key (starts with sk_live_): Stripe → Developers → API keys."
+          else
+            echo "::notice::STRIPE_SECRET_KEY not set: trainers are hired through payment links or their contact, not in the app."
+          fi
           [ -z "$REVENUECAT_SECRET_KEY" ] && echo "::notice::REVENUECAT_SECRET_KEY not set: everyone gets the free AI allowance until Premium is configured."
           exit $problems
 
@@ -234,11 +250,67 @@ jobs:
           if [ -n "$REVENUECAT_SECRET_KEY" ]; then
             supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
           fi
+          # Where Stripe sends people back (stripe-return.html).
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" SITE_URL="$SITE_URL"
+          if [ -n "$STRIPE_SECRET_KEY" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+          fi
 
       - name: Deploy the functions
         run: |
           supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy account --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy trainer-pay --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy stripe-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
+
+      # Stripe tells the app about hires (paid, renewed, canceled) through a
+      # webhook. Created once; its signing secret is only shown at creation,
+      # so it is made again if the project lost the secret.
+      - name: Connect Stripe's webhook
+        if: env.STRIPE_SECRET_KEY != ''
+        run: |
+          endpoint="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/stripe-webhook"
+          events=(checkout.session.completed customer.subscription.created customer.subscription.updated customer.subscription.deleted)
+          stripe_api() { curl -sS -o /tmp/stripe.json -w "%{http_code}" -H "Authorization: Bearer $STRIPE_SECRET_KEY" "$@"; }
+          status=$(stripe_api "https://api.stripe.com/v1/webhook_endpoints?limit=100")
+          if [ "$status" = 401 ]; then
+            echo "::error::Stripe rejected STRIPE_SECRET_KEY: copy the Secret key again (Stripe → Developers → API keys)."
+            exit 1
+          elif [ "$status" != 200 ]; then
+            echo "::error::Stripe answered HTTP $status: $(jq -r '.error.message // empty' /tmp/stripe.json)"
+            exit 1
+          fi
+          existing=$(jq -r --arg url "$endpoint" '[.data[] | select(.url == $url) | .id] | join(" ")' /tmp/stripe.json)
+          has_secret=$(supabase secrets list --project-ref "$SUPABASE_PROJECT_REF" | grep -c STRIPE_WEBHOOK_SECRET || true)
+          form=(); for e in "${events[@]}"; do form+=(-d "enabled_events[]=$e"); done
+          if [ -n "$existing" ] && [ "$has_secret" -gt 0 ]; then
+            id=${existing%% *}
+            status=$(stripe_api -X POST "https://api.stripe.com/v1/webhook_endpoints/$id" "${form[@]}" -d disabled=false)
+            [ "$status" = 200 ] || { echo "::error::Could not update Stripe's webhook (HTTP $status)."; exit 1; }
+            echo "Stripe's webhook is set up."
+          else
+            for id in $existing; do stripe_api -X DELETE "https://api.stripe.com/v1/webhook_endpoints/$id" > /dev/null; done
+            status=$(stripe_api -X POST https://api.stripe.com/v1/webhook_endpoints -d url="$endpoint" -d description="Fitness Life: trainer hires" "${form[@]}")
+            if [ "$status" != 200 ]; then
+              echo "::error::Could not create Stripe's webhook (HTTP $status): $(jq -r '.error.message // empty' /tmp/stripe.json)"
+              exit 1
+            fi
+            secret=$(jq -r .secret /tmp/stripe.json)
+            echo "::add-mask::$secret"
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" STRIPE_WEBHOOK_SECRET="$secret"
+            echo "Stripe's webhook was created."
+          fi
+          # An unsigned call must be refused (400): the function has both secrets.
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$endpoint" -d '{}')
+            [ "$status" = 400 ] && break
+            sleep 5
+          done
+          if [ "$status" != 400 ]; then
+            echo "::error::The stripe-webhook function is not ready (HTTP $status)."
+            exit 1
+          fi
+          echo "::notice::Trainer hiring with Stripe is on."
 
       # End-to-end check, like the app does it: anonymous sign-in, the coach's
       # usage status, the paywall for free users, and one short real answer

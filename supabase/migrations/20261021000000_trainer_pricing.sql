@@ -77,7 +77,9 @@ end $$;
 
 -- Approved trainers for everyone: the contact only when there is no
 -- payment link (then people reach them directly).
-create or replace function public.trainers_listed()
+-- Dropped first: a later migration adds columns to it.
+drop function if exists public.trainers_listed();
+create function public.trainers_listed()
 returns table (
   id uuid, user_id uuid, name text, specialty text, bio text, experience_years smallint,
   certifications text, languages text, country text, app_price text, payment_url text,

@@ -13,10 +13,12 @@ const COUNT_IN = 3; // seconds of "3, 2, 1" before the hold starts
 // in, calls out the time every 10 seconds and counts down the last 10 to the
 // target; beeps mark the same moments even without the voice (in every
 // workout, the women's included). "Finish" saves the seconds held into the set.
-export const HoldTimer = ({ target, onDone }: { target: number; onDone: (seconds: number) => void }) => {
+// In cardio and fat-burning workouts (auto) it starts by itself and the set
+// ends when the time is reached, so the clock only stops for the rests.
+export const HoldTimer = ({ target, onDone, auto = false }: { target: number; onDone: (seconds: number) => void; auto?: boolean }) => {
     const voiceOn = useStore(s => s.profile?.voice !== false) && voiceAvailable();
     const sound = useStore(s => s.profile?.restSound !== false);
-    const [goAt, setGoAt] = useState<number | null>(null);
+    const [goAt, setGoAt] = useState<number | null>(() => (auto ? Date.now() : null));
     const now = useNow(goAt !== null, 200);
     // Negative while counting in. The first render after Start still has the
     // old clock reading, hence the floor at the count-in.
@@ -36,6 +38,12 @@ export const HoldTimer = ({ target, onDone }: { target: number; onDone: (seconds
         if (target > 0 && elapsed >= target && (before === null || before < target)) {
             haptic('success');
             restOver(sound);
+            if (auto) {
+                setGoAt(null);
+                void stopSpeaking();
+                onDone(target);
+                return;
+            }
         }
         if (cue && voiceOn) void speak(cue);
     }, [elapsed, goAt, target, voiceOn, sound]);
