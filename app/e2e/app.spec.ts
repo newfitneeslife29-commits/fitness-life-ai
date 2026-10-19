@@ -1331,7 +1331,7 @@ test('the app icon color can be changed in Settings', async ({ page }) => {
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
     const icons = page.getByRole('radiogroup', { name: 'Ícono de la app' });
     await expect(icons.getByRole('radio')).toHaveCount(9);
-    await expect(icons.getByRole('radio', { name: 'Naranja' })).toHaveAttribute('aria-checked', 'true');
+    await expect(icons.getByRole('radio', { name: 'Fondo blanco' })).toHaveAttribute('aria-checked', 'true');
     await icons.getByRole('radio', { name: 'Morado' }).click();
     await expect(icons.getByRole('radio', { name: 'Morado' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('Ícono Morado listo')).toBeVisible();

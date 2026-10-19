@@ -1060,7 +1060,7 @@ export const de: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "App-Symbol",
-    'appIcon.name.naranja': "Orange",
+    'appIcon.name.naranja': "Weißer Hintergrund",
     'appIcon.name.rojo': "Rot",
     'appIcon.name.rosa': "Rosa",
     'appIcon.name.morado': "Lila",
@@ -1068,7 +1068,7 @@ export const de: Dict = {
     'appIcon.name.verde': "Grün",
     'appIcon.name.dorado': "Gold",
     'appIcon.name.blanco': "Weiß",
-    'appIcon.name.claro': "Weißer Hintergrund",
+    'appIcon.name.claro': "Orange",
     'appIcon.hint.background': "Das Symbol ändert sich, wenn du die App verlässt. Wenn sie auf deinem Home-Bildschirm war, musst du sie eventuell erneut aus der App-Liste hinzufügen.",
     'appIcon.hint.now': "Das Symbol ändert sich sofort. Dein iPhone zeigt dazu eine Meldung an.",
     'appIcon.hint.tab': "Im Web ändert sich das Tab-Symbol. Auf deinem Handy ändert sich das App-Symbol.",

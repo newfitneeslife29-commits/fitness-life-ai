@@ -1060,7 +1060,7 @@ export const ko: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "앱 아이콘",
-    'appIcon.name.naranja': "주황",
+    'appIcon.name.naranja': "흰색 배경",
     'appIcon.name.rojo': "빨강",
     'appIcon.name.rosa': "분홍",
     'appIcon.name.morado': "보라",
@@ -1068,7 +1068,7 @@ export const ko: Dict = {
     'appIcon.name.verde': "초록",
     'appIcon.name.dorado': "골드",
     'appIcon.name.blanco': "흰색",
-    'appIcon.name.claro': "흰색 배경",
+    'appIcon.name.claro': "주황",
     'appIcon.hint.background': "앱을 나가면 아이콘이 바뀌어요. 홈 화면에 있었다면 앱 목록에서 다시 추가해야 할 수도 있어요.",
     'appIcon.hint.now': "아이콘이 바로 바뀌어요. iPhone에 안내 메시지가 표시돼요.",
     'appIcon.hint.tab': "웹에서는 탭 아이콘이 바뀌어요. 휴대폰에서는 앱 아이콘이 바뀌어요.",

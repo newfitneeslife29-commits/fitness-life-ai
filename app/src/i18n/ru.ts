@@ -1060,7 +1060,7 @@ export const ru: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "Иконка приложения",
-    'appIcon.name.naranja': "Оранжевая",
+    'appIcon.name.naranja': "Белый фон",
     'appIcon.name.rojo': "Красная",
     'appIcon.name.rosa': "Розовая",
     'appIcon.name.morado': "Фиолетовая",
@@ -1068,7 +1068,7 @@ export const ru: Dict = {
     'appIcon.name.verde': "Зелёная",
     'appIcon.name.dorado': "Золотая",
     'appIcon.name.blanco': "Белая",
-    'appIcon.name.claro': "Белый фон",
+    'appIcon.name.claro': "Оранжевая",
     'appIcon.hint.background': "Иконка сменится, когда ты выйдешь из приложения. Если она была на главном экране, возможно, придётся снова добавить её из списка приложений.",
     'appIcon.hint.now': "Иконка сменится сразу. iPhone покажет сообщение.",
     'appIcon.hint.tab': "В вебе меняется иконка вкладки. На телефоне — иконка приложения.",

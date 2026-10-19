@@ -1060,7 +1060,7 @@ export const id: Dict = {
 
     // Warna ikon aplikasi (Pengaturan)
     'appIcon.title': "Ikon aplikasi",
-    'appIcon.name.naranja': "Oranye",
+    'appIcon.name.naranja': "Latar putih",
     'appIcon.name.rojo': "Merah",
     'appIcon.name.rosa': "Merah muda",
     'appIcon.name.morado': "Ungu",
@@ -1068,7 +1068,7 @@ export const id: Dict = {
     'appIcon.name.verde': "Hijau",
     'appIcon.name.dorado': "Emas",
     'appIcon.name.blanco': "Putih",
-    'appIcon.name.claro': "Latar putih",
+    'appIcon.name.claro': "Oranye",
     'appIcon.hint.background': "Ikon berubah saat kamu keluar dari aplikasi. Kalau ikonnya ada di layar utama, kamu mungkin perlu menambahkannya lagi dari daftar aplikasi.",
     'appIcon.hint.now': "Ikon langsung berubah. iPhone-mu akan menampilkan pesan.",
     'appIcon.hint.tab': "Di web, ini mengubah ikon tab. Di HP, ini mengubah ikon aplikasi.",
