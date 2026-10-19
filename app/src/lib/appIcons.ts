@@ -18,7 +18,7 @@ export interface AppIcon {
 }
 
 export const APP_ICONS = [
-    { id: 'naranja', top: '#1c1f24', bottom: '#050607', bg: '#f26b1d', glow: '#ffc79c' },
+    { id: 'naranja', top: '#ff8b3d', bottom: '#e8550f', bg: '#ffffff', glow: '#f26b1d' },
     { id: 'rojo', top: '#ff6b6b', bottom: '#d91e36', bg: '#0b0d10', glow: '#e5323f' },
     { id: 'rosa', top: '#ff8fc4', bottom: '#e5488e', bg: '#0b0d10', glow: '#ec5f9e' },
     { id: 'morado', top: '#b794ff', bottom: '#7c3aed', bg: '#0b0d10', glow: '#8b5cf6' },
@@ -26,7 +26,7 @@ export const APP_ICONS = [
     { id: 'verde', top: '#5ce59f', bottom: '#12a45c', bg: '#0b0d10', glow: '#22c55e' },
     { id: 'dorado', top: '#ffd56b', bottom: '#e09c0c', bg: '#0b0d10', glow: '#f2b01d' },
     { id: 'blanco', top: '#ffffff', bottom: '#d9dde3', bg: '#0b0d10', glow: '#9ca3af' },
-    { id: 'claro', top: '#ff8b3d', bottom: '#e8550f', bg: '#ffffff', glow: '#f26b1d' },
+    { id: 'claro', top: '#1c1f24', bottom: '#050607', bg: '#f26b1d', glow: '#ffc79c' },
 ] as const satisfies readonly AppIcon[];
 
 export type AppIconId = (typeof APP_ICONS)[number]['id'];

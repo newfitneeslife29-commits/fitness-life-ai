@@ -1061,7 +1061,7 @@ export const pt: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "Ícone do app",
-    'appIcon.name.naranja': "Laranja",
+    'appIcon.name.naranja': "Fundo branco",
     'appIcon.name.rojo': "Vermelho",
     'appIcon.name.rosa': "Rosa",
     'appIcon.name.morado': "Roxo",
@@ -1069,7 +1069,7 @@ export const pt: Dict = {
     'appIcon.name.verde': "Verde",
     'appIcon.name.dorado': "Dourado",
     'appIcon.name.blanco': "Branco",
-    'appIcon.name.claro': "Fundo branco",
+    'appIcon.name.claro': "Laranja",
     'appIcon.hint.background': "O ícone muda ao sair do app. Se ele estava na tela inicial, talvez seja preciso colocá-lo de novo pela lista de apps.",
     'appIcon.hint.now': "O ícone muda na hora. Seu iPhone vai mostrar uma mensagem.",
     'appIcon.hint.tab': "Na web muda o ícone da aba. No celular muda o ícone do app.",

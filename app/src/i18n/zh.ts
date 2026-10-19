@@ -1060,7 +1060,7 @@ export const zh: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "App 图标",
-    'appIcon.name.naranja': "橙色",
+    'appIcon.name.naranja': "白色背景",
     'appIcon.name.rojo': "红色",
     'appIcon.name.rosa': "粉色",
     'appIcon.name.morado': "紫色",
@@ -1068,7 +1068,7 @@ export const zh: Dict = {
     'appIcon.name.verde': "绿色",
     'appIcon.name.dorado': "金色",
     'appIcon.name.blanco': "白色",
-    'appIcon.name.claro': "白色背景",
+    'appIcon.name.claro': "橙色",
     'appIcon.hint.background': "离开 App 后图标会更换。如果它在你的主屏幕上，你可能需要从应用列表中重新添加。",
     'appIcon.hint.now': "图标会立即更换。你的 iPhone 会显示一条提示。",
     'appIcon.hint.tab': "在网页上，这会更改标签页图标。在手机上，会更改 App 图标。",

@@ -1060,7 +1060,7 @@ export const nl: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "App-icoon",
-    'appIcon.name.naranja': "Oranje",
+    'appIcon.name.naranja': "Witte achtergrond",
     'appIcon.name.rojo': "Rood",
     'appIcon.name.rosa': "Roze",
     'appIcon.name.morado': "Paars",
@@ -1068,7 +1068,7 @@ export const nl: Dict = {
     'appIcon.name.verde': "Groen",
     'appIcon.name.dorado': "Goud",
     'appIcon.name.blanco': "Wit",
-    'appIcon.name.claro': "Witte achtergrond",
+    'appIcon.name.claro': "Oranje",
     'appIcon.hint.background': "Het icoon verandert als je de app verlaat. Stond het op je beginscherm, dan moet je het misschien opnieuw toevoegen vanuit de lijst met apps.",
     'appIcon.hint.now': "Het icoon verandert meteen. Je iPhone toont een melding.",
     'appIcon.hint.tab': "Op het web verandert dit het tabbladicoon. Op je telefoon verandert het het app-icoon.",

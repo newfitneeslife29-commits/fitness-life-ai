@@ -1060,7 +1060,7 @@ export const tr: Dict = {
 
     // Uygulama simgesi rengi (Ayarlar)
     'appIcon.title': "Uygulama simgesi",
-    'appIcon.name.naranja': "Turuncu",
+    'appIcon.name.naranja': "Beyaz arka plan",
     'appIcon.name.rojo': "Kırmızı",
     'appIcon.name.rosa': "Pembe",
     'appIcon.name.morado': "Mor",
@@ -1068,7 +1068,7 @@ export const tr: Dict = {
     'appIcon.name.verde': "Yeşil",
     'appIcon.name.dorado': "Altın",
     'appIcon.name.blanco': "Beyaz",
-    'appIcon.name.claro': "Beyaz arka plan",
+    'appIcon.name.claro': "Turuncu",
     'appIcon.hint.background': "Simge, uygulamadan çıktığında değişir. Ana ekranındaysa uygulama listesinden tekrar eklemen gerekebilir.",
     'appIcon.hint.now': "Simge hemen değişir. iPhone'un bir mesaj gösterecek.",
     'appIcon.hint.tab': "Web'de bu, sekme simgesini değiştirir. Telefonunda uygulama simgesini değiştirir.",

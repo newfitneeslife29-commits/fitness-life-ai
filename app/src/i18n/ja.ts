@@ -1060,7 +1060,7 @@ export const ja: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "アプリアイコン",
-    'appIcon.name.naranja': "オレンジ",
+    'appIcon.name.naranja': "白背景",
     'appIcon.name.rojo': "レッド",
     'appIcon.name.rosa': "ピンク",
     'appIcon.name.morado': "パープル",
@@ -1068,7 +1068,7 @@ export const ja: Dict = {
     'appIcon.name.verde': "グリーン",
     'appIcon.name.dorado': "ゴールド",
     'appIcon.name.blanco': "ホワイト",
-    'appIcon.name.claro': "白背景",
+    'appIcon.name.claro': "オレンジ",
     'appIcon.hint.background': "アイコンはアプリを閉じたときに変わります。ホーム画面に置いていた場合は、アプリ一覧からもう一度追加する必要があるかもしれません。",
     'appIcon.hint.now': "アイコンはすぐに変わります。iPhoneにメッセージが表示されます。",
     'appIcon.hint.tab': "Webではタブのアイコンが変わります。スマホではアプリのアイコンが変わります。",

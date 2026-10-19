@@ -1061,7 +1061,7 @@ export const es = {
 
     // App icon color (Settings)
     'appIcon.title': "Ícono de la app",
-    'appIcon.name.naranja': "Naranja",
+    'appIcon.name.naranja': "Fondo blanco",
     'appIcon.name.rojo': "Rojo",
     'appIcon.name.rosa': "Rosa",
     'appIcon.name.morado': "Morado",
@@ -1069,7 +1069,7 @@ export const es = {
     'appIcon.name.verde': "Verde",
     'appIcon.name.dorado': "Dorado",
     'appIcon.name.blanco': "Blanco",
-    'appIcon.name.claro': "Fondo blanco",
+    'appIcon.name.claro': "Naranja",
     'appIcon.hint.background': "El ícono cambia al salir de la app. Si lo tenías en la pantalla de inicio, puede que tengas que volver a ponerlo desde la lista de apps.",
     'appIcon.hint.now': "El ícono cambia al momento. Tu iPhone te avisará con un mensaje.",
     'appIcon.hint.tab': "En la web cambia el ícono de la pestaña. En el teléfono cambia el de la app.",

@@ -1060,7 +1060,7 @@ export const fr: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "Icône de l'appli",
-    'appIcon.name.naranja': "Orange",
+    'appIcon.name.naranja': "Fond blanc",
     'appIcon.name.rojo': "Rouge",
     'appIcon.name.rosa': "Rose",
     'appIcon.name.morado': "Violet",
@@ -1068,7 +1068,7 @@ export const fr: Dict = {
     'appIcon.name.verde': "Vert",
     'appIcon.name.dorado': "Doré",
     'appIcon.name.blanco': "Blanc",
-    'appIcon.name.claro': "Fond blanc",
+    'appIcon.name.claro': "Orange",
     'appIcon.hint.background': "L'icône change quand tu quittes l'appli. Si elle était sur ton écran d'accueil, tu devras peut-être la rajouter depuis la liste des applis.",
     'appIcon.hint.now': "L'icône change tout de suite. Ton iPhone affichera un message.",
     'appIcon.hint.tab': "Sur le web, cela change l'icône de l'onglet. Sur ton téléphone, cela change l'icône de l'appli.",

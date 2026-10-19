@@ -1060,7 +1060,7 @@ export const hi: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "ऐप आइकन",
-    'appIcon.name.naranja': "नारंगी",
+    'appIcon.name.naranja': "सफ़ेद बैकग्राउंड",
     'appIcon.name.rojo': "लाल",
     'appIcon.name.rosa': "गुलाबी",
     'appIcon.name.morado': "बैंगनी",
@@ -1068,7 +1068,7 @@ export const hi: Dict = {
     'appIcon.name.verde': "हरा",
     'appIcon.name.dorado': "सुनहरा",
     'appIcon.name.blanco': "सफ़ेद",
-    'appIcon.name.claro': "सफ़ेद बैकग्राउंड",
+    'appIcon.name.claro': "नारंगी",
     'appIcon.hint.background': "ऐप से बाहर जाने पर आइकन बदल जाता है। अगर यह आपकी होम स्क्रीन पर था, तो शायद आपको इसे ऐप लिस्ट से फिर से जोड़ना पड़े।",
     'appIcon.hint.now': "आइकन तुरंत बदल जाता है। आपका iPhone एक मैसेज दिखाएगा।",
     'appIcon.hint.tab': "वेब पर इससे टैब का आइकन बदलता है। आपके फ़ोन पर इससे ऐप का आइकन बदलता है।",

@@ -1060,7 +1060,7 @@ export const pl: Dict = {
 
     // App icon color (Settings)
     'appIcon.title': "Ikona aplikacji",
-    'appIcon.name.naranja': "Pomarańczowa",
+    'appIcon.name.naranja': "Białe tło",
     'appIcon.name.rojo': "Czerwona",
     'appIcon.name.rosa': "Różowa",
     'appIcon.name.morado': "Fioletowa",
@@ -1068,7 +1068,7 @@ export const pl: Dict = {
     'appIcon.name.verde': "Zielona",
     'appIcon.name.dorado': "Złota",
     'appIcon.name.blanco': "Biała",
-    'appIcon.name.claro': "Białe tło",
+    'appIcon.name.claro': "Pomarańczowa",
     'appIcon.hint.background': "Ikona zmieni się, gdy wyjdziesz z aplikacji. Jeśli była na ekranie głównym, może trzeba będzie dodać ją ponownie z listy aplikacji.",
     'appIcon.hint.now': "Ikona zmieni się od razu. iPhone wyświetli komunikat.",
     'appIcon.hint.tab': "W przeglądarce zmienia to ikonę karty. Na telefonie zmienia ikonę aplikacji.",
