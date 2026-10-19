@@ -18,7 +18,7 @@ export interface AppIcon {
 }
 
 export const APP_ICONS = [
-    { id: 'naranja', top: '#ff8b3d', bottom: '#e8550f', bg: '#0b0d10', glow: '#f26b1d' },
+    { id: 'naranja', top: '#1c1f24', bottom: '#050607', bg: '#f26b1d', glow: '#ffc79c' },
     { id: 'rojo', top: '#ff6b6b', bottom: '#d91e36', bg: '#0b0d10', glow: '#e5323f' },
     { id: 'rosa', top: '#ff8fc4', bottom: '#e5488e', bg: '#0b0d10', glow: '#ec5f9e' },
     { id: 'morado', top: '#b794ff', bottom: '#7c3aed', bg: '#0b0d10', glow: '#8b5cf6' },
@@ -42,7 +42,7 @@ export const appIconSvg = (icon: AppIcon, rx = 112) => {
     const corner = rx ? ` rx="${rx}"` : '';
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">` +
         `<defs><linearGradient id="${k}-m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${icon.top}"/><stop offset="1" stop-color="${icon.bottom}"/></linearGradient>` +
-        `<radialGradient id="${k}-g" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="${icon.glow}" stop-opacity="${icon.bg === '#ffffff' ? '.12' : '.22'}"/><stop offset="1" stop-color="${icon.glow}" stop-opacity="0"/></radialGradient></defs>` +
+        `<radialGradient id="${k}-g" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="${icon.glow}" stop-opacity="${icon.bg === '#ffffff' ? '.12' : icon.bg === '#f26b1d' ? '.45' : '.22'}"/><stop offset="1" stop-color="${icon.glow}" stop-opacity="0"/></radialGradient></defs>` +
         `<rect width="512" height="512"${corner} fill="${icon.bg}"/><rect width="512" height="512"${corner} fill="url(#${k}-g)"/>` +
         `<path fill="url(#${k}-m)" transform="translate(256 262) scale(2.5) translate(0 -51)" d="${MARK_PATH}"/></svg>`;
 };
