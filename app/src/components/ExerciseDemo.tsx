@@ -3,9 +3,10 @@ import { exercisePhotos } from '../data/exercises';
 import { exerciseMotion } from '../data/motion';
 import { t } from '../i18n';
 
-// Start and end position photos, alternating like a slow animation so the
-// movement is obvious at a glance. Photos: Free Exercise DB (public domain).
-// Lists use still thumbnails (`animate` off) to keep scrolling light.
+// The animated demo when the exercise has one; otherwise start and end
+// position photos alternating like a slow animation, so the movement is
+// obvious at a glance. Lists use still thumbnails (`animate` off) to keep
+// scrolling light.
 export const ExerciseDemo = ({ id, name, variant = 'full', animate = variant === 'full' }: { id: string; name: string; variant?: 'full' | 'thumb'; animate?: boolean }) => {
     const photos = exercisePhotos(id);
     const video = exerciseMotion(id);
@@ -23,9 +24,9 @@ export const ExerciseDemo = ({ id, name, variant = 'full', animate = variant ===
         return (
             <div role="img" aria-label={t('demo.alt', { name })}
                 className={`relative shrink-0 overflow-hidden bg-snow ${thumb ? 'h-14 w-14 rounded-xl' : 'aspect-[3/2] w-full rounded-2xl'}`}>
-                {animate
-                    ? <video src={video} autoPlay loop muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-contain" />
-                    : <video src={`${video}#t=0.5`} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-contain" />}
+                {animate || !photos
+                    ? <video src={video} poster={photos?.[1]} autoPlay={animate} loop muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-contain" />
+                    : <img src={photos[1]} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
             </div>
         );
     }

@@ -51,11 +51,19 @@ const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 };
 
-// Every exercise demo shows real photos, not broken images.
+// Every exercise demo shows real photos (or an animation with its still), not broken images.
 const expectPhotosLoaded = async (page: Page) => {
     const demo = page.getByRole('img', { name: /^Cómo se hace/ }).first();
-    await expect(demo.locator('img').first()).toHaveJSProperty('complete', true);
-    expect(await demo.locator('img').first().evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(100);
+    const video = demo.locator('video');
+    const src = await video.count() ? await video.first().getAttribute('poster') : await demo.locator('img').first().getAttribute('src');
+    expect(src).toBeTruthy();
+    const still = await page.request.get(new URL(src!, page.url()).href);
+    expect(still.ok()).toBe(true);
+    expect((await still.body()).length).toBeGreaterThan(2000);
+    if (await video.count()) {
+        const clip = await page.request.get(new URL((await video.first().getAttribute('src'))!, page.url()).href);
+        expect(clip.ok()).toBe(true);
+    }
 };
 
 test('onboarding builds a plan that matches the answers', async ({ page }) => {

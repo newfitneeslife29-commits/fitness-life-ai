@@ -40,7 +40,7 @@ const Motion = ({ id, className = '' }: { id: string; className?: string }) => {
     if (video) {
         return (
             <div role="img" aria-label={t('demo.alt', { name: exerciseName(id) })} className={`overflow-hidden bg-snow ${className}`}>
-                <video src={video} autoPlay loop muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-contain" />
+                <video src={video} poster={photos?.[1]} autoPlay loop muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-contain" />
             </div>
         );
     }

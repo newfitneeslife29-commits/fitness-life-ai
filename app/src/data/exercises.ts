@@ -480,6 +480,252 @@ export const EXERCISES: Exercise[] = [
         'One knee down, the other foot in front. Squeeze the back glute and shift your hips slightly forward without arching your back.',
         'Um joelho no chão e o outro pé à frente. Contraia o glúteo de trás e leve o quadril um pouco para a frente, sem arquear as costas.',
     ], { secondary: ['gluteos'], timed: true, kind: 'gentle' }),
+    // Animated with Gym Visual demos (src/assets/motion).
+    x("press-inclinado-maquina", "Press inclinado en máquina", "Machine incline chest press", "Supino inclinado na máquina", "pecho", "maquina", 5, [
+        "Espalda pegada al respaldo; empuja hacia arriba y adelante sin bloquear los codos.",
+        "Back flat on the pad; press up and forward without locking your elbows.",
+        "Costas apoiadas no encosto; empurre para cima e à frente sem travar os cotovelos.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-declinado-smith", "Press declinado en máquina Smith", "Smith machine decline press", "Supino declinado no Smith", "pecho", "maquina", 5, [
+        "Baja la barra a la parte baja del pecho controlando la bajada y empuja sin rebotar.",
+        "Lower the bar to your lower chest under control and press without bouncing.",
+        "Desça a barra até a parte baixa do peito com controle e empurre sem quicar.",
+    ], { secondary: ["triceps"] }),
+    x("aperturas-kettlebell", "Aperturas inclinadas con kettlebell", "Kettlebell incline fly", "Crucifixo inclinado com kettlebell", "pecho", "kettlebell", 4, [
+        "Codos un poco flexionados y fijos; abre hasta notar el estiramiento en el pecho y cierra apretando.",
+        "Elbows slightly bent and fixed; open until you feel a chest stretch, then squeeze back up.",
+        "Cotovelos levemente flexionados e fixos; abra até sentir alongar o peito e feche apertando.",
+    ]),
+    x("pullover-mancuerna", "Pullover con mancuerna", "Dumbbell pullover", "Pullover com halter", "pecho", "mancuernas", 2, [
+        "Brazos casi rectos; baja la mancuerna por detrás de la cabeza sin arquear la espalda y vuelve sobre el pecho.",
+        "Arms almost straight; lower the dumbbell behind your head without arching your back, then bring it back over your chest.",
+        "Braços quase retos; desça o halter atrás da cabeça sem arquear as costas e volte sobre o peito.",
+    ], { secondary: ["espalda"] }),
+    x("press-una-mano-suelo", "Press a una mano en el suelo", "Single-arm dumbbell floor press", "Supino unilateral no chão", "pecho", "mancuernas", 2, [
+        "Tumbado con las rodillas flexionadas; empuja la mancuerna hacia arriba con un brazo y baja hasta que el codo toque el suelo.",
+        "Lying with bent knees; press the dumbbell up with one arm and lower until your elbow touches the floor.",
+        "Deitado com os joelhos flexionados; empurre o halter com um braço e desça até o cotovelo tocar o chão.",
+    ], { secondary: ["triceps"] }),
+    x("flexiones-pliometricas", "Flexiones pliométricas", "Plyometric push-ups", "Flexões pliométricas", "pecho", "peso corporal", 0, [
+        "Empuja explosivo para que las manos despeguen del suelo y aterriza suave con los codos flexionados.",
+        "Push explosively so your hands leave the floor, and land softly with bent elbows.",
+        "Empurre explosivo para as mãos saírem do chão e aterrisse suave com os cotovelos flexionados.",
+    ], { secondary: ["triceps", "hombros"] }),
+    x("flexiones-balon", "Flexiones con balón medicinal", "Medicine ball push-ups", "Flexões com bola medicinal", "pecho", "peso corporal", 0, [
+        "Una mano sobre el balón y el cuerpo recto; cambia de lado en cada serie.",
+        "One hand on the ball, body straight; switch sides each set.",
+        "Uma mão na bola e o corpo reto; troque de lado a cada série.",
+    ], { secondary: ["triceps", "core"] }),
+    x("press-landmine", "Press landmine de rodillas", "Kneeling landmine press", "Supino landmine ajoelhado", "pecho", "barra", 2.5, [
+        "Sujeta el extremo de la barra con las manos juntas y empuja hacia arriba y adelante apretando el pecho.",
+        "Hold the end of the bar with your hands together and press up and forward, squeezing your chest.",
+        "Segure a ponta da barra com as mãos juntas e empurre para cima e à frente apertando o peito.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-inclinado-polea", "Press inclinado en polea", "Cable incline press", "Supino inclinado na polia", "pecho", "polea", 2.5, [
+        "En un banco inclinado entre las poleas, empuja y junta las manos arriba sin chocarlas.",
+        "On an incline bench between the cables, press and bring your hands together at the top.",
+        "Num banco inclinado entre as polias, empurre e junte as mãos em cima sem bater.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("remo-t-tumbado", "Remo en T con pecho apoyado", "Chest-supported T-bar row", "Remada cavalinho com apoio", "espalda", "maquina", 5, [
+        "Pecho apoyado en el soporte; lleva los codos hacia atrás y junta las escápulas arriba.",
+        "Chest on the pad; drive your elbows back and squeeze your shoulder blades at the top.",
+        "Peito apoiado; leve os cotovelos para trás e junte as escápulas em cima.",
+    ], { secondary: ["biceps"] }),
+    x("remo-inclinado-maquina", "Remo inclinado en máquina", "Machine incline row", "Remada inclinada na máquina", "espalda", "maquina", 5, [
+        "Pecho contra el respaldo; tira con agarre neutro hasta llevar las manos a las costillas.",
+        "Chest against the pad; pull with a neutral grip until your hands reach your ribs.",
+        "Peito no encosto; puxe com pegada neutra até as mãos chegarem às costelas.",
+    ], { secondary: ["biceps"] }),
+    x("remo-una-mano-maquina", "Remo a una mano en máquina", "Single-arm machine row", "Remada unilateral na máquina", "espalda", "maquina", 5, [
+        "Inclinado y con la espalda recta, tira con un brazo llevando el codo hacia la cadera.",
+        "Bent over with a flat back, pull with one arm, driving your elbow toward your hip.",
+        "Inclinado e com as costas retas, puxe com um braço levando o cotovelo em direção ao quadril.",
+    ], { secondary: ["biceps"] }),
+    x("jalon-estrecho", "Jalón con agarre estrecho", "Close-grip lat pulldown", "Puxada com pegada fechada", "espalda", "polea", 2.5, [
+        "Agarre estrecho con las palmas hacia ti; baja la barra al pecho llevando los codos hacia abajo.",
+        "Narrow underhand grip; pull the bar to your chest, driving your elbows down.",
+        "Pegada fechada com as palmas para você; puxe a barra ao peito levando os cotovelos para baixo.",
+    ], { secondary: ["biceps"] }),
+    x("jalon-una-mano", "Jalón a una mano en máquina", "Single-arm machine pulldown", "Puxada unilateral na máquina", "espalda", "maquina", 5, [
+        "Tira con un brazo cada vez, llevando el codo hacia la cadera sin girar el tronco.",
+        "Pull with one arm at a time, driving your elbow toward your hip without twisting.",
+        "Puxe com um braço por vez, levando o cotovelo em direção ao quadril sem girar o tronco.",
+    ], { secondary: ["biceps"] }),
+    x("pullover-barra", "Pullover con barra", "Barbell pullover", "Pullover com barra", "espalda", "barra", 2.5, [
+        "Tumbado en el banco con los codos flexionados; lleva la barra por detrás de la cabeza y vuelve sobre el pecho.",
+        "Lying on the bench with bent elbows; take the bar behind your head and back over your chest.",
+        "Deitado no banco com os cotovelos flexionados; leve a barra atrás da cabeça e volte sobre o peito.",
+    ], { secondary: ["pecho"] }),
+    x("encogimientos", "Encogimientos de hombros", "Shoulder shrugs", "Encolhimento de ombros", "espalda", "maquina", 5, [
+        "Brazos rectos; sube los hombros hacia las orejas, aguanta un segundo y baja despacio.",
+        "Arms straight; lift your shoulders toward your ears, hold a second and lower slowly.",
+        "Braços retos; suba os ombros em direção às orelhas, segure um segundo e desça devagar.",
+    ], { secondary: ["hombros"] }),
+    x("elevacion-frontal-polea", "Elevación frontal en polea", "Cable front raise", "Elevação frontal na polia", "hombros", "polea", 2.5, [
+        "Brazos casi rectos; sube hasta la altura de los hombros sin balancear el cuerpo.",
+        "Arms almost straight; raise to shoulder height without swinging.",
+        "Braços quase retos; suba até a altura dos ombros sem balançar o corpo.",
+    ]),
+    x("elevacion-frontal", "Elevación frontal con mancuerna", "Dumbbell front raise", "Elevação frontal com halter", "hombros", "mancuernas", 1, [
+        "Un brazo cada vez, casi recto; sube hasta la altura del hombro y baja despacio.",
+        "One arm at a time, almost straight; raise to shoulder height and lower slowly.",
+        "Um braço por vez, quase reto; suba até a altura do ombro e desça devagar.",
+    ]),
+    x("remo-menton", "Remo al mentón", "Upright row", "Remada alta", "hombros", "barra", 2.5, [
+        "Agarre a la anchura de los hombros; sube la barra pegada al cuerpo hasta el pecho, con los codos por encima de las manos.",
+        "Shoulder-width grip; pull the bar up close to your body to chest height, elbows above your hands.",
+        "Pegada na largura dos ombros; suba a barra rente ao corpo até o peito, com os cotovelos acima das mãos.",
+    ], { secondary: ["espalda"] }),
+    x("elevacion-y", "Elevación en Y inclinado", "Bent-over Y raise", "Elevação em Y inclinado", "hombros", "mancuernas", 1, [
+        "Inclinado hacia delante con la espalda recta; sube los brazos formando una Y con los pulgares hacia arriba.",
+        "Bent forward with a flat back; raise your arms into a Y, thumbs up.",
+        "Inclinado à frente com as costas retas; suba os braços formando um Y, polegares para cima.",
+    ], { secondary: ["espalda"] }),
+    x("pajaros", "Pájaros con mancuernas", "Dumbbell rear delt raise", "Crucifixo inverso com halteres", "hombros", "mancuernas", 1, [
+        "Inclinado con la espalda recta; abre los brazos hacia los lados apretando la parte de atrás del hombro.",
+        "Bent over with a flat back; open your arms to the sides, squeezing the back of your shoulders.",
+        "Inclinado com as costas retas; abra os braços para os lados apertando a parte de trás dos ombros.",
+    ], { secondary: ["espalda"] }),
+    x("curl-maquina", "Curl de bíceps en máquina", "Machine biceps curl", "Rosca na máquina", "biceps", "maquina", 2.5, [
+        "Brazos apoyados en el cojín; sube alternando y baja controlando, sin soltar de golpe.",
+        "Arms on the pad; curl alternating and lower under control.",
+        "Braços apoiados no apoio; suba alternando e desça com controle.",
+    ]),
+    x("curl-isometrico", "Curl con pausa isométrica", "Dumbbell curl with isometric hold", "Rosca com pausa isométrica", "biceps", "mancuernas", 1, [
+        "Mantén un brazo arriba a 90° mientras el otro hace la repetición completa; luego cambia.",
+        "Hold one arm at 90° while the other does full reps, then switch.",
+        "Mantenha um braço a 90° enquanto o outro faz a repetição completa; depois troque.",
+    ]),
+    x("curl-muneca", "Curl de muñeca con barra", "Barbell wrist curl", "Rosca de punho com barra", "biceps", "barra", 1, [
+        "Antebrazos apoyados en el banco; mueve solo las muñecas, despacio y en todo el recorrido.",
+        "Forearms on the bench; move only your wrists, slowly and through the full range.",
+        "Antebraços apoiados no banco; mova só os punhos, devagar e em toda a amplitude.",
+    ]),
+    x("patada-triceps", "Patada de tríceps en polea", "Cable triceps kickback", "Tríceps coice na polia", "triceps", "polea", 2.5, [
+        "Inclinado, con el codo pegado al cuerpo; estira el brazo hacia atrás y aprieta el tríceps.",
+        "Bent over, elbow tucked; straighten your arm back and squeeze your triceps.",
+        "Inclinado, cotovelo junto ao corpo; estenda o braço para trás e aperte o tríceps.",
+    ]),
+    x("extension-triceps-una-mano", "Extensión de tríceps a una mano en polea", "Single-arm cable pushdown", "Tríceps unilateral na polia", "triceps", "polea", 2.5, [
+        "Codo fijo al costado; empuja la cuerda hacia abajo hasta estirar el brazo del todo.",
+        "Elbow fixed at your side; push the rope down until your arm is fully straight.",
+        "Cotovelo fixo ao lado; empurre a corda para baixo até estender todo o braço.",
+    ]),
+    x("extension-triceps-alta", "Extensión de tríceps en polea alta", "High-cable overhead triceps extension", "Tríceps na polia alta", "triceps", "polea", 2.5, [
+        "De espaldas a la polea, con los codos junto a la cabeza; estira los brazos hacia delante.",
+        "Back to the cable, elbows by your head; straighten your arms forward.",
+        "De costas para a polia, cotovelos junto à cabeça; estenda os braços à frente.",
+    ]),
+    x("sentadilla-sumo", "Sentadilla sumo con barra", "Barbell sumo squat", "Agachamento sumô com barra", "gluteos", "barra", 2.5, [
+        "Pies muy abiertos y puntas hacia fuera; baja con el pecho alto y las rodillas siguiendo las puntas.",
+        "Wide stance, toes out; sit down with your chest up and knees tracking your toes.",
+        "Pés bem afastados e pontas para fora; desça com o peito alto e os joelhos seguindo as pontas.",
+    ], { secondary: ["cuadriceps"] }),
+    x("prensa-una-pierna", "Prensa a una pierna", "Single-leg press", "Leg press unilateral", "cuadriceps", "maquina", 5, [
+        "Una pierna cada vez; baja hasta 90° sin despegar la espalda y empuja con el talón.",
+        "One leg at a time; lower to 90° keeping your back down and push through your heel.",
+        "Uma perna por vez; desça até 90° sem tirar as costas e empurre com o calcanhar.",
+    ], { secondary: ["gluteos"] }),
+    x("sentadilla-explosiva", "Sentadilla explosiva", "Explosive squat", "Agachamento explosivo", "cuadriceps", "peso corporal", 0, [
+        "Baja rápido a media sentadilla y sube explosivo estirando los brazos hacia arriba.",
+        "Drop quickly into a half squat and drive up explosively, reaching your arms overhead.",
+        "Desça rápido a meio agachamento e suba explosivo estendendo os braços para cima.",
+    ], { secondary: ["gluteos"] }),
+    x("salto-cajon", "Salto al cajón", "Box jump", "Salto na caixa", "cuadriceps", "peso corporal", 0, [
+        "Impúlsate con los brazos, aterriza suave sobre el cajón con las rodillas flexionadas y baja andando.",
+        "Swing your arms, land softly on the box with bent knees and step back down.",
+        "Impulsione com os braços, aterrisse suave na caixa com os joelhos flexionados e desça andando.",
+    ], { secondary: ["gluteos", "gemelos"] }),
+    x("goblet-gemelos", "Sentadilla goblet con elevación de talones", "Goblet squat with calf raise", "Agachamento goblet com panturrilha", "cuadriceps", "mancuernas", 2, [
+        "Haz la sentadilla y, al subir, ponte de puntillas un segundo.",
+        "Squat, and at the top rise onto your toes for a second.",
+        "Agache e, ao subir, fique na ponta dos pés por um segundo.",
+    ], { secondary: ["gemelos", "gluteos"] }),
+    x("peso-muerto-escalonado", "Peso muerto rumano escalonado", "Staggered-stance Romanian deadlift", "Stiff com base escalonada", "isquios", "barra", 2.5, [
+        "Un pie un poco adelantado; baja la barra pegada a las piernas con la espalda recta y sube apretando glúteos.",
+        "One foot slightly ahead; lower the bar close to your legs with a flat back and squeeze your glutes to stand.",
+        "Um pé levemente à frente; desça a barra rente às pernas com as costas retas e suba apertando os glúteos.",
+    ], { secondary: ["gluteos"] }),
+    x("curl-femoral-hiperextension", "Curl femoral con hiperextensión", "Leg curl to reverse hyperextension", "Flexora com hiperextensão", "isquios", "maquina", 5, [
+        "Lleva los talones hacia los glúteos y al final eleva las piernas apretando glúteos.",
+        "Curl your heels in, then lift your legs by squeezing your glutes.",
+        "Leve os calcanhares aos glúteos e no final eleve as pernas apertando os glúteos.",
+    ], { secondary: ["gluteos"] }),
+    x("hip-thrust-maquina", "Hip thrust en máquina", "Machine hip thrust", "Elevação pélvica na máquina", "gluteos", "maquina", 5, [
+        "Espalda alta en el respaldo; sube la cadera hasta alinear tronco y muslos y aprieta glúteos arriba.",
+        "Upper back on the pad; drive your hips up until torso and thighs line up, squeezing at the top.",
+        "Parte alta das costas no encosto; suba o quadril até alinhar tronco e coxas e aperte os glúteos.",
+    ], { secondary: ["isquios"] }),
+    x("hiperextension-inversa", "Hiperextensión inversa con mancuerna", "Dumbbell reverse hyperextension", "Hiperextensão reversa com halter", "gluteos", "mancuernas", 2, [
+        "Boca abajo en el banco con la mancuerna entre los pies; sube las piernas apretando los glúteos.",
+        "Face down on the bench with a dumbbell between your feet; lift your legs by squeezing your glutes.",
+        "De bruços no banco com o halter entre os pés; suba as pernas apertando os glúteos.",
+    ], { secondary: ["isquios"] }),
+    x("patada-gluteo-banco", "Patada de glúteo en banco", "Bench glute kickback", "Coice de glúteo no banco", "gluteos", "peso corporal", 0, [
+        "Una rodilla y las manos en el banco; lleva la otra pierna hacia atrás y arriba sin arquear la espalda.",
+        "One knee and both hands on the bench; drive the other leg back and up without arching your back.",
+        "Um joelho e as mãos no banco; leve a outra perna para trás e para cima sem arquear as costas.",
+    ], { secondary: ["isquios"] }),
+    x("toque-equilibrio", "Toques de equilibrio a tres puntos", "3-point balance toe tap", "Toque de equilíbrio em três pontos", "gluteos", "peso corporal", 0, [
+        "Sobre una pierna, toca con la otra delante, al lado y atrás sin perder el equilibrio.",
+        "Standing on one leg, tap the other foot in front, to the side and behind without losing balance.",
+        "Apoiado numa perna, toque com a outra à frente, ao lado e atrás sem perder o equilíbrio.",
+    ], { secondary: ["core"] }),
+    x("arrancada", "Arrancada de potencia", "Barbell power snatch", "Arranco de potência", "isquios", "barra", 2.5, [
+        "Desde el suelo, extiende la cadera de forma explosiva y recibe la barra arriba con los brazos rectos. Aprende la técnica con poco peso.",
+        "From the floor, extend your hips explosively and catch the bar overhead with straight arms. Learn it with light weight.",
+        "Do chão, estenda o quadril de forma explosiva e receba a barra acima da cabeça com os braços retos. Aprenda com pouco peso.",
+    ], { secondary: ["gluteos", "hombros", "espalda"] }),
+    x("bicicleta-aerea", "Bicicleta en el aire", "Air cycling", "Bicicleta no ar", "core", "peso corporal", 0, [
+        "Boca arriba con la lumbar pegada al suelo; pedalea en el aire con las piernas, sin prisa.",
+        "On your back with your lower back flat; pedal your legs in the air, smoothly.",
+        "De barriga para cima com a lombar no chão; pedale as pernas no ar, sem pressa.",
+    ], { timed: true }),
+    x("l-sit", "L-sit colgado", "Hanging L-sit", "L-sit na barra", "core", "peso corporal", 0, [
+        "Colgado de la barra, sube las piernas rectas hasta formar una L y aguanta.",
+        "Hang from the bar, lift your straight legs into an L and hold.",
+        "Pendurado na barra, suba as pernas retas formando um L e segure.",
+    ], { timed: true }),
+    x("crunch-polea", "Crunch en polea de rodillas", "Kneeling cable crunch", "Abdominal na polia ajoelhado", "core", "polea", 2.5, [
+        "De rodillas con la cuerda junto a la cabeza; enrolla el tronco hacia abajo con el abdomen, no con los brazos.",
+        "Kneeling with the rope by your head; curl down with your abs, not your arms.",
+        "Ajoelhado com a corda junto à cabeça; enrole o tronco com o abdômen, não com os braços.",
+    ]),
+    x("elevacion-piernas-suelo", "Elevación de piernas tumbado", "Lying leg raise", "Elevação de pernas deitado", "core", "peso corporal", 0, [
+        "Lumbar pegada al suelo; sube las piernas rectas, aguanta un momento y baja despacio.",
+        "Lower back flat; raise straight legs, hold a moment and lower slowly.",
+        "Lombar no chão; suba as pernas retas, segure um instante e desça devagar.",
+    ]),
+    x("inclinacion-lateral", "Inclinación lateral sentado", "Seated side bend", "Inclinação lateral sentado", "core", "peso corporal", 0, [
+        "Sentado erguido en una silla, inclínate a un lado y al otro sin girar el tronco.",
+        "Sit tall on a chair and lean side to side without twisting.",
+        "Sentado ereto numa cadeira, incline para um lado e para o outro sem girar o tronco.",
+    ]),
+    x("rotacion-toracica", "Rotación torácica", "Thoracic rotation", "Rotação torácica", "espalda", "peso corporal", 0, [
+        "Piernas abiertas e inclinado hacia delante; gira el tronco llevando una mano al techo y alterna.",
+        "Wide stance, bent forward; rotate, reaching one hand to the ceiling, then switch.",
+        "Pernas afastadas e inclinado à frente; gire o tronco levando uma mão ao teto e alterne.",
+    ], { secondary: ["core"], kind: "gentle" }),
+    x("extension-toracica", "Extensión torácica con rodillo", "Foam roller thoracic extension", "Extensão torácica no rolo", "espalda", "peso corporal", 0, [
+        "Rodillo bajo la espalda alta y manos tras la cabeza; extiéndete hacia atrás despacio y respira.",
+        "Roller under your upper back, hands behind your head; extend back slowly and breathe.",
+        "Rolo sob a parte alta das costas e mãos atrás da cabeça; estenda para trás devagar e respire.",
+    ], { timed: true, kind: "gentle" }),
+    x("estiramiento-flexor-pie", "Estiramiento de flexor de cadera de pie", "Standing hip flexor stretch", "Alongamento do flexor do quadril em pé", "cuadriceps", "peso corporal", 0, [
+        "Apoyado en una silla, lleva una pierna atrás y empuja la cadera hacia delante sin arquear la espalda.",
+        "Holding a chair, step one leg back and push your hips forward without arching your back.",
+        "Apoiado numa cadeira, leve uma perna para trás e empurre o quadril à frente sem arquear as costas.",
+    ], { secondary: ["gluteos"], timed: true, kind: "gentle" }),
+    x("estiramiento-pretzel", "Estiramiento pretzel", "Lying pretzel stretch", "Alongamento pretzel", "gluteos", "peso corporal", 0, [
+        "Tumbado de lado, sujeta el pie de arriba y gira el tronco hacia el otro lado respirando profundo.",
+        "Lying on your side, hold your top foot and rotate your torso the other way, breathing deeply.",
+        "Deitado de lado, segure o pé de cima e gire o tronco para o outro lado respirando fundo.",
+    ], { secondary: ["cuadriceps"], timed: true, kind: "gentle" }),
+    x("rodillas-altas-lateral", "Desplazamiento lateral con rodillas altas", "Side shuffle high knees", "Deslocamento lateral com joelhos altos", "cuadriceps", "peso corporal", 0, [
+        "Desplázate de lado subiendo las rodillas rápido y con los brazos activos.",
+        "Shuffle sideways driving your knees up fast, arms pumping.",
+        "Desloque-se de lado subindo os joelhos rápido, com os braços ativos.",
+    ], { secondary: ["gemelos"], timed: true }),
 ];
 
 const BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
