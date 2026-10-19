@@ -5,9 +5,10 @@
 // Deletes the user's cloud copy, AI usage records, community photos and
 // posts, and the account itself.
 // Subscriptions are kept by the stores and RevenueCat; the app tells the
-// user to cancel there.
+// user to cancel there. Trainer hires (Stripe) end with the account.
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { stripe, stripeConfigured } from '../_shared/stripe.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -31,6 +32,15 @@ Deno.serve(async req => {
         const paths = (files ?? []).filter(f => f.id).map(f => `${folder}/${f.name}`);
         if (paths.length) await bucket.remove(paths);
       }
+    }
+    // Hires as client or as trainer: nobody keeps paying for them.
+    const { data: hires } = await admin.from('trainer_clients').select('stripe_subscription_id')
+      .or(`client_id.eq.${user.id},trainer_user_id.eq.${user.id}`).in('status', ['active', 'trialing', 'past_due', 'unpaid', 'incomplete']);
+    if (hires?.length && !stripeConfigured) throw new Error('stripe not configured');
+    for (const hire of hires ?? []) {
+      await stripe.subscriptions.cancel(hire.stripe_subscription_id).catch(e => {
+        if (e?.code !== 'resource_missing') throw e;
+      });
     }
     // Posts, likes and comments go with the account (foreign keys cascade).
     for (const table of ['user_data', 'ai_usage']) {

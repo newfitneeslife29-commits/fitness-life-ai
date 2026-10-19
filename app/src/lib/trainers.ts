@@ -1,10 +1,11 @@
-import { LANGS } from '../i18n';
+import { LANGS, locale, t } from '../i18n';
 import { publicUrl, syncCommunityProfile } from './community';
 import { backendAvailable, getSessionClient, getSupabase } from './supabase';
 
 // Online trainers: people apply from Ajustes, the team (app admins) approves
-// them from the app, sets the price shown and a payment link that pays
-// Fitness Life. Trainers without a payment link are contacted directly.
+// them from the app and sets the monthly price and the Fitness Life
+// commission. Trainers who set up payouts are hired in the app (Stripe,
+// lib/trainerPay.ts); otherwise through a payment link or their contact.
 
 export interface TrainerFields {
     name: string;
@@ -26,6 +27,13 @@ export interface Trainer extends TrainerFields {
     // Set by the team: the price shown in the app and where people pay it.
     appPrice: string;
     paymentUrl: string;
+    // Monthly price in cents and the Fitness Life share of it (percent).
+    priceCents: number;
+    currency: string;
+    feePercent: number;
+    // The trainer can receive payments: hired in the app.
+    payoutsReady: boolean;
+    hireInApp: boolean;
 }
 
 export const trainersAvailable = backendAvailable;
@@ -34,17 +42,40 @@ type Row = {
     id: string; user_id: string; name: string; specialty: string; bio: string; experience_years: number; certifications: string;
     languages: string; price: string; contact: string; country: string; status: Trainer['status'];
     app_price?: string; payment_url?: string;
+    price_cents?: number; currency?: string; fee_percent?: number; payouts_ready?: boolean; hire_in_app?: boolean;
     profile: { avatar_path: string | null; updated_at: string } | null;
 };
 const BASE_COLUMNS = 'id, user_id, name, specialty, bio, experience_years, certifications, languages, price, contact, country, status, profile:community_profiles!trainer_applications_user_id_fkey(avatar_path, updated_at)';
-const COLUMNS = `${BASE_COLUMNS}, app_price, payment_url`;
+const COLUMNS = `${BASE_COLUMNS}, app_price, payment_url, price_cents, currency, fee_percent, payouts_ready`;
 
 const fromRow = (r: Row): Trainer => ({
     id: r.id, userId: r.user_id, name: r.name, specialty: r.specialty, bio: r.bio, experienceYears: r.experience_years,
     certifications: r.certifications, languages: r.languages, price: r.price, contact: r.contact, country: r.country,
     status: r.status, avatarUrl: publicUrl(r.profile?.avatar_path ?? null, r.profile?.updated_at),
     appPrice: r.app_price ?? '', paymentUrl: r.payment_url ?? '',
+    priceCents: r.price_cents ?? 0, currency: r.currency ?? 'usd', feePercent: r.fee_percent ?? 25,
+    payoutsReady: r.payouts_ready ?? false,
+    hireInApp: r.hire_in_app ?? ((r.payouts_ready ?? false) && (r.price_cents ?? 0) > 0),
 });
+
+// "49 $", "€39": an amount in cents in the app's language.
+export const formatMoney = (cents: number, currency: string) => {
+    const amount = cents / 100;
+    try {
+        return new Intl.NumberFormat(locale(), { style: 'currency', currency: currency.toUpperCase(), maximumFractionDigits: Number.isInteger(amount) ? 0 : 2 }).format(amount);
+    } catch {
+        return `${amount} ${currency.toUpperCase()}`;
+    }
+};
+
+// The price people see: the monthly price set by the team, or older free text.
+export const displayPrice = (tr: Pick<Trainer, 'priceCents' | 'currency' | 'appPrice'>) =>
+    tr.priceCents > 0 ? t('trainers.perMonth', { price: formatMoney(tr.priceCents, tr.currency) }) : tr.appPrice;
+
+// What the trainer gets of each payment, before Stripe's own fee.
+export const trainerShareCents = (priceCents: number, feePercent: number) => Math.round(priceCents * (100 - feePercent) / 100);
+
+export const CURRENCIES = ['usd', 'eur', 'mxn', 'gbp', 'cad', 'brl'] as const;
 
 type Listed = Omit<Row, 'profile' | 'status' | 'price'> & { avatar_path: string | null; profile_updated_at: string | null };
 
@@ -80,11 +111,24 @@ export const fetchApplications = async (): Promise<Trainer[]> => {
     return ((data ?? []) as unknown as Row[]).map(fromRow);
 };
 
-export const reviewApplication = async (id: string, review: { status: Trainer['status']; appPrice: string; paymentUrl: string }) => {
+export const reviewApplication = async (id: string, review: {
+    status: Trainer['status']; priceCents: number; currency: string; feePercent: number; paymentUrl: string;
+}) => {
     const supabase = await getSupabase();
-    const { error } = await supabase.from('trainer_applications')
-        .update({ status: review.status, app_price: review.appPrice.trim(), payment_url: review.paymentUrl.trim() }).eq('id', id);
+    const { error } = await supabase.from('trainer_applications').update({
+        status: review.status, price_cents: review.priceCents, currency: review.currency, fee_percent: review.feePercent,
+        app_price: review.priceCents > 0 ? displayPrice({ priceCents: review.priceCents, currency: review.currency, appPrice: '' }) : '',
+        payment_url: review.paymentUrl.trim(),
+    }).eq('id', id);
     if (error) throw error;
+};
+
+// Admins: paying clients per trainer.
+export const fetchClientCounts = async (): Promise<Record<string, number>> => {
+    const supabase = await getSupabase();
+    const { data, error } = await supabase.rpc('trainer_client_counts');
+    if (error) return {};
+    return Object.fromEntries(((data ?? []) as { trainer_id: string; active: number }[]).map(r => [r.trainer_id, r.active]));
 };
 
 // Languages are saved as codes ("es,en"); older applications as free text.
@@ -127,7 +171,7 @@ export const withdrawApplication = async () => {
     if (!id) return;
     const supabase = await getSupabase();
     const { error } = await supabase.from('trainer_applications').delete().eq('user_id', id);
-    if (error) throw error;
+    if (error) throw error.message.includes('trainer_has_clients') ? new Error('trainer_has_clients') : error;
 };
 
 // Where "Contact" goes: a web page, an e-mail, WhatsApp for a phone number,

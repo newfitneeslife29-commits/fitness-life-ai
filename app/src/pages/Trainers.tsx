@@ -1,16 +1,21 @@
-import { BadgeCheck, ChevronDown, CreditCard, Globe2, GraduationCap, Info, Languages, MessageCircle, RefreshCw, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ChevronRight, CreditCard, Globe2, GraduationCap, Info, Languages, Loader2, MessageCircle, RefreshCw, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
+import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { t, tp } from '../i18n';
 import { errorText } from '../lib/errorText';
-import { contactLink, fetchTrainers, isTrainerAdmin, trainerLanguages, trainersAvailable, type Trainer } from '../lib/trainers';
+import { fetchHires, hireState, hireTrainer, PayError, STRIPE_RETURN_EVENT, syncHires, type Hire } from '../lib/trainerPay';
+import { contactLink, displayPrice, fetchMyApplication, fetchTrainers, isTrainerAdmin, trainerLanguages, trainersAvailable, type Trainer } from '../lib/trainers';
+import { useStore } from '../store/store';
 
-const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
+const TrainerCard = ({ trainer, hire, busy, onHire }: { trainer: Trainer; hire?: Hire; busy: boolean; onHire: (tr: Trainer) => void }) => {
+    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const link = contactLink(trainer.contact);
     const langs = trainerLanguages(trainer.languages);
+    const price = displayPrice(trainer);
     return (
         <article className="card overflow-hidden" aria-label={trainer.name}>
             <div className="flex gap-3 p-4">
@@ -25,7 +30,7 @@ const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
                         {trainer.country && <span className="flex items-center gap-1"><Globe2 size={12} /> {trainer.country}</span>}
                     </p>
                 </div>
-                {trainer.appPrice && <span className="h-fit shrink-0 rounded-full bg-good/15 px-2.5 py-1 text-xs font-bold text-good">{trainer.appPrice}</span>}
+                {price && <span className="h-fit shrink-0 rounded-full bg-good/15 px-2.5 py-1 text-xs font-bold text-good">{price}</span>}
             </div>
             {langs.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3" aria-label={t('trainers.speaks')}>
@@ -45,7 +50,13 @@ const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
                 <button onClick={() => setOpen(o => !o)} className="btn-ghost flex-1 py-2 text-sm">
                     <ChevronDown size={16} className={`transition ${open ? 'rotate-180' : ''}`} /> {t(open ? 'trainers.less' : 'trainers.more')}
                 </button>
-                {trainer.paymentUrl
+                {hire
+                    ? <button onClick={() => navigate(`/entrenadores/chat/${hire.id}`)} className="btn-primary flex-1 py-2 text-sm"><MessageCircle size={16} /> {t('trainers.openChat')}</button>
+                    : trainer.hireInApp
+                    ? <button disabled={busy} onClick={() => onHire(trainer)} className="btn-primary flex-1 py-2 text-sm">
+                        {busy ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />} {t('trainers.hire')}
+                    </button>
+                    : trainer.paymentUrl
                     ? <a href={trainer.paymentUrl} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 py-2 text-sm"><CreditCard size={16} /> {t('trainers.hire')}</a>
                     : link
                         ? <a href={link} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 py-2 text-sm"><MessageCircle size={16} /> {t('trainers.contact')}</a>
@@ -53,7 +64,9 @@ const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
                             ? <span className="flex-1 select-all rounded-xl bg-ink-3 px-3 py-2 text-center text-sm">{trainer.contact}</span>
                             : null}
             </div>
-            {trainer.paymentUrl && <p className="-mt-1 px-4 pb-4 text-xs text-white/45">{t('trainers.hireHint')}</p>}
+            {!hire && (trainer.hireInApp || trainer.paymentUrl) && (
+                <p className="-mt-1 px-4 pb-4 text-xs text-white/45">{t(trainer.hireInApp ? 'trainers.hireInAppHint' : 'trainers.hireHint')}</p>
+            )}
         </article>
     );
 };
@@ -61,20 +74,79 @@ const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
 // Real trainers who coach online, reviewed by the Fitness Life team.
 export default function Trainers() {
     const navigate = useNavigate();
+    const [params, setParams] = useSearchParams();
+    const account = useStore(s => s.account);
+    const profileName = useStore(s => s.profile?.name ?? '');
     const [trainers, setTrainers] = useState<Trainer[] | null>(null);
     const [failed, setFailed] = useState<string | null>(null);
     const [admin, setAdmin] = useState(false);
+    const [coach, setCoach] = useState(false);
+    const [hires, setHires] = useState<Hire[]>([]);
+    const [hiring, setHiring] = useState<string | null>(null);
     const [lang, setLang] = useState<string | null>(null);
     const load = () => {
         setFailed(null);
         setTrainers(null);
         fetchTrainers().then(setTrainers).catch(e => { setFailed(errorText(e)); setTrainers([]); });
     };
+    const loadHires = () => fetchHires().then(setHires, () => {});
     useEffect(() => {
         if (!trainersAvailable()) return;
         load();
         void isTrainerAdmin().then(setAdmin, () => setAdmin(false));
     }, []);
+    useEffect(() => {
+        if (!account || !trainersAvailable()) return;
+        void loadHires();
+        void fetchMyApplication().then(a => setCoach(!!a), () => {});
+    }, [account?.id]);
+
+    // Back from Stripe: save the hire and open its chat.
+    const backFromStripe = async (to: string) => {
+        if (to === 'canceled' || !account) return;
+        if (to === 'hired') toast(t('trainers.checkingPayment'));
+        try {
+            const hired = await syncHires();
+            await loadHires();
+            if (hired) {
+                toast(t('trainers.hiredToast'), 4000);
+                navigate(`/entrenadores/chat/${hired}`);
+            } else if (to === 'hired') {
+                toast(t('trainers.paymentPending'), 5000);
+            }
+        } catch {
+            if (to === 'hired') toast(t('trainers.paymentPending'), 5000);
+        }
+    };
+    useEffect(() => {
+        // On the web the page reloads: wait for the account to be back.
+        const to = params.get('stripe');
+        if (to && account) {
+            setParams({}, { replace: true });
+            void backFromStripe(to);
+        }
+        const onReturn = (e: Event) => void backFromStripe((e as CustomEvent<string>).detail);
+        window.addEventListener(STRIPE_RETURN_EVENT, onReturn);
+        return () => window.removeEventListener(STRIPE_RETURN_EVENT, onReturn);
+    }, [account?.id]);
+
+    const hire = async (tr: Trainer) => {
+        if (!account) {
+            toast(t('trainers.needAccount'), 3500);
+            navigate('/cuenta');
+            return;
+        }
+        setHiring(tr.id);
+        try {
+            await hireTrainer(tr.id, profileName);
+        } catch (e) {
+            toast(t(`pay.err.${e instanceof PayError ? e.code : 'failed'}`), 4500);
+        } finally {
+            setHiring(null);
+        }
+    };
+    const mine = hires.filter(h => h.role === 'client');
+    const current = (trainerId: string) => mine.find(h => h.trainerId === trainerId && h.open);
     // Filter by the languages the listed trainers speak.
     const languages = [...new Map((trainers ?? []).flatMap(tr => trainerLanguages(tr.languages)).map(l => [l.code, l])).values()];
     const shown = lang ? (trainers ?? []).filter(tr => trainerLanguages(tr.languages).some(l => l.code === lang)) : trainers ?? [];
@@ -87,6 +159,23 @@ export default function Trainers() {
                     <Info size={16} className="mt-0.5 shrink-0 text-sky-400" /> {t('trainers.note')}
                 </p>
             </Section>
+            {mine.length > 0 && (
+                <Section title={t('trainers.mine')}>
+                    <div className="space-y-2">
+                        {mine.map(h => (
+                            <button key={h.id} onClick={() => navigate(`/entrenadores/chat/${h.id}`)} className="card flex w-full items-center gap-3 p-3 text-left hover:bg-ink-3">
+                                <Avatar src={h.trainerAvatar} name={h.trainerName || '?'} size={44} />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate font-semibold">{h.trainerName}</span>
+                                    <span className="block truncate text-xs text-white/55">{t(`hire.${hireState(h)}`)}</span>
+                                </span>
+                                {h.unread > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink" aria-label={t('chat.unread', { n: h.unread })}>{h.unread}</span>}
+                                <MessageCircle size={18} className="shrink-0 text-white/40" />
+                            </button>
+                        ))}
+                    </div>
+                </Section>
+            )}
             <Section>
                 {!trainersAvailable() ? (
                     <p className="card p-6 text-center text-sm text-white/60">{t('community.unavailable')}</p>
@@ -117,10 +206,23 @@ export default function Trainers() {
                                 ))}
                             </div>
                         )}
-                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} />)}</div>
+                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} hire={current(tr.id)} busy={hiring === tr.id} onHire={hire} />)}</div>
                     </>
                 )}
             </Section>
+            {coach && (
+                <Section>
+                    <button onClick={() => navigate('/entrenadores/panel')} className="card flex w-full items-center gap-3 border-brand/40 p-4 text-left hover:bg-ink-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><BadgeCheck size={20} /></span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">{t('trainers.panelTitle')}</span>
+                            <span className="block text-sm text-white/55">{t('trainers.panelHint')}</span>
+                        </span>
+                        {hires.some(h => h.role === 'trainer' && h.unread > 0) && <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-label={t('chat.newMessages')} />}
+                        <ChevronRight size={18} className="shrink-0 text-white/30" />
+                    </button>
+                </Section>
+            )}
             {admin && (
                 <Section>
                     <button onClick={() => navigate('/entrenadores/admin')} className="card flex w-full items-center gap-3 border-amber-400/40 p-4 text-left hover:bg-ink-3">

@@ -36,6 +36,8 @@ import FreePlans from './pages/FreePlans';
 import Mom from './pages/Mom';
 import TrainerApply from './pages/TrainerApply';
 import TrainerAdmin from './pages/TrainerAdmin';
+import TrainerChat from './pages/TrainerChat';
+import TrainerPanel from './pages/TrainerPanel';
 import Trainers from './pages/Trainers';
 import Privacy from './pages/Privacy';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
@@ -196,6 +198,8 @@ export default function App() {
                 <Route path="/entrenadores" element={<Shell><Trainers /></Shell>} />
                 <Route path="/entrenadores/aplicar" element={<Shell><TrainerApply /></Shell>} />
                 <Route path="/entrenadores/admin" element={<Shell><TrainerAdmin /></Shell>} />
+                <Route path="/entrenadores/panel" element={<Shell><TrainerPanel /></Shell>} />
+                <Route path="/entrenadores/chat/:id" element={<ErrorBoundary><TrainerChat /></ErrorBoundary>} />
                 <Route path="/sobre-nosotros" element={<Shell><AboutUs /></Shell>} />
                 <Route path="/privacidad" element={<Shell><Privacy /></Shell>} />
                 <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />

@@ -43,6 +43,7 @@
   .label { @apply text-xs font-medium uppercase tracking-wider text-white/45; }
   .pb-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
   /* A coloured header inside the page frame (already padded by .pt-safe):
      its colour runs up under the status bar instead of leaving a gap. */
   .bleed-top { margin-top: calc(-1 * env(safe-area-inset-top)); }

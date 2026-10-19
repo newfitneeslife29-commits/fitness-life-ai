@@ -1,10 +1,10 @@
-import { CheckCircle2, Clock, Send, Trash2, UserPlus, XCircle } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, ChevronRight, Clock, Send, Trash2, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { LANGS, t } from '../i18n';
-import { contactLink, fetchMyApplication, saveApplication, trainerLanguages, trainersAvailable, withdrawApplication, type Trainer, type TrainerFields } from '../lib/trainers';
+import { contactLink, displayPrice, fetchMyApplication, saveApplication, trainerLanguages, trainersAvailable, withdrawApplication, type Trainer, type TrainerFields } from '../lib/trainers';
 import { useStore } from '../store/store';
 
 const EMPTY: TrainerFields = { name: '', specialty: '', bio: '', experienceYears: 0, certifications: '', languages: '', price: '', contact: '', country: '' };
@@ -72,8 +72,8 @@ export default function TrainerApply() {
             await withdrawApplication();
             setMine(null);
             toast(t('apply.withdrawn'));
-        } catch {
-            toast(t('apply.err.failed'));
+        } catch (e) {
+            toast(t(e instanceof Error && e.message === 'trainer_has_clients' ? 'apply.err.hasClients' : 'apply.err.failed'), 4500);
         }
     };
 
@@ -100,9 +100,17 @@ export default function TrainerApply() {
                                 <span className="text-sm">
                                     <span className="block font-bold">{t(`apply.status.${mine.status}`)}</span>
                                     <span className="block text-white/70">{t(`apply.status.${mine.status}.hint`)}</span>
-                                    {mine.status === 'approved' && mine.appPrice && <span className="mt-1 block font-semibold text-white">{t('apply.appPrice', { price: mine.appPrice })}</span>}
+                                    {mine.status === 'approved' && displayPrice(mine) && <span className="mt-1 block font-semibold text-white">{t('apply.appPrice', { price: displayPrice(mine) })}</span>}
                                 </span>
                             </div>
+                            <Link to="/entrenadores/panel" className="card mt-2 flex items-center gap-3 p-4 hover:bg-ink-3">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><BadgeCheck size={20} /></span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block font-semibold">{t('trainers.panelTitle')}</span>
+                                    <span className="block text-sm text-white/55">{t('trainers.panelHint')}</span>
+                                </span>
+                                <ChevronRight size={18} className="shrink-0 text-white/30" />
+                            </Link>
                         </Section>
                     )}
                     <Section>

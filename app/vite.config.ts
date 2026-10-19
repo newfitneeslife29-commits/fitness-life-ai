@@ -18,7 +18,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['icon.svg'],
       // Exercise photos are precached too, so how-to images work offline.
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'] },
+      // Stripe's return page reads its query string: never answer it with the app.
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'], navigateFallbackDenylist: [/stripe-return\.html/] },
       manifest: {
         name: 'Fitness Life',
         short_name: 'Fitness Life',
