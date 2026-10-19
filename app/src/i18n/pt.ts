@@ -1772,4 +1772,6 @@ export const pt: Dict = {
     'admin.clients': "Clientes ativos: {n}",
     'admin.badPrice': "O preço mínimo é 1.",
     'apply.err.hasClients': "Você tem clientes ativos. Peça que cancelem ou espere terminarem antes de sair.",
+    'workout.activeTime': "Tempo ativo",
+    'workout.activePaused': "Pausado · descanso",
 };

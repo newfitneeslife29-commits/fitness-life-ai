@@ -1764,4 +1764,6 @@ export const zh: Dict = {
     'admin.payoutsMissing': "Hasn't connected payouts yet (they do it in their trainer dashboard).",
     'admin.clients': "Active clients: {n}",
     'admin.badPrice': "The minimum price is 1.",
+    'workout.activeTime': "运动时间",
+    'workout.activePaused': "已暂停 · 休息",
 };

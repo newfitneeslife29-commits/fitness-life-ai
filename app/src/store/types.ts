@@ -145,6 +145,8 @@ export interface ActiveWorkout {
     // Epoch ms when the current rest ends; null when not resting.
     restEndsAt: number | null;
     restTotalSec: number;
+    // Time spent in rests that already ended (ms): the active clock leaves it out.
+    restedMs?: number;
 }
 
 export interface Macros {

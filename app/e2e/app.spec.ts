@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }, info) => {
 
 // Full journey on a phone viewport against the production build.
 
-interface PlanAnswers { days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
+interface PlanAnswers { goal?: RegExp; days?: string; setup?: RegExp; level?: RegExp; limits?: string[]; loseToKg?: string }
 
 const onboard = async (page: Page, opts: PlanAnswers = {}) => {
     await page.goto('/');
@@ -25,7 +25,7 @@ const onboard = async (page: Page, opts: PlanAnswers = {}) => {
 const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
     await expect(page.getByRole('heading', { name: 'Tu plan de fuerza en 1 minuto' })).toBeVisible();
     await page.getByLabel('¿Cómo te llamas? (opcional)').fill('Sebas');
-    await page.getByRole('radio', { name: /Ganar músculo/ }).click();
+    await page.getByRole('radio', { name: opts.goal ?? /Ganar músculo/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     // About you: nothing goes on until it is filled in.
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
@@ -1573,6 +1573,36 @@ test('trainer dashboard: connect payouts with Stripe and see clients', async ({ 
     await expect(page.getByText(/Cobros activos/)).toBeVisible();
     expect(calls).toContainEqual(expect.objectContaining({ action: 'connect', country: 'MX', platform: 'web' }));
     await expect(page.getByRole('button', { name: /Ver mis ganancias/ })).toBeVisible();
+});
+
+test('guided: fat burning keeps an active clock that only stops in the rests', async ({ page }) => {
+    await onboard(page, { goal: /Perder grasa/, setup: /En casa sin material/ });
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await page.getByRole('button', { name: '¡Empezar!' }).click();
+    await page.getByRole('button', { name: '¡Empezar ya!' }).click();
+
+    // Working: the clock is on screen and running.
+    const running = page.getByRole('timer', { name: /^Tiempo activo/ });
+    await expect(running).toBeVisible();
+    const before = await running.getAttribute('aria-label');
+    await expect(running).not.toHaveAttribute('aria-label', before!, { timeout: 3000 });
+
+    // Resting: it stops and says so.
+    const set = page.getByRole('button', { name: 'Serie hecha' });
+    if (await set.isVisible()) await set.click();
+    else await page.getByRole('button', { name: 'Terminar' }).click();
+    const paused = page.getByRole('timer', { name: /^En pausa · descanso/ });
+    await expect(paused).toBeVisible();
+    const frozen = await paused.getAttribute('aria-label');
+    await page.waitForTimeout(2200);
+    await expect(paused).toHaveAttribute('aria-label', frozen!);
+
+    // After the rest it carries on from where it stopped.
+    await page.getByRole('button', { name: 'Saltar' }).click();
+    await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
 });
 
 test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {

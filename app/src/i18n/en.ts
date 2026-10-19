@@ -1771,4 +1771,6 @@ export const en: Dict = {
     'admin.clients': "Active clients: {n}",
     'admin.badPrice': "The minimum price is 1.",
     'apply.err.hasClients': "You have active clients. Ask them to cancel or wait until they end before withdrawing.",
+    'workout.activeTime': "Active time",
+    'workout.activePaused': "Paused · rest",
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Routine, Session } from '../store/types';
-import { createActiveWorkout, finishWorkout } from './workout';
+import { activeSeconds, createActiveWorkout, endRest, finishWorkout, isBurnWorkout } from './workout';
 
 const routine: Routine = {
     id: 'r1',
@@ -61,5 +61,31 @@ describe('finishWorkout', () => {
 
     it('discards a workout without completed sets', () => {
         expect(finishWorkout(createActiveWorkout(routine, history))).toBeNull();
+    });
+});
+
+describe('active clock', () => {
+    const at = (s: number) => Date.parse('2026-10-19T10:00:00.000Z') + s * 1000;
+    const base = { ...createActiveWorkout(routine, [], new Date(at(0))), restedMs: 0 };
+
+    it('runs the whole session and leaves out the rests', () => {
+        expect(activeSeconds(base, at(90))).toBe(90);
+        // A 60 s rest started at 90 s: frozen while it lasts.
+        const resting = { ...base, restEndsAt: at(150), restTotalSec: 60 };
+        expect(activeSeconds(resting, at(120))).toBe(90);
+        expect(activeSeconds(resting, at(150))).toBe(90);
+        // Its time stays out after it ends, whether it ran out or was skipped.
+        expect(activeSeconds(resting, at(170))).toBe(110);
+        const skipped = endRest(resting, at(100));
+        expect(skipped.restEndsAt).toBeNull();
+        expect(skipped.restedMs).toBe(10_000);
+        expect(activeSeconds(skipped, at(200))).toBe(190);
+    });
+
+    it('is on for cardio and fat-burning workouts', () => {
+        expect(isBurnWorkout(base)).toBe(false);
+        expect(isBurnWorkout(base, 'grasa')).toBe(true);
+        expect(isBurnWorkout({ ...base, dayKey: 'premium-home-burn:0' })).toBe(true);
+        expect(isBurnWorkout({ ...base, exercises: [{ ...base.exercises[0], exerciseId: 'caminadora' }] })).toBe(true);
     });
 });

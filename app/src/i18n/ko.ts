@@ -1764,4 +1764,6 @@ export const ko: Dict = {
     'admin.payoutsMissing': "Hasn't connected payouts yet (they do it in their trainer dashboard).",
     'admin.clients': "Active clients: {n}",
     'admin.badPrice': "The minimum price is 1.",
+    'workout.activeTime': "운동 시간",
+    'workout.activePaused': "일시정지 · 휴식",
 };

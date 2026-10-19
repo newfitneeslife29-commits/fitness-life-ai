@@ -1772,4 +1772,6 @@ export const es = {
     'admin.clients': "Clientes activos: {n}",
     'admin.badPrice': "El precio mínimo es 1.",
     'apply.err.hasClients': "Tienes clientes activos. Pídeles que cancelen o espera a que terminen antes de retirarte.",
+    'workout.activeTime': "Tiempo activo",
+    'workout.activePaused': "En pausa · descanso",
 };

@@ -1,6 +1,7 @@
 import { ArrowLeftRight, BookOpen, Sparkles, Check, ChevronLeft, Clock3, Copy, Disc3, Dumbbell, Minus, Plus, RefreshCw, Repeat, Target, Timer, Trash2, TrendingUp } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ActiveClock } from '../components/ActiveClock';
 import { ExerciseDemo } from '../components/ExerciseDemo';
 import { GuidedWorkout } from '../components/GuidedWorkout';
 import { ExercisePicker } from '../components/ExercisePicker';
@@ -18,7 +19,7 @@ import { sessionName } from '../lib/names';
 import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { useRestCountdown } from '../lib/useRest';
-import { planExercise } from '../lib/workout';
+import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveExercise, Unit } from '../store/types';
 
@@ -325,6 +326,7 @@ const savedView = (): 'guided' | 'list' => {
 export default function Workout() {
     const active = useStore(s => s.active);
     const unit = useStore(s => s.profile?.unit ?? 'kg');
+    const goal = useStore(s => s.profile?.goal);
     const navigate = useNavigate();
     const now = useNow(!!active);
     const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'swap'; index: number } | null>(null);
@@ -423,6 +425,7 @@ export default function Workout() {
                     <Stat icon={<Dumbbell size={11} />} label={t('workout.volume')} value={fmtVolume(volumeKg, unit)} />
                     <Stat icon={<Check size={11} />} label={t('workout.sets')} value={t('workout.progress', { done, total })} />
                 </div>
+                {isBurnWorkout(active, goal) && <div className="mt-2.5"><ActiveClock active={active} /></div>}
 
                 {active.exercises.length > 1 && (
                     <nav aria-label={t('workout.exercises')} className="-mx-3 mt-2.5 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">

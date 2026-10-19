@@ -1764,4 +1764,6 @@ export const ja: Dict = {
     'admin.payoutsMissing': "Hasn't connected payouts yet (they do it in their trainer dashboard).",
     'admin.clients': "Active clients: {n}",
     'admin.badPrice': "The minimum price is 1.",
+    'workout.activeTime': "運動時間",
+    'workout.activePaused': "一時停止・休憩中",
 };

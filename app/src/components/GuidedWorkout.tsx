@@ -11,9 +11,10 @@ import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { useRestCountdown } from '../lib/useRest';
 import { speak, voiceAvailable } from '../lib/voice';
-import { planExercise } from '../lib/workout';
+import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Unit } from '../store/types';
+import { ActiveClock } from './ActiveClock';
 import { HoldTimer } from './HoldTimer';
 import { Sheet } from './ui';
 import { UnitToggle } from './UnitToggle';
@@ -220,7 +221,7 @@ const Ready = ({ id, index, total, onGo }: { id: string; index: number; total: n
     );
 };
 
-const Rest = ({ active, endsAt, total, nextIndex, onList, unit }: { active: ActiveWorkout; endsAt: number; total: number; nextIndex: number; onList: () => void; unit: Unit }) => {
+const Rest = ({ active, endsAt, total, nextIndex, onList, unit, burn }: { active: ActiveWorkout; endsAt: number; total: number; nextIndex: number; onList: () => void; unit: Unit; burn: boolean }) => {
     const { left, finished, ending } = useRestCountdown(endsAt);
     const voiceOn = useStore(s => s.profile?.voice !== false) && voiceAvailable();
     const next = active.exercises[nextIndex];
@@ -238,6 +239,7 @@ const Rest = ({ active, endsAt, total, nextIndex, onList, unit }: { active: Acti
                 <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
             </div>
             <div className="mx-auto flex w-full max-w-lg flex-col items-center px-6 pt-4 text-center">
+                {burn && <div className="mb-3"><ActiveClock active={active} tone="light" /></div>}
                 <p className="text-lg font-black uppercase tracking-[0.35em]">{finished ? t('rest.done') : t('rest.title')}</p>
                 <p className={`mt-1 text-[5.5rem] font-black leading-none tabular-nums ${ending ? 'animate-pulse' : ''}`}>{fmtClock(left)}</p>
                 <div className="mt-4 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/25">
@@ -310,6 +312,8 @@ const Done = ({ active, onFinish, onList, unit }: { active: ActiveWorkout; onFin
 export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { active: ActiveWorkout; unit: Unit; onFinish: () => void; onList: () => void; onClose: () => void }) => {
     const sessions = useStore(s => s.sessions);
     const sound = useStore(s => s.profile?.restSound !== false);
+    const goal = useStore(s => s.profile?.goal);
+    const burn = isBurnWorkout(active, goal);
     const now = useNow(true, 1000);
     const doneCount = active.exercises.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
     const [started, setStarted] = useState(doneCount > 0);
@@ -326,7 +330,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
 
     if (!started) return <Overview active={active} unit={unit} onClose={onClose} onList={onList} onStart={() => { primeSound(); haptic('tap'); setStarted(true); }} />;
     if (!ex || !set) return <Done active={active} unit={unit} onFinish={onFinish} onList={onList} />;
-    if (active.restEndsAt) return <Rest active={active} endsAt={active.restEndsAt} total={active.restTotalSec} nextIndex={current} onList={onList} unit={unit} />;
+    if (active.restEndsAt) return <Rest active={active} endsAt={active.restEndsAt} total={active.restTotalSec} nextIndex={current} onList={onList} unit={unit} burn={burn} />;
     // A new exercise starts with "get ready" (not between its sets).
     if (setIndex === 0 && !introduced.includes(current)) {
         return <Ready key={current} id={ex.exerciseId} index={current} total={active.exercises.length} onGo={() => setIntroduced(list => [...list, current])} />;
@@ -356,7 +360,9 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
                             <RoundButton label={t('workout.back')} onClick={onClose}><ChevronDown size={22} /></RoundButton>
                             <div className="min-w-0 text-center">
                                 <p className="truncate text-sm font-extrabold">{t('workout.exerciseOf', { n: current + 1, total: active.exercises.length })}</p>
-                                <p className="text-xs font-semibold tabular-nums text-snow/75">{fmtClock((now - Date.parse(active.startedAt)) / 1000)}</p>
+                                {burn
+                                    ? <div className="mt-1.5"><ActiveClock active={active} tone="light" /></div>
+                                    : <p className="text-xs font-semibold tabular-nums text-snow/75">{fmtClock((now - Date.parse(active.startedAt)) / 1000)}</p>}
                             </div>
                             <div className="flex flex-col gap-2">
                                 <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
@@ -392,7 +398,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
 
                     {info?.timed ? (
                         <div className="mt-3">
-                            <HoldTimer target={set.reps || ex.repMin} onDone={sec => {
+                            <HoldTimer key={`${current}-${setIndex}`} auto={burn} target={set.reps || ex.repMin} onDone={sec => {
                                 actions.setValue(current, setIndex, 'reps', sec);
                                 complete();
                             }} />
