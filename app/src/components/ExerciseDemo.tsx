@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { exercisePhotos } from '../data/exercises';
+import { exerciseMotion } from '../data/motion';
 import { t } from '../i18n';
 
 // Start and end position photos, alternating like a slow animation so the
@@ -7,17 +8,28 @@ import { t } from '../i18n';
 // Lists use still thumbnails (`animate` off) to keep scrolling light.
 export const ExerciseDemo = ({ id, name, variant = 'full', animate = variant === 'full' }: { id: string; name: string; variant?: 'full' | 'thumb'; animate?: boolean }) => {
     const photos = exercisePhotos(id);
+    const video = exerciseMotion(id);
     const [frame, setFrame] = useState(0);
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        if (!animate) return;
+        if (!animate || video) return;
         const timer = window.setInterval(() => setFrame(f => 1 - f), variant === 'thumb' ? 1400 : 1100);
         return () => window.clearInterval(timer);
-    }, [variant, animate]);
+    }, [variant, animate, video]);
 
-    if (!photos || failed) return null;
     const thumb = variant === 'thumb';
+    if (video) {
+        return (
+            <div role="img" aria-label={t('demo.alt', { name })}
+                className={`relative shrink-0 overflow-hidden bg-snow ${thumb ? 'h-14 w-14 rounded-xl' : 'aspect-[3/2] w-full rounded-2xl'}`}>
+                {animate
+                    ? <video src={video} autoPlay loop muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-contain" />
+                    : <video src={`${video}#t=0.5`} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-contain" />}
+            </div>
+        );
+    }
+    if (!photos || failed) return null;
     return (
         <div
             role="img"

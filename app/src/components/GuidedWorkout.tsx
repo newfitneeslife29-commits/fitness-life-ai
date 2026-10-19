@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Clock3, Dumbbell, Flame, HelpCircle, List, Minus, Play, Plus, SkipForward, Target, Trophy, TrendingUp, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { routineCover } from '../data/covers';
+import { exerciseMotion } from '../data/motion';
 import { exerciseName, exercisePhotos, exerciseTip, getExercise, muscleLabel, type Muscle } from '../data/exercises';
 import { t, type Key } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtVolume, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
@@ -25,14 +26,24 @@ import { UnitToggle } from './UnitToggle';
 const READY_SEC = 10;
 const TIPS: Key[] = ['guided.tip1', 'guided.tip2', 'guided.tip3', 'guided.tip4', 'guided.tip5'];
 
-// Start and end photos crossfading, slowly zooming: the movement at a glance.
+// The animated demo when there is one; otherwise the start and end photos
+// crossfading, slowly zooming: the movement at a glance.
 const Motion = ({ id, className = '' }: { id: string; className?: string }) => {
+    const video = exerciseMotion(id);
     const photos = exercisePhotos(id);
     const [frame, setFrame] = useState(0);
     useEffect(() => {
+        if (video) return;
         const timer = window.setInterval(() => setFrame(f => 1 - f), 1100);
         return () => window.clearInterval(timer);
-    }, []);
+    }, [video]);
+    if (video) {
+        return (
+            <div role="img" aria-label={t('demo.alt', { name: exerciseName(id) })} className={`overflow-hidden bg-snow ${className}`}>
+                <video src={video} autoPlay loop muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-contain" />
+            </div>
+        );
+    }
     if (!photos) {
         return (
             <div className={`flex items-center justify-center bg-gradient-to-br from-brand/30 via-ink-2 to-ink ${className}`}>
