@@ -1,20 +1,23 @@
-import { ArrowLeftRight, BookOpen, Check, ChevronLeft, Clock3, Copy, Disc3, Dumbbell, Minus, Plus, RefreshCw, Repeat, Target, Timer, Trash2, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, Sparkles, Check, ChevronLeft, Clock3, Copy, Disc3, Dumbbell, Minus, Plus, RefreshCw, Repeat, Target, Timer, Trash2, TrendingUp } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ExerciseDemo } from '../components/ExerciseDemo';
+import { GuidedWorkout } from '../components/GuidedWorkout';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { HoldTimer } from '../components/HoldTimer';
 import { OfflineNotice } from '../components/OfflineNotice';
 import { confirm, toast } from '../components/feedback';
 import { PlateSheet } from '../components/PlateSheet';
+import { UnitToggle } from '../components/UnitToggle';
 import { Sheet } from '../components/ui';
 import { busyAlternatives, equipmentLabel, exerciseName, exerciseTip, getExercise, muscleLabel } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtVolume, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
-import { cancelRestAlert, COUNTDOWN_SEC, haptic, keepAwake, primeSound, restOver, restTick, scheduleRestAlert } from '../lib/native';
+import { cancelRestAlert, haptic, keepAwake, primeSound, scheduleRestAlert } from '../lib/native';
 import { sessionName } from '../lib/names';
 import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
+import { useRestCountdown } from '../lib/useRest';
 import { planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveExercise, Unit } from '../store/types';
@@ -274,25 +277,7 @@ const Ring = ({ progress, children }: { progress: number; children: ReactNode })
 export interface NextUp { name: string; set: number; value: string }
 
 const RestPanel = ({ endsAt, total, next }: { endsAt: number; total: number; next: NextUp | null }) => {
-    const sound = useStore(s => s.profile?.restSound !== false);
-    const now = useNow(true, 250);
-    const left = Math.ceil((endsAt - now) / 1000);
-    const finished = left <= 0;
-    // The last 10 seconds: a tick each second, then the "go" alert.
-    const ticked = useRef<number | null>(null);
-    useEffect(() => {
-        if (left > 0 && left <= COUNTDOWN_SEC && ticked.current !== left) {
-            ticked.current = left;
-            restTick(sound, left <= 3);
-        }
-    }, [left, sound]);
-    useEffect(() => {
-        if (!finished) return;
-        restOver(sound);
-        const timer = window.setTimeout(() => actions.skipRest(), 4000);
-        return () => window.clearTimeout(timer);
-    }, [finished]);
-    const ending = !finished && left <= COUNTDOWN_SEC;
+    const { left, finished, ending } = useRestCountdown(endsAt);
     return (
         <div role="timer" aria-live="polite" className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] animate-rise">
             <div className="mx-auto flex max-w-lg items-center gap-3.5 rounded-3xl border border-line bg-ink-2/95 p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl">
@@ -320,18 +305,6 @@ const RestPanel = ({ endsAt, total, next }: { endsAt: number; total: number; nex
     );
 };
 
-// kg ⇄ lb right where the weights are typed; the whole app follows.
-const UnitToggle = ({ unit }: { unit: Unit }) => (
-    <div role="radiogroup" aria-label={t('workout.unit')} className="flex rounded-full bg-ink-3 p-0.5 text-xs font-bold">
-        {(['kg', 'lbs'] as const).map(u => (
-            <button key={u} role="radio" aria-checked={unit === u} onClick={() => { if (unit !== u) { haptic('tap'); actions.updateProfile({ unit: u }); } }}
-                className={`rounded-full px-2.5 py-1 transition ${unit === u ? 'bg-white text-ink shadow' : 'text-white/55'}`}>
-                {u === 'kg' ? 'kg' : 'lb'}
-            </button>
-        ))}
-    </div>
-);
-
 const Stat = ({ icon, label, value }: { icon: ReactNode; label: string; value: string }) => (
     <div className="min-w-0 rounded-xl bg-ink-3/70 px-2.5 py-2">
         <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/45">{icon}{label}</p>
@@ -339,12 +312,27 @@ const Stat = ({ icon, label, value }: { icon: ReactNode; label: string; value: s
     </div>
 );
 
+// Guided (full screen, one exercise at a time) or the list of every set.
+const VIEW_KEY = 'fitness-life:workout-view';
+const savedView = (): 'guided' | 'list' => {
+    try {
+        return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'guided';
+    } catch {
+        return 'guided';
+    }
+};
+
 export default function Workout() {
     const active = useStore(s => s.active);
     const unit = useStore(s => s.profile?.unit ?? 'kg');
     const navigate = useNavigate();
     const now = useNow(!!active);
     const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'swap'; index: number } | null>(null);
+    const [view, setView] = useState(savedView);
+    const changeView = (next: 'guided' | 'list') => {
+        setView(next);
+        try { localStorage.setItem(VIEW_KEY, next); } catch { /* the choice just isn't remembered */ }
+    };
     // Set when finishing, so the "no workout, go home" redirect below does not
     // override the navigation to the session summary.
     const finishing = useRef(false);
@@ -407,6 +395,10 @@ export default function Workout() {
         if (ok) actions.discardWorkout();
     };
 
+    if (view === 'guided') {
+        return <GuidedWorkout active={active} unit={unit} onFinish={finish} onList={() => changeView('list')} onClose={() => navigate('/')} />;
+    }
+
     return (
         <div className="mx-auto min-h-dvh max-w-lg pb-44">
             {/* The safe-area padding lives in the sticky header so it never slides under the notch. */}
@@ -421,6 +413,7 @@ export default function Workout() {
                             <p className="text-xs text-white/50">{t('workout.exerciseOf', { n: (currentIndex >= 0 ? currentIndex : active.exercises.length - 1) + 1, total: active.exercises.length })}</p>
                         )}
                     </div>
+                    <button onClick={() => changeView('guided')} aria-label={t('guided.guidedView')} className="rounded-lg p-2 text-brand hover:bg-ink-3"><Sparkles size={20} /></button>
                     <UnitToggle unit={unit} />
                     <button onClick={finish} className="btn-primary ml-1 px-4 py-2">{t('workout.finish')}</button>
                 </div>

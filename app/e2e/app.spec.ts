@@ -4,7 +4,9 @@ import path from 'node:path';
 const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', name);
 
 // New users get a tour of the app once; tests skip it, except the one about it.
+// Workout tests use the list of sets, except the ones about the guided mode.
 test.beforeEach(async ({ page }, info) => {
+    if (!info.title.startsWith('guided:')) await page.addInitScript(() => localStorage.setItem('fitness-life:workout-view', 'list'));
     if (info.title.startsWith('tour:')) return;
     await page.addInitScript(() => localStorage.setItem('fitness-life:guide-seen', '1'));
 });
@@ -1414,4 +1416,52 @@ test('online trainers: languages, hiring through the app, and the owner sets the
     await app.getByRole('button', { name: 'Aprobar y publicar' }).click();
     await expect(page.getByText('Entrenador publicado')).toBeVisible();
     expect(updates).toEqual([{ status: 'approved', app_price: '49 $/mes', payment_url: 'https://buy.stripe.com/test' }]);
+});
+
+test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+
+    // The cover of the session with its exercises.
+    await expect(page.getByRole('heading', { name: 'Cuerpo completo A' })).toBeVisible();
+    await expect(page.getByText('Ejercicios')).toBeVisible();
+    await expect(page.getByText('Intermedio')).toBeVisible();
+    await page.getByRole('button', { name: '¡Empezar!' }).click();
+
+    // Get ready, then the exercise.
+    await expect(page.getByText('¡Prepárate!')).toBeVisible();
+    await page.getByRole('button', { name: '¡Empezar ya!' }).click();
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await expect(squat.getByText('Serie 1 de 3')).toBeVisible();
+    await squat.getByLabel('Peso serie 1').fill('60');
+    await squat.getByRole('button', { name: 'Subir el peso de la serie 1' }).click();
+    await expect(squat.getByLabel('Peso serie 1')).toHaveValue('62,5');
+    await squat.getByRole('button', { name: 'Una repetición más serie 1' }).click();
+    await squat.getByRole('button', { name: 'Serie hecha' }).click();
+
+    // Full-screen rest with the next set.
+    const rest = page.getByRole('timer');
+    await expect(rest).toContainText('Descanso');
+    await expect(rest).toContainText('Serie 2 de 3');
+    await expect(rest).toContainText('62,5 kg');
+    await rest.getByRole('button', { name: 'Saltar' }).click();
+    await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByText('Serie 2 de 3')).toBeVisible();
+
+    // The list shows the same workout; back to guided and finish.
+    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByLabel('Peso serie 1')).toHaveValue('62,5');
+    await page.getByRole('button', { name: 'Modo guiado' }).click();
+    for (let i = 0; i < 6; i++) {
+        const go = page.getByRole('button', { name: '¡Empezar ya!' });
+        const skip = page.getByRole('button', { name: 'Saltar ejercicio' });
+        await expect(go.or(skip)).toBeVisible();
+        if (await go.isVisible()) await go.click();
+        await skip.click();
+    }
+    await expect(page.getByRole('heading', { name: '¡Entreno completado!' })).toBeVisible();
+    await page.getByRole('button', { name: 'Guardar entreno' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Entreno guardado')).toBeVisible();
+    await expect(page.getByText('60 × 7').or(page.getByText('62,5 × 7')).first()).toBeVisible();
 });
