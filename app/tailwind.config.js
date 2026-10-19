@@ -25,11 +25,13 @@ export default {
         fade: { from: { opacity: '0' }, to: { opacity: '1' } },
         rise: { from: { opacity: '0', transform: 'translateY(12px)' }, to: { opacity: '1', transform: 'none' } },
         pop: { '0%': { transform: 'scale(1)' }, '40%': { transform: 'scale(1.18)' }, '100%': { transform: 'scale(1)' } },
+        kenburns: { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.07)' } },
       },
       animation: {
         fade: 'fade 180ms ease-out',
         rise: 'rise 220ms cubic-bezier(.2,.8,.2,1)',
         pop: 'pop 260ms ease-out',
+        kenburns: 'kenburns 9s ease-in-out infinite alternate',
       },
       fontFamily: {
         sans: ['"Inter Variable"', 'system-ui', 'sans-serif'],

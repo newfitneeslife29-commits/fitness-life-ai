@@ -251,8 +251,17 @@ export const actions = {
                 completedAt: w.done ? undefined : new Date().toISOString(),
             }));
             if (wasDone) return next;
+            // The sets still at 0 kg start from the weight just lifted.
+            const lifted = a.exercises[exIndex].sets[setIndex].weightKg;
+            const filled = lifted > 0 ? {
+                ...next,
+                exercises: next.exercises.map((e, i) => (i !== exIndex ? e : {
+                    ...e,
+                    sets: e.sets.map((w, j) => (j > setIndex && !w.done && w.weightKg === 0 ? { ...w, weightKg: lifted } : w)),
+                })),
+            } : next;
             const rest = a.exercises[exIndex].restSec;
-            return { ...next, restEndsAt: Date.now() + rest * 1000, restTotalSec: rest };
+            return { ...filled, restEndsAt: Date.now() + rest * 1000, restTotalSec: rest };
         });
     },
 

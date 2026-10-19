@@ -10,6 +10,8 @@ name: Deploy backend
 #            REVENUECAT_SECRET_KEY (optional until Premium is set up),
 #            GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (optional: "Continue with Google")
 # Variables: SUPABASE_PROJECT_REF,
+#            ADMIN_EMAIL (optional: the e-mail of your account in the app; it can
+#            approve trainers and set their price from the app),
 #            AUTH_CONFIRM_EMAIL=true (optional: ask new accounts to confirm their
 #            e-mail; needs your own SMTP in Supabase, the built-in one only
 #            sends to the project's team)
@@ -31,6 +33,7 @@ jobs:
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       AUTH_CONFIRM_EMAIL: ${{ vars.AUTH_CONFIRM_EMAIL }}
+      ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
       # The published web app (GitHub Pages): where sign-in comes back to.
       SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     steps:
@@ -191,6 +194,33 @@ jobs:
             echo "::error::Database password rejected. Reset it in Supabase (Project Settings → Database → Reset database password) and update the SUPABASE_DB_PASSWORD secret."
             exit 1
           }
+
+      # The owner's account manages trainers from the app (needs an account
+      # with that e-mail in the app first).
+      - name: Register the app admin
+        if: env.ADMIN_EMAIL != ''
+        run: |
+          email=$(printf '%s' "$ADMIN_EMAIL" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          if ! [[ "$email" =~ ^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$ ]]; then
+            echo "::error::ADMIN_EMAIL is not an e-mail address."
+            exit 1
+          fi
+          body=$(jq -n --arg e "$email" '{query: "insert into public.app_admins (user_id) select id from auth.users where lower(email) = \u0027\($e)\u0027 on conflict do nothing returning user_id"}')
+          status=$(curl -sS -o /tmp/admin.json -w "%{http_code}" -X POST \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$body")
+          if [ "$status" -ge 300 ]; then
+            echo "::error::Could not register the admin (HTTP $status)."
+            exit 1
+          fi
+          found=$(jq -n --arg e "$email" '{query: "select count(*)::int as n from public.app_admins a join auth.users u on u.id = a.user_id where lower(u.email) = \u0027\($e)\u0027"}')
+          curl -sS -o /tmp/admin.json -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$found"
+          if [ "$(jq -r '.[0].n // 0' /tmp/admin.json)" = 1 ]; then
+            echo "::notice::The account $email manages trainers in the app."
+          else
+            echo "::warning::No account with the ADMIN_EMAIL e-mail yet: create it in the app, then run this deploy again."
+          fi
 
       - name: Store the function secrets
         run: |

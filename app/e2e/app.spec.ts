@@ -4,7 +4,9 @@ import path from 'node:path';
 const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', name);
 
 // New users get a tour of the app once; tests skip it, except the one about it.
+// Workout tests use the list of sets, except the ones about the guided mode.
 test.beforeEach(async ({ page }, info) => {
+    if (!info.title.startsWith('guided:')) await page.addInitScript(() => localStorage.setItem('fitness-life:workout-view', 'list'));
     if (info.title.startsWith('tour:')) return;
     await page.addInitScript(() => localStorage.setItem('fitness-life:guide-seen', '1'));
 });
@@ -49,11 +51,19 @@ const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 };
 
-// Every exercise demo shows real photos, not broken images.
+// Every exercise demo shows real photos (or an animation with its still), not broken images.
 const expectPhotosLoaded = async (page: Page) => {
     const demo = page.getByRole('img', { name: /^Cómo se hace/ }).first();
-    await expect(demo.locator('img').first()).toHaveJSProperty('complete', true);
-    expect(await demo.locator('img').first().evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(100);
+    const video = demo.locator('video');
+    const src = await video.count() ? await video.first().getAttribute('poster') : await demo.locator('img').first().getAttribute('src');
+    expect(src).toBeTruthy();
+    const still = await page.request.get(new URL(src!, page.url()).href);
+    expect(still.ok()).toBe(true);
+    expect((await still.body()).length).toBeGreaterThan(2000);
+    if (await video.count()) {
+        const clip = await page.request.get(new URL((await video.first().getAttribute('src'))!, page.url()).href);
+        expect(clip.ok()).toBe(true);
+    }
 };
 
 test('onboarding builds a plan that matches the answers', async ({ page }) => {
@@ -1330,4 +1340,136 @@ test('the app icon color can be changed in Settings', async ({ page }) => {
     await page.reload();
     await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /%237c3aed/);
     await expect(icons.getByRole('radio', { name: 'Morado' })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('workout: switch to pounds, adjust with the − / + buttons, and the next set starts from the weight lifted', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await expect(page.getByText('Ejercicio 1 de 6')).toBeVisible();
+
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await squat.getByLabel('Peso serie 1').fill('80');
+    await squat.getByRole('button', { name: 'Subir el peso de la serie 1' }).click();
+    await expect(squat.getByLabel('Peso serie 1')).toHaveValue('82,5');
+    await squat.getByRole('button', { name: 'Una repetición más serie 1' }).click();
+    await squat.getByLabel('Marcar serie 1 como hecha').click();
+    // The next set starts from the weight just lifted; the rest shows what comes next.
+    await expect(squat.getByLabel('Peso serie 2')).toHaveValue('82,5');
+    await expect(page.getByRole('timer')).toContainText('Sentadilla con barra · serie 2');
+    await page.getByRole('button', { name: 'Saltar' }).click();
+
+    // Pounds right from the workout: the same weights, now in lbs, and the whole app follows.
+    await page.getByRole('radio', { name: 'lb', exact: true }).click();
+    await expect(squat.getByLabel('Peso serie 1')).toHaveValue('182');
+    await expect(squat.getByRole('button', { name: 'Subir el peso de la serie 2' })).toHaveText('+5');
+    await page.getByRole('button', { name: 'Ir a Press de banca' }).click();
+    await page.getByRole('button', { name: /Volver/ }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await expect(page.getByRole('radio', { name: 'lb', exact: true })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('online trainers: languages, hiring through the app, and the owner sets the price', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const ana = {
+        id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
+        certifications: 'NSCA', languages: 'es,en', country: 'España', price: '30 $/mes', contact: '+34600111222', status: 'pending',
+        app_price: '', payment_url: '', profile: null,
+    };
+    const updates: Record<string, unknown>[] = [];
+    await page.route(/http:\/\/ai\.test\/rest\/v1\/(rpc\/trainers_listed|app_admins|trainer_applications)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = req.url();
+        if (url.includes('trainers_listed')) {
+            return route.fulfill({ headers: cors, json: [
+                { ...ana, status: undefined, app_price: '49 $/mes', payment_url: 'https://buy.stripe.com/test', contact: '', avatar_path: null, profile_updated_at: null },
+                { ...ana, id: 't2', user_id: 'leo', name: 'Leo Fit', languages: 'pt', app_price: '', payment_url: '', avatar_path: null, profile_updated_at: null },
+            ] });
+        }
+        if (url.includes('app_admins')) return route.fulfill({ headers: cors, json: { user_id: '00000000-0000-0000-0000-0000000000aa' } });
+        if (req.method() === 'PATCH') {
+            updates.push(req.postDataJSON());
+            return route.fulfill({ status: 204, headers: cors });
+        }
+        return route.fulfill({ headers: cors, json: [ana] });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores');
+
+    // Each trainer shows the languages they speak; filter by one.
+    const anaCard = page.getByRole('article', { name: 'Ana Coach' });
+    await expect(anaCard.getByText('Español')).toBeVisible();
+    await expect(anaCard.getByText('English')).toBeVisible();
+    await expect(anaCard.getByText('49 $/mes')).toBeVisible();
+    // Hired through the app: pay with the link, the contact stays private.
+    await expect(anaCard.getByRole('link', { name: 'Contratar' })).toHaveAttribute('href', 'https://buy.stripe.com/test');
+    await expect(page.getByRole('article', { name: 'Leo Fit' }).getByRole('link', { name: 'Contactar' })).toBeVisible();
+    await page.getByRole('radio', { name: /Português/ }).click();
+    await expect(page.getByRole('article', { name: 'Ana Coach' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Leo Fit' })).toBeVisible();
+
+    // The owner approves an application and sets the price and payment link.
+    await page.getByRole('button', { name: /Gestionar entrenadores/ }).click();
+    const app = page.getByRole('article', { name: 'Ana Coach' });
+    await expect(app.getByText('30 $/mes')).toBeVisible(); // what the trainer asks for
+    await app.getByLabel('Precio en la app').fill('49 $/mes');
+    await app.getByLabel('Enlace de pago (Stripe)').fill('http://not-secure');
+    await app.getByRole('button', { name: 'Aprobar y publicar' }).click();
+    await expect(page.getByText('El enlace de pago debe empezar por https://')).toBeVisible();
+    await app.getByLabel('Enlace de pago (Stripe)').fill('https://buy.stripe.com/test');
+    await app.getByRole('button', { name: 'Aprobar y publicar' }).click();
+    await expect(page.getByText('Entrenador publicado')).toBeVisible();
+    expect(updates).toEqual([{ status: 'approved', app_price: '49 $/mes', payment_url: 'https://buy.stripe.com/test' }]);
+});
+
+test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+
+    // The cover of the session with its exercises.
+    await expect(page.getByRole('heading', { name: 'Cuerpo completo A' })).toBeVisible();
+    await expect(page.getByText('Ejercicios')).toBeVisible();
+    await expect(page.getByText('Intermedio')).toBeVisible();
+    await page.getByRole('button', { name: '¡Empezar!' }).click();
+
+    // Get ready, then the exercise.
+    await expect(page.getByText('¡Prepárate!')).toBeVisible();
+    await page.getByRole('button', { name: '¡Empezar ya!' }).click();
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await expect(squat.getByText('Serie 1 de 3')).toBeVisible();
+    await squat.getByLabel('Peso serie 1').fill('60');
+    await squat.getByRole('button', { name: 'Subir el peso de la serie 1' }).click();
+    await expect(squat.getByLabel('Peso serie 1')).toHaveValue('62,5');
+    await squat.getByRole('button', { name: 'Una repetición más serie 1' }).click();
+    await squat.getByRole('button', { name: 'Serie hecha' }).click();
+
+    // Full-screen rest with the next set.
+    const rest = page.getByRole('timer');
+    await expect(rest).toContainText('Descanso');
+    await expect(rest).toContainText('Serie 2 de 3');
+    await expect(rest).toContainText('62,5 kg');
+    await rest.getByRole('button', { name: 'Saltar' }).click();
+    await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByText('Serie 2 de 3')).toBeVisible();
+
+    // The list shows the same workout; back to guided and finish.
+    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByLabel('Peso serie 1')).toHaveValue('62,5');
+    await page.getByRole('button', { name: 'Modo guiado' }).click();
+    for (let i = 0; i < 6; i++) {
+        const go = page.getByRole('button', { name: '¡Empezar ya!' });
+        const skip = page.getByRole('button', { name: 'Saltar ejercicio' });
+        await expect(go.or(skip)).toBeVisible();
+        if (await go.isVisible()) await go.click();
+        await skip.click();
+    }
+    await expect(page.getByRole('heading', { name: '¡Entreno completado!' })).toBeVisible();
+    await page.getByRole('button', { name: 'Guardar entreno' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
+    await expect(page.getByText('Entreno guardado')).toBeVisible();
+    await expect(page.getByText('60 × 7').or(page.getByText('62,5 × 7')).first()).toBeVisible();
 });
