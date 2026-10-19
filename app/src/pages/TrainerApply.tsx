@@ -3,8 +3,8 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
-import { t } from '../i18n';
-import { contactLink, fetchMyApplication, saveApplication, trainersAvailable, withdrawApplication, type Trainer, type TrainerFields } from '../lib/trainers';
+import { LANGS, t } from '../i18n';
+import { contactLink, fetchMyApplication, saveApplication, trainerLanguages, trainersAvailable, withdrawApplication, type Trainer, type TrainerFields } from '../lib/trainers';
 import { useStore } from '../store/store';
 
 const EMPTY: TrainerFields = { name: '', specialty: '', bio: '', experienceYears: 0, certifications: '', languages: '', price: '', contact: '', country: '' };
@@ -42,7 +42,12 @@ export default function TrainerApply() {
         }).catch(() => setMine(null));
     }, [account?.id]);
 
+    // Saved as codes ("es,en"); an older free-text answer is read as best it can.
+    const langs = trainerLanguages(f.languages).map(l => l.code).filter(c => LANGS.some(l => l.code === c));
+    const toggleLang = (code: string) => set({ languages: (langs.includes(code) ? langs.filter(c => c !== code) : [...langs, code]).join(',') });
+
     const problem = f.name.trim().length < 2 ? 'name' : f.specialty.trim().length < 2 ? 'specialty' : f.bio.trim().length < 20 ? 'bio'
+        : langs.length === 0 ? 'languages'
         : !contactLink(f.contact) && f.contact.trim().length < 3 ? 'contact' : null;
 
     const submit = async (e: FormEvent) => {
@@ -95,6 +100,7 @@ export default function TrainerApply() {
                                 <span className="text-sm">
                                     <span className="block font-bold">{t(`apply.status.${mine.status}`)}</span>
                                     <span className="block text-white/70">{t(`apply.status.${mine.status}.hint`)}</span>
+                                    {mine.status === 'approved' && mine.appPrice && <span className="mt-1 block font-semibold text-white">{t('apply.appPrice', { price: mine.appPrice })}</span>}
                                 </span>
                             </div>
                         </Section>
@@ -113,10 +119,21 @@ export default function TrainerApply() {
                                 <Field label={t('apply.country')}><input className={input} value={f.country} maxLength={60} onChange={e => set({ country: e.target.value })} /></Field>
                             </div>
                             <Field label={t('apply.certifications')} hint={t('apply.certificationsHint')}><input className={input} value={f.certifications} maxLength={300} onChange={e => set({ certifications: e.target.value })} /></Field>
-                            <div className="flex gap-3">
-                                <Field label={t('apply.languages')}><input className={input} value={f.languages} maxLength={100} onChange={e => set({ languages: e.target.value })} /></Field>
-                                <Field label={t('apply.price')} hint={t('apply.priceHint')}><input className={input} value={f.price} maxLength={60} onChange={e => set({ price: e.target.value })} /></Field>
-                            </div>
+                            <fieldset>
+                                <legend className="label mb-2 block">{t('apply.languages')}</legend>
+                                <div className="flex flex-wrap gap-2">
+                                    {LANGS.map(l => {
+                                        const on = langs.includes(l.code);
+                                        return (
+                                            <button key={l.code} type="button" role="checkbox" aria-checked={on} onClick={() => toggleLang(l.code)}
+                                                className={`chip flex items-center gap-1.5 ${on ? 'chip-on' : ''}`}>
+                                                <span aria-hidden>{l.flag}</span> {l.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </fieldset>
+                            <Field label={t('apply.price')} hint={t('apply.priceHint')}><input className={input} value={f.price} maxLength={60} onChange={e => set({ price: e.target.value })} /></Field>
                             <Field label={t('apply.contact')} hint={t('apply.contactHint')}><input className={input} value={f.contact} maxLength={200} onChange={e => set({ contact: e.target.value })} /></Field>
                         </div>
                         <p className="mt-2 text-xs text-white/45">{t('apply.review')}</p>
