@@ -2174,7 +2174,7 @@ test('injury mode: workouts avoid the sore zone and it can be ended; then a rest
     await expect(page.getByText('Modo lesión activado. Cuídate 🩹')).toBeVisible();
 
     // Home says so; the workout swaps the barbell squat.
-    await page.getByRole('link', { name: 'Hoy', exact: true }).click();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
     await expect(page.getByTestId('pause-banner')).toContainText('cuidamos: Rodillas');
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
     await expect(page.getByText('Modo lesión (Rodillas): adaptamos este entreno')).toBeVisible();
@@ -2190,15 +2190,15 @@ test('injury mode: workouts avoid the sore zone and it can be ended; then a rest
     await page.getByRole('button', { name: /Descanso o lesión/ }).click();
     await page.getByRole('radio', { name: '3 días' }).click();
     await page.getByRole('button', { name: 'Empezar descanso' }).click();
-    await page.getByRole('link', { name: 'Hoy', exact: true }).click();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
     await expect(page.getByTestId('pause-banner')).toContainText('Modo descanso · quedan 3 días');
 });
 
 test('weekly summary: the page, its tip and the Sunday notification switch', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
-    await page.getByRole('link', { name: 'Resumen semanal' }).click();
+    // Opened from Sunday's notification (and from Progress once there are workouts).
+    await page.goto('/#/resumen');
     await expect(page.getByRole('heading', { name: 'Resumen semanal' })).toBeVisible();
     await expect(page.getByText('0/3')).toBeVisible();
     await expect(page.getByText('Empieza la semana con un entreno corto')).toBeVisible();
