@@ -969,12 +969,14 @@ test('community: read, like, comment and post', async ({ page }) => {
         user_id: 'ana', author: { name: 'Ana', avatar_path: null, updated_at: '2026-10-08T10:00:00Z' },
         community_likes: [{ count: 2 }], community_comments: [{ count: 1 }],
     }];
-    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/)/, async route => {
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/community_|storage\/v1\/|functions\/v1\/community-push)/, async route => {
         const req = route.request();
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
         if (req.method() !== 'GET') {
             sent.push({ url, method: req.method(), body: req.postData() ? (() => { try { return req.postDataJSON(); } catch { return null; } })() : null });
+            if (url.includes('community-push')) return route.fulfill({ headers: cors, json: { sent: 1 } });
+            if (url.includes('community_comments')) return route.fulfill({ status: 201, headers: cors, json: { id: 'c2' } });
             return route.fulfill({ status: url.includes('/storage/') ? 200 : 201, headers: cors, json: url.includes('/storage/') ? { Key: 'k' } : [] });
         }
         // Like the real database: posts and profiles are linked directly and
@@ -1013,6 +1015,8 @@ test('community: read, like, comment and post', async ({ page }) => {
     await like.click();
     await expect(like).toContainText('3');
     await expect.poll(() => sent.some(r => r.url.includes('community_likes') && r.method === 'POST')).toBe(true);
+    // Ana hears about it.
+    await expect.poll(() => sent.find(r => r.url.includes('community-push'))?.body).toEqual({ kind: 'like', postId: 'p1' });
 
     // Comment (the rules are accepted once).
     await page.getByRole('button', { name: 'Comentarios' }).click();
@@ -1022,6 +1026,7 @@ test('community: read, like, comment and post', async ({ page }) => {
     await expect(page.getByRole('alertdialog', { name: 'Normas de la comunidad' })).toBeVisible();
     await page.getByRole('button', { name: 'Acepto' }).click();
     await expect.poll(() => sent.find(r => r.url.includes('community_comments'))?.body).toMatchObject({ post_id: 'p1', body: '¡Vamos!' });
+    await expect.poll(() => sent.filter(r => r.url.includes('community-push')).map(r => r.body)).toContainEqual({ kind: 'comment', commentId: 'c2' });
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click();
 
     // A new post with a photo; the profile is published first.

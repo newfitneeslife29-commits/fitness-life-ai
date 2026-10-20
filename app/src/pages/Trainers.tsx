@@ -6,7 +6,7 @@ import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { t, tp } from '../i18n';
 import { errorText } from '../lib/errorText';
-import { enableChatPush } from '../lib/push';
+import { enablePush } from '../lib/push';
 import { fetchHires, hireState, hireTrainer, PayError, STRIPE_RETURN_EVENT, syncHires, type Hire } from '../lib/trainerPay';
 import { contactLink, displayPrice, fetchMyApplication, fetchTrainers, isTrainerAdmin, trainerLanguages, trainersAvailable, type Trainer } from '../lib/trainers';
 import { useStore } from '../store/store';
@@ -94,7 +94,7 @@ export default function Trainers() {
     // Someone with a trainer hears about their messages.
     const hasHires = hires.length > 0;
     useEffect(() => {
-        if (hasHires) void enableChatPush();
+        if (hasHires) void enablePush();
     }, [hasHires]);
     useEffect(() => {
         if (!trainersAvailable()) return;

@@ -10,7 +10,7 @@
 // was sent.
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { preview, pushConfigured, sendPush } from '../_shared/push.ts';
+import { preview, pushConfigured, pushToUser } from '../_shared/push.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -50,12 +50,9 @@ Deno.serve(async req => {
       name = profile?.name || 'Fitness Life';
     }
 
-    const { data: tokens } = await admin.from('push_tokens').select('token, platform').eq('user_id', to).limit(20);
     const push = { title: name, body: preview(message.body), link: `/entrenadores/chat/${message.link_id}`, thread: String(message.link_id) };
-    const results = await Promise.all((tokens ?? []).map(async t => ({ token: t.token, result: await sendPush(t.platform, t.token, push) })));
-    const gone = results.filter(r => r.result === 'gone').map(r => r.token);
-    if (gone.length) await admin.from('push_tokens').delete().in('token', gone);
-    return json({ sent: results.filter(r => r.result === 'sent').length });
+    const sent = await pushToUser(admin, to, () => push);
+    return json({ sent });
   } catch (e) {
     console.error(e);
     return json({ error: 'failed' }, 500);

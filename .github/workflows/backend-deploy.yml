@@ -299,6 +299,7 @@ jobs:
           supabase functions deploy trainer-pay --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy stripe-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy chat-push --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy community-push --project-ref "$SUPABASE_PROJECT_REF"
 
       # Stripe tells the app about hires (paid, renewed, canceled) through a
       # webhook. Created once; its signing secret is only shown at creation,

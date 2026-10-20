@@ -1,5 +1,6 @@
 import { getState, subscribeStore } from '../store/store';
 import { uid } from './id';
+import { enablePush, notifyCommunity } from './push';
 import { getSessionClient, getSupabase, SUPABASE_URL } from './supabase';
 
 // Community: posts with text and an optional photo, likes and comments,
@@ -147,6 +148,8 @@ export const createPost = async (body: string, photo: Blob | null, kind: PostKin
         if (videoPath) await supabase.storage.from(VIDEO_BUCKET).remove([videoPath]);
         throw error;
     }
+    // Now there's something to hear about: likes and comments on it.
+    void enablePush();
 };
 
 export const deletePost = async (post: Post) => {
@@ -163,6 +166,7 @@ export const setLike = async (postId: string, like: boolean) => {
         ? await supabase.from('community_likes').upsert({ post_id: postId, user_id: id }, { ignoreDuplicates: true })
         : await supabase.from('community_likes').delete().eq('post_id', postId).eq('user_id', id);
     if (error) throw error;
+    if (like) void notifyCommunity({ kind: 'like', postId }).catch(() => {});
 };
 
 export const fetchComments = async (postId: string): Promise<Comment[]> => {
@@ -182,8 +186,10 @@ export const fetchComments = async (postId: string): Promise<Comment[]> => {
 
 export const addComment = async (postId: string, body: string) => {
     const { supabase, id } = await requireMember();
-    const { error } = await supabase.from('community_comments').insert({ post_id: postId, user_id: id, body: body.trim() });
+    const { data, error } = await supabase.from('community_comments').insert({ post_id: postId, user_id: id, body: body.trim() }).select('id').single();
     if (error) throw error;
+    void notifyCommunity({ kind: 'comment', commentId: (data as { id: string }).id }).catch(() => {});
+    void enablePush();
 };
 
 export const deleteComment = async (commentId: string) => {
@@ -326,6 +332,8 @@ export const follow = async (userId: string) => {
     const { supabase, id } = await requireMember();
     const { error } = await supabase.from('community_follows').insert({ follower: id, following: userId });
     if (error && error.code !== '23505') throw error;
+    if (!error) void notifyCommunity({ kind: 'follow', userId }).catch(() => {});
+    void enablePush();
 };
 
 export const unfollow = async (userId: string) => {

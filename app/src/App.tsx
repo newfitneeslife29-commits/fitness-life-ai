@@ -11,7 +11,7 @@ import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
 import { useMealReminders } from './lib/mealplan';
 import { useMovementSync } from './lib/movement';
-import { useChatPush } from './lib/push';
+import { usePush } from './lib/push';
 import { useRecoveryAlerts } from './lib/recovery';
 import { useTrainingReminders } from './lib/reminders';
 import { useTracking } from './lib/tracker';
@@ -149,7 +149,7 @@ export default function App() {
     useTrainingReminders();
     useMovementSync();
     useTracking();
-    useChatPush();
+    usePush();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);

@@ -1,16 +1,19 @@
 import { Capacitor } from '@capacitor/core';
 import { useEffect } from 'react';
 import { toast } from '../components/feedback';
+import { getLang } from '../i18n';
 import { getState, useStore } from '../store/store';
 import { isNative } from './native';
 import { getSupabase } from './supabase';
 
-// Phone notifications for the trainer chat: each phone that allows them
-// saves its token in the account (push_register), and the chat-push
-// function notifies the other person's phones of every new message.
+// Phone notifications: new messages in the trainer chat, and likes, comments
+// and followers in the community. Each phone that allows them saves its token
+// in the account (push_register, with the app's language); the chat-push and
+// community-push functions notify the other person's phones.
 
 const TOKEN_KEY = 'fitness-life:push-token';
-const CHAT_LINK = /^\/entrenadores\/chat\/[0-9a-f-]{36}$/;
+// The screens a notification may open.
+const LINK = /^\/(entrenadores\/chat\/[0-9a-f-]{36}|comunidad(\/u\/[0-9a-f-]{36})?)$/;
 
 // Android needs the Firebase settings (google-services.json) in the build:
 // the release build adds them when the GOOGLE_SERVICES_JSON secret exists.
@@ -34,19 +37,19 @@ const saveToken = async (token: string) => {
     } catch { /* kept only for signing out */ }
     const supabase = await getSupabase();
     const platform = Capacitor.getPlatform();
-    await supabase.rpc('push_register', { token, platform });
+    await supabase.rpc('push_register', { token, platform, lang: getLang() });
 };
 
 const listen = () => {
     listening ??= (async () => {
         const push = await plugin();
         await push.addListener('registration', ({ value }) => { void saveToken(value).catch(() => {}); });
-        // Tapping a notification opens its chat (also when it started the app).
+        // Tapping a notification opens its screen (also when it started the app).
         await push.addListener('pushNotificationActionPerformed', ({ notification }) => {
             const link = String(notification.data?.link ?? '');
-            if (CHAT_LINK.test(link)) window.location.hash = `#${link}`;
+            if (LINK.test(link)) window.location.hash = `#${link}`;
         });
-        // With the app open the phone shows nothing: a note, unless that chat is open.
+        // With the app open the phone shows nothing: a note, unless that screen is open.
         await push.addListener('pushNotificationReceived', n => {
             const link = String(n.data?.link ?? '');
             if (window.location.hash === `#${link}`) return;
@@ -64,8 +67,9 @@ const listen = () => {
 };
 
 // Asks to allow notifications (once: the phone remembers the answer) and
-// saves this phone's token. Called where notifications matter: the chats.
-export const enableChatPush = async () => {
+// saves this phone's token. Called where notifications matter: the chats
+// and the community.
+export const enablePush = async () => {
     if (!available() || !getState().account) return;
     try {
         await listen();
@@ -76,10 +80,12 @@ export const enableChatPush = async () => {
     } catch { /* notifications are a bonus: the chat works without them */ }
 };
 
-// At start and when the account changes: taps on notifications open their
-// chat, and a phone that already allows them refreshes its token.
-export const useChatPush = () => {
+// At start and when the account or the language changes: taps on
+// notifications open their screen, and a phone that already allows them
+// refreshes its token.
+export const usePush = () => {
     const accountId = useStore(s => s.account?.id ?? null);
+    const lang = useStore(s => s.lang);
     useEffect(() => {
         if (!available()) return;
         void listen().catch(() => {});
@@ -88,7 +94,7 @@ export const useChatPush = () => {
             const push = await plugin();
             if ((await push.checkPermissions()).receive === 'granted') await push.register();
         })().catch(() => {});
-    }, [accountId]);
+    }, [accountId, lang]);
 };
 
 // Signing out: this phone stops getting the account's messages.
@@ -106,4 +112,10 @@ export const forgetPushToken = async () => {
 export const notifyChat = async (messageId: number) => {
     const supabase = await getSupabase();
     await supabase.functions.invoke('chat-push', { body: { messageId } });
+};
+
+// Right after a like, a comment or a follow: the other person hears about it.
+export const notifyCommunity = async (body: { kind: 'like'; postId: string } | { kind: 'comment'; commentId: string } | { kind: 'follow'; userId: string }) => {
+    const supabase = await getSupabase();
+    await supabase.functions.invoke('community-push', { body });
 };
