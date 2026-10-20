@@ -5,6 +5,7 @@ import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { MealPlanSection } from '../components/MealPlan';
 import { Recipes } from '../components/Recipes';
+import { FastingCard } from '../components/Fasting';
 import { WaterCard } from '../components/Water';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
@@ -584,6 +585,10 @@ export default function Nutrition() {
 
             <Section title={t('water.title')}>
                 <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
+            </Section>
+
+            <Section title={t('fasting.title')}>
+                <FastingCard />
             </Section>
 
             <Section title={t('freePlans.title')}>

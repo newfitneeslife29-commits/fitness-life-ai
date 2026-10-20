@@ -634,6 +634,29 @@ test('nutrition: water for the day and saved recipes', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Anotar una porción de Pancakes de avena' })).toBeVisible();
 });
 
+test('nutrition: intermittent fasting with a plan, the time to the goal and the history', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-10-20T20:00:00') });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+
+    await page.getByRole('radio', { name: '18 h de ayuno y 6 h para comer' }).click();
+    await expect(page.getByRole('radio', { name: '18 h de ayuno y 6 h para comer' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: 'Empezar ayuno' }).click();
+    await expect(page.getByText(/Faltan 18 h 00 min · Meta a las 14:00/)).toBeVisible();
+
+    // Still running after closing the app.
+    await page.clock.fastForward('10:00:00');
+    await page.reload();
+    await expect(page.getByText(/Faltan 8 h 00 min/)).toBeVisible();
+    await page.clock.fastForward('08:30:00');
+    await expect(page.getByText('¡Meta cumplida! Ya puedes comer cuando quieras.')).toBeVisible();
+    await page.getByRole('button', { name: 'Terminar ayuno' }).click();
+    await expect(page.getByText('Ayuno de 18 h 30 min guardado.')).toBeVisible();
+    await expect(page.getByText('Último ayuno: 18 h 30 min')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar ayuno' })).toBeVisible();
+});
+
 test('movement: a walk of the walking plan with GPS, a ride by hand, steps and sleep', async ({ page, context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });

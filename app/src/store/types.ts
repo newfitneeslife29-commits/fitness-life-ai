@@ -267,6 +267,14 @@ export interface PremiumStatus {
     checkedAt: string;
 }
 
+// Intermittent fasting: the chosen plan (hours fasting), the fast in
+// progress and the latest ones.
+export interface Fasting {
+    hours: number;
+    startedAt: string | null;
+    history: { start: string; end: string; hours: number }[]; // newest first
+}
+
 // A signed-in account (the anonymous session used without one is not stored).
 export interface Account {
     id: string;
@@ -298,6 +306,7 @@ export interface AppState {
     trainerChat: ChatMessage[]; // the personal trainer's, oldest first
     mealPlan?: MealPlan | null;
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
+    fasting?: Fasting;
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
     sleep?: SleepEntry[]; // newest first

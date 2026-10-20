@@ -402,6 +402,26 @@ export const actions = {
         });
     },
 
+    // Intermittent fasting (components/Fasting.tsx).
+    setFastingPlan(hours: number) {
+        set(s => ({ ...s, fasting: { history: [], startedAt: null, ...s.fasting, hours } }));
+    },
+
+    startFast(at = new Date()) {
+        set(s => ({ ...s, fasting: { hours: 16, history: [], ...s.fasting, startedAt: at.toISOString() } }));
+    },
+
+    // Fasts under 10 minutes are not kept (started by mistake).
+    endFast(at = new Date()) {
+        set(s => {
+            const f = s.fasting;
+            if (!f?.startedAt) return s;
+            const done = at.getTime() - new Date(f.startedAt).getTime() >= 10 * 60_000;
+            const history = done ? [{ start: f.startedAt, end: at.toISOString(), hours: f.hours }, ...f.history].slice(0, 60) : f.history;
+            return { ...s, fasting: { ...f, startedAt: null, history } };
+        });
+    },
+
     saveRecipe(recipe: Omit<Recipe, 'id' | 'createdAt'> & { id?: string }) {
         const clean = { ...recipe, name: recipe.name.trim(), ...roundMacros(recipe) };
         set(s => {
