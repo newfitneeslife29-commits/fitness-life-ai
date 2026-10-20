@@ -10,6 +10,7 @@ import { sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementDescription, achievementTitle, unlockedAchievements } from '../lib/achievements';
 import { fmtClock, fmtDate, fmtNumber, fmtVolume, fmtWeight } from '../lib/format';
 import { shareText } from '../lib/native';
+import { maybeAskReview } from '../lib/review';
 import { kgToDisplay, newRecords, volume } from '../lib/progression';
 import { durationMin } from '../lib/stats';
 import { actions, useStore } from '../store/store';
@@ -38,6 +39,13 @@ export default function SessionDetail() {
     useEffect(() => {
         if (isNew && medals.length) actions.markAchievementsSeen(medals.map(m => m.id));
     }, [isNew, medals]);
+    // A good moment to ask for a rating: right after a finished workout,
+    // once the summary has been seen.
+    useEffect(() => {
+        if (!isNew) return;
+        const timer = window.setTimeout(() => void maybeAskReview(sessions.length), 2500);
+        return () => window.clearTimeout(timer);
+    }, [isNew]);
 
     const records = useMemo(() => {
         if (!session) return [];
