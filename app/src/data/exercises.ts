@@ -1,4 +1,5 @@
 import { l10n, type L10n } from '../i18n';
+import { motionKey } from './motion';
 
 export type Muscle =
     | 'pecho' | 'espalda' | 'hombros' | 'biceps' | 'triceps'
@@ -726,6 +727,112 @@ export const EXERCISES: Exercise[] = [
         "Shuffle sideways driving your knees up fast, arms pumping.",
         "Desloque-se de lado subindo os joelhos rápido, com os braços ativos.",
     ], { secondary: ["gemelos"], timed: true }),
+    // More bought demos (gymvisual)
+    x("press-pecho-tumbado-maquina", "Press de pecho tumbado en máquina", "Lying machine chest press", "Supino deitado na máquina", "pecho", "maquina", 5, [
+        "Espalda plana en el banco; empuja las asas hacia arriba sin bloquear los codos y baja despacio.",
+        "Back flat on the bench; press the handles up without locking your elbows and lower slowly.",
+        "Costas apoiadas no banco; empurre as alças para cima sem travar os cotovelos e desça devagar.",
+    ], { secondary: ["triceps", "hombros"] }),
+    x("press-pecho-interno-maquina", "Press de pecho interno en máquina", "Machine inner chest press", "Supino interno na máquina", "pecho", "maquina", 5, [
+        "Junta las manos al empujar y aprieta el centro del pecho un segundo antes de volver.",
+        "Bring your hands together as you press and squeeze the middle of your chest for a second.",
+        "Junte as mãos ao empurrar e aperte o centro do peito por um segundo antes de voltar.",
+    ], { secondary: ["triceps"] }),
+    x("press-inclinado-martillo", "Press inclinado en máquina tipo martillo", "Incline hammer chest press", "Supino inclinado na máquina hammer", "pecho", "maquina", 5, [
+        "Agarre neutro y escápulas atrás; empuja hacia arriba y adelante controlando la bajada.",
+        "Neutral grip, shoulder blades back; press up and forward and control the way down.",
+        "Pegada neutra e escápulas para trás; empurre para cima e à frente controlando a descida.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-inclinado-palanca", "Press inclinado en máquina de palanca", "Leverage incline chest press", "Supino inclinado na máquina de alavanca", "pecho", "maquina", 5, [
+        "Ajusta el asiento para que las asas queden a la altura del pecho alto; empuja sin despegar la espalda.",
+        "Set the seat so the handles line up with your upper chest; press without lifting your back.",
+        "Ajuste o banco para as alças ficarem na altura do peito alto; empurre sem tirar as costas.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-banca-smith-abierto", "Press de banca agarre ancho en Smith", "Smith machine wide-grip bench press", "Supino pegada aberta no Smith", "pecho", "maquina", 5, [
+        "Manos más abiertas que los hombros; baja la barra a la mitad del pecho y empuja sin rebotar.",
+        "Hands wider than shoulders; lower the bar to mid-chest and press without bouncing.",
+        "Mãos mais abertas que os ombros; desça a barra ao meio do peito e empurre sem quicar.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-cerrado-smith", "Press cerrado declinado inverso en Smith", "Smith reverse decline close-grip press", "Supino fechado declinado invertido no Smith", "triceps", "maquina", 5, [
+        "Agarre cerrado y codos pegados al cuerpo; baja a la parte baja del pecho y empuja con los tríceps.",
+        "Close grip, elbows tucked; lower to your lower chest and press with your triceps.",
+        "Pegada fechada e cotovelos junto ao corpo; desça à parte baixa do peito e empurre com o tríceps.",
+    ], { secondary: ["pecho"] }),
+    x("press-pecho-maquina-v2", "Press de pecho sentado en máquina (palanca)", "Lever seated chest press", "Supino sentado na máquina de alavanca", "pecho", "maquina", 5, [
+        "Sentado con la espalda apoyada; empuja al frente hasta casi estirar los brazos y vuelve despacio.",
+        "Seated with your back on the pad; press forward until your arms are almost straight, then return slowly.",
+        "Sentado com as costas apoiadas; empurre à frente até quase estender os braços e volte devagar.",
+    ], { secondary: ["triceps", "hombros"] }),
+    x("press-pecho-un-brazo-maquina", "Press de pecho a un brazo en máquina", "Single-arm machine chest press", "Supino unilateral na máquina", "pecho", "maquina", 5, [
+        "Un brazo cada vez sin girar el tronco; empuja al frente y vuelve controlando.",
+        "One arm at a time without twisting; press forward and return under control.",
+        "Um braço por vez sem girar o tronco; empurre à frente e volte com controle.",
+    ], { secondary: ["triceps", "core"] }),
+    x("press-inclinado-un-brazo-maquina", "Press inclinado a un brazo en máquina", "Single-arm machine incline press", "Supino inclinado unilateral na máquina", "pecho", "maquina", 5, [
+        "Un brazo cada vez; empuja hacia arriba y adelante con el pecho alto y sin girar.",
+        "One arm at a time; press up and forward with your chest high and no twisting.",
+        "Um braço por vez; empurre para cima e à frente com o peito alto e sem girar.",
+    ], { secondary: ["hombros", "triceps"] }),
+    x("press-pecho-parque", "Press de pecho en máquina de parque", "Outdoor seated chest press", "Supino na máquina de parque", "pecho", "maquina", 0, [
+        "Sentado y con la espalda apoyada; empuja las asas con tu propio peso y vuelve despacio.",
+        "Seated with your back supported; push the handles using your own weight and return slowly.",
+        "Sentado com as costas apoiadas; empurre as alças com o próprio peso e volte devagar.",
+    ], { secondary: ["triceps"] }),
+    x("dominada-excentrica", "Dominada excéntrica a un brazo", "Single-arm eccentric pull-up", "Barra fixa excêntrica unilateral", "espalda", "peso corporal", 0, [
+        "Empieza arriba con ayuda y baja lo más lento que puedas con un brazo, controlando todo el recorrido. Es avanzado.",
+        "Start at the top with help and lower as slowly as you can on one arm, in control the whole way. Advanced.",
+        "Comece em cima com ajuda e desça o mais devagar possível com um braço, controlando todo o percurso. É avançado.",
+    ], { secondary: ["biceps"] }),
+    x("jalon-un-brazo-supino", "Jalón a un brazo con agarre invertido", "Single-arm reverse-grip pulldown", "Puxada unilateral com pegada supinada", "espalda", "maquina", 5, [
+        "Palma hacia ti; tira llevando el codo hacia la cadera y estira bien arriba.",
+        "Palm facing you; pull your elbow toward your hip and stretch fully at the top.",
+        "Palma virada para você; puxe levando o cotovelo ao quadril e estique bem em cima.",
+    ], { secondary: ["biceps"] }),
+    x("hiperextension-rana", "Hiperextensión inversa rana con mancuerna", "Frog reverse hyperextension", "Hiperextensão reversa sapo com halter", "gluteos", "mancuernas", 2, [
+        "Boca abajo en el banco, rodillas abiertas y plantas juntas con la mancuerna; sube los talones apretando glúteos.",
+        "Face down on the bench, knees out and soles together holding the dumbbell; lift your heels by squeezing your glutes.",
+        "De bruços no banco, joelhos abertos e solas juntas segurando o halter; suba os calcanhares apertando os glúteos.",
+    ], { secondary: ["isquios"] }),
+    x("flexion-cuello", "Flexión de cuello tumbado", "Lying neck flexion", "Flexão de pescoço deitado", "hombros", "peso corporal", 0, [
+        "Boca arriba; lleva la barbilla al pecho despacio y baja controlando. Sin tirones.",
+        "On your back; bring your chin to your chest slowly and lower under control. No jerking.",
+        "De barriga para cima; leve o queixo ao peito devagar e desça com controle. Sem trancos.",
+    ], { kind: "gentle" }),
+    x("press-hombro-piedra", "Press de hombro explosivo con piedra", "Standing stone power press", "Desenvolvimento explosivo com pedra", "hombros", "mancuernas", 2, [
+        "Sujeta el peso a la altura del pecho, flexiona un poco las rodillas y empuja explosivo hasta arriba con los brazos rectos.",
+        "Hold the weight at chest height, dip your knees and drive it explosively overhead to straight arms.",
+        "Segure o peso na altura do peito, flexione um pouco os joelhos e empurre explosivo até em cima com os braços retos.",
+    ], { secondary: ["triceps", "cuadriceps"] }),
+    x("elevacion-tres-direcciones", "Elevación de brazos atrás, al lado y al frente", "Back-side-front arm raise", "Elevação de braços atrás, lateral e à frente", "hombros", "peso corporal", 0, [
+        "Inclinado con la espalda recta; lleva los brazos atrás, luego a los lados y luego al frente sin balancear.",
+        "Bent over with a flat back; raise your arms back, then out to the sides, then forward, without swinging.",
+        "Inclinado com as costas retas; leve os braços para trás, depois para os lados e depois à frente sem balançar.",
+    ], { secondary: ["espalda"] }),
+    x("estiramiento-rodillas-abajo", "Estiramiento de rodillas hacia dentro sentado", "Seated knee-down stretch", "Alongamento joelhos para dentro sentado", "gluteos", "peso corporal", 0, [
+        "Sentado con los pies separados, deja caer las dos rodillas hacia un lado y luego al otro, despacio.",
+        "Seated with feet wide, let both knees drop to one side, then the other, slowly.",
+        "Sentado com os pés afastados, deixe os dois joelhos caírem para um lado e depois para o outro, devagar.",
+    ], { timed: true, kind: "gentle" }),
+    x("sentadilla-banco-smith", "Sentadilla al banco en Smith", "Smith machine box squat", "Agachamento no banco no Smith", "cuadriceps", "maquina", 5, [
+        "Baja hasta rozar el banco con el pecho alto, sin dejarte caer, y sube empujando con los talones.",
+        "Sit back until you touch the bench with your chest up, without dropping, and drive up through your heels.",
+        "Desça até encostar no banco com o peito alto, sem se jogar, e suba empurrando com os calcanhares.",
+    ], { secondary: ["gluteos"] }),
+    x("curl-pierna-tumbado", "Curl de pierna tumbado alterno sin peso", "Lying alternating leg curl", "Flexão de perna deitado alternada", "isquios", "peso corporal", 0, [
+        "Boca abajo; lleva un talón hacia el glúteo apretando la parte de atrás del muslo y alterna.",
+        "Face down; bring one heel toward your glutes squeezing the back of your thigh, then switch.",
+        "De bruços; leve um calcanhar aos glúteos apertando a parte de trás da coxa e alterne.",
+    ], { secondary: ["gluteos"] }),
+    x("extension-triceps-cruzada", "Extensión de tríceps en polea alta cruzada", "High cable cross triceps extension", "Tríceps cruzado na polia alta", "triceps", "polea", 2.5, [
+        "Entre las dos poleas altas, agarre neutro; estira los brazos hacia fuera y abajo con los codos fijos.",
+        "Between two high pulleys, neutral grip; straighten your arms out and down with your elbows fixed.",
+        "Entre as duas polias altas, pegada neutra; estenda os braços para fora e para baixo com os cotovelos fixos.",
+    ]),
+    x("extension-triceps-cabeza-polea", "Extensión de tríceps sobre la cabeza en polea", "Overhead cable triceps extension", "Tríceps acima da cabeça na polia", "triceps", "polea", 2.5, [
+        "De espaldas a la polea, codos junto a las orejas; estira los brazos hacia arriba y baja despacio.",
+        "Back to the pulley, elbows by your ears; straighten your arms overhead and lower slowly.",
+        "De costas para a polia, cotovelos junto às orelhas; estenda os braços para cima e desça devagar.",
+    ]),
 ];
 
 const BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
@@ -740,8 +847,11 @@ export const exerciseTip = (ex: Exercise) => l10n(ex.tip);
 // Two photos per exercise (start and end position), bundled in public/exercises.
 // A few gentle moves have no photo; their tip says how to do them.
 const NO_PHOTO = new Set(['respiracion-diafragmatica', 'suelo-pelvico', 'deslizamiento-talon', 'toques-talon', 'bird-dog']);
-export const exercisePhotos = (id: string): [string, string] | null =>
-    BY_ID.has(id) && !NO_PHOTO.has(id) ? [`./exercises/${id}-0.webp`, `./exercises/${id}-1.webp`] : null;
+export const exercisePhotos = (id: string): [string, string] | null => {
+    if (!BY_ID.has(id) || NO_PHOTO.has(id)) return null;
+    const key = motionKey(id); // the woman's version for women, when there is one
+    return [`./exercises/${key}-0.webp`, `./exercises/${key}-1.webp`];
+};
 
 // Same muscle first, then anything that shares a secondary muscle.
 export const alternativesFor = (id: string): Exercise[] => {

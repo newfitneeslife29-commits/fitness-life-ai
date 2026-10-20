@@ -55,6 +55,7 @@ import Women from './pages/Women';
 import Wrapped from './pages/Wrapped';
 import Workout from './pages/Workout';
 import { actions, useStore } from './store/store';
+import { showFemaleDemos } from './data/motion';
 
 const TABS = [
     { to: '/', label: () => t('nav.today'), icon: House },
@@ -124,6 +125,8 @@ export default function App() {
     const [intro, setIntro] = useState(true);
     const splash = intro && <LaunchSplash onDone={() => setIntro(false)} />;
     const hasProfile = useStore(s => s.profile !== null);
+    // Women see the women's version of the exercise demos that have one.
+    showFemaleDemos(useStore(s => s.profile?.sex === 'mujer'));
     const lang = useStore(s => s.lang); // remount everything when the language changes
     const navigate = useNavigate();
     const askAccount = useStore(s => !s.account && !s.authPrompted) && authAvailable();
