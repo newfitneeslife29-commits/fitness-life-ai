@@ -1767,4 +1767,9 @@ export const id: Dict = {
     'workout.activeTime': "Waktu aktif",
     'workout.activePaused': "Dijeda · istirahat",
     'workout.restTime': "Istirahat",
+    'streak.alertTitle': "🔥 Jangan putuskan rentetanmu!",
+    'streak.alertBody': "Kamu sudah {n} hari berturut-turut. Buka aplikasi hari ini untuk melanjutkannya.",
+    'streak.milestone': "🔥 {n} hari berturut-turut! Pertahankan.",
+    'settings.streakReminder': "Pengingat rentetan",
+    'settings.streakReminderHint': "Pukul 20.00, jika hari itu kamu belum membuka aplikasi.",
 };

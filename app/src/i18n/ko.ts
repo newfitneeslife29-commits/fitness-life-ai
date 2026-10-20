@@ -1767,4 +1767,9 @@ export const ko: Dict = {
     'workout.activeTime': "운동 시간",
     'workout.activePaused': "일시정지 · 휴식",
     'workout.restTime': "휴식",
+    'streak.alertTitle': "🔥 연속 기록을 놓치지 마세요!",
+    'streak.alertBody': "{n}일 연속입니다. 오늘도 앱을 열어 기록을 이어가세요.",
+    'streak.milestone': "🔥 {n}일 연속! 계속 이렇게 해요.",
+    'settings.streakReminder': "연속 기록 알림",
+    'settings.streakReminderHint': "그날 아직 앱을 열지 않았다면 오후 8시에 알려드려요.",
 };

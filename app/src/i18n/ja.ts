@@ -1767,4 +1767,9 @@ export const ja: Dict = {
     'workout.activeTime': "運動時間",
     'workout.activePaused': "一時停止・休憩中",
     'workout.restTime': "休憩",
+    'streak.alertTitle': "🔥 連続記録を途切れさせないで！",
+    'streak.alertBody': "{n}日連続です。今日もアプリを開いて記録を伸ばしましょう。",
+    'streak.milestone': "🔥 {n}日連続！この調子で。",
+    'settings.streakReminder': "連続記録のリマインダー",
+    'settings.streakReminderHint': "その日にまだアプリを開いていない場合、午後8時にお知らせします。",
 };

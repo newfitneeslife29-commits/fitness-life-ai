@@ -1767,4 +1767,9 @@ export const zh: Dict = {
     'workout.activeTime': "运动时间",
     'workout.activePaused': "已暂停 · 休息",
     'workout.restTime': "休息",
+    'streak.alertTitle': "🔥 别让连续记录中断！",
+    'streak.alertBody': "你已经连续 {n} 天了。今天打开应用继续保持。",
+    'streak.milestone': "🔥 连续 {n} 天！继续加油。",
+    'settings.streakReminder': "连续记录提醒",
+    'settings.streakReminderHint': "如果当天还没打开应用，晚上 8 点提醒你。",
 };

@@ -1767,4 +1767,9 @@ export const pl: Dict = {
     'workout.activeTime': "Czas aktywny",
     'workout.activePaused': "Pauza · odpoczynek",
     'workout.restTime': "Odpoczynek",
+    'streak.alertTitle': "🔥 Nie przerywaj serii!",
+    'streak.alertBody': "Masz już {n} dni z rzędu. Otwórz dziś aplikację, aby ją utrzymać.",
+    'streak.milestone': "🔥 {n} dni z rzędu! Tak trzymaj.",
+    'settings.streakReminder': "Przypomnienie o serii",
+    'settings.streakReminderHint': "O 20:00, jeśli tego dnia nie otworzysz jeszcze aplikacji.",
 };

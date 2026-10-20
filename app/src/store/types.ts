@@ -46,6 +46,8 @@ export interface Profile {
     restSound?: boolean;
     // Reminders when trained muscles have rested (on by default).
     recoveryAlerts?: boolean;
+    // "Don't lose your streak" at 8 pm on days the app wasn't opened (on by default).
+    streakReminder?: boolean;
     // A notification at the time of each meal of the meal plan (on by default).
     mealReminders?: boolean;
     stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)

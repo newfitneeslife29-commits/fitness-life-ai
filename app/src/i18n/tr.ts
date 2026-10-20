@@ -1767,4 +1767,9 @@ export const tr: Dict = {
     'workout.activeTime': "Aktif süre",
     'workout.activePaused': "Duraklatıldı · dinlenme",
     'workout.restTime': "Dinlenme",
+    'streak.alertTitle': "🔥 Serini kaybetme!",
+    'streak.alertBody': "{n} gündür üst üste devam ediyorsun. Devam etmek için bugün uygulamayı aç.",
+    'streak.milestone': "🔥 Üst üste {n} gün! Böyle devam.",
+    'settings.streakReminder': "Seri hatırlatıcısı",
+    'settings.streakReminderHint': "O gün uygulamayı henüz açmadıysan saat 20:00'de.",
 };

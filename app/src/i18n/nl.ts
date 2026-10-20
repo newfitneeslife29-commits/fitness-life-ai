@@ -1767,4 +1767,9 @@ export const nl: Dict = {
     'workout.activeTime': "Actieve tijd",
     'workout.activePaused': "Gepauzeerd · rust",
     'workout.restTime': "Rust",
+    'streak.alertTitle': "🔥 Verlies je reeks niet!",
+    'streak.alertBody': "Je zit op {n} dagen op rij. Open de app vandaag om door te gaan.",
+    'streak.milestone': "🔥 {n} dagen op rij! Ga zo door.",
+    'settings.streakReminder': "Reeksherinnering",
+    'settings.streakReminderHint': "Om 20.00 uur, als je de app die dag nog niet hebt geopend.",
 };

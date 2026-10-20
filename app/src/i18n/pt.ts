@@ -1775,4 +1775,9 @@ export const pt: Dict = {
     'workout.activeTime': "Tempo ativo",
     'workout.activePaused': "Pausado · descanso",
     'workout.restTime': "Descanso",
+    'streak.alertTitle': "🔥 Não perca sua sequência!",
+    'streak.alertBody': "Você está há {n} dias seguidos. Entre hoje para continuar somando.",
+    'streak.milestone': "🔥 {n} dias seguidos! Continue assim.",
+    'settings.streakReminder': "Aviso de sequência",
+    'settings.streakReminderHint': "Às 20h, se você ainda não entrou no app naquele dia.",
 };

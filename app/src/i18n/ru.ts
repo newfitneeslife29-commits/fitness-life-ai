@@ -1767,4 +1767,9 @@ export const ru: Dict = {
     'workout.activeTime': "Активное время",
     'workout.activePaused': "Пауза · отдых",
     'workout.restTime': "Отдых",
+    'streak.alertTitle': "🔥 Не прерывайте серию!",
+    'streak.alertBody': "Вы уже {n} дн. подряд. Откройте приложение сегодня, чтобы продолжить.",
+    'streak.milestone': "🔥 {n} дн. подряд! Так держать.",
+    'settings.streakReminder': "Напоминание о серии",
+    'settings.streakReminderHint': "В 20:00, если в этот день вы ещё не открывали приложение.",
 };

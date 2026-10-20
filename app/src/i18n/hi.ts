@@ -1767,4 +1767,9 @@ export const hi: Dict = {
     'workout.activeTime': "सक्रिय समय",
     'workout.activePaused': "रुका हुआ · आराम",
     'workout.restTime': "आराम",
+    'streak.alertTitle': "🔥 अपनी स्ट्रीक न टूटने दें!",
+    'streak.alertBody': "आप लगातार {n} दिन से जुड़े हैं। इसे जारी रखने के लिए आज ऐप खोलें।",
+    'streak.milestone': "🔥 लगातार {n} दिन! ऐसे ही जारी रखें।",
+    'settings.streakReminder': "स्ट्रीक रिमाइंडर",
+    'settings.streakReminderHint': "रात 8 बजे, अगर उस दिन आपने ऐप नहीं खोला है।",
 };

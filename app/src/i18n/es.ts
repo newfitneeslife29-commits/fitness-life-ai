@@ -1775,4 +1775,9 @@ export const es = {
     'workout.activeTime': "Tiempo activo",
     'workout.activePaused': "En pausa · descanso",
     'workout.restTime': "Descanso",
+    'streak.alertTitle': "🔥 ¡No pierdas tu racha!",
+    'streak.alertBody': "Llevas {n} días seguidos. Entra hoy para seguir sumando.",
+    'streak.milestone': "🔥 ¡{n} días seguidos! Sigue así.",
+    'settings.streakReminder': "Aviso de racha",
+    'settings.streakReminderHint': "A las 8 de la noche, si ese día aún no has entrado a la app.",
 };

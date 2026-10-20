@@ -402,10 +402,10 @@ export default function Today() {
                         <p className="text-xs font-semibold uppercase tracking-wider text-snow/80">{now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                         <h1 className="truncate text-2xl font-extrabold tracking-tight">{greeting()}{profile.name ? `, ${profile.name}` : ''}</h1>
                     </div>
-                    <span className="flex items-center gap-1 rounded-full bg-snow/20 px-3 py-1.5 text-sm font-bold backdrop-blur"
-                        aria-label={`${streak} ${tp('today.streak', streak)}`}>
-                        <Flame size={16} className={streak > 0 ? 'fill-amber-300 text-amber-300' : ''} /> {streak}
-                    </span>
+                    <Link to="/actividad" className="flex items-center gap-1 rounded-full bg-snow/20 px-3 py-1.5 text-sm font-bold backdrop-blur"
+                        aria-label={`${t('activity.streak')}: ${tp('activity.days', activity.activeStreak)}`}>
+                        <Flame size={16} className={activity.activeStreak > 1 ? 'fill-amber-300 text-amber-300' : ''} /> {activity.activeStreak}
+                    </Link>
                 </div>
                 <div className="relative mt-4 grid grid-cols-3 gap-2">
                     <HeroStat value={`${Math.min(thisWeek, profile.daysPerWeek)}/${profile.daysPerWeek}`} label={t('home.heroWeek')} />

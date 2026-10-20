@@ -1774,4 +1774,9 @@ export const en: Dict = {
     'workout.activeTime': "Active time",
     'workout.activePaused': "Paused · rest",
     'workout.restTime': "Rest",
+    'streak.alertTitle': "🔥 Don't lose your streak!",
+    'streak.alertBody': "You're on a {n}-day streak. Open the app today to keep it going.",
+    'streak.milestone': "🔥 {n} days in a row! Keep it up.",
+    'settings.streakReminder': "Streak reminder",
+    'settings.streakReminderHint': "At 8 pm, if you haven't opened the app that day.",
 };
