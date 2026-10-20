@@ -11,24 +11,17 @@ const session = (startedAt: string, sets: [string, number, number][]): Session =
 });
 
 describe('voice timer cues', () => {
-    it('says halfway, the time left, 3-2-1, the target and then the extra time', () => {
+    it('counts down the last 10 seconds, calls the target, and says the time every 10 seconds', () => {
         expect(cueAt(1, 30)).toBeNull();
-        expect(cueAt(10, 30)).toBeNull();
-        expect(cueAt(15, 30)).toBe('¡Mitad!');
-        expect(cueAt(20, 30)).toBe('Quedan 10 segundos');
-        expect(cueAt(26, 30)).toBeNull();
+        expect(cueAt(10, 30)).toBe('10 segundos');
+        expect(cueAt(19, 30)).toBeNull();
+        expect(cueAt(20, 30)).toBe('10');
         expect(cueAt(27, 30)).toBe('3');
         expect(cueAt(29, 30)).toBe('1');
         expect(cueAt(30, 30)).toBe('¡Tiempo!');
-        expect(cueAt(35, 30)).toBeNull();
         expect(cueAt(40, 30)).toBe('40 segundos');
-        // Long holds also say the last 30 seconds.
-        expect(cueAt(30, 60)).toBe('¡Mitad!');
-        expect(cueAt(50, 80)).toBe('Quedan 30 segundos');
-        // No double cue: the countdown wins over halfway.
-        expect(cueAt(2, 5)).toBe('3');
-        // Without a target: the time every 10 seconds.
-        expect(cueAt(20, 0)).toBe('20 segundos');
+        // No double cue: the countdown wins over a round number.
+        expect(cueAt(20, 22)).toBe('2');
     });
     it('speaks minutes', () => {
         expect(spokenTime(60)).toBe('1 minuto');

@@ -398,7 +398,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
 
                     {info?.timed ? (
                         <div className="mt-3">
-                            <HoldTimer key={`${current}-${setIndex}`} auto={burn} size="lg" target={set.reps || ex.repMin} onDone={sec => {
+                            <HoldTimer key={`${current}-${setIndex}`} auto={burn} target={set.reps || ex.repMin} onDone={sec => {
                                 actions.setValue(current, setIndex, 'reps', sec);
                                 complete();
                             }} />
