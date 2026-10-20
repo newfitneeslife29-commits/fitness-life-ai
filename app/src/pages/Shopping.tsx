@@ -1,18 +1,21 @@
 import { Check, RotateCcw, Share2, ShoppingCart } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { PremiumLock } from '../components/AiParts';
 import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { FOOD_EMOJI } from '../data/foods';
 import { FREE_PLANS, planKcal, portionFactor } from '../data/freePlans';
 import { l10n, t, tp } from '../i18n';
 import { autoTargets } from '../lib/nutrition';
+import { usePremiumActive } from '../lib/premium';
 import { shareText } from '../lib/native';
 import { shoppingList } from '../lib/shopping';
 import { actions, useStore } from '../store/store';
 
 // The shopping list of the AI meal plan (?plan=ai) or of a free plan (?plan=<id>).
 export default function Shopping() {
+    const premium = usePremiumActive();
     const [params] = useSearchParams();
     const source = params.get('plan') ?? 'ai';
     const mealPlan = useStore(s => s.mealPlan);
@@ -43,6 +46,15 @@ export default function Shopping() {
         const text = sections.map(s => `${FOOD_EMOJI[s.category]} ${t(`foods.cat.${s.category}`)}\n${s.items.map(i => `• ${i.name}${i.amount ? ` — ${i.amount}` : ''}`).join('\n')}`).join('\n\n');
         if ((await shareText(t('shopping.title'), `🛒 ${t('shopping.title')}\n\n${text}`)) === 'copied') toast(t('shopping.copied'));
     };
+
+    if (!premium) {
+        return (
+            <div className="space-y-4 pb-4">
+                <BackHeader title={t('shopping.title')} icon={<ShoppingCart size={20} />} />
+                <Section><PremiumLock text={t('shopping.locked')} /></Section>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4 pb-4">

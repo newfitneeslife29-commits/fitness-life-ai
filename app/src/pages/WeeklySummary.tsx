@@ -1,9 +1,11 @@
 import { CalendarRange, Clock3, Droplets, Dumbbell, Flame, Footprints, Lightbulb, Target } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { PremiumLock } from '../components/AiParts';
 import { BackHeader, Section } from '../components/ui';
 import { locale, t, tp } from '../i18n';
 import { fmtNumber, fmtVolume } from '../lib/format';
 import { currentPause } from '../lib/pause';
+import { usePremiumActive } from '../lib/premium';
 import { useStreak } from '../lib/streak';
 import { useWeekSummary, weeklyTip, type WeekSummary } from '../lib/weeklySummary';
 import { useStore } from '../store/store';
@@ -37,6 +39,16 @@ export default function WeeklySummaryPage() {
     const { activeStreak } = useStreak();
     const compare = offset === 0 ? null : prev; // this week is still running: no arrows
     const d = (now: number, before: number) => (compare ? <Delta now={now} before={before} /> : undefined);
+    const premium = usePremiumActive();
+
+    if (!premium) {
+        return (
+            <div className="space-y-5 pb-6">
+                <BackHeader title={t('weekly.title')} subtitle={range(w)} icon={<CalendarRange size={20} />} />
+                <Section><PremiumLock text={t('weekly.locked')} /></Section>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-5 pb-6">

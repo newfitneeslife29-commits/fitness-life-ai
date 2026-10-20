@@ -5,6 +5,7 @@ import { stepGoalOf, stepsOn } from './movement';
 import { scheduleAlert } from './native';
 import { autoTargets, waterTargetMl } from './nutrition';
 import { currentPause } from './pause';
+import { usePremiumActive } from './premium';
 import { volume } from './progression';
 import { weekStart } from './stats';
 import { useStore } from '../store/store';
@@ -89,7 +90,9 @@ export const useWeekSummary = (offsetWeeks = 0) => {
 // Reschedules Sunday's notification with this week's numbers so far: workouts
 // and water only happen in the app, so they are right when it arrives.
 export const useWeeklySummaryAlert = () => {
-    const on = useStore(s => s.profile !== null && s.profile.weeklySummary !== false);
+    // Premium: the summary and its Sunday notification.
+    const premium = usePremiumActive();
+    const on = useStore(s => s.profile !== null && s.profile.weeklySummary !== false) && premium;
     const paused = useStore(s => !!currentPause(s.profile));
     const lang = useStore(s => s.lang);
     const w = useWeekSummary();

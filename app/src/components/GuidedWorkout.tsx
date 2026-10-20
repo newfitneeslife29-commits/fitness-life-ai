@@ -13,6 +13,8 @@ import { useRestCountdown } from '../lib/useRest';
 import { speak, voiceAvailable } from '../lib/voice';
 import { handsFreeSupported, useHandsFree, type HandsFreeState, type VoiceCommand } from '../lib/voiceCommands';
 import { toast } from './feedback';
+import { usePremiumActive } from '../lib/premium';
+import { useNavigate } from 'react-router-dom';
 import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Unit } from '../store/types';
@@ -140,9 +142,17 @@ const focusArea = (active: ActiveWorkout) => {
 // Turns hands-free on and off; it pulses while listening.
 const HandsFreeButton = ({ state }: { state: HandsFreeState }) => {
     const on = useStore(s => s.profile?.handsFree === true);
+    const premium = usePremiumActive();
+    const navigate = useNavigate();
     if (!handsFreeSupported()) return null;
     const toggle = () => {
         haptic('tap');
+        // Premium: otherwise it opens Premium.
+        if (!premium) {
+            toast(t('handsFree.locked'), 3500);
+            navigate('/premium');
+            return;
+        }
         actions.updateProfile({ handsFree: !on });
         toast(t(on ? 'handsFree.off' : 'handsFree.on'), on ? 2000 : 4500);
     };
@@ -357,7 +367,8 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
 
     // Hands-free: what each word does on the screen showing now.
     const screen = !started ? 'overview' : !ex || !set ? 'done' : active.restEndsAt ? 'rest' : setIndex === 0 && !introduced.includes(current) ? 'ready' : 'exercise';
-    const handsFreeOn = useStore(s => s.profile?.handsFree === true);
+    const premium = usePremiumActive();
+    const handsFreeOn = useStore(s => s.profile?.handsFree === true) && premium;
     const handsFree = useHandsFree(handsFreeOn, (c: VoiceCommand) => {
         const did = (label: Key) => { haptic('tap'); toast(`🎙 ${t(label)}`, 1200); };
         if (screen === 'overview' && (c === 'done' || c === 'next')) { primeSound(); setStarted(true); did('handsFree.cmd.start'); }

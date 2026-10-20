@@ -1,6 +1,6 @@
 import { BookOpen, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Avatar } from '../components/Avatar';
 import { LanguageRow } from '../components/LanguagePicker';
@@ -51,6 +51,10 @@ const ToggleRow = ({ icon, title, hint, on, onChange, test }: {
 
 export default function Settings() {
     const profile = useStore(s => s.profile)!;
+    // Premium switches open Premium for free users.
+    const premium = usePremiumActive();
+    const navigate = useNavigate();
+    const premiumSwitch = (apply: (on: boolean) => void) => (on: boolean) => (premium ? apply(on) : navigate('/premium'));
     const plan = useStore(s => s.plan);
     const sessionsCount = useStore(s => s.sessions.length);
     const theme = useStore(s => s.theme ?? 'system');
@@ -177,13 +181,13 @@ export default function Settings() {
                         test={{ label: t('settings.restSoundTest'), run: () => { primeSound(); restOver(true); } }} />
                     <ToggleRow icon={<Flame size={20} />} title={t('settings.streakReminder')} hint={t('settings.streakReminderHint')}
                         on={profile.streakReminder !== false} onChange={on => actions.updateProfile({ streakReminder: on })} />
-                    <ToggleRow icon={<CalendarRange size={20} />} title={t('settings.weeklySummary')} hint={t('settings.weeklySummaryHint')}
-                        on={profile.weeklySummary !== false} onChange={on => actions.updateProfile({ weeklySummary: on })} />
+                    <ToggleRow icon={<CalendarRange size={20} />} title={`${t('settings.weeklySummary')}${premium ? '' : ' · Premium'}`} hint={t('settings.weeklySummaryHint')}
+                        on={premium && profile.weeklySummary !== false} onChange={premiumSwitch(on => actions.updateProfile({ weeklySummary: on }))} />
                     <ToggleRow icon={<BatteryCharging size={20} />} title={t('settings.recoveryAlerts')} hint={t('settings.recoveryAlertsHint')}
                         on={profile.recoveryAlerts !== false} onChange={on => actions.updateProfile({ recoveryAlerts: on })} />
                     {handsFreeSupported() && (
-                        <ToggleRow icon={<Mic size={20} />} title={t('handsFree.title')} hint={t('handsFree.hint')}
-                            on={profile.handsFree === true} onChange={on => actions.updateProfile({ handsFree: on })} />
+                        <ToggleRow icon={<Mic size={20} />} title={`${t('handsFree.title')}${premium ? '' : ' · Premium'}`} hint={t('handsFree.hint')}
+                            on={premium && profile.handsFree === true} onChange={premiumSwitch(on => actions.updateProfile({ handsFree: on }))} />
                     )}
                     {voiceAvailable() && (
                         <ToggleRow icon={<Mic size={20} />} title={t('settings.voice')} hint={t('settings.voiceHint')}

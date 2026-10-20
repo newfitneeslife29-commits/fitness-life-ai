@@ -59,7 +59,7 @@ Rutinas de gym o casa, entreno guiado, nutrición y coach IA. ¡Empieza gratis!
 **Descripción completa:** la de abajo, más este final:
 ```
 FITNESS LIFE PREMIUM
-Entrenar es gratis. Premium añade la IA: entrenador personal, plan de comidas, coach de nutrición y comidas calculadas desde una foto. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
+Entrenar es gratis. Premium añade la IA (entrenador personal, plan de comidas, coach de nutrición y comidas calculadas desde una foto), el entreno manos libres, la lista de la compra con escáner de código de barras, el ayuno intermitente y el resumen semanal. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
 ```
 
 ### Descripción (las dos tiendas)
@@ -74,7 +74,7 @@ TU PLAN, A TU MEDIDA
 
 ENTRENA GUIADO, ¡Y MANOS LIBRES!
 • Entreno a pantalla completa: prepárate, haz tu serie y descansa con cuenta atrás.
-• Manos libres: di «listo» o «siguiente» y la app avanza sin tocar el teléfono.
+• Manos libres (Premium): di «listo» o «siguiente» y la app avanza sin tocar el teléfono.
 • Fotos y animaciones de cada ejercicio, con consejos de técnica.
 • La app te dice cuándo subir de peso.
 • ¿Máquina ocupada? Cámbiala al instante por otra del mismo músculo.
@@ -83,7 +83,7 @@ ENTRENA GUIADO, ¡Y MANOS LIBRES!
 
 MIRA Y COMPARTE TU PROGRESO
 • Constancia, récords, 1RM estimado, volumen y peso corporal.
-• Resumen semanal cada domingo con un consejo para mejorar.
+• Resumen semanal cada domingo con un consejo para mejorar (Premium).
 • Racha de días, calendario de actividad y widget en tu pantalla de inicio.
 • Insignias y Gym Wrapped listos para tus historias de Instagram, Facebook y TikTok.
 • Antes y después con tus fotos.
@@ -91,10 +91,10 @@ MIRA Y COMPARTE TU PROGRESO
 
 NUTRICIÓN SIN COMPLICARTE
 • Calorías, proteína, carbohidratos y grasa con objetivos según tu meta.
-• Escanea el código de barras de tus alimentos.
-• Agua del día con recordatorios, ayuno intermitente y tus recetas.
-• Planes de comidas gratis y lista de la compra automática.
-• Premium: foto de tu comida y la IA calcula los macros, plan de comidas de 7 días y coach de nutrición con IA.
+• Busca en la tabla de alimentos o añade los tuyos.
+• Agua del día con recordatorios y tus recetas.
+• Planes de comidas gratis.
+• Premium: foto de tu comida y la IA calcula los macros, plan de comidas de 7 días, coach de nutrición con IA, escáner de código de barras, lista de la compra automática y ayuno intermitente.
 
 MOTIVACIÓN EN COMUNIDAD
 • Retos de 30 días con clasificación y ranking semanal con tus amigos.
@@ -119,11 +119,11 @@ Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a u
 
 ### Novedades de esta versión (las dos tiendas)
 ```
-• Manos libres: di «listo» o «siguiente» durante el entreno guiado.
-• Resumen semanal cada domingo con un consejo.
+• Manos libres (Premium): di «listo» o «siguiente» durante el entreno guiado.
+• Resumen semanal cada domingo con un consejo (Premium).
 • Modo descanso o lesión: tu racha no se pierde y los entrenos cuidan la zona.
 • Insignias para compartir en tus historias.
-• Widget en la pantalla de inicio, lista de la compra, recordatorios de agua, ranking con amigos, programas de entrenadores y tu música en el entreno.
+• Widget en la pantalla de inicio, lista de la compra (Premium), recordatorios de agua, ranking con amigos, programas de entrenadores y tu música en el entreno.
 ```
 
 ---
@@ -169,7 +169,7 @@ Gym or home workouts, guided training, nutrition and an AI coach. Start free!
 **Full description:** the one below, plus this ending:
 ```
 FITNESS LIFE PREMIUM
-Training is free. Premium adds the AI: personal trainer, meal plan, nutrition coach and meals calculated from a photo. Monthly plan with a 7-day free trial, or a yearly plan. Cancel anytime in Google Play.
+Training is free. Premium adds the AI (personal trainer, meal plan, nutrition coach and meals calculated from a photo), hands-free workouts, the shopping list with barcode scanner, intermittent fasting and the weekly summary. Monthly plan with a 7-day free trial, or a yearly plan. Cancel anytime in Google Play.
 ```
 
 ### Description (both stores)
@@ -184,7 +184,7 @@ YOUR PLAN, MADE FOR YOU
 
 GUIDED WORKOUTS, HANDS-FREE
 • Full-screen workouts: get ready, do your set and rest with a countdown.
-• Hands-free: say "done" or "next" and the app moves on without touching your phone.
+• Hands-free (Premium): say "done" or "next" and the app moves on without touching your phone.
 • Photos and animations of every exercise, with technique tips.
 • The app tells you when to add weight.
 • Machine taken? Swap it instantly for another one for the same muscle.
@@ -193,7 +193,7 @@ GUIDED WORKOUTS, HANDS-FREE
 
 SEE AND SHARE YOUR PROGRESS
 • Consistency, records, estimated 1RM, volume and body weight.
-• A weekly summary every Sunday with a tip to improve.
+• A weekly summary every Sunday with a tip to improve (Premium).
 • Day streak, activity calendar and a home screen widget.
 • Badges and Gym Wrapped ready for your Instagram, Facebook and TikTok stories.
 • Before and after with your photos.
@@ -201,10 +201,10 @@ SEE AND SHARE YOUR PROGRESS
 
 NUTRITION MADE SIMPLE
 • Calories, protein, carbs and fat with targets for your goal.
-• Scan your food's barcode.
-• Daily water with reminders, intermittent fasting and your own recipes.
-• Free meal plans and an automatic shopping list.
-• Premium: snap your meal and the AI counts the macros, a 7-day meal plan and an AI nutrition coach.
+• Search the food table or add your own foods.
+• Daily water with reminders and your own recipes.
+• Free meal plans.
+• Premium: snap your meal and the AI counts the macros, a 7-day meal plan, an AI nutrition coach, barcode scanner, automatic shopping list and intermittent fasting.
 
 A COMMUNITY THAT KEEPS YOU GOING
 • 30-day challenges with leaderboards and a weekly ranking with your friends.
@@ -229,11 +229,11 @@ Fitness Life does not replace the advice of a doctor or nutritionist. Talk to a 
 
 ### What's new (both stores)
 ```
-• Hands-free: say "done" or "next" during guided workouts.
-• A weekly summary every Sunday with a tip.
+• Hands-free (Premium): say "done" or "next" during guided workouts.
+• A weekly summary every Sunday with a tip (Premium).
 • Rest or injury mode: keep your streak, and workouts protect the sore area.
 • Badges to share in your stories.
-• Home screen widget, shopping list, water reminders, friends ranking, trainer programs and your music in the workout.
+• Home screen widget, shopping list (Premium), water reminders, friends ranking, trainer programs and your music in the workout.
 ```
 
 ---
@@ -279,7 +279,7 @@ Treinos na academia ou em casa, treino guiado, nutrição e coach com IA. Gráti
 **Descrição completa:** a de baixo, mais este final:
 ```
 FITNESS LIFE PREMIUM
-Treinar é grátis. O Premium adiciona a IA: personal trainer, plano de refeições, coach de nutrição e refeições calculadas por foto. Plano mensal com 7 dias de teste grátis, ou plano anual. Cancele quando quiser no Google Play.
+Treinar é grátis. O Premium adiciona a IA (personal trainer, plano de refeições, coach de nutrição e refeições calculadas por foto), o treino com mãos livres, a lista de compras com leitor de código de barras, o jejum intermitente e o resumo semanal. Plano mensal com 7 dias de teste grátis, ou plano anual. Cancele quando quiser no Google Play.
 ```
 
 ### Descrição (as duas lojas)
@@ -294,7 +294,7 @@ SEU PLANO, DO SEU JEITO
 
 TREINO GUIADO, COM MÃOS LIVRES
 • Treino em tela cheia: prepare-se, faça sua série e descanse com contagem regressiva.
-• Mãos livres: diga «pronto» ou «próximo» e o app avança sem tocar no celular.
+• Mãos livres (Premium): diga «pronto» ou «próximo» e o app avança sem tocar no celular.
 • Fotos e animações de cada exercício, com dicas de técnica.
 • O app diz quando subir o peso.
 • Aparelho ocupado? Troque na hora por outro do mesmo músculo.
@@ -303,7 +303,7 @@ TREINO GUIADO, COM MÃOS LIVRES
 
 VEJA E COMPARTILHE SEU PROGRESSO
 • Constância, recordes, 1RM estimado, volume e peso corporal.
-• Resumo semanal todo domingo com uma dica para melhorar.
+• Resumo semanal todo domingo com uma dica para melhorar (Premium).
 • Sequência de dias, calendário de atividade e widget na tela inicial.
 • Insígnias e Gym Wrapped prontos para seus stories do Instagram, Facebook e TikTok.
 • Antes e depois com suas fotos.
@@ -311,10 +311,10 @@ VEJA E COMPARTILHE SEU PROGRESSO
 
 NUTRIÇÃO SEM COMPLICAÇÃO
 • Calorias, proteína, carboidratos e gordura com metas para o seu objetivo.
-• Escaneie o código de barras dos alimentos.
-• Água do dia com lembretes, jejum intermitente e suas receitas.
-• Planos de refeições grátis e lista de compras automática.
-• Premium: foto da refeição e a IA calcula os macros, plano de refeições de 7 dias e coach de nutrição com IA.
+• Busque na tabela de alimentos ou adicione os seus.
+• Água do dia com lembretes e suas receitas.
+• Planos de refeições grátis.
+• Premium: foto da refeição e a IA calcula os macros, plano de refeições de 7 dias, coach de nutrição com IA, leitor de código de barras, lista de compras automática e jejum intermitente.
 
 MOTIVAÇÃO EM COMUNIDADE
 • Desafios de 30 dias com classificação e ranking semanal com seus amigos.
@@ -339,9 +339,9 @@ O Fitness Life não substitui o conselho de um médico ou nutricionista. Consult
 
 ### Novidades desta versão (as duas lojas)
 ```
-• Mãos livres: diga «pronto» ou «próximo» durante o treino guiado.
-• Resumo semanal todo domingo com uma dica.
+• Mãos livres (Premium): diga «pronto» ou «próximo» durante o treino guiado.
+• Resumo semanal todo domingo com uma dica (Premium).
 • Modo descanso ou lesão: sua sequência não se perde e os treinos protegem a região.
 • Insígnias para compartilhar nos seus stories.
-• Widget na tela inicial, lista de compras, lembretes de água, ranking com amigos, programas de personais e sua música no treino.
+• Widget na tela inicial, lista de compras (Premium), lembretes de água, ranking com amigos, programas de personais e sua música no treino.
 ```

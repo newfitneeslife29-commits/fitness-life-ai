@@ -1,4 +1,4 @@
-import { ChevronLeft, Keyboard, Plus, ScanBarcode, Search, X } from 'lucide-react';
+import { ChevronLeft, Crown, Keyboard, Plus, ScanBarcode, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from '../components/feedback';
@@ -7,6 +7,7 @@ import { FOOD_CATEGORIES, FOOD_EMOJI, foodMacros, foodName, foodTags, portionLab
 import { t } from '../i18n';
 import { lookupBarcode, scanBarcode, validBarcode } from '../lib/barcode';
 import { fmtNumber, parseDecimal } from '../lib/format';
+import { usePremiumActive } from '../lib/premium';
 import { actions } from '../store/store';
 
 // Food table: what a portion (or 100 g) of common foods brings, and a quick way to log it.
@@ -115,6 +116,12 @@ export default function Foods() {
     const [open, setOpen] = useState<Food | null>(null);
     const [brand, setBrand] = useState<string | undefined>(undefined);
     const [typing, setTyping] = useState(false);
+    // The barcode scanner is Premium: otherwise it opens Premium.
+    const premium = usePremiumActive();
+    const unlock = () => {
+        toast(t('barcode.locked'), 3500);
+        navigate('/premium');
+    };
     const [code, setCode] = useState('');
     const [params, setParams] = useSearchParams();
 
@@ -150,7 +157,8 @@ export default function Foods() {
     useEffect(() => {
         if (params.get('escanear') !== '1') return;
         setParams({}, { replace: true });
-        void scan();
+        if (premium) void scan();
+        else unlock();
     }, []);
 
     const foods = useMemo(() => {
@@ -178,8 +186,8 @@ export default function Foods() {
 
             <Section>
                 <div className="mb-3 flex gap-2">
-                    <button onClick={() => void scan()} className="btn-primary flex-1"><ScanBarcode size={18} /> {t('barcode.scan')}</button>
-                    <button onClick={() => setTyping(true)} aria-label={t('barcode.type')} className="btn-ghost px-3"><Keyboard size={18} /></button>
+                    <button onClick={() => (premium ? void scan() : unlock())} className="btn-primary flex-1"><ScanBarcode size={18} /> {t('barcode.scan')}{!premium && <Crown size={15} aria-label="Premium" />}</button>
+                    <button onClick={() => (premium ? setTyping(true) : unlock())} aria-label={t('barcode.type')} className="btn-ghost px-3"><Keyboard size={18} /></button>
                 </div>
                 <label className="relative block">
                     <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
