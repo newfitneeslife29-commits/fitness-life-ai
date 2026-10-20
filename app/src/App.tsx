@@ -17,6 +17,7 @@ import { useFastingAlert } from './lib/fasting';
 import { useCoachRoutines } from './lib/trainerTools';
 import { useChallenges } from './lib/challenges';
 import { useWaterReminders } from './lib/waterReminders';
+import { useWeeklySummaryAlert } from './lib/weeklySummary';
 import { useFriendsWeekSync } from './lib/friendsWeek';
 import { useHomeWidget } from './lib/widget';
 import { useRecoveryAlerts } from './lib/recovery';
@@ -25,6 +26,7 @@ import { useTracking } from './lib/tracker';
 import { cancelRestAlert, initNative } from './lib/native';
 import Achievements from './pages/Achievements';
 import Activity from './pages/Activity';
+import WeeklySummaryPage from './pages/WeeklySummary';
 import Cardio from './pages/Cardio';
 import Move from './pages/Move';
 import MemberProfile from './pages/MemberProfile';
@@ -166,6 +168,7 @@ export default function App() {
     useCoachRoutines();
     useChallenges();
     useWaterReminders();
+    useWeeklySummaryAlert();
     useFriendsWeekSync();
     useHomeWidget();
     // A finished or discarded workout has no rest left to announce (the
@@ -232,6 +235,7 @@ export default function App() {
                 <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="/actividad" element={<Shell><Activity /></Shell>} />
+                <Route path="/resumen" element={<Shell><WeeklySummaryPage /></Shell>} />
                 <Route path="/movimiento" element={<Shell><Move /></Shell>} />
                 <Route path="/mujeres" element={<Shell><Women /></Shell>} />
                 <Route path="/wrapped" element={<Shell><Wrapped /></Shell>} />

@@ -157,6 +157,9 @@ export default function Progress() {
                 <Link to="/actividad" className="mt-2 flex items-center justify-between rounded-xl px-1 py-1 text-sm font-semibold text-brand">
                     {t('activity.title')} <ChevronRight size={16} />
                 </Link>
+                <Link to="/resumen" className="flex items-center justify-between rounded-xl px-1 py-1 text-sm font-semibold text-brand">
+                    {t('weekly.title')} <ChevronRight size={16} />
+                </Link>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                     <div className="rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 p-3.5 text-snow shadow-md shadow-sky-500/25">
                         <p className="text-2xl font-extrabold tabular-nums">{thisWeek.length}</p>

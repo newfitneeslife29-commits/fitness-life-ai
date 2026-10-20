@@ -16,7 +16,9 @@ import { fmtDate, fmtNumber, fmtVolume, fmtWeight, greeting } from '../lib/forma
 import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition';
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
-import { activitySummary } from '../lib/activity';
+import { useStreak } from '../lib/streak';
+import { currentPause } from '../lib/pause';
+import { PauseBanner } from '../components/PauseCard';
 import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
@@ -364,7 +366,7 @@ export default function Today() {
     const activeDays = useStore(s => s.activeDays);
     const stepsMap = useStore(s => s.steps);
     const cardio = useStore(s => s.cardio);
-    const activity = useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions]);
+    const activity = useStreak();
     // The first running challenge, in one line.
     const joined = useStore(s => s.challenges);
     const challengeLine = useMemo(() => {
@@ -424,6 +426,8 @@ export default function Today() {
                     <HeroStat value={fmtNumber(sessions.length)} label={t('home.heroTotal')} />
                 </div>
             </header>
+
+            {currentPause(profile) && <Section><PauseBanner /></Section>}
 
             <Section>
                 {next ? (

@@ -1,4 +1,4 @@
-import { BookOpen, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -29,6 +29,8 @@ import { appVersion, checkForUpdate, useUpdate } from '../lib/updates';
 import { actions, getSaveError, useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
 import type { Goal, Level, Setup } from '../store/types';
+import { PauseRow } from '../components/PauseCard';
+import { handsFreeSupported } from '../lib/voiceCommands';
 
 const ToggleRow = ({ icon, title, hint, on, onChange, test }: {
     icon: ReactNode; title: string; hint: string; on: boolean; onChange: (on: boolean) => void; test?: { label: string; run: () => void };
@@ -165,13 +167,20 @@ export default function Settings() {
             <Section title={t('settings.workout')}>
                 <div className="card divide-y divide-line">
                     <TrainingReminder />
+                    <PauseRow />
                     <ToggleRow icon={<BellRing size={20} />} title={t('settings.restSound')} hint={t('settings.restSoundHint')}
                         on={profile.restSound !== false} onChange={on => actions.updateProfile({ restSound: on })}
                         test={{ label: t('settings.restSoundTest'), run: () => { primeSound(); restOver(true); } }} />
                     <ToggleRow icon={<Flame size={20} />} title={t('settings.streakReminder')} hint={t('settings.streakReminderHint')}
                         on={profile.streakReminder !== false} onChange={on => actions.updateProfile({ streakReminder: on })} />
+                    <ToggleRow icon={<CalendarRange size={20} />} title={t('settings.weeklySummary')} hint={t('settings.weeklySummaryHint')}
+                        on={profile.weeklySummary !== false} onChange={on => actions.updateProfile({ weeklySummary: on })} />
                     <ToggleRow icon={<BatteryCharging size={20} />} title={t('settings.recoveryAlerts')} hint={t('settings.recoveryAlertsHint')}
                         on={profile.recoveryAlerts !== false} onChange={on => actions.updateProfile({ recoveryAlerts: on })} />
+                    {handsFreeSupported() && (
+                        <ToggleRow icon={<Mic size={20} />} title={t('handsFree.title')} hint={t('handsFree.hint')}
+                            on={profile.handsFree === true} onChange={on => actions.updateProfile({ handsFree: on })} />
+                    )}
                     {voiceAvailable() && (
                         <ToggleRow icon={<Mic size={20} />} title={t('settings.voice')} hint={t('settings.voiceHint')}
                             on={profile.voice !== false} onChange={on => actions.updateProfile({ voice: on })}

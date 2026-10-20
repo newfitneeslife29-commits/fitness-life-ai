@@ -3,7 +3,8 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader, Section } from '../components/ui';
 import { locale, t, tp } from '../i18n';
-import { activitySummary, monthGrid } from '../lib/activity';
+import { monthGrid } from '../lib/activity';
+import { useStreak } from '../lib/streak';
 import { useStore } from '../store/store';
 
 
@@ -25,7 +26,7 @@ export default function Activity() {
     const sessions = useStore(s => s.sessions);
     const now = new Date();
     const [month, setMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
-    const summary = useMemo(() => activitySummary(activeDays, sessions), [activeDays, sessions]);
+    const summary = useStreak();
     const grid = useMemo(() => monthGrid(month.year, month.month, activeDays, sessions), [month, activeDays, sessions]);
     const isCurrent = month.year === now.getFullYear() && month.month === now.getMonth();
     const shift = (n: number) => setMonth(m => {

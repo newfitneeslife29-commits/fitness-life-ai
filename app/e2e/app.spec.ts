@@ -2161,3 +2161,106 @@ test('guided: cover, get ready, the exercise full screen, a full-screen rest, th
     await expect(page.getByText('Entreno guardado')).toBeVisible();
     await expect(page.getByText('60 × 7').or(page.getByText('62,5 × 7')).first()).toBeVisible();
 });
+
+test('injury mode: workouts avoid the sore zone and it can be ended; then a rest', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('button', { name: /Descanso o lesión/ }).click();
+    await page.getByRole('radio', { name: 'Modo lesión' }).click();
+    await expect(page.getByRole('button', { name: 'Activar modo lesión' })).toBeDisabled();
+    await page.getByRole('checkbox', { name: 'Rodillas' }).click();
+    await page.getByRole('button', { name: 'Activar modo lesión' }).click();
+    await expect(page.getByText('Modo lesión activado. Cuídate 🩹')).toBeVisible();
+
+    // Home says so; the workout swaps the barbell squat.
+    await page.getByRole('link', { name: 'Hoy', exact: true }).click();
+    await expect(page.getByTestId('pause-banner')).toContainText('cuidamos: Rodillas');
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await expect(page.getByText('Modo lesión (Rodillas): adaptamos este entreno')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Sentadilla con barra' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Hip thrust' })).toBeVisible();
+    await page.getByRole('button', { name: 'Volver' }).first().click();
+
+    // Ending it, then a 3-day rest.
+    await page.getByTestId('pause-banner').click();
+    await page.getByRole('button', { name: 'Terminar y volver a entrenar' }).click();
+    await expect(page.getByTestId('pause-banner')).toHaveCount(0);
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('button', { name: /Descanso o lesión/ }).click();
+    await page.getByRole('radio', { name: '3 días' }).click();
+    await page.getByRole('button', { name: 'Empezar descanso' }).click();
+    await page.getByRole('link', { name: 'Hoy', exact: true }).click();
+    await expect(page.getByTestId('pause-banner')).toContainText('Modo descanso · quedan 3 días');
+});
+
+test('weekly summary: the page, its tip and the Sunday notification switch', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
+    await page.getByRole('link', { name: 'Resumen semanal' }).click();
+    await expect(page.getByRole('heading', { name: 'Resumen semanal' })).toBeVisible();
+    await expect(page.getByText('0/3')).toBeVisible();
+    await expect(page.getByText('Empieza la semana con un entreno corto')).toBeVisible();
+    await page.getByRole('radio', { name: 'Semana pasada' }).click();
+    await expect(page.getByRole('radio', { name: 'Semana pasada' })).toHaveAttribute('aria-checked', 'true');
+    await page.goto('/#/ajustes');
+    await expect(page.getByRole('switch', { name: 'Resumen semanal' })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('badges: an earned medal becomes a story to share', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/logros');
+    // The first weigh-in (at sign-up) is a medal.
+    await page.getByRole('button', { name: 'Compartir: Punto de partida' }).click();
+    await expect(page.getByRole('img', { name: 'Vista previa de la insignia Punto de partida' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir en Instagram' })).toBeVisible();
+    const gym = await page.getByRole('img', { name: 'Vista previa de la insignia Punto de partida' }).getAttribute('src');
+    await page.getByRole('radio', { name: 'Liso' }).click();
+    await expect.poll(() => page.getByRole('img', { name: 'Vista previa de la insignia Punto de partida' }).getAttribute('src')).not.toBe(gym);
+    // Streak badges not reached yet can't be shared.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('streak-badge-7')).toBeDisabled();
+});
+
+test('guided: hands-free, the voice moves the workout on', async ({ page }) => {
+    // A stand-in for the browser's speech recognizer: tests "say" words.
+    await page.addInitScript(() => {
+        const w = window as unknown as Record<string, unknown>;
+        class FakeRecognition {
+            onresult: ((e: unknown) => void) | null = null;
+            onend: (() => void) | null = null;
+            constructor() { w.__rec = this; }
+            start() { w.__listening = true; }
+            abort() { setTimeout(() => this.onend?.(), 10); }
+        }
+        w.SpeechRecognition = FakeRecognition;
+        w.__say = (text: string) => (w.__rec as FakeRecognition | undefined)?.onresult?.({ resultIndex: 0, results: [[{ transcript: text }]] });
+    });
+    const say = (text: string) => page.evaluate(t => (window as unknown as { __say: (t: string) => void }).__say(t), text);
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await page.getByTestId('hands-free').click();
+    await expect(page.getByText(/Manos libres activado/)).toBeVisible();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __listening?: boolean }).__listening)).toBe(true);
+
+    // "listo" starts, "listo" again after the countdown cue, "listo" logs the set.
+    await say('listo');
+    await expect(page.getByText('¡Prepárate!')).toBeVisible();
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    await expect(async () => {
+        await say('listo');
+        await expect(squat.getByText('Serie 1 de 3')).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 12_000 });
+    await expect(async () => {
+        await say('listo');
+        await expect(page.getByRole('timer')).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    // In the rest, "siguiente" skips it.
+    await expect(async () => {
+        await say('siguiente');
+        await expect(squat.getByText('Serie 2 de 3')).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+});

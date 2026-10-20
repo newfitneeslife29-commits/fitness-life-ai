@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Clock3, Dumbbell, Flame, HelpCircle, List, Minus, Play, Plus, SkipForward, Target, Trophy, TrendingUp, Volume2, VolumeX } from 'lucide-react';
+import { Check, ChevronDown, Clock3, Dumbbell, Flame, HelpCircle, List, Mic, MicOff, Minus, Play, Plus, SkipForward, Target, Trophy, TrendingUp, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { routineCover } from '../data/covers';
 import { exerciseMotion } from '../data/motion';
@@ -11,11 +11,14 @@ import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { useRestCountdown } from '../lib/useRest';
 import { speak, voiceAvailable } from '../lib/voice';
+import { handsFreeSupported, useHandsFree, type HandsFreeState, type VoiceCommand } from '../lib/voiceCommands';
+import { toast } from './feedback';
 import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Unit } from '../store/types';
 import { ActiveClock } from './ActiveClock';
 import { MusicButton } from './MusicSheet';
+import { InjuryNote } from './PauseCard';
 import { HoldTimer } from './HoldTimer';
 import { Sheet } from './ui';
 import { UnitToggle } from './UnitToggle';
@@ -134,7 +137,25 @@ const focusArea = (active: ActiveWorkout) => {
 };
 
 // The cover: what today's session is, then one big Start.
-const Overview = ({ active, onStart, onList, onClose, unit }: { active: ActiveWorkout; onStart: () => void; onList: () => void; onClose: () => void; unit: Unit }) => {
+// Turns hands-free on and off; it pulses while listening.
+const HandsFreeButton = ({ state }: { state: HandsFreeState }) => {
+    const on = useStore(s => s.profile?.handsFree === true);
+    if (!handsFreeSupported()) return null;
+    const toggle = () => {
+        haptic('tap');
+        actions.updateProfile({ handsFree: !on });
+        toast(t(on ? 'handsFree.off' : 'handsFree.on'), on ? 2000 : 4500);
+    };
+    return (
+        <button onClick={toggle} aria-label={t('handsFree.title')} aria-pressed={on} data-testid="hands-free"
+            className={`relative flex h-11 w-11 items-center justify-center rounded-full backdrop-blur-md transition active:scale-90 ${on ? 'bg-brand text-ink' : 'bg-black/35 text-snow hover:bg-black/50'}`}>
+            {on && state === 'listening' && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-brand/50" />}
+            {on ? <Mic size={19} className="relative" /> : <MicOff size={19} />}
+        </button>
+    );
+};
+
+const Overview = ({ active, onStart, onList, onClose, unit, handsFree }: { active: ActiveWorkout; onStart: () => void; onList: () => void; onClose: () => void; unit: Unit; handsFree: HandsFreeState }) => {
     const level = useStore(s => s.profile?.level ?? 'principiante');
     const cover = routineCover({ id: active.routineId ?? active.id, exercises: active.exercises.map(e => ({ exerciseId: e.exerciseId, sets: e.sets.length, repMin: e.repMin, repMax: e.repMax, restSec: e.restSec })) });
     return (
@@ -146,6 +167,7 @@ const Overview = ({ active, onStart, onList, onClose, unit }: { active: ActiveWo
                     <RoundButton label={t('workout.back')} onClick={onClose}><ChevronDown size={22} /></RoundButton>
                     <p className="truncate px-2 text-sm font-extrabold uppercase tracking-[0.18em]">{sessionName(active)}</p>
                     <span className="flex gap-2">
+                        <HandsFreeButton state={handsFree} />
                         <MusicButton className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-snow backdrop-blur-md transition hover:bg-black/50 active:scale-90" />
                         <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
                     </span>
@@ -158,6 +180,7 @@ const Overview = ({ active, onStart, onList, onClose, unit }: { active: ActiveWo
                     <div className="px-3"><dd className="truncate font-bold">{t('guided.minutes', { n: estimateMinutes(active) })}</dd><dt className="text-xs text-white/50">{t('workout.time')}</dt></div>
                     <div className="px-3"><dd className="line-clamp-2 text-sm font-bold leading-tight">{focusArea(active) || '—'}</dd><dt className="text-xs text-white/50">{t('guided.focus')}</dt></div>
                 </dl>
+                {active.injury && <InjuryNote injury={active.injury} className="mt-4" />}
                 <h2 className="mb-2 mt-7 text-xl font-extrabold">{t('guided.exercises')} <span className="font-medium text-white/45">({active.exercises.length})</span></h2>
                 <ol className="divide-y divide-line">
                     {active.exercises.map((e, i) => {
@@ -332,7 +355,26 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
     const set = ex?.sets[setIndex];
     const info = ex ? getExercise(ex.exerciseId) : undefined;
 
-    if (!started) return <Overview active={active} unit={unit} onClose={onClose} onList={onList} onStart={() => { primeSound(); haptic('tap'); setStarted(true); }} />;
+    // Hands-free: what each word does on the screen showing now.
+    const screen = !started ? 'overview' : !ex || !set ? 'done' : active.restEndsAt ? 'rest' : setIndex === 0 && !introduced.includes(current) ? 'ready' : 'exercise';
+    const handsFreeOn = useStore(s => s.profile?.handsFree === true);
+    const handsFree = useHandsFree(handsFreeOn, (c: VoiceCommand) => {
+        const did = (label: Key) => { haptic('tap'); toast(`🎙 ${t(label)}`, 1200); };
+        if (screen === 'overview' && (c === 'done' || c === 'next')) { primeSound(); setStarted(true); did('handsFree.cmd.start'); }
+        else if (screen === 'ready' && (c === 'done' || c === 'next')) { setIntroduced(list => [...list, current]); did('handsFree.cmd.start'); }
+        else if (screen === 'exercise' && c === 'done' && !info?.timed) { primeSound(); actions.toggleSet(current, setIndex); did('handsFree.cmd.done'); }
+        else if (screen === 'exercise' && c === 'next') { setSkipped(s => [...s, current]); did('handsFree.cmd.next'); }
+        else if (screen === 'rest' && (c === 'done' || c === 'next')) { actions.skipRest(); did('handsFree.cmd.next'); }
+        else if (screen === 'rest' && c === 'more') { actions.adjustRest(20); did('handsFree.cmd.more'); }
+        else if (screen === 'done' && c === 'save') { did('handsFree.cmd.save'); onFinish(); }
+    });
+    useEffect(() => {
+        if (handsFree === 'denied') toast(t('handsFree.denied'), 4500);
+        if (handsFree === 'unavailable') toast(t('handsFree.unavailable'), 4500);
+        if (handsFree === 'denied' || handsFree === 'unavailable') actions.updateProfile({ handsFree: false });
+    }, [handsFree]);
+
+    if (!started) return <Overview active={active} unit={unit} handsFree={handsFree} onClose={onClose} onList={onList} onStart={() => { primeSound(); haptic('tap'); setStarted(true); }} />;
     if (!ex || !set) return <Done active={active} unit={unit} onFinish={onFinish} onList={onList} />;
     if (active.restEndsAt) return <Rest active={active} endsAt={active.restEndsAt} total={active.restTotalSec} nextIndex={current} onList={onList} unit={unit} burn={burn} />;
     // A new exercise starts with "get ready" (not between its sets).
@@ -373,6 +415,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
                                 <RoundButton label={t('settings.restSound')} onClick={() => actions.updateProfile({ restSound: !sound })}>
                                     {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
                                 </RoundButton>
+                                <HandsFreeButton state={handsFree} />
                             </div>
                         </div>
                     </div>

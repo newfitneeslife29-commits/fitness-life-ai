@@ -9,7 +9,9 @@ import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, endRest, finishWorkout } from '../lib/workout';
-import type { Account, ActiveCardio, ActiveWorkout, AiUsage, AppState, CardioKind, CardioSession, ChatMessage, Macros, Meal, MealPlan, PremiumStatus, Recipe, SleepEntry, Profile, Routine, RoutineExercise, WorkingSet } from './types';
+import { currentPause, endPause } from '../lib/pause';
+import { workoutAround } from '../data/programs';
+import type { Account, ActiveCardio, ActiveWorkout, AiUsage, AppState, CardioKind, CardioSession, ChatMessage, Macros, Meal, MealPlan, Pause, PremiumStatus, Recipe, SleepEntry, Profile, Routine, RoutineExercise, WorkingSet } from './types';
 
 // The device holds the working copy of everything. With an account, a copy
 // also lives in the cloud (lib/cloud.ts); without one, export/import in
@@ -206,8 +208,25 @@ export const actions = {
     },
 
     startWorkout(routineId: string | null) {
-        const routine = state.routines.find(r => r.id === routineId) ?? null;
-        set(s => ({ ...s, active: createActiveWorkout(routine, s.sessions, new Date(), unitOf(s)) }));
+        let routine = state.routines.find(r => r.id === routineId) ?? null;
+        // Injured: the exercises that load the sore zones are swapped or left out.
+        const pause = currentPause(state.profile);
+        let injury: ActiveWorkout['injury'];
+        if (routine && pause?.kind === 'injury' && pause.zones.length && state.profile) {
+            const adapted = workoutAround(routine.exercises, pause.zones, state.profile.setup);
+            routine = { ...routine, exercises: adapted.exercises };
+            injury = { zones: pause.zones, swapped: adapted.swapped, removed: adapted.removed };
+        }
+        set(s => ({ ...s, active: { ...createActiveWorkout(routine, s.sessions, new Date(), unitOf(s)), ...(injury && { injury }) } }));
+    },
+
+    // Rest or injury mode (lib/pause.ts); null ends it.
+    setPause(pause: Pause | null) {
+        set(s => {
+            if (!s.profile) return s;
+            const ended = endPause(s.profile);
+            return { ...s, profile: { ...s.profile, ...ended, pause } };
+        });
     },
 
     discardWorkout() {

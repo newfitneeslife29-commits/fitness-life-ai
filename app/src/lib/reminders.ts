@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { notificationWeekday } from './mealplan';
 import { routineName } from './names';
 import { reminderId, scheduleWeeklyReminders, type WeeklyReminder } from './native';
+import { currentPause } from './pause';
 import { useStore } from '../store/store';
 import type { AppState } from '../store/types';
 
@@ -35,8 +36,10 @@ export const useTrainingReminders = () => {
     const lang = useStore(s => s.lang);
     const reminder = profile?.trainingReminder ?? null;
     const next = plan?.routineIds[plan.nextIndex];
+    // None while resting or injured.
+    const paused = !!currentPause(profile);
     useEffect(() => {
-        void scheduleWeeklyReminders('training', trainingReminders({ profile, plan, routines }));
+        void scheduleWeeklyReminders('training', paused ? [] : trainingReminders({ profile, plan, routines }));
         // The routine name only matters when the next day changes.
-    }, [JSON.stringify(reminder), next, lang]);
+    }, [JSON.stringify(reminder), next, lang, paused]);
 };

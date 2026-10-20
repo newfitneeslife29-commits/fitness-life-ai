@@ -10,7 +10,13 @@ export const voiceAvailable = () => isNative() || (typeof window !== 'undefined'
 
 let tts: Promise<typeof import('@capacitor-community/text-to-speech')> | null = null;
 
+// Until when the app is talking (roughly): hands-free listening ignores what
+// it hears meanwhile, so "Next: squats" doesn't skip an exercise.
+let talkingUntil = 0;
+export const appTalking = () => Date.now() < talkingUntil;
+
 export const speak = async (text: string) => {
+    talkingUntil = Date.now() + 900 + text.length * 75;
     try {
         if (isNative()) {
             tts ??= import('@capacitor-community/text-to-speech');
