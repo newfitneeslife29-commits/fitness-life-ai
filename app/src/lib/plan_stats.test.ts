@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EXERCISES, getExercise } from '../data/exercises';
+import { existsSync } from 'node:fs';
+import { EXERCISES, exercisePhotos, getExercise } from '../data/exercises';
+import { exerciseMotion, showFemaleDemos } from '../data/motion';
 import { adaptDays, getProgram, PROGRAMS, pickProgram } from '../data/programs';
 import type { Level, Session, Setup } from '../store/types';
 import { buildPlan } from './plan';
@@ -8,6 +10,19 @@ import { exerciseSeries, lastPerformance, sessionsThisWeek, setsPerMuscle, strea
 describe('catalog integrity', () => {
     it('has unique exercise ids', () => {
         expect(new Set(EXERCISES.map(e => e.id)).size).toBe(EXERCISES.length);
+    });
+    it('has the stills of every exercise, and the women\'s version for women when there is one', () => {
+        const onDisk = (src: string) => existsSync(new URL(`../../public/${src.slice(2)}`, import.meta.url));
+        for (const female of [false, true]) {
+            showFemaleDemos(female);
+            for (const e of EXERCISES) for (const src of exercisePhotos(e.id) ?? []) expect(onDisk(src), src).toBe(true);
+        }
+        showFemaleDemos(true);
+        expect(exerciseMotion('sentadilla-banco-smith')).toMatch(/sentadilla-banco-smith\.mujer/);
+        expect(exercisePhotos('sentadilla-banco-smith')?.[1]).toBe('./exercises/sentadilla-banco-smith.mujer-1.webp');
+        expect(exerciseMotion('dominada-excentrica')).toMatch(/dominada-excentrica\.mp4/);
+        showFemaleDemos(false);
+        expect(exerciseMotion('sentadilla-banco-smith')).not.toMatch(/mujer/);
     });
     it('only references existing exercises that match the program setup', () => {
         const allowed = {
