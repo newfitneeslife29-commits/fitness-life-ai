@@ -1886,4 +1886,9 @@ export const nl: Dict = {
     'shopping.done': "Je hebt alles! 🛒",
     'shopping.empty': "Maak een maaltijdplan om hier je boodschappenlijst te zien.",
     'shopping.copied': "Lijst gekopieerd",
+    'water.remind': "Herinner me om water te drinken",
+    'water.remindHint': "Elke 2 uur een herinnering, van 10.00 tot 20.00 uur, tot je je doel haalt.",
+    'water.alertTitle': "💧 Tijd voor een glas water",
+    'water.alertBody': "Je zit vandaag op {drunk} van {target} L.",
+    'water.alertMorning': "Je doel vandaag: {target} L. Begin met een glas!",
 };

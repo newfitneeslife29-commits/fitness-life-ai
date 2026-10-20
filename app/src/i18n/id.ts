@@ -1886,4 +1886,9 @@ export const id: Dict = {
     'shopping.done': "Semua sudah ada! 🛒",
     'shopping.empty': "Buat rencana makan untuk melihat daftar belanjamu di sini.",
     'shopping.copied': "Daftar disalin",
+    'water.remind': "Ingatkan aku minum air",
+    'water.remindHint': "Pengingat tiap 2 jam, pukul 10.00–20.00, sampai targetmu tercapai.",
+    'water.alertTitle': "💧 Waktunya segelas air",
+    'water.alertBody': "Hari ini sudah {drunk} dari {target} L.",
+    'water.alertMorning': "Target hari ini: {target} L. Mulai dengan segelas!",
 };

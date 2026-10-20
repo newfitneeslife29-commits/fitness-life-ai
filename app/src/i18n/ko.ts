@@ -1886,4 +1886,9 @@ export const ko: Dict = {
     'shopping.done': "다 샀어요! 🛒",
     'shopping.empty': "식단을 만들면 여기에 장보기 목록이 나와요.",
     'shopping.copied': "목록을 복사했어요",
+    'water.remind': "물 마시기 알림",
+    'water.remindHint': "목표를 채울 때까지 오전 10시~오후 8시, 2시간마다 알려드려요.",
+    'water.alertTitle': "💧 물 한 잔 마실 시간",
+    'water.alertBody': "오늘 {target}L 중 {drunk}L 마셨어요.",
+    'water.alertMorning': "오늘 목표: {target}L. 한 잔부터 시작해요!",
 };

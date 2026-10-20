@@ -1886,4 +1886,9 @@ export const tr: Dict = {
     'shopping.done': "Her şey tamam! 🛒",
     'shopping.empty': "Alışveriş listeni burada görmek için bir yemek planı oluştur.",
     'shopping.copied': "Liste kopyalandı",
+    'water.remind': "Su içmeyi hatırlat",
+    'water.remindHint': "Hedefine ulaşana kadar 10:00–20:00 arası her 2 saatte bir hatırlatma.",
+    'water.alertTitle': "💧 Bir bardak su vakti",
+    'water.alertBody': "Bugün {target} L'nin {drunk} L'sini içtin.",
+    'water.alertMorning': "Bugünkü hedefin: {target} L. Bir bardakla başla!",
 };

@@ -1886,4 +1886,9 @@ export const ru: Dict = {
     'shopping.done': "Всё куплено! 🛒",
     'shopping.empty': "Создайте план питания, чтобы увидеть здесь список покупок.",
     'shopping.copied': "Список скопирован",
+    'water.remind': "Напоминать пить воду",
+    'water.remindHint': "Напоминание каждые 2 часа с 10:00 до 20:00, пока не достигнете цели.",
+    'water.alertTitle': "💧 Время выпить стакан воды",
+    'water.alertBody': "Сегодня выпито {drunk} из {target} л.",
+    'water.alertMorning': "Цель на сегодня: {target} л. Начните со стакана!",
 };

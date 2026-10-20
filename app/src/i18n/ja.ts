@@ -1886,4 +1886,9 @@ export const ja: Dict = {
     'shopping.done': "全部そろいました！🛒",
     'shopping.empty': "食事プランを作ると、ここに買い物リストが表示されます。",
     'shopping.copied': "リストをコピーしました",
+    'water.remind': "水分補給をリマインド",
+    'water.remindHint': "目標に届くまで、10時〜20時に2時間ごとにお知らせします。",
+    'water.alertTitle': "💧 水を一杯飲みましょう",
+    'water.alertBody': "今日は{target} L中{drunk} L飲みました。",
+    'water.alertMorning': "今日の目標：{target} L。まずは一杯から！",
 };

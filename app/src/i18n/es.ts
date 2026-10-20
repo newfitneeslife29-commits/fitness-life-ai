@@ -1894,4 +1894,9 @@ export const es = {
     'shopping.done': "¡Ya tienes todo! 🛒",
     'shopping.empty': "Crea un plan de comidas para ver aquí tu lista de compras.",
     'shopping.copied': "Lista copiada",
+    'water.remind': "Recordarme tomar agua",
+    'water.remindHint': "Un aviso cada 2 horas, de 10:00 a 20:00, mientras no llegues a tu meta.",
+    'water.alertTitle': "💧 Hora de un vaso de agua",
+    'water.alertBody': "Llevas {drunk} de {target} L hoy.",
+    'water.alertMorning': "Tu meta de hoy: {target} L. ¡Empieza con un vaso!",
 };

@@ -1886,4 +1886,9 @@ export const pl: Dict = {
     'shopping.done': "Masz już wszystko! 🛒",
     'shopping.empty': "Utwórz plan posiłków, aby zobaczyć tu listę zakupów.",
     'shopping.copied': "Lista skopiowana",
+    'water.remind': "Przypominaj o piciu wody",
+    'water.remindHint': "Przypomnienie co 2 godziny, od 10:00 do 20:00, dopóki nie osiągniesz celu.",
+    'water.alertTitle': "💧 Czas na szklankę wody",
+    'water.alertBody': "Dziś wypiłeś {drunk} z {target} L.",
+    'water.alertMorning': "Twój cel na dziś: {target} L. Zacznij od szklanki!",
 };

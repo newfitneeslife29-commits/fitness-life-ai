@@ -1886,4 +1886,9 @@ export const zh: Dict = {
     'shopping.done': "全部买齐了！🛒",
     'shopping.empty': "创建饮食计划后，这里会显示购物清单。",
     'shopping.copied': "清单已复制",
+    'water.remind': "提醒我喝水",
+    'water.remindHint': "在达到目标前，10:00 至 20:00 每 2 小时提醒一次。",
+    'water.alertTitle': "💧 该喝杯水了",
+    'water.alertBody': "今天已喝 {drunk} / {target} L。",
+    'water.alertMorning': "今天的目标：{target} L，先喝一杯吧！",
 };

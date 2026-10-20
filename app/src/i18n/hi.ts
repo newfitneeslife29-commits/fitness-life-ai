@@ -1886,4 +1886,9 @@ export const hi: Dict = {
     'shopping.done': "सब कुछ मिल गया! 🛒",
     'shopping.empty': "यहां शॉपिंग लिस्ट देखने के लिए मील प्लान बनाएं।",
     'shopping.copied': "लिस्ट कॉपी हो गई",
+    'water.remind': "पानी पीने की याद दिलाएं",
+    'water.remindHint': "लक्ष्य पूरा होने तक, सुबह 10 से रात 8 बजे तक हर 2 घंटे में याद।",
+    'water.alertTitle': "💧 एक गिलास पानी का समय",
+    'water.alertBody': "आज आपने {target} L में से {drunk} L पिया है।",
+    'water.alertMorning': "आज का लक्ष्य: {target} L. एक गिलास से शुरुआत करें!",
 };
