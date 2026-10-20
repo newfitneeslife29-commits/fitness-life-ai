@@ -3,67 +3,13 @@
 Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`google-play/`](google-play/):
 - **Icono de la app:** `icon-512.png` (512×512).
 - **Gráfico de funciones:** `feature-graphic.png` (1024×500).
-- **Capturas de pantalla del teléfono:** de `01-inicio.png` a `08-premium.png` (1080×1920), en ese orden:
-  `01-inicio`, `02-entreno`, `03-maquina-ocupada`, `04-entrenador-ia`, `05-mujeres`, `06-gym-wrapped`, `07-nutricion`, `08-premium`.
-- **Capturas para computadoras y Chromebook:** las mismas 8 en horizontal (1920×1080), en [`google-play/chromebook/`](google-play/chromebook/).
+- **Capturas de pantalla del teléfono** (1080×1920), una carpeta por idioma: [`google-play/es`](google-play/es), [`google-play/en`](google-play/en) y [`google-play/pt`](google-play/pt), en este orden:
+  `01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-resumen`, `08-premium`.
+- **Capturas para computadoras y Chromebook:** en horizontal (1920×1080), en [`google-play/chromebook/`](google-play/chromebook/).
 
 ## Ficha de Play Store principal
 
-**Nombre de la app** (máx. 30): `Fitness Life: Gym y Nutrición`
-
-**Descripción breve** (máx. 80): `Plan de gym o casa, entrenador con IA y nutrición. Prueba Premium 7 días gratis.`
-
-**Descripción completa:**
-
-```
-Fitness Life arma tu plan de fuerza en un minuto y te acompaña en cada entreno, cada comida y cada récord.
-
-TU PLAN, A TU MEDIDA
-• Dinos tu objetivo, tu nivel, tus días y dónde entrenas: gimnasio, mancuernas o en casa sin material.
-• Tu plan avanza cada semana: al completar tu semana, tus rutinas se renuevan con nuevas fases y ejercicios.
-• Sección de entrenamiento para mujeres: planes para bajar de peso o tonificar, en casa o en el gimnasio.
-
-TU ENTRENADOR PERSONAL CON IA (PREMIUM)
-• Pregúntale qué entrenar hoy, con cuánto peso y cómo mejorar.
-• Pídele una rutina para casa sin material, con mancuernas o para el gym, y la guarda en tu plan.
-
-ENTRENA MEJOR
-• Fotos de cada ejercicio y consejos de técnica.
-• Temporizador de descanso automático con vibración y sonido.
-• Repite la serie anterior con un toque y la app te dice cuándo subir de peso.
-• ¿Máquina ocupada? Cámbiala al instante por otro ejercicio del mismo músculo.
-• Alertas de recuperación: te avisa cuando tus músculos ya descansaron.
-• Funciona sin internet: tus entrenos se guardan y se sincronizan al volver la señal.
-
-MIRA Y COMPARTE TU PROGRESO
-• Constancia por semanas, 1RM estimado, volumen y peso corporal.
-• Tu actividad: calendario con los días que entrenas y tus rachas.
-• Gym Wrapped: tu mes en tarjetas para Instagram, Facebook y TikTok, con un fondo de gym o tu propia foto.
-• Antes y después: compara tus fotos y compártelas.
-• Pasos, calorías activas y pulso desde Health Connect.
-
-NUTRICIÓN SIN COMPLICARTE
-• Calorías, proteína, carbohidratos y grasa del día, con objetivos según tu meta.
-• Índice de masa corporal (IMC) y tu rango de peso saludable.
-• Tabla con 94 alimentos comunes.
-• Premium: toma una foto de tu comida y la IA calcula los macros.
-• Premium: plan de comidas de 7 días con IA, ordenado por horario, con lo que te toca comer cada día y un aviso a la hora de cada comida.
-• Premium: coach de nutrición con IA que conoce tu objetivo y lo que llevas comido hoy.
-
-COMUNIDAD
-• Publica tu progreso con fotos, da like y comenta.
-• Reporta y bloquea con un toque: tolerancia cero con el contenido ofensivo.
-
-TU CUENTA, TUS DATOS
-• Úsala sin cuenta o entra con tu correo o Google para guardar una copia en la nube.
-• Sin anuncios. No vendemos tus datos.
-• En español, inglés y portugués, con modo claro y oscuro.
-
-FITNESS LIFE PREMIUM
-Entrenar es gratis. Premium añade la IA: entrenador personal, plan de comidas, coach de nutrición y comidas calculadas desde una foto. Plan mensual con 7 días de prueba gratis, o plan anual. Cancela cuando quieras desde Google Play.
-
-Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a un profesional antes de empezar un programa de ejercicio o cambiar tu dieta.
-```
+Los textos (nombre, descripción breve, descripción completa y novedades) en español, inglés y portugués están en [`textos-tiendas.md`](textos-tiendas.md).
 
 **Categoría:** Aplicación → Salud y bienestar.
 
