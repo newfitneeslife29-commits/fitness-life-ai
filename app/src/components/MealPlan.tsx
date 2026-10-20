@@ -1,4 +1,5 @@
-import { Bell, Check, Plus, RotateCcw, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Bell, Check, Plus, RotateCcw, ShoppingCart, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { AiUsageLine, PremiumLock, useAiErrorHandler } from './AiParts';
 import { confirm, toast } from './feedback';
@@ -225,6 +226,9 @@ export const MealPlanSection = ({ context }: { context: CoachContext }) => {
                 </button>
             </div>
 
+            <div className="border-t border-line p-3">
+                <Link to="/nutricion/compras?plan=ai" className="btn-primary w-full py-2 text-sm"><ShoppingCart size={16} /> {t('shopping.title')}</Link>
+            </div>
             <div className="flex items-center gap-2 border-t border-line p-3">
                 <button className="btn-ghost flex-1 py-2 text-sm" onClick={replace}><RotateCcw size={16} /> {t('mealPlan.new')}</button>
                 <button onClick={remove} aria-label={t('mealPlan.deleteTitle')} className="rounded-full p-2.5 text-white/40 hover:bg-ink-3 hover:text-red-400"><Trash2 size={18} /></button>

@@ -717,6 +717,27 @@ test('30-day challenges: join, progress on the home screen, leaderboard and leav
     await expect(page.getByRole('article', { name: '12 entrenamientos' }).getByRole('button', { name: 'Unirme' })).toBeVisible();
 });
 
+test('nutrition: shopping list of a free plan, checked as you shop', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/nutricion/planes');
+    await page.getByRole('link', { name: 'Lista de compras' }).click();
+    await expect(page.getByRole('heading', { name: 'Lista de compras' })).toBeVisible();
+    await expect(page.getByText('Para una semana repitiendo los días del plan, con tus porciones.')).toBeVisible();
+    const total = await page.getByRole('checkbox').count();
+    expect(total).toBeGreaterThan(8);
+    await expect(page.getByRole('heading', { name: /Huevos y lácteos/ })).toBeVisible();
+
+    const first = page.getByRole('checkbox').first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByText(`Te faltan ${total - 1} cosas`)).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('checkbox').first()).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: 'Desmarcar todo' }).click();
+    await expect(page.getByText(`Te faltan ${total} cosas`)).toBeVisible();
+});
+
 test('movement: a walk of the walking plan with GPS, a ride by hand, steps and sleep', async ({ page, context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });

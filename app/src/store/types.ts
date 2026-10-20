@@ -317,6 +317,7 @@ export interface AppState {
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
     fasting?: Fasting;
     challenges?: JoinedChallenge[];
+    shopping?: { list: string; checked: string[] }; // what's in the cart, for one list at a time
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
     sleep?: SleepEntry[]; // newest first

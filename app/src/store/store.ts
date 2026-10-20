@@ -402,6 +402,18 @@ export const actions = {
         });
     },
 
+    // The shopping list's checks (pages/Shopping.tsx); another list starts clean.
+    toggleShopping(list: string, item: string) {
+        set(s => {
+            const checked = s.shopping?.list === list ? s.shopping.checked : [];
+            return { ...s, shopping: { list, checked: checked.includes(item) ? checked.filter(x => x !== item) : [...checked, item] } };
+        });
+    },
+
+    clearShopping(list: string) {
+        set(s => ({ ...s, shopping: { list, checked: [] } }));
+    },
+
     // 30-day challenges (lib/challenges.ts): joining again starts over.
     joinChallenge(id: string, at = new Date()) {
         set(s => ({ ...s, challenges: [...(s.challenges ?? []).filter(c => c.id !== id), { id, joinedAt: at.toISOString() }] }));

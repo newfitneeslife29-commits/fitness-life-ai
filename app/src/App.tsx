@@ -37,6 +37,7 @@ import Community from './pages/Community';
 import Compare from './pages/Compare';
 import Challenges from './pages/Challenges';
 import Invite from './pages/Invite';
+import Shopping from './pages/Shopping';
 import AboutUs from './pages/AboutUs';
 import Feedback from './pages/Feedback';
 import FreePlans from './pages/FreePlans';
@@ -205,6 +206,7 @@ export default function App() {
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/planes" element={<Shell><FreePlans /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
+                <Route path="/nutricion/compras" element={<Shell><Shopping /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/retos" element={<Shell><Challenges /></Shell>} />
