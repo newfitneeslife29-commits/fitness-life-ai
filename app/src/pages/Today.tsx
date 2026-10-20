@@ -17,6 +17,7 @@ import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition'
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { activitySummary } from '../lib/activity';
+import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
 import { localDay } from '../lib/activity';
@@ -364,6 +365,16 @@ export default function Today() {
     const stepsMap = useStore(s => s.steps);
     const cardio = useStore(s => s.cardio);
     const activity = useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions]);
+    // The first running challenge, in one line.
+    const joined = useStore(s => s.challenges);
+    const challengeLine = useMemo(() => {
+        for (const j of joined ?? []) {
+            if (!challengeDef(j.id)) continue;
+            const st = challengeStatus(j, { sessions, cardio, steps: stepsMap, activeDays });
+            if (st.state === 'running') return `${challengeName(j.id)} · ${t('challenges.progress', { n: st.progress, target: st.target })}`;
+        }
+        return null;
+    }, [joined, sessions, cardio, stepsMap, activeDays]);
     if (!profile) return null;
 
     const next = plan ? routines.find(r => r.id === plan.routineIds[plan.nextIndex]) : undefined;
@@ -402,10 +413,10 @@ export default function Today() {
                         <p className="text-xs font-semibold uppercase tracking-wider text-snow/80">{now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                         <h1 className="truncate text-2xl font-extrabold tracking-tight">{greeting()}{profile.name ? `, ${profile.name}` : ''}</h1>
                     </div>
-                    <span className="flex items-center gap-1 rounded-full bg-snow/20 px-3 py-1.5 text-sm font-bold backdrop-blur"
-                        aria-label={`${streak} ${tp('today.streak', streak)}`}>
-                        <Flame size={16} className={streak > 0 ? 'fill-amber-300 text-amber-300' : ''} /> {streak}
-                    </span>
+                    <Link to="/actividad" className="flex items-center gap-1 rounded-full bg-snow/20 px-3 py-1.5 text-sm font-bold backdrop-blur"
+                        aria-label={`${t('activity.streak')}: ${tp('activity.days', activity.activeStreak)}`}>
+                        <Flame size={16} className={activity.activeStreak > 1 ? 'fill-amber-300 text-amber-300' : ''} /> {activity.activeStreak}
+                    </Link>
                 </div>
                 <div className="relative mt-4 grid grid-cols-3 gap-2">
                     <HeroStat value={`${Math.min(thisWeek, profile.daysPerWeek)}/${profile.daysPerWeek}`} label={t('home.heroWeek')} />
@@ -480,6 +491,14 @@ export default function Today() {
                     <div className="min-w-0 flex-1">
                         <p className="font-semibold">{t('activity.card')}</p>
                         <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
+                <Link to="/retos" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('challenges.title')}</p>
+                        <p className="text-sm text-white/50">{challengeLine ?? t('challenges.cardHint')}</p>
                     </div>
                     <ChevronRight className="shrink-0 text-white/40" />
                 </Link>

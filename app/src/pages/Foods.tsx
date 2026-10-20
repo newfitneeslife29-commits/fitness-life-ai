@@ -1,10 +1,11 @@
-import { ChevronLeft, Plus, Search, X } from 'lucide-react';
+import { ChevronLeft, Keyboard, Plus, ScanBarcode, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from '../components/feedback';
 import { Section, Sheet } from '../components/ui';
 import { FOOD_CATEGORIES, FOOD_EMOJI, foodMacros, foodName, foodTags, portionLabel, searchFoods, type Food, type FoodCategory } from '../data/foods';
 import { t } from '../i18n';
+import { lookupBarcode, scanBarcode, validBarcode } from '../lib/barcode';
 import { fmtNumber, parseDecimal } from '../lib/format';
 import { actions } from '../store/store';
 
@@ -25,7 +26,8 @@ const MacroBar = ({ label, grams, kcalShare, color }: { label: string; grams: nu
     </div>
 );
 
-const FoodSheet = ({ food, onClose }: { food: Food | null; onClose: () => void }) => {
+// `brand`: a product found by its barcode (shown instead of the category).
+const FoodSheet = ({ food, brand, onClose }: { food: Food | null; brand?: string; onClose: () => void }) => {
     const [amount, setAmount] = useState<'portion' | '100' | 'custom'>('portion');
     const [custom, setCustom] = useState('');
     useEffect(() => {
@@ -50,9 +52,15 @@ const FoodSheet = ({ food, onClose }: { food: Food | null; onClose: () => void }
 
     return (
         <Sheet open onClose={onClose} title={foodName(food)}>
-            <p className="mb-4 flex items-center gap-2 text-sm text-white/55">
-                <span className="text-xl" aria-hidden>{FOOD_EMOJI[food.category]}</span> {t(`foods.cat.${food.category}`)}
-            </p>
+            {brand !== undefined ? (
+                <p className="mb-4 flex items-center gap-2 text-sm text-white/55">
+                    <ScanBarcode size={18} aria-hidden /> {[brand, t('barcode.source')].filter(Boolean).join(' · ')}
+                </p>
+            ) : (
+                <p className="mb-4 flex items-center gap-2 text-sm text-white/55">
+                    <span className="text-xl" aria-hidden>{FOOD_EMOJI[food.category]}</span> {t(`foods.cat.${food.category}`)}
+                </p>
+            )}
 
             <div role="radiogroup" aria-label={t('foods.amount')} className="mb-3 flex flex-wrap gap-2">
                 <button role="radio" aria-checked={amount === 'portion'} onClick={() => setAmount('portion')} className={`chip ${amount === 'portion' ? 'chip-on' : ''}`}>
@@ -105,6 +113,45 @@ export default function Foods() {
     const [sort, setSort] = useState<Sort>('name');
     const [per100, setPer100] = useState(false);
     const [open, setOpen] = useState<Food | null>(null);
+    const [brand, setBrand] = useState<string | undefined>(undefined);
+    const [typing, setTyping] = useState(false);
+    const [code, setCode] = useState('');
+    const [params, setParams] = useSearchParams();
+
+    const show = (food: Food | null, from?: string) => {
+        setBrand(from);
+        setOpen(food);
+    };
+
+    // A packaged food by its barcode (Open Food Facts).
+    const find = async (barcode: string) => {
+        toast(t('barcode.searching'), 1500);
+        try {
+            const found = await lookupBarcode(barcode);
+            if (found === 'notFound' || found === 'noNutrition') toast(t(`barcode.${found}`), 4500);
+            else {
+                setTyping(false);
+                show(found.food, found.brand);
+            }
+        } catch {
+            toast(t('barcode.failed'), 4000);
+        }
+    };
+    const scan = async () => {
+        try {
+            const barcode = await scanBarcode();
+            if (barcode) await find(barcode);
+        } catch (e) {
+            // Closed by hand: nothing to do. No camera (or no permission): the number can be typed.
+            if (!/cancel/i.test(String((e as Error)?.message ?? e))) setTyping(true);
+        }
+    };
+    // From Nutrition's "scan" shortcut.
+    useEffect(() => {
+        if (params.get('escanear') !== '1') return;
+        setParams({}, { replace: true });
+        void scan();
+    }, []);
 
     const foods = useMemo(() => {
         const list = searchFoods(query, category);
@@ -130,6 +177,10 @@ export default function Foods() {
             </header>
 
             <Section>
+                <div className="mb-3 flex gap-2">
+                    <button onClick={() => void scan()} className="btn-primary flex-1"><ScanBarcode size={18} /> {t('barcode.scan')}</button>
+                    <button onClick={() => setTyping(true)} aria-label={t('barcode.type')} className="btn-ghost px-3"><Keyboard size={18} /></button>
+                </div>
                 <label className="relative block">
                     <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
                     <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('foods.search')} aria-label={t('foods.search')}
@@ -169,7 +220,7 @@ export default function Foods() {
                             const m = foodMacros(f, grams);
                             return (
                                 <li key={f.id}>
-                                    <button onClick={() => setOpen(f)} className="flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-ink-3">
+                                    <button onClick={() => show(f)} className="flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-ink-3">
                                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-3 text-xl" aria-hidden>{FOOD_EMOJI[f.category]}</span>
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate font-medium">{foodName(f)}</span>
@@ -195,7 +246,15 @@ export default function Foods() {
                 <p className="mt-3 text-xs text-white/40">{t('foods.source')}</p>
             </Section>
 
-            <FoodSheet food={open} onClose={() => setOpen(null)} />
+            <FoodSheet food={open} brand={brand} onClose={() => show(null)} />
+            <Sheet open={typing} onClose={() => setTyping(false)} title={t('barcode.type')}>
+                <form onSubmit={e => { e.preventDefault(); if (validBarcode(code.trim())) void find(code.trim()); }}>
+                    <label className="mb-1 block text-sm text-white/60" htmlFor="barcode-number">{t('barcode.number')}</label>
+                    <input id="barcode-number" autoFocus value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 14))} inputMode="numeric" placeholder="7501055300075"
+                        className="mb-4 w-full rounded-xl border border-line bg-ink px-3 py-3 text-lg tabular-nums tracking-wider outline-none focus:border-brand" />
+                    <button type="submit" disabled={!validBarcode(code)} className="btn-primary w-full"><Search size={18} /> {t('barcode.find')}</button>
+                </form>
+            </Sheet>
         </div>
     );
 }

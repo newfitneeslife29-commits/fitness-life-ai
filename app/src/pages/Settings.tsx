@@ -1,4 +1,4 @@
-import { BookOpen, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -168,6 +168,8 @@ export default function Settings() {
                     <ToggleRow icon={<BellRing size={20} />} title={t('settings.restSound')} hint={t('settings.restSoundHint')}
                         on={profile.restSound !== false} onChange={on => actions.updateProfile({ restSound: on })}
                         test={{ label: t('settings.restSoundTest'), run: () => { primeSound(); restOver(true); } }} />
+                    <ToggleRow icon={<Flame size={20} />} title={t('settings.streakReminder')} hint={t('settings.streakReminderHint')}
+                        on={profile.streakReminder !== false} onChange={on => actions.updateProfile({ streakReminder: on })} />
                     <ToggleRow icon={<BatteryCharging size={20} />} title={t('settings.recoveryAlerts')} hint={t('settings.recoveryAlertsHint')}
                         on={profile.recoveryAlerts !== false} onChange={on => actions.updateProfile({ recoveryAlerts: on })} />
                     {voiceAvailable() && (
@@ -409,6 +411,14 @@ const PremiumCard = () => {
                             ? premium?.expiresAt ? t(premium.willRenew ? 'premium.renews' : 'premium.endsOn', { date: fmtDate(premium.expiresAt) }) : t('premium.noExpiry')
                             : t('settings.premiumPitch', { price: fallbackPlan('annual').perMonth })}
                     </p>
+                </div>
+                <ChevronRight className="shrink-0 text-white/40" />
+            </Link>
+            <Link to="/invitar" className="card mt-2 flex items-center gap-3 p-4 hover:bg-ink-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-brand text-snow"><Gift size={20} /></span>
+                <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{t('invite.title')}</p>
+                    <p className="text-sm text-white/55">{t('invite.subtitle')}</p>
                 </div>
                 <ChevronRight className="shrink-0 text-white/40" />
             </Link>

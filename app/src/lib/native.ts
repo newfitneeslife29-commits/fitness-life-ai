@@ -154,6 +154,19 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
     });
 };
 
+// One-off alerts that replace themselves each time (streak, fasting).
+const ALERT_IDS = { streak: 5401, fasting: 5402 } as const;
+export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: Date; title: string; body: string } | null) => {
+    if (!isNative()) return;
+    await quiet(async () => {
+        await LocalNotifications.cancel({ notifications: [{ id: ALERT_IDS[kind] }] });
+        if (!alert || alert.at.getTime() <= Date.now() + 60_000 || !(await notificationsOk())) return;
+        await LocalNotifications.schedule({
+            notifications: [{ id: ALERT_IDS[kind], title: alert.title, body: alert.body, schedule: { at: alert.at, allowWhileIdle: true }, isExactNotification: false }],
+        });
+    });
+};
+
 // Weekly reminders (lib/mealplan.ts, lib/reminders.ts): one notification a
 // week each, at a weekday and time. Each call replaces the group's previous ones.
 export interface WeeklyReminder {

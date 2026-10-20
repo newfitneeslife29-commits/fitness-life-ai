@@ -11,7 +11,11 @@ import { localDay } from './lib/activity';
 import { sessionName } from './lib/names';
 import { useMealReminders } from './lib/mealplan';
 import { useMovementSync } from './lib/movement';
-import { useChatPush } from './lib/push';
+import { usePush } from './lib/push';
+import { useStreakAlerts } from './lib/streak';
+import { useFastingAlert } from './lib/fasting';
+import { useCoachRoutines } from './lib/trainerTools';
+import { useChallenges } from './lib/challenges';
 import { useRecoveryAlerts } from './lib/recovery';
 import { useTrainingReminders } from './lib/reminders';
 import { useTracking } from './lib/tracker';
@@ -31,6 +35,8 @@ import Nutrition from './pages/Nutrition';
 import Foods from './pages/Foods';
 import Community from './pages/Community';
 import Compare from './pages/Compare';
+import Challenges from './pages/Challenges';
+import Invite from './pages/Invite';
 import AboutUs from './pages/AboutUs';
 import Feedback from './pages/Feedback';
 import FreePlans from './pages/FreePlans';
@@ -149,7 +155,11 @@ export default function App() {
     useTrainingReminders();
     useMovementSync();
     useTracking();
-    useChatPush();
+    usePush();
+    useStreakAlerts();
+    useFastingAlert();
+    useCoachRoutines();
+    useChallenges();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);
@@ -197,6 +207,8 @@ export default function App() {
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
+                <Route path="/retos" element={<Shell><Challenges /></Shell>} />
+                <Route path="/invitar" element={<Shell><Invite /></Shell>} />
                 <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />
                 <Route path="/mama" element={<Shell><Mom /></Shell>} />

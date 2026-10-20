@@ -20,7 +20,7 @@ import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { useRestCountdown } from '../lib/useRest';
 import { isBurnWorkout, planExercise } from '../lib/workout';
-import { actions, useStore } from '../store/store';
+import { actions, getState, useStore } from '../store/store';
 import type { ActiveExercise, Unit } from '../store/types';
 
 // Numeric field that keeps what the user is typing ("62," or "") and only
@@ -389,6 +389,9 @@ export default function Workout() {
         haptic('success');
         finishing.current = true;
         const id = actions.finishWorkout();
+        // The trainers the person hired see it too.
+        const session = id ? getState().sessions.find(x => x.id === id) : undefined;
+        if (session) void import('../lib/trainerTools').then(m => m.shareWorkout(session)).catch(() => {});
         navigate(id ? `/sesion/${id}?nuevo=1` : '/', { replace: true });
     };
 

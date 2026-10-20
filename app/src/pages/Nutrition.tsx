@@ -1,10 +1,11 @@
-import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, ScanBarcode, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { MealPlanSection } from '../components/MealPlan';
 import { Recipes } from '../components/Recipes';
+import { FastingCard } from '../components/Fasting';
 import { WaterCard } from '../components/Water';
 import { ReportAiButton } from '../components/ReportAi';
 import { ProfileDetailsSheet } from '../components/ProfileForm';
@@ -586,6 +587,10 @@ export default function Nutrition() {
                 <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
             </Section>
 
+            <Section title={t('fasting.title')}>
+                <FastingCard />
+            </Section>
+
             <Section title={t('freePlans.title')}>
                 <Link to="/nutricion/planes" className="card relative flex min-h-[7.5rem] items-end overflow-hidden p-4 text-snow active:scale-[0.99]">
                     <Photo photo={{ src: './food/plato-7.webp', position: '50% 50%' }} />
@@ -638,6 +643,7 @@ export default function Nutrition() {
 
             <Section title={t('foods.title')}>
                 <FoodTablePreview />
+                <Link to="/nutricion/alimentos?escanear=1" className="btn-ghost mt-2 w-full"><ScanBarcode size={18} /> {t('barcode.scan')}</Link>
             </Section>
 
             <Section title={t('coach.section')}>

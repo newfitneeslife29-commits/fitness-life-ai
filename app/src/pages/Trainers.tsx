@@ -3,15 +3,19 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
+import { RatingLine, ReviewSheet, ReviewsSheet } from '../components/TrainerExtras';
 import { BackHeader, Section } from '../components/ui';
 import { t, tp } from '../i18n';
 import { errorText } from '../lib/errorText';
-import { enableChatPush } from '../lib/push';
+import { enablePush } from '../lib/push';
 import { fetchHires, hireState, hireTrainer, PayError, STRIPE_RETURN_EVENT, syncHires, type Hire } from '../lib/trainerPay';
+import { fetchRatings, receiveRoutines, type Rating } from '../lib/trainerTools';
 import { contactLink, displayPrice, fetchMyApplication, fetchTrainers, isTrainerAdmin, trainerLanguages, trainersAvailable, type Trainer } from '../lib/trainers';
 import { useStore } from '../store/store';
 
-const TrainerCard = ({ trainer, hire, busy, onHire }: { trainer: Trainer; hire?: Hire; busy: boolean; onHire: (tr: Trainer) => void }) => {
+const TrainerCard = ({ trainer, hire, busy, onHire, rating, onReviews }: {
+    trainer: Trainer; hire?: Hire; busy: boolean; onHire: (tr: Trainer) => void; rating?: Rating; onReviews: (tr: Trainer) => void;
+}) => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const link = contactLink(trainer.contact);
@@ -26,6 +30,7 @@ const TrainerCard = ({ trainer, hire, busy, onHire }: { trainer: Trainer; hire?:
                 <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1.5 font-bold">{trainer.name} <BadgeCheck size={16} className="shrink-0 text-sky-400" aria-label={t('trainers.verified')} /></p>
                     <p className="text-sm font-medium text-brand">{trainer.specialty}</p>
+                    <RatingLine rating={rating} onClick={() => onReviews(trainer)} />
                     <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/55">
                         {trainer.experienceYears > 0 && <span>{tp('trainers.years', trainer.experienceYears)}</span>}
                         {trainer.country && <span className="flex items-center gap-1"><Globe2 size={12} /> {trainer.country}</span>}
@@ -85,16 +90,22 @@ export default function Trainers() {
     const [hires, setHires] = useState<Hire[]>([]);
     const [hiring, setHiring] = useState<string | null>(null);
     const [lang, setLang] = useState<string | null>(null);
+    const [ratings, setRatings] = useState<Record<string, Rating>>({});
+    const [reviewsOf, setReviewsOf] = useState<Trainer | null>(null);
+    const [rating, setRating] = useState<Trainer | null>(null);
     const load = () => {
         setFailed(null);
         setTrainers(null);
         fetchTrainers().then(setTrainers).catch(e => { setFailed(errorText(e)); setTrainers([]); });
+        void fetchRatings().then(setRatings, () => {});
     };
     const loadHires = () => fetchHires().then(setHires, () => {});
     // Someone with a trainer hears about their messages.
     const hasHires = hires.length > 0;
     useEffect(() => {
-        if (hasHires) void enableChatPush();
+        if (!hasHires) return;
+        void enablePush();
+        void receiveRoutines().then(names => names.forEach(name => toast(t('coachRoutine.received', { name }), 4500))).catch(() => {});
     }, [hasHires]);
     useEffect(() => {
         if (!trainersAvailable()) return;
@@ -212,7 +223,7 @@ export default function Trainers() {
                                 ))}
                             </div>
                         )}
-                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} hire={current(tr.id)} busy={hiring === tr.id} onHire={hire} />)}</div>
+                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} hire={current(tr.id)} busy={hiring === tr.id} onHire={hire} rating={ratings[tr.id]} onReviews={setReviewsOf} />)}</div>
                     </>
                 )}
             </Section>
@@ -250,6 +261,13 @@ export default function Trainers() {
                 </button>
                 <Link to="/entrenador" className="mt-2 block text-center text-sm text-white/55 underline">{t('trainers.ai')}</Link>
             </Section>
+            {reviewsOf && (
+                <ReviewsSheet open trainerId={reviewsOf.id} name={reviewsOf.name} onClose={() => setReviewsOf(null)}
+                    onRate={hires.some(h => h.role === 'client' && h.trainerId === reviewsOf.id) ? () => { setRating(reviewsOf); setReviewsOf(null); } : undefined} />
+            )}
+            {rating && (
+                <ReviewSheet open trainerId={rating.id} name={rating.name} onClose={() => { setRating(null); void fetchRatings().then(setRatings, () => {}); }} />
+            )}
         </div>
     );
 }

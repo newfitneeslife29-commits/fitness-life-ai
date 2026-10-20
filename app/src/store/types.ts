@@ -46,6 +46,10 @@ export interface Profile {
     restSound?: boolean;
     // Reminders when trained muscles have rested (on by default).
     recoveryAlerts?: boolean;
+    // The workouts are shared with the trainers the person hired (on by default).
+    shareWithTrainer?: boolean;
+    // "Don't lose your streak" at 8 pm on days the app wasn't opened (on by default).
+    streakReminder?: boolean;
     // A notification at the time of each meal of the meal plan (on by default).
     mealReminders?: boolean;
     stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)
@@ -265,6 +269,21 @@ export interface PremiumStatus {
     checkedAt: string;
 }
 
+// A 30-day challenge the person joined (lib/challenges.ts).
+export interface JoinedChallenge {
+    id: string;
+    joinedAt: string; // ISO; the challenge lasts 30 days from then
+    doneAt?: string; // reached the goal
+}
+
+// Intermittent fasting: the chosen plan (hours fasting), the fast in
+// progress and the latest ones.
+export interface Fasting {
+    hours: number;
+    startedAt: string | null;
+    history: { start: string; end: string; hours: number }[]; // newest first
+}
+
 // A signed-in account (the anonymous session used without one is not stored).
 export interface Account {
     id: string;
@@ -296,6 +315,8 @@ export interface AppState {
     trainerChat: ChatMessage[]; // the personal trainer's, oldest first
     mealPlan?: MealPlan | null;
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
+    fasting?: Fasting;
+    challenges?: JoinedChallenge[];
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
     sleep?: SleepEntry[]; // newest first

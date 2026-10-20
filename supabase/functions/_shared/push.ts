@@ -23,10 +23,10 @@ const BUNDLE_ID = 'com.fitnesslife.app';
 export const pushConfigured = { android: FIREBASE !== null, ios: APNS_KEY !== '' && APNS_KEY_ID !== '' && TEAM_ID !== '' };
 
 export interface Push {
-  title: string;
+  title?: string; // without one, the phone shows the app's name
   body: string;
   // The app screen the notification opens (#/...), and the conversation it
-  // belongs to (notifications of one chat are grouped).
+  // belongs to (notifications of one chat, or of the community, are grouped).
   link: string;
   thread: string;
 }
@@ -80,7 +80,7 @@ const sendAndroid = async (token: string, push: Push): Promise<PushResult> => {
     body: JSON.stringify({
       message: {
         token,
-        notification: { title: push.title, body: push.body },
+        notification: { ...(push.title ? { title: push.title } : {}), body: push.body },
         data: { link: push.link },
         android: { priority: 'high', notification: { channel_id: 'chat', tag: push.thread, icon: 'ic_stat_notify', color: '#f26b1d', sound: 'default' } },
       },
@@ -117,7 +117,7 @@ const sendIos = async (token: string, push: Push): Promise<PushResult> => {
       'apns-priority': '10',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ aps: { alert: { title: push.title, body: push.body }, sound: 'default', 'thread-id': push.thread }, link: push.link }),
+    body: JSON.stringify({ aps: { alert: { ...(push.title ? { title: push.title } : {}), body: push.body }, sound: 'default', 'thread-id': push.thread }, link: push.link }),
   });
   if (res.ok) return 'sent';
   const reason = (await res.json().catch(() => ({})))?.reason ?? '';
@@ -137,4 +137,16 @@ export const sendPush = (platform: string, token: string, push: Push): Promise<P
 export const preview = (text: string, max = 180) => {
   const flat = text.replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+};
+
+// Sends to every phone of a person and forgets the tokens that no longer
+// exist. Returns how many phones got it.
+// deno-lint-ignore no-explicit-any
+export const pushToUser = async (admin: any, userId: string, make: (lang: string | null) => Push) => {
+  const { data: tokens } = await admin.from('push_tokens').select('token, platform, lang').eq('user_id', userId).limit(20);
+  const results = await Promise.all(((tokens ?? []) as { token: string; platform: string; lang: string | null }[])
+    .map(async t => ({ token: t.token, result: await sendPush(t.platform, t.token, make(t.lang)) })));
+  const gone = results.filter(r => r.result === 'gone').map(r => r.token);
+  if (gone.length) await admin.from('push_tokens').delete().in('token', gone);
+  return results.filter(r => r.result === 'sent').length;
 };
