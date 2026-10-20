@@ -207,6 +207,24 @@ export const actions = {
         set(s => ({ ...s, plan, routines: [...s.routines.filter(r => r.source === 'custom'), ...routines] }));
     },
 
+    // Same program and week with the exercises swapped for the profile's
+    // aches; days edited by hand and the next day stay as they are.
+    adaptPlan() {
+        const profile = state.profile;
+        const old = state.plan;
+        if (!profile || !old) return;
+        const { plan, routines } = buildPlan({ ...profile, programId: old.programId }, old.week ?? 1);
+        const kept = plan.routineIds.map((id, i) => {
+            const before = state.routines.find(r => r.id === old.routineIds[i]);
+            return before?.edited ? before : routines.find(r => r.id === id)!;
+        });
+        set(s => ({
+            ...s,
+            plan: { ...old, routineIds: kept.map(r => r.id) },
+            routines: [...s.routines.filter(r => !old.routineIds.includes(r.id) || kept.includes(r)), ...kept.filter(r => !s.routines.includes(r))],
+        }));
+    },
+
     startWorkout(routineId: string | null) {
         let routine = state.routines.find(r => r.id === routineId) ?? null;
         // Injured: the exercises that load the sore zones are swapped or left out.
@@ -331,12 +349,18 @@ export const actions = {
     },
 
     // Swap keeps the prescription (sets, reps, rest) but re-plans the load.
+    // Sets already done stay with the old exercise; the new one takes the rest.
     swapExercise(exIndex: number, exerciseId: string) {
         updateActive(a => ({
             ...a,
-            exercises: a.exercises.map((ex, i) => i !== exIndex ? ex : activeExerciseFrom(state.sessions, {
-                exerciseId, sets: ex.sets.length || 3, repMin: ex.repMin, repMax: ex.repMax, restSec: ex.restSec,
-            }, unitOf(state))),
+            exercises: a.exercises.flatMap((ex, i) => {
+                if (i !== exIndex) return [ex];
+                const done = ex.sets.filter(s => s.done);
+                const swapped = activeExerciseFrom(state.sessions, {
+                    exerciseId, sets: (ex.sets.length - done.length) || 3, repMin: ex.repMin, repMax: ex.repMax, restSec: ex.restSec,
+                }, unitOf(state));
+                return done.length ? [{ ...ex, sets: done }, swapped] : [swapped];
+            }),
         }));
     },
 
@@ -372,7 +396,10 @@ export const actions = {
             const plan = s.plan && s.plan.routineIds.includes(id)
                 ? (() => {
                     const routineIds = s.plan!.routineIds.filter(r => r !== id);
-                    return routineIds.length ? { ...s.plan!, routineIds, nextIndex: s.plan!.nextIndex % routineIds.length } : null;
+                    // The next day stays the same day when an earlier one goes.
+                    const at = s.plan!.routineIds.indexOf(id);
+                    const next = s.plan!.nextIndex > at ? s.plan!.nextIndex - 1 : s.plan!.nextIndex;
+                    return routineIds.length ? { ...s.plan!, routineIds, nextIndex: next % routineIds.length } : null;
                 })()
                 : s.plan;
             return { ...s, plan, routines: s.routines.filter(r => r.id !== id) };
@@ -649,7 +676,11 @@ export const actions = {
             throw new Error(t('backup.invalid'));
         }
         const { exportedAt: _ignored, ...rest } = data as AppState & { exportedAt?: string };
-        set(s => ({ ...EMPTY, ...rest, active: null, cardioActive: null, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt }));
+        // Premium comes from the store on this device, never from a file.
+        set(s => ({
+            ...EMPTY, ...rest, active: null, cardioActive: null, account: s.account, authPrompted: s.authPrompted, cloudSyncedAt: s.cloudSyncedAt,
+            premium: s.premium, aiUsage: s.aiUsage,
+        }));
     },
 
     resetAll() {

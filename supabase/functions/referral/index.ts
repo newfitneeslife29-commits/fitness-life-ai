@@ -67,8 +67,10 @@ Deno.serve(async req => {
       throw e;
     }
 
-    const { count } = await admin.from('referral_redemptions').select('redeemer', { count: 'exact', head: true }).eq('referrer', owner.user_id);
-    if ((count ?? 0) <= MAX_REWARDS) {
+    // The friend's reward, while they have rewards left (a counter that never goes down).
+    const { data: rewards, error: rewardError } = await admin.rpc('referral_take_reward', { p_referrer: owner.user_id, p_max: MAX_REWARDS });
+    if (rewardError) console.error('referral: reward count failed', rewardError);
+    if (rewards != null) {
       try {
         await grantWeek(owner.user_id);
         const { data: profile } = await admin.from('community_profiles').select('name').eq('id', user.id).maybeSingle();

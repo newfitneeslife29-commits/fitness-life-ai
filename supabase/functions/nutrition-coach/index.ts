@@ -302,25 +302,42 @@ interface Usage {
   premium: boolean;
 }
 
-async function usageOf(userId: string, smokeTest: boolean): Promise<Usage> {
+// Requests this month.
+const usedThisMonth = async (userId: string) => {
   const now = new Date();
   const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const [premium, { count, error }] = await Promise.all([
-    smokeTest || isPremium(userId),
-    admin
-      .from('ai_usage')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .like('action', 'nutrition_%')
-      .gte('created_at', since.toISOString()),
-  ]);
+  const { count, error } = await admin
+    .from('ai_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .like('action', 'nutrition_%')
+    .gte('created_at', since.toISOString());
   if (error) throw error;
-  return { used: count ?? 0, limit: premium ? PREMIUM_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT, premium };
+  return count ?? 0;
+};
+
+async function usageOf(userId: string, smokeTest: boolean): Promise<Usage> {
+  const [premium, used] = await Promise.all([smokeTest || isPremium(userId), usedThisMonth(userId)]);
+  return { used, limit: premium ? PREMIUM_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT, premium };
 }
 
 const checkQuota = (usage: Usage) => {
   if (usage.used < usage.limit) return;
   throw usage.premium ? new HttpError(429, 'monthly limit reached') : new HttpError(402, 'premium required');
+};
+
+// Counts this request before asking the model, so many requests at once can't
+// go past the limit. Returns how to give it back if the model fails.
+const reserve = async (userId: string, usage: Usage, action: string) => {
+  checkQuota(usage);
+  const { data, error } = await admin.from('ai_usage').insert({ user_id: userId, action: `nutrition_${action}` }).select('id').single();
+  if (error) throw error;
+  const release = async () => { await admin.from('ai_usage').delete().eq('id', data.id); };
+  if (await usedThisMonth(userId) > usage.limit) {
+    await release();
+    checkQuota({ ...usage, used: usage.limit });
+  }
+  return release;
 };
 
 // ---------- Handler ----------
@@ -369,6 +386,7 @@ Deno.serve(async req => {
   if (!user) return json({ error: 'Unauthorized' }, 401);
 
   let usage: Usage | undefined;
+  let release: (() => Promise<void>) | null = null;
   try {
     const body = await req.json().catch(() => ({}));
     const lang = langOf(body.lang);
@@ -379,33 +397,37 @@ Deno.serve(async req => {
     let result: object;
     if (body.action === 'chat') {
       const messages = messagesOf(body.messages);
-      checkQuota(usage);
+      release = await reserve(user.id, usage, body.action);
       result = await chat(lang, contextOf(body.context), messages);
     } else if (body.action === 'trainer') {
       const messages = messagesOf(body.messages);
-      checkQuota(usage);
+      release = await reserve(user.id, usage, body.action);
       result = await trainer(lang, trainerContextOf(body.context), messages);
     } else if (body.action === 'routine') {
       const request = typeof body.text === 'string' ? body.text.trim().slice(0, 500) : '';
       if (request.length < 3) throw new HttpError(400, 'describe the routine');
       const catalog = catalogOf(body.exercises);
-      checkQuota(usage);
+      release = await reserve(user.id, usage, body.action);
       result = await routine(lang, trainerContextOf(body.context), request, catalog);
     } else if (body.action === 'mealplan') {
       const request = typeof body.text === 'string' ? body.text.trim().slice(0, 500) : '';
       const perDay = Number(body.mealsPerDay);
       const mealsPerDay = Number.isFinite(perDay) ? Math.min(6, Math.max(3, Math.round(perDay))) : 4;
-      checkQuota(usage);
+      const giveBack = await reserve(user.id, usage, 'mealplan');
       const known = usage;
       return keepAlive(async () => {
-        const plan = await mealPlan(lang, contextOf(body.context), request, mealsPerDay);
-        await admin.from('ai_usage').insert({ user_id: user.id, action: 'nutrition_mealplan' });
-        return { ...plan, usage: { ...known, used: known.used + 1 } };
+        try {
+          const plan = await mealPlan(lang, contextOf(body.context), request, mealsPerDay);
+          return { ...plan, usage: { ...known, used: known.used + 1 } };
+        } catch (e) {
+          await giveBack();
+          throw e;
+        }
       }, known);
     } else if (body.action === 'estimate') {
       const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
       if (text.length < 3) throw new HttpError(400, 'describe the meal');
-      checkQuota(usage);
+      release = await reserve(user.id, usage, body.action);
       result = await estimate(lang, text);
     } else if (body.action === 'photo') {
       const data = typeof body.image === 'string' ? body.image : '';
@@ -414,14 +436,14 @@ Deno.serve(async req => {
         throw new HttpError(400, 'send a JPEG, PNG or WebP photo');
       }
       const note = typeof body.text === 'string' ? body.text.trim().slice(0, 300) : '';
-      checkQuota(usage);
+      release = await reserve(user.id, usage, body.action);
       result = await estimate(lang, note, { data, mediaType });
     } else {
       throw new HttpError(400, 'unknown action');
     }
-    await admin.from('ai_usage').insert({ user_id: user.id, action: `nutrition_${body.action}` });
     return json({ ...result, usage: { ...usage, used: usage.used + 1 } });
   } catch (error) {
+    await release?.().catch(() => {});
     const { status, body } = failure(error, usage);
     return json(body, status);
   }

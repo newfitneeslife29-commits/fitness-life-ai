@@ -170,7 +170,7 @@ export const scheduleWaterAlerts = async (alerts: { at: Date; title: string; bod
 
 // One-off alerts that replace themselves each time (streak, fasting, the
 // weekly summary). A `link` opens that screen when the notification is tapped.
-const ALERT_IDS = { streak: 5401, fasting: 5402, weekly: 5403 } as const;
+const ALERT_IDS = { streak: 5401, fasting: 5402, weekly: 5403, pauseEnd: 5404 } as const;
 export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: Date; title: string; body: string; link?: string } | null) => {
     if (!isNative()) return;
     await quiet(async () => {

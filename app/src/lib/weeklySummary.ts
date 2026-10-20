@@ -93,6 +93,8 @@ export const useWeeklySummaryAlert = () => {
     const paused = useStore(s => !!currentPause(s.profile));
     const lang = useStore(s => s.lang);
     const w = useWeekSummary();
+    // Also once each week, after Sunday's has gone out.
+    const next = summaryAlertAt().getTime();
     useEffect(() => {
         if (!on) {
             void scheduleAlert('weekly', null);
@@ -107,5 +109,5 @@ export const useWeeklySummaryAlert = () => {
             body: `${t('weekly.alertBody', { workouts: week.workouts, target: week.target, water: week.waterDays })} ${t(weeklyTip(week, paused))}`,
             link: '/resumen',
         });
-    }, [on, paused, lang, w.workouts, w.target, w.waterDays, w.stepDays]);
+    }, [on, paused, lang, w.workouts, w.target, w.waterDays, w.stepDays, next]);
 };

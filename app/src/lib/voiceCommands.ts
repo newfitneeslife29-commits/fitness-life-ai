@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { locale, t, type Key } from '../i18n';
 import { isNative } from './native';
-import { appTalking } from './voice';
+import { appTalking, recentSpeech } from './voice';
 import { useStore } from '../store/store';
 
 // Hands-free guided workouts: the microphone listens for a few words ("done",
@@ -65,7 +65,11 @@ const listen = async (onCommand: (c: VoiceCommand) => void, onDenied: () => void
     let lastAt = 0;
     const heard = (texts: string[], restart: () => void) => {
         if (!on || appTalking()) return;
+        const echo = norm(recentSpeech());
         for (const text of texts) {
+            // The app's own cue heard back: every word was in what it just said.
+            const said = norm(text);
+            if (echo && said && said.split(' ').every(w => echo.includes(w))) continue;
             const c = matchCommand(text, words);
             if (!c) continue;
             if (Date.now() - lastAt < 1200) return;

@@ -79,6 +79,8 @@ export const isBurnWorkout = (a: ActiveWorkout, goal?: Goal) =>
     || a.exercises.some(e => getExercise(e.exerciseId)?.kind === 'cardio');
 
 // Only completed sets are kept. A workout with none is discarded (null).
+const STALE_MS = 60 * 60_000;
+
 export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session | null => {
     const sets = active.exercises.flatMap(ex =>
         ex.sets
@@ -93,15 +95,19 @@ export const finishWorkout = (active: ActiveWorkout, now = new Date()): Session 
             })),
     );
     if (sets.length === 0) return null;
+    // Left open long after the last set (finished the next day): it ends a few
+    // minutes after that set, not hours later.
+    const last = Math.max(...sets.map(s => Date.parse(s.completedAt)).filter(Number.isFinite));
+    const end = Number.isFinite(last) && now.getTime() - last > STALE_MS ? new Date(last + 5 * 60_000) : now;
     return {
         id: active.id,
         routineId: active.routineId,
         routineName: active.routineName,
         dayKey: active.dayKey,
         startedAt: active.startedAt,
-        endedAt: now.toISOString(),
+        endedAt: end.toISOString(),
         sets,
-        activeSec: activeSeconds(active, now.getTime()),
-        restSec: restSeconds(active, now.getTime()),
+        activeSec: activeSeconds(active, end.getTime()),
+        restSec: restSeconds(active, end.getTime()),
     };
 };

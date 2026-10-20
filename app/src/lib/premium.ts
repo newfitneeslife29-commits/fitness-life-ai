@@ -41,7 +41,11 @@ export const LEGAL_URL = import.meta.env.VITE_LEGAL_URL
 export const premiumAvailable = () => aiAvailable() && Boolean(KEYS[platform]);
 
 // Premium according to the store (RevenueCat) or to the AI server.
-export const usePremiumActive = () => useStore(s => Boolean(s.premium?.active || s.aiUsage?.premium));
+// A known expiry date that has passed means it lapsed (until the next check).
+export const usePremiumActive = () => useStore(s => {
+    const store = !!s.premium?.active && (!s.premium.expiresAt || Date.parse(s.premium.expiresAt) > Date.now());
+    return store || Boolean(s.aiUsage?.premium);
+});
 
 export interface Plan {
     id: PlanId;

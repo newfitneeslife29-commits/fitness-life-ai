@@ -11,6 +11,21 @@ struct WidgetData: Decodable {
     var stepsLabel = ""
     var next = ""
     var nextLabel = ""
+    // The day it was saved, and the next workout even if today's is done:
+    // after midnight the widget shows 0 steps and that workout.
+    var day: String?
+    var later: String?
+
+    var isToday: Bool {
+        guard let day else { return true }
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return day == f.string(from: .now)
+    }
+    var shownSteps: String { isToday ? steps : "0" }
+    var shownNext: String { isToday ? next : (later ?? next) }
 
     static func load() -> WidgetData {
         guard let json = UserDefaults(suiteName: "group.com.fitnesslife.app")?.string(forKey: "widget"),
@@ -36,7 +51,9 @@ struct Provider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
         // The app reloads it whenever its data changes; an hourly look as well.
-        completion(Timeline(entries: [Entry(date: .now, data: WidgetData.load())], policy: .after(.now.addingTimeInterval(3600))))
+        // Every hour, and right after midnight for the new day.
+        let midnight = Calendar.current.startOfDay(for: .now.addingTimeInterval(86_400))
+        completion(Timeline(entries: [Entry(date: .now, data: WidgetData.load())], policy: .after(min(.now.addingTimeInterval(3600), midnight.addingTimeInterval(60)))))
     }
 }
 
@@ -49,12 +66,12 @@ struct FitnessWidgetView: View {
             HStack(alignment: .top) {
                 stat(value: entry.data.streak, label: entry.data.streakLabel, icon: "flame.fill", color: brand)
                 Spacer(minLength: 8)
-                stat(value: entry.data.steps, label: entry.data.stepsLabel, icon: "figure.walk", color: .white)
+                stat(value: entry.data.shownSteps, label: entry.data.stepsLabel, icon: "figure.walk", color: .white)
             }
-            if !entry.data.next.isEmpty {
+            if !entry.data.shownNext.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.data.nextLabel).font(.caption2.bold()).foregroundStyle(brand).lineLimit(1)
-                    Text(entry.data.next).font(.subheadline.bold()).foregroundStyle(.white).lineLimit(1)
+                    Text(entry.data.shownNext).font(.subheadline.bold()).foregroundStyle(.white).lineLimit(1)
                 }
             }
         }

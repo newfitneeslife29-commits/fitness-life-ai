@@ -28,6 +28,9 @@ Deno.serve(async req => {
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+      // A delayed payment (bank transfer, voucher) that went through or failed.
+      case 'checkout.session.async_payment_succeeded':
+      case 'checkout.session.async_payment_failed':
         // A hire (subscription) or a program (one payment).
         await finishCheckout(admin, event.data.object);
         break;

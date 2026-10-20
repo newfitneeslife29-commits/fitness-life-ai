@@ -20,6 +20,7 @@ import { foodHero } from '../data/photos';
 import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { localDay } from '../lib/activity';
+import { useNow } from '../lib/useNow';
 import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal, Unit } from '../store/types';
 
@@ -525,6 +526,15 @@ export default function Nutrition() {
     const weightKg = useStore(s => s.bodyWeights[0]?.weightKg ?? null);
     const sessions = useStore(s => s.sessions);
     const [day, setDay] = useState(() => startOfDay(new Date()));
+    // Showing today when the date changes (left open overnight): follow to the new today.
+    const now = useNow(true, 60_000);
+    const [shownToday, setShownToday] = useState(() => startOfDay(new Date()).getTime());
+    useEffect(() => {
+        const today = startOfDay(new Date(now)).getTime();
+        if (today === shownToday) return;
+        if (day.getTime() === shownToday) setDay(new Date(today));
+        setShownToday(today);
+    }, [now]);
     const [editTargets, setEditTargets] = useState(false);
     const [adding, setAdding] = useState(false);
 

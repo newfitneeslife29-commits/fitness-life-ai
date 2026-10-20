@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { t } from '../i18n';
 import { notificationWeekday } from './mealplan';
 import { routineName } from './names';
-import { reminderId, scheduleWeeklyReminders, type WeeklyReminder } from './native';
+import { reminderId, scheduleAlert, scheduleWeeklyReminders, type WeeklyReminder } from './native';
 import { currentPause } from './pause';
 import { useStore } from '../store/store';
 import type { AppState } from '../store/types';
@@ -28,6 +28,13 @@ export const trainingReminders = (state: Pick<AppState, 'profile' | 'plan' | 'ro
     }));
 };
 
+// The day after a rest's last day, at the training reminder's time (or 9:00).
+export const pauseEndAt = (until: string, time?: string) => {
+    const [y, m, d] = until.split('-').map(Number);
+    const [h, min] = (time ?? '09:00').split(':').map(Number);
+    return new Date(y, m - 1, d + 1, h || 9, min || 0, 0);
+};
+
 // Keeps the phone's training reminders in line with the setting and the plan.
 export const useTrainingReminders = () => {
     const profile = useStore(s => s.profile);
@@ -36,10 +43,15 @@ export const useTrainingReminders = () => {
     const lang = useStore(s => s.lang);
     const reminder = profile?.trainingReminder ?? null;
     const next = plan?.routineIds[plan.nextIndex];
-    // None while resting or injured.
-    const paused = !!currentPause(profile);
+    // None while resting or injured; the morning after a rest, one to come back.
+    const pause = currentPause(profile);
+    const paused = !!pause;
     useEffect(() => {
         void scheduleWeeklyReminders('training', paused ? [] : trainingReminders({ profile, plan, routines }));
         // The routine name only matters when the next day changes.
     }, [JSON.stringify(reminder), next, lang, paused]);
+    const until = pause?.kind === 'rest' ? pause.until : null;
+    useEffect(() => {
+        void scheduleAlert('pauseEnd', until ? { at: pauseEndAt(until, reminder?.time), title: t('pause.backTitle'), body: t('pause.backBody'), link: '/' } : null);
+    }, [until, reminder?.time, lang]);
 };
