@@ -1891,4 +1891,13 @@ export const ko: Dict = {
     'water.alertTitle': "💧 물 한 잔 마실 시간",
     'water.alertBody': "오늘 {target}L 중 {drunk}L 마셨어요.",
     'water.alertMorning': "오늘 목표: {target}L. 한 잔부터 시작해요!",
+    'music.title': "운동 음악",
+    'music.open': "음악 틀기",
+    'music.hint': "음악 앱에서 재생하고 돌아오세요. 운동은 그대로 이어져요.",
+    'music.playlist': "내 플레이리스트",
+    'music.playlistLabel': "플레이리스트 링크",
+    'music.playlistHint': "Spotify, Apple Music, YouTube Music 플레이리스트 링크를 붙여 넣으면 한 번에 열 수 있어요.",
+    'music.save': "플레이리스트 저장",
+    'music.badLink': "Spotify, Apple Music, YouTube 링크가 아니에요.",
+    'music.saved': "플레이리스트를 저장했어요",
 };

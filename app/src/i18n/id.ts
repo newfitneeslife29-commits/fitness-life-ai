@@ -1891,4 +1891,13 @@ export const id: Dict = {
     'water.alertTitle': "💧 Waktunya segelas air",
     'water.alertBody': "Hari ini sudah {drunk} dari {target} L.",
     'water.alertMorning': "Target hari ini: {target} L. Mulai dengan segelas!",
+    'music.title': "Musik latihan",
+    'music.open': "Putar musik",
+    'music.hint': "Buka aplikasi musik, putar daftarmu, lalu kembali: latihanmu tetap di tempatnya.",
+    'music.playlist': "Playlist-ku",
+    'music.playlistLabel': "Tautan playlist-mu",
+    'music.playlistHint': "Salin tautan playlist dari Spotify, Apple Music, atau YouTube Music dan tempel di sini.",
+    'music.save': "Simpan playlist",
+    'music.badLink': "Tautan itu bukan dari Spotify, Apple Music, atau YouTube.",
+    'music.saved': "Playlist disimpan",
 };

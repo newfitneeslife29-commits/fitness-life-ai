@@ -1899,4 +1899,13 @@ export const es = {
     'water.alertTitle': "💧 Hora de un vaso de agua",
     'water.alertBody': "Llevas {drunk} de {target} L hoy.",
     'water.alertMorning': "Tu meta de hoy: {target} L. ¡Empieza con un vaso!",
+    'music.title': "Música para entrenar",
+    'music.open': "Poner música",
+    'music.hint': "Abre tu app de música, pon tu lista y vuelve aquí: tu entreno sigue donde lo dejaste.",
+    'music.playlist': "Mi playlist",
+    'music.playlistLabel': "Enlace de tu playlist",
+    'music.playlistHint': "Copia el enlace de tu playlist en Spotify, Apple Music o YouTube Music y pégalo aquí para abrirla con un toque.",
+    'music.save': "Guardar playlist",
+    'music.badLink': "Ese enlace no es de Spotify, Apple Music ni YouTube.",
+    'music.saved': "Playlist guardada",
 };

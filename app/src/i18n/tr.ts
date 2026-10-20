@@ -1891,4 +1891,13 @@ export const tr: Dict = {
     'water.alertTitle': "💧 Bir bardak su vakti",
     'water.alertBody': "Bugün {target} L'nin {drunk} L'sini içtin.",
     'water.alertMorning': "Bugünkü hedefin: {target} L. Bir bardakla başla!",
+    'music.title': "Antrenman müziği",
+    'music.open': "Müzik aç",
+    'music.hint': "Müzik uygulamanı aç, listeni başlat ve geri dön: antrenmanın kaldığı yerde.",
+    'music.playlist': "Çalma listem",
+    'music.playlistLabel': "Çalma listesi bağlantın",
+    'music.playlistHint': "Spotify, Apple Music veya YouTube Music'teki çalma listenin bağlantısını kopyalayıp buraya yapıştır.",
+    'music.save': "Listeyi kaydet",
+    'music.badLink': "Bu bağlantı Spotify, Apple Music veya YouTube'a ait değil.",
+    'music.saved': "Liste kaydedildi",
 };

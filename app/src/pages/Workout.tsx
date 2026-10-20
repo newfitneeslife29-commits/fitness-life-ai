@@ -6,6 +6,7 @@ import { ExerciseDemo } from '../components/ExerciseDemo';
 import { GuidedWorkout } from '../components/GuidedWorkout';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { HoldTimer } from '../components/HoldTimer';
+import { MusicButton } from '../components/MusicSheet';
 import { OfflineNotice } from '../components/OfflineNotice';
 import { confirm, toast } from '../components/feedback';
 import { PlateSheet } from '../components/PlateSheet';
@@ -418,6 +419,7 @@ export default function Workout() {
                             <p className="text-xs text-white/50">{t('workout.exerciseOf', { n: (currentIndex >= 0 ? currentIndex : active.exercises.length - 1) + 1, total: active.exercises.length })}</p>
                         )}
                     </div>
+                    <MusicButton />
                     <button onClick={() => changeView('guided')} aria-label={t('guided.guidedView')} className="rounded-lg p-2 text-brand hover:bg-ink-3"><Sparkles size={20} /></button>
                     <UnitToggle unit={unit} />
                     <button onClick={finish} className="btn-primary ml-1 px-4 py-2">{t('workout.finish')}</button>

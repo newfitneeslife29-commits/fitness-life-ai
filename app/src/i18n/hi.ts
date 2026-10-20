@@ -1891,4 +1891,13 @@ export const hi: Dict = {
     'water.alertTitle': "💧 एक गिलास पानी का समय",
     'water.alertBody': "आज आपने {target} L में से {drunk} L पिया है।",
     'water.alertMorning': "आज का लक्ष्य: {target} L. एक गिलास से शुरुआत करें!",
+    'music.title': "वर्कआउट म्यूज़िक",
+    'music.open': "म्यूज़िक चलाएं",
+    'music.hint': "म्यूज़िक ऐप खोलें, अपनी लिस्ट चलाएं और वापस आएं: वर्कआउट वहीं रहेगा।",
+    'music.playlist': "मेरी प्लेलिस्ट",
+    'music.playlistLabel': "आपकी प्लेलिस्ट का लिंक",
+    'music.playlistHint': "Spotify, Apple Music या YouTube Music से प्लेलिस्ट का लिंक कॉपी करके यहां पेस्ट करें।",
+    'music.save': "प्लेलिस्ट सेव करें",
+    'music.badLink': "यह लिंक Spotify, Apple Music या YouTube का नहीं है।",
+    'music.saved': "प्लेलिस्ट सेव हो गई",
 };

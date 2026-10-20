@@ -1891,4 +1891,13 @@ export const pl: Dict = {
     'water.alertTitle': "💧 Czas na szklankę wody",
     'water.alertBody': "Dziś wypiłeś {drunk} z {target} L.",
     'water.alertMorning': "Twój cel na dziś: {target} L. Zacznij od szklanki!",
+    'music.title': "Muzyka do treningu",
+    'music.open': "Włącz muzykę",
+    'music.hint': "Otwórz aplikację z muzyką, włącz playlistę i wróć: trening czeka.",
+    'music.playlist': "Moja playlista",
+    'music.playlistLabel': "Link do playlisty",
+    'music.playlistHint': "Skopiuj link do playlisty ze Spotify, Apple Music lub YouTube Music i wklej go tutaj.",
+    'music.save': "Zapisz playlistę",
+    'music.badLink': "Ten link nie pochodzi ze Spotify, Apple Music ani YouTube.",
+    'music.saved': "Playlista zapisana",
 };

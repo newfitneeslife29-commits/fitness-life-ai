@@ -1891,4 +1891,13 @@ export const ru: Dict = {
     'water.alertTitle': "💧 Время выпить стакан воды",
     'water.alertBody': "Сегодня выпито {drunk} из {target} л.",
     'water.alertMorning': "Цель на сегодня: {target} л. Начните со стакана!",
+    'music.title': "Музыка для тренировки",
+    'music.open': "Включить музыку",
+    'music.hint': "Откройте музыкальное приложение, включите плейлист и вернитесь: тренировка ждёт.",
+    'music.playlist': "Мой плейлист",
+    'music.playlistLabel': "Ссылка на плейлист",
+    'music.playlistHint': "Скопируйте ссылку на плейлист из Spotify, Apple Music или YouTube Music и вставьте сюда.",
+    'music.save': "Сохранить плейлист",
+    'music.badLink': "Это ссылка не из Spotify, Apple Music или YouTube.",
+    'music.saved': "Плейлист сохранён",
 };

@@ -1891,4 +1891,13 @@ export const ja: Dict = {
     'water.alertTitle': "💧 水を一杯飲みましょう",
     'water.alertBody': "今日は{target} L中{drunk} L飲みました。",
     'water.alertMorning': "今日の目標：{target} L。まずは一杯から！",
+    'music.title': "トレーニング用の音楽",
+    'music.open': "音楽をかける",
+    'music.hint': "音楽アプリでリストを再生して戻ってきてください。トレーニングはそのままです。",
+    'music.playlist': "マイプレイリスト",
+    'music.playlistLabel': "プレイリストのリンク",
+    'music.playlistHint': "Spotify・Apple Music・YouTube Musicのプレイリストのリンクを貼り付けると、ワンタップで開けます。",
+    'music.save': "プレイリストを保存",
+    'music.badLink': "Spotify・Apple Music・YouTubeのリンクではありません。",
+    'music.saved': "プレイリストを保存しました",
 };

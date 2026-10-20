@@ -1947,6 +1947,27 @@ test('guided: fat burning keeps an active clock that only stops in the rests', a
     await expect(page.getByText('Descanso', { exact: true })).toBeVisible();
 });
 
+test('workout music: the music apps and my own playlist', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await page.getByRole('button', { name: 'Poner música' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Música para entrenar' });
+    await expect(sheet.getByRole('button', { name: 'Spotify' })).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Apple Music' })).toBeVisible();
+    await sheet.getByLabel('Enlace de tu playlist').fill('https://example.com/lista');
+    await sheet.getByRole('button', { name: 'Guardar playlist' }).click();
+    await expect(page.getByText('Ese enlace no es de Spotify, Apple Music ni YouTube.')).toBeVisible();
+    await sheet.getByLabel('Enlace de tu playlist').fill('Mi lista: https://open.spotify.com/playlist/37i9dQZF1DX76Wlfdnj7AP');
+    await sheet.getByRole('button', { name: 'Guardar playlist' }).click();
+    await expect(page.getByText('Playlist guardada')).toBeVisible();
+    await page.context().route('https://open.spotify.com/**', route => route.fulfill({ contentType: 'text/html', body: 'Spotify' }));
+    const popup = page.waitForEvent('popup');
+    await sheet.getByRole('button', { name: 'Mi playlist' }).click();
+    const opened = await popup;
+    await opened.waitForURL(/open\.spotify\.com\/playlist\/37i9dQZF1DX76Wlfdnj7AP/);
+});
+
 test('guided: cover, get ready, the exercise full screen, a full-screen rest, then save', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();

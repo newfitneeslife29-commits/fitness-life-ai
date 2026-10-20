@@ -1891,4 +1891,13 @@ export const nl: Dict = {
     'water.alertTitle': "💧 Tijd voor een glas water",
     'water.alertBody': "Je zit vandaag op {drunk} van {target} L.",
     'water.alertMorning': "Je doel vandaag: {target} L. Begin met een glas!",
+    'music.title': "Trainingsmuziek",
+    'music.open': "Muziek aanzetten",
+    'music.hint': "Open je muziekapp, start je lijst en kom terug: je training staat klaar.",
+    'music.playlist': "Mijn playlist",
+    'music.playlistLabel': "Link van je playlist",
+    'music.playlistHint': "Kopieer de link van je playlist in Spotify, Apple Music of YouTube Music en plak hem hier.",
+    'music.save': "Playlist opslaan",
+    'music.badLink': "Die link is niet van Spotify, Apple Music of YouTube.",
+    'music.saved': "Playlist opgeslagen",
 };

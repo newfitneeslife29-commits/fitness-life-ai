@@ -1891,4 +1891,13 @@ export const zh: Dict = {
     'water.alertTitle': "💧 该喝杯水了",
     'water.alertBody': "今天已喝 {drunk} / {target} L。",
     'water.alertMorning': "今天的目标：{target} L，先喝一杯吧！",
+    'music.title': "健身音乐",
+    'music.open': "播放音乐",
+    'music.hint': "打开音乐应用播放歌单后返回，训练会从原处继续。",
+    'music.playlist': "我的歌单",
+    'music.playlistLabel': "歌单链接",
+    'music.playlistHint': "复制 Spotify、Apple Music 或 YouTube Music 的歌单链接并粘贴到这里，一键打开。",
+    'music.save': "保存歌单",
+    'music.badLink': "这不是 Spotify、Apple Music 或 YouTube 的链接。",
+    'music.saved': "歌单已保存",
 };

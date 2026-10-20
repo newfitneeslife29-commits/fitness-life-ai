@@ -48,6 +48,8 @@ export interface Profile {
     recoveryAlerts?: boolean;
     // The workouts are shared with the trainers the person hired (on by default).
     shareWithTrainer?: boolean;
+    // A playlist link opened from the workouts (lib/music.ts).
+    musicPlaylist?: string;
     // "Time for a glass of water" through the day until the goal (off by default).
     waterReminders?: boolean;
     // "Don't lose your streak" at 8 pm on days the app wasn't opened (on by default).
