@@ -117,11 +117,25 @@ test('beginner at home with sore knees: guided plan, guides, programs and the vo
     await page.goto('/#/');
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
     const plank = page.getByRole('region', { name: 'Plancha', exact: true });
+    // A ring with the target; ±10 s before or during the hold.
+    const idle = plank.getByRole('img', { name: /^Objetivo: \d+ s$/ });
+    const target = Number((await idle.getAttribute('aria-label'))!.match(/(\d+) s/)![1]);
+    await plank.getByRole('button', { name: 'Añadir 10 segundos' }).click();
+    await expect(idle).toHaveAttribute('aria-label', `Objetivo: ${target + 10} s`);
     await plank.getByRole('button', { name: 'Iniciar cronómetro' }).click();
+    const ring = plank.getByRole('timer');
     await expect(plank.getByText('Prepárate')).toBeVisible();
     await expect.poll(() => page.evaluate(() => (window as unknown as { spoken: string[] }).spoken), { timeout: 8000 }).toEqual(['3', '2', '1', '¡Ya!']);
+    // It counts down, and pauses.
+    await expect(ring).toHaveAttribute('aria-label', /^Quedan: /);
+    await plank.getByRole('button', { name: 'Pausa' }).click();
+    const frozen = await ring.getAttribute('aria-label');
+    expect(frozen).toMatch(/^En pausa: /);
+    await page.waitForTimeout(1500);
+    await expect(ring).toHaveAttribute('aria-label', frozen!);
+    await plank.getByRole('button', { name: 'Seguir' }).click();
     await page.waitForTimeout(1200);
-    await plank.getByRole('button', { name: 'Terminar serie' }).click();
+    await plank.getByRole('button', { name: 'Hecho' }).click();
     await expect(plank.getByLabel('Marcar serie 1 como hecha')).toHaveAttribute('aria-pressed', 'true');
     expect(Number(await plank.getByLabel('Repeticiones serie 1').inputValue())).toBeGreaterThanOrEqual(1);
 });

@@ -49,14 +49,18 @@ export const spokenTime = (sec: number) => {
     return t('voice.minutesSeconds', { minutes: tp('voice.minutes', m), seconds: tp('voice.seconds', s) });
 };
 
-// What to say at second `sec` of a hold that aims for `target` seconds:
-// a countdown of the last 10 seconds, "time!" on it, and the time every 10 seconds.
+// What to say at second `sec` of a hold that aims for `target` seconds, like
+// the big fitness apps: "halfway", the time left at 30 and 10 seconds, 3-2-1,
+// "time!" on it, then the extra time every 10 seconds. Without a target, the
+// time every 10 seconds.
 export const cueAt = (sec: number, target: number): string | null => {
     if (sec <= 0) return null;
-    if (target > 0) {
-        if (sec === target) return t('voice.target');
-        if (sec >= target - COUNTDOWN_SEC && sec < target) return String(target - sec);
-    }
-    if (sec % 10 === 0) return spokenTime(sec);
+    if (target <= 0) return sec % 10 === 0 ? spokenTime(sec) : null;
+    const left = target - sec;
+    if (left === 0) return t('voice.target');
+    if (left > 0 && left <= 3) return String(left);
+    if (target >= 20 && sec === Math.floor(target / 2)) return t('voice.halfway');
+    if (left === COUNTDOWN_SEC || (left === 30 && target >= 50)) return t('voice.left', { time: spokenTime(left) });
+    if (left < 0 && -left % 10 === 0) return spokenTime(sec);
     return null;
 };
