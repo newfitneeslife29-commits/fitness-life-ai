@@ -21,7 +21,7 @@
 <body>
 <main>
   <h1>Fitness Life</h1>
-  <p class="muted">Última actualización: 19 de octubre de 2026</p>
+  <p class="muted">Última actualización: 20 de octubre de 2026</p>
   <nav><a href="#es">Español</a><a href="#en">English</a><a href="#pt">Português</a></nav>
 
   <section id="es" lang="es">
@@ -59,8 +59,16 @@
       <li><strong>Antes y después y tarjetas para compartir:</strong> las fotos y las imágenes se crean en tu teléfono y solo salen si tú las compartes.</li>
       <li><strong>Suscripción:</strong> las compras las procesan Apple, Google o Stripe (web) y RevenueCat, que nos indica si la suscripción está activa. No vemos los datos de tu tarjeta.</li>
       <li><strong>Entrenadores online:</strong> si contratas a un entrenador, Stripe procesa el pago con tu correo; guardamos qué entrenador contrataste, el estado de la suscripción y los mensajes del chat, que solo ven tú y tu entrenador. Si te haces entrenador, Stripe guarda los datos de identidad y de banco que le das para pagarte; nosotros solo guardamos el identificador de tu cuenta de Stripe. Todo se borra al eliminar tu cuenta.</li>
+      <li><strong>Programas de entrenadores:</strong> si compras un programa, Stripe procesa el pago único con tu correo; guardamos qué programa compraste para darte sus rutinas. Se borra al eliminar tu cuenta.</li>
+      <li><strong>Manos libres (micrófono):</strong> solo si lo activas, la app escucha durante el entreno guiado para entender «listo» o «siguiente». La voz la reconoce el servicio de voz del teléfono (Apple o Google), que puede procesarla en sus servidores; la app solo recibe el texto, no guarda el audio y no lo envía a nuestro servidor ni a la IA. Puedes quitar el permiso del micrófono cuando quieras en los ajustes del teléfono.</li>
+      <li><strong>Notificaciones:</strong> los recordatorios (entreno, agua, racha, ayuno, resumen del domingo) se programan en tu teléfono. Si tienes cuenta y aceptas las notificaciones, guardamos el identificador de notificaciones de tu teléfono, el sistema (iOS o Android) y el idioma para avisarte de mensajes de tu entrenador y de me gusta o comentarios; los avisos se envían a través de Apple (APNs) y Google (Firebase Cloud Messaging). Se borra al cerrar sesión o eliminar la cuenta.</li>
+      <li><strong>Ranking con amigos y retos:</strong> con cuenta, guardamos el total de tu semana (entrenos, minutos y pasos) para el ranking; solo lo ven las personas que se siguen contigo mutuamente. Si te unes a un reto de 30 días, guardamos tu avance y tu nombre y foto aparecen en su clasificación. Al salir del reto o eliminar la cuenta se borra.</li>
+      <li><strong>Invitar a un amigo:</strong> guardamos tu código de invitación y quién usó el código de quién, para dar a los dos la semana de Premium.</li>
+      <li><strong>Escáner de código de barras:</strong> el número del código se envía a Open Food Facts para buscar el alimento; no se envía nada más.</li>
+      <li><strong>Widget:</strong> el widget de la pantalla de inicio muestra tu racha y el entreno de hoy con datos que la app guarda en tu propio teléfono; no salen de él.</li>
+      <li><strong>Informes de errores:</strong> si la app falla, enviamos un informe técnico a Sentry para poder arreglarlo: el error, la pantalla, la versión de la app y el modelo y sistema del teléfono. No incluye tu nombre, tu correo, tus fotos ni tus datos de entrenos, salud o comidas.</li>
     </ul>
-    <p>No vendemos datos, no mostramos publicidad y no usamos analítica de terceros. Puedes borrar todos los datos del dispositivo en Ajustes → Borrar todos los datos. Para borrar el identificador anónimo y su registro de uso, o para cualquier consulta, escríbenos al correo de soporte que aparece en la ficha de la app en la tienda.</p>
+    <p>No vendemos datos, no mostramos publicidad y no usamos analítica de terceros (solo los informes de errores de arriba). Puedes borrar todos los datos del dispositivo en Ajustes → Borrar todos los datos. Para borrar el identificador anónimo y su registro de uso, o para cualquier consulta, escríbenos al correo de soporte que aparece en la ficha de la app en la tienda.</p>
 
     <h2 id="eliminar-cuenta">Eliminar tu cuenta de Fitness Life</h2>
     <p><strong>Desde la app:</strong> abre Fitness Life → Ajustes → Cuenta → Eliminar cuenta y confirma. Se borra al momento.</p>
@@ -103,8 +111,16 @@
       <li><strong>Before and after and share cards:</strong> photos and images are made on your phone and only leave it if you share them.</li>
       <li><strong>Subscription:</strong> purchases are processed by Apple, Google or Stripe (web) and RevenueCat, which tells us whether the subscription is active. We never see your card details.</li>
       <li><strong>Online trainers:</strong> if you hire a trainer, Stripe processes the payment with your e-mail; we store which trainer you hired, the subscription status and the chat messages, which only you and your trainer can see. If you become a trainer, Stripe keeps the identity and bank details you give it to pay you; we only store your Stripe account ID. Everything is deleted when you delete your account.</li>
+      <li><strong>Trainer programs:</strong> if you buy a program, Stripe processes the one-time payment with your e-mail; we store which program you bought to give you its routines. It is deleted when you delete your account.</li>
+      <li><strong>Hands-free (microphone):</strong> only if you turn it on, the app listens during guided workouts to understand "done" or "next". Your voice is recognized by the phone's speech service (Apple or Google), which may process it on its servers; the app only receives the text, does not keep the audio and does not send it to our server or to the AI. You can remove the microphone permission anytime in your phone's settings.</li>
+      <li><strong>Notifications:</strong> reminders (workout, water, streak, fasting, Sunday summary) are scheduled on your phone. If you have an account and allow notifications, we store your phone's notification token, its system (iOS or Android) and language to tell you about messages from your trainer and likes or comments; they are delivered through Apple (APNs) and Google (Firebase Cloud Messaging). It is deleted when you sign out or delete your account.</li>
+      <li><strong>Friends ranking and challenges:</strong> with an account, we store your week's totals (workouts, minutes and steps) for the ranking; only people who follow each other with you can see them. If you join a 30-day challenge, we store your progress and your name and photo appear on its leaderboard. Leaving the challenge or deleting your account removes it.</li>
+      <li><strong>Invite a friend:</strong> we store your invite code and who used whose code, to give you both the week of Premium.</li>
+      <li><strong>Barcode scanner:</strong> the barcode number is sent to Open Food Facts to look up the food; nothing else is sent.</li>
+      <li><strong>Widget:</strong> the home screen widget shows your streak and today's workout using data the app keeps on your own phone; it never leaves it.</li>
+      <li><strong>Error reports:</strong> if the app crashes, we send a technical report to Sentry so we can fix it: the error, the screen, the app version and the phone's model and system. It does not include your name, e-mail, photos or your workout, health or food data.</li>
     </ul>
-    <p>We do not sell data, show ads or use third-party analytics. You can delete all data on the device in Settings → Delete all data. To delete the anonymous identifier and its usage records, or for any question, write to the support email shown on the app's store listing.</p>
+    <p>We do not sell data, show ads or use third-party analytics (only the error reports above). You can delete all data on the device in Settings → Delete all data. To delete the anonymous identifier and its usage records, or for any question, write to the support email shown on the app's store listing.</p>
 
     <h2 id="delete-account">Delete your Fitness Life account</h2>
     <p><strong>In the app:</strong> open Fitness Life → Settings → Account → Delete account and confirm. It is deleted right away.</p>
@@ -147,8 +163,16 @@
       <li><strong>Antes e depois e cards para compartilhar:</strong> as fotos e imagens são criadas no seu celular e só saem se você compartilhar.</li>
       <li><strong>Assinatura:</strong> as compras são processadas pela Apple, Google ou Stripe (web) e pela RevenueCat, que nos informa se a assinatura está ativa. Não vemos os dados do seu cartão.</li>
       <li><strong>Treinadores online:</strong> se você contratar um treinador, a Stripe processa o pagamento com seu e-mail; guardamos qual treinador você contratou, o status da assinatura e as mensagens do chat, que só você e seu treinador veem. Se você se tornar treinador, a Stripe guarda os dados de identidade e bancários que você informar para pagar você; nós só guardamos o identificador da sua conta Stripe. Tudo é apagado ao excluir sua conta.</li>
+      <li><strong>Programas de treinadores:</strong> se você comprar um programa, a Stripe processa o pagamento único com seu e-mail; guardamos qual programa você comprou para liberar as rotinas. É apagado ao excluir sua conta.</li>
+      <li><strong>Mãos livres (microfone):</strong> só se você ativar, o app escuta durante o treino guiado para entender «pronto» ou «próximo». A voz é reconhecida pelo serviço de voz do celular (Apple ou Google), que pode processá-la nos servidores deles; o app só recebe o texto, não guarda o áudio e não o envia ao nosso servidor nem à IA. Você pode tirar a permissão do microfone quando quiser nos ajustes do celular.</li>
+      <li><strong>Notificações:</strong> os lembretes (treino, água, sequência, jejum, resumo de domingo) são agendados no seu celular. Se você tem conta e aceita as notificações, guardamos o identificador de notificações do celular, o sistema (iOS ou Android) e o idioma para avisar sobre mensagens do seu treinador e curtidas ou comentários; os avisos são enviados pela Apple (APNs) e pelo Google (Firebase Cloud Messaging). É apagado ao sair da conta ou excluí-la.</li>
+      <li><strong>Ranking com amigos e desafios:</strong> com conta, guardamos o total da sua semana (treinos, minutos e passos) para o ranking; só veem as pessoas que se seguem mutuamente com você. Se você entrar em um desafio de 30 dias, guardamos seu progresso e seu nome e foto aparecem na classificação. Ao sair do desafio ou excluir a conta, é apagado.</li>
+      <li><strong>Convidar um amigo:</strong> guardamos seu código de convite e quem usou o código de quem, para dar aos dois a semana de Premium.</li>
+      <li><strong>Leitor de código de barras:</strong> o número do código é enviado ao Open Food Facts para buscar o alimento; nada mais é enviado.</li>
+      <li><strong>Widget:</strong> o widget da tela inicial mostra sua sequência e o treino de hoje com dados que o app guarda no seu próprio celular; eles não saem dele.</li>
+      <li><strong>Relatórios de erros:</strong> se o app falhar, enviamos um relatório técnico ao Sentry para poder corrigir: o erro, a tela, a versão do app e o modelo e sistema do celular. Não inclui seu nome, e-mail, fotos nem seus dados de treinos, saúde ou refeições.</li>
     </ul>
-    <p>Não vendemos dados, não mostramos anúncios e não usamos analytics de terceiros. Você pode apagar todos os dados do dispositivo em Ajustes → Apagar todos os dados. Para apagar o identificador anônimo e seu registro de uso, ou para qualquer dúvida, escreva para o e-mail de suporte que aparece na página do app na loja.</p>
+    <p>Não vendemos dados, não mostramos anúncios e não usamos analytics de terceiros (só os relatórios de erros acima). Você pode apagar todos os dados do dispositivo em Ajustes → Apagar todos os dados. Para apagar o identificador anônimo e seu registro de uso, ou para qualquer dúvida, escreva para o e-mail de suporte que aparece na página do app na loja.</p>
 
     <h2 id="excluir-conta">Excluir sua conta do Fitness Life</h2>
     <p><strong>No app:</strong> abra o Fitness Life → Ajustes → Conta → Excluir conta e confirme. A exclusão é imediata.</p>
