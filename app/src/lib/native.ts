@@ -154,6 +154,20 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
     });
 };
 
+// Water reminders (lib/waterReminders.ts): up to 12, today's and tomorrow's.
+const WATER_IDS = Array.from({ length: 12 }, (_, i) => 5500 + i);
+export const scheduleWaterAlerts = async (alerts: { at: Date; title: string; body: string }[]) => {
+    if (!isNative()) return;
+    await quiet(async () => {
+        await LocalNotifications.cancel({ notifications: WATER_IDS.map(id => ({ id })) });
+        const due = alerts.filter(a => a.at.getTime() > Date.now() + 60_000).slice(0, WATER_IDS.length);
+        if (!due.length || !(await notificationsOk())) return;
+        await LocalNotifications.schedule({
+            notifications: due.map((a, i) => ({ id: WATER_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
+        });
+    });
+};
+
 // One-off alerts that replace themselves each time (streak, fasting).
 const ALERT_IDS = { streak: 5401, fasting: 5402 } as const;
 export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: Date; title: string; body: string } | null) => {

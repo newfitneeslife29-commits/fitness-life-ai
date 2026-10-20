@@ -13,7 +13,7 @@ export const cryptoProvider = Stripe.createSubtleCryptoProvider();
 // Where Stripe sends people back: a page of the web app that returns to the
 // phone app (or to the web app's trainers page).
 const SITE_URL = (Deno.env.get('SITE_URL') || 'https://newfitneeslife29-commits.github.io/fitness-life-ai/').replace(/\/?$/, '/');
-export const returnUrl = (to: 'hired' | 'canceled' | 'connected' | 'refresh', platform: string) =>
+export const returnUrl = (to: 'hired' | 'bought' | 'canceled' | 'connected' | 'refresh', platform: string) =>
   `${SITE_URL}stripe-return.html?to=${to}&app=${platform === 'native' ? 'native' : 'web'}`;
 
 // Paid (or in its last paid month): the client and the trainer can talk.
@@ -70,11 +70,26 @@ export const saveSubscription = async (admin: SupabaseClient, sub: Stripe.Subscr
   return data.id as string;
 };
 
-// Finishes a checkout started from the app (complete → hire saved).
+// A paid program: the buyer gets its routines (program_content).
+export const savePurchase = async (admin: SupabaseClient, session: Stripe.Checkout.Session) => {
+  const programId = session.metadata?.program_id;
+  const buyerId = session.metadata?.buyer_id;
+  if (!programId || !buyerId || session.payment_status !== 'paid') return null;
+  const { error } = await admin.from('program_purchases').upsert({
+    program_id: programId, buyer_id: buyerId, stripe_session_id: session.id,
+    amount_cents: session.amount_total ?? 0, currency: session.currency ?? 'usd',
+  }, { onConflict: 'program_id,buyer_id', ignoreDuplicates: true });
+  if (error) throw error;
+  return programId;
+};
+
+// Finishes a checkout started from the app (complete → hire or program saved).
 export const finishCheckout = async (admin: SupabaseClient, session: Stripe.Checkout.Session) => {
   const { data: row } = await admin.from('trainer_checkouts').select('client_name, done').eq('session_id', session.id).maybeSingle();
   let linkId: string | null = null;
-  if (session.status === 'complete' && session.subscription) {
+  if (session.status === 'complete' && session.mode === 'payment') {
+    await savePurchase(admin, session);
+  } else if (session.status === 'complete' && session.subscription) {
     const sub = typeof session.subscription === 'string' ? await stripe.subscriptions.retrieve(session.subscription) : session.subscription;
     linkId = await saveSubscription(admin, sub, row?.client_name ?? '');
   }

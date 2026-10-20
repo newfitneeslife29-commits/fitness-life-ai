@@ -5,6 +5,7 @@ import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { locale, t } from '../i18n';
+import { MyPrograms } from '../components/Programs';
 import { enablePush } from '../lib/push';
 import { fetchLastWorkouts } from '../lib/trainerTools';
 import { displayPrice, fetchMyApplication, formatMoney, trainerShareCents, type Trainer } from '../lib/trainers';
@@ -144,6 +145,12 @@ export default function TrainerPanel() {
                             <p className="text-xs text-white/45">{t('panel.stripeNote')}</p>
                         </div>
                     </Section>
+
+                    {mine.status === 'approved' && (
+                        <Section title={t('tprog.mine')}>
+                            <MyPrograms trainerId={mine.id} currency={mine.currency} ready={payouts !== null && payouts !== 'error' && payouts.ready} />
+                        </Section>
+                    )}
 
                     <Section title={`${t('panel.clients')} (${active.length})`}>
                         {clients === null ? (

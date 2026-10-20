@@ -1,4 +1,5 @@
-import { Check, Plus, Salad } from 'lucide-react';
+import { Check, Plus, Salad, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from '../components/feedback';
 import { BackHeader, Chips, Photo, Section } from '../components/ui';
@@ -85,6 +86,7 @@ export default function FreePlans() {
                         );
                     })}
                 </ul>
+                <Link to={`/nutricion/compras?plan=${id}`} className="btn-ghost mt-3 w-full"><ShoppingCart size={16} /> {t('shopping.title')}</Link>
                 <p className="mt-3 text-xs text-white/45">{t('freePlans.note')}</p>
             </Section>
         </div>

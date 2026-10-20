@@ -15,6 +15,7 @@ import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Unit } from '../store/types';
 import { ActiveClock } from './ActiveClock';
+import { MusicButton } from './MusicSheet';
 import { HoldTimer } from './HoldTimer';
 import { Sheet } from './ui';
 import { UnitToggle } from './UnitToggle';
@@ -144,7 +145,10 @@ const Overview = ({ active, onStart, onList, onClose, unit }: { active: ActiveWo
                 <div className="relative mx-auto flex max-w-lg items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] text-snow">
                     <RoundButton label={t('workout.back')} onClick={onClose}><ChevronDown size={22} /></RoundButton>
                     <p className="truncate px-2 text-sm font-extrabold uppercase tracking-[0.18em]">{sessionName(active)}</p>
-                    <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
+                    <span className="flex gap-2">
+                        <MusicButton className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-snow backdrop-blur-md transition hover:bg-black/50 active:scale-90" />
+                        <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
+                    </span>
                 </div>
             </div>
             <div className="relative mx-auto -mt-10 max-w-lg rounded-t-[2rem] bg-ink px-5 pb-40 pt-6">

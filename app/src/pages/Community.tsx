@@ -1,4 +1,4 @@
-import { Camera, Clapperboard, HeartHandshake, ImageIcon, MessageSquarePlus, RefreshCw, Send, ShieldAlert, UserPlus, Users, X } from 'lucide-react';
+import { Camera, Clapperboard, Flame, HeartHandshake, ImageIcon, MessageSquarePlus, RefreshCw, Send, ShieldAlert, Trophy, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -269,6 +269,19 @@ export default function Community() {
                     </p>
                 </div>
             </Section>
+
+            {member && (
+                <Section>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Link to="/comunidad/ranking" className="card flex items-center gap-2 p-3 text-sm font-semibold hover:bg-ink-3">
+                            <Trophy size={18} className="shrink-0 text-amber-400" /> <span className="min-w-0">{t('ranking.title')}</span>
+                        </Link>
+                        <Link to="/retos" className="card flex items-center gap-2 p-3 text-sm font-semibold hover:bg-ink-3">
+                            <Flame size={18} className="shrink-0 text-brand" /> <span className="min-w-0">{t('challenges.title')}</span>
+                        </Link>
+                    </div>
+                </Section>
+            )}
 
             {requests > 0 && (
                 <Section>

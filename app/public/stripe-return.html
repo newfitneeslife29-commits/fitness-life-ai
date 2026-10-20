@@ -23,18 +23,18 @@
   <a id="back" href="./"></a>
 </main>
 <script>
-  // Stripe sends people here after paying for a trainer or setting up a
-  // trainer's payouts: back to the phone app, or to the web app.
+  // Stripe sends people here after paying for a trainer or a program, or
+  // setting up a trainer's payouts: back to the phone app, or to the web app.
   (function () {
     var q = new URLSearchParams(location.search);
-    var to = ['hired', 'canceled', 'connected', 'refresh'].indexOf(q.get('to')) >= 0 ? q.get('to') : 'connected';
+    var to = ['hired', 'bought', 'canceled', 'connected', 'refresh'].indexOf(q.get('to')) >= 0 ? q.get('to') : 'connected';
     var lang = (navigator.language || 'es').slice(0, 2);
     var words = {
-      es: { hired: '¡Pago completado!', canceled: 'Pago cancelado', connected: 'Datos guardados', refresh: 'Vuelve a la app',
+      es: { hired: '¡Pago completado!', bought: '¡Pago completado!', canceled: 'Pago cancelado', connected: 'Datos guardados', refresh: 'Vuelve a la app',
             text: 'Vuelve a Fitness Life para continuar.', back: 'Volver a Fitness Life' },
-      pt: { hired: 'Pagamento concluído!', canceled: 'Pagamento cancelado', connected: 'Dados salvos', refresh: 'Volte ao app',
+      pt: { hired: 'Pagamento concluído!', bought: 'Pagamento concluído!', canceled: 'Pagamento cancelado', connected: 'Dados salvos', refresh: 'Volte ao app',
             text: 'Volte ao Fitness Life para continuar.', back: 'Voltar ao Fitness Life' },
-      en: { hired: 'Payment complete!', canceled: 'Payment canceled', connected: 'Details saved', refresh: 'Go back to the app',
+      en: { hired: 'Payment complete!', bought: 'Payment complete!', canceled: 'Payment canceled', connected: 'Details saved', refresh: 'Go back to the app',
             text: 'Go back to Fitness Life to continue.', back: 'Back to Fitness Life' },
     };
     var w = words[lang] || words.en;

@@ -16,6 +16,9 @@ import { useStreakAlerts } from './lib/streak';
 import { useFastingAlert } from './lib/fasting';
 import { useCoachRoutines } from './lib/trainerTools';
 import { useChallenges } from './lib/challenges';
+import { useWaterReminders } from './lib/waterReminders';
+import { useFriendsWeekSync } from './lib/friendsWeek';
+import { useHomeWidget } from './lib/widget';
 import { useRecoveryAlerts } from './lib/recovery';
 import { useTrainingReminders } from './lib/reminders';
 import { useTracking } from './lib/tracker';
@@ -37,6 +40,8 @@ import Community from './pages/Community';
 import Compare from './pages/Compare';
 import Challenges from './pages/Challenges';
 import Invite from './pages/Invite';
+import Shopping from './pages/Shopping';
+import Ranking from './pages/Ranking';
 import AboutUs from './pages/AboutUs';
 import Feedback from './pages/Feedback';
 import FreePlans from './pages/FreePlans';
@@ -160,6 +165,9 @@ export default function App() {
     useFastingAlert();
     useCoachRoutines();
     useChallenges();
+    useWaterReminders();
+    useFriendsWeekSync();
+    useHomeWidget();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);
@@ -205,9 +213,11 @@ export default function App() {
                 <Route path="/nutricion" element={<Shell><Nutrition /></Shell>} />
                 <Route path="/nutricion/planes" element={<Shell><FreePlans /></Shell>} />
                 <Route path="/nutricion/alimentos" element={<Shell><Foods /></Shell>} />
+                <Route path="/nutricion/compras" element={<Shell><Shopping /></Shell>} />
                 <Route path="/premium" element={<Shell><Premium /></Shell>} />
                 <Route path="/comunidad" element={<Shell><Community /></Shell>} />
                 <Route path="/retos" element={<Shell><Challenges /></Shell>} />
+                <Route path="/comunidad/ranking" element={<Shell><Ranking /></Shell>} />
                 <Route path="/invitar" element={<Shell><Invite /></Shell>} />
                 <Route path="/comunidad/u/:id" element={<Shell><MemberProfile /></Shell>} />
                 <Route path="/ajustes" element={<Shell><Settings /></Shell>} />

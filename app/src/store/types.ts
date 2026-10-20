@@ -48,6 +48,10 @@ export interface Profile {
     recoveryAlerts?: boolean;
     // The workouts are shared with the trainers the person hired (on by default).
     shareWithTrainer?: boolean;
+    // A playlist link opened from the workouts (lib/music.ts).
+    musicPlaylist?: string;
+    // "Time for a glass of water" through the day until the goal (off by default).
+    waterReminders?: boolean;
     // "Don't lose your streak" at 8 pm on days the app wasn't opened (on by default).
     streakReminder?: boolean;
     // A notification at the time of each meal of the meal plan (on by default).
@@ -317,6 +321,8 @@ export interface AppState {
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
     fasting?: Fasting;
     challenges?: JoinedChallenge[];
+    programsAdded?: string[]; // trainer programs bought whose routines are in Routines
+    shopping?: { list: string; checked: string[] }; // what's in the cart, for one list at a time
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
     sleep?: SleepEntry[]; // newest first

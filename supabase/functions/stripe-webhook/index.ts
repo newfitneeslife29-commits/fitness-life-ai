@@ -28,7 +28,8 @@ Deno.serve(async req => {
   try {
     switch (event.type) {
       case 'checkout.session.completed':
-        if (event.data.object.mode === 'subscription') await finishCheckout(admin, event.data.object);
+        // A hire (subscription) or a program (one payment).
+        await finishCheckout(admin, event.data.object);
         break;
       case 'customer.subscription.created':
       case 'customer.subscription.updated':

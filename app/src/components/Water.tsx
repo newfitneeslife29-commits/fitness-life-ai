@@ -1,4 +1,4 @@
-import { Droplets, GlassWater, Minus, Plus } from 'lucide-react';
+import { BellRing, Droplets, GlassWater, Minus, Plus } from 'lucide-react';
 import { locale, t } from '../i18n';
 import { localDay } from '../lib/activity';
 import { haptic } from '../lib/native';
@@ -17,6 +17,7 @@ export const WaterCard = ({ day, targetMl, why }: { day: Date; targetMl: number;
     const done = Math.floor(drunk / GLASS_ML);
     const pct = Math.min(100, (drunk / targetMl) * 100);
     const reached = drunk >= targetMl;
+    const reminders = useStore(s => s.profile?.waterReminders === true);
 
     const add = (ml: number) => {
         haptic('tap');
@@ -49,6 +50,17 @@ export const WaterCard = ({ day, targetMl, why }: { day: Date; targetMl: number;
                 ))}
             </div>
             <p className="border-t border-line px-4 py-2 text-[11px] text-white/45">{why}</p>
+            <div className="flex items-center gap-3 border-t border-line px-4 py-3">
+                <BellRing size={18} className="shrink-0 text-sky-400" />
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{t('water.remind')}</p>
+                    <p className="text-xs text-white/50">{t('water.remindHint')}</p>
+                </div>
+                <button role="switch" aria-checked={reminders} aria-label={t('water.remind')} onClick={() => actions.updateProfile({ waterReminders: !reminders })}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${reminders ? 'bg-sky-500' : 'bg-ink-4'}`}>
+                    <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${reminders ? 'left-6' : 'left-1'}`} />
+                </button>
+            </div>
         </div>
     );
 };
