@@ -1944,4 +1944,8 @@ export const tr: Dict = {
     'tprog.none': "Henüz programın yok.",
     'tprog.failed': "Program kaydedilemedi. Bilgileri kontrol et.",
     'pay.err.already_bought': "Bu programı zaten aldın: Rutinler'de.",
+    'widget.streak': "günlük seri",
+    'widget.steps': "bugünkü adım",
+    'widget.next': "Bugünün antrenmanı",
+    'widget.done': "Tamam! 💪",
 };

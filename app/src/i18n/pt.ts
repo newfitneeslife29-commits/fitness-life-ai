@@ -1952,4 +1952,8 @@ export const pt: Dict = {
     'tprog.none': "Você ainda não tem programas.",
     'tprog.failed': "Não foi possível salvar o programa. Confira os dados.",
     'pay.err.already_bought': "Você já comprou este programa: está em Rotinas.",
+    'widget.streak': "dias de sequência",
+    'widget.steps': "passos hoje",
+    'widget.next': "Treino de hoje",
+    'widget.done': "Feito! 💪",
 };

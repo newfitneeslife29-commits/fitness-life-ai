@@ -1944,4 +1944,8 @@ export const ja: Dict = {
     'tprog.none': "まだプログラムがありません。",
     'tprog.failed': "プログラムを保存できませんでした。内容を確認してください。",
     'pay.err.already_bought': "このプログラムは購入済みです：ルーティンにあります。",
+    'widget.streak': "日連続",
+    'widget.steps': "今日の歩数",
+    'widget.next': "今日のトレーニング",
+    'widget.done': "完了！💪",
 };

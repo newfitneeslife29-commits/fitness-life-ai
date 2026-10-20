@@ -1944,4 +1944,8 @@ export const fr: Dict = {
     'tprog.none': "Vous n'avez pas encore de programme.",
     'tprog.failed': "Impossible d'enregistrer le programme. Vérifiez les informations.",
     'pay.err.already_bought': "Vous avez déjà acheté ce programme : il est dans Routines.",
+    'widget.streak': "jours de série",
+    'widget.steps': "pas aujourd'hui",
+    'widget.next': "Séance du jour",
+    'widget.done': "Fait ! 💪",
 };

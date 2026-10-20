@@ -86,10 +86,16 @@ jobs:
       - name: Add the entitlements
         run: |
           app="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          # The home screen widget first (inside the app), with its App Group.
+          widget="$app/PlugIns/FitnessWidget.appex"
+          [ -d "$widget" ] || { echo "::error::The widget extension is missing from the app"; exit 1; }
+          codesign --force --sign - --entitlements ios/App/FitnessWidget/FitnessWidget.entitlements "$widget"
+          codesign -d --entitlements - "$widget" 2>&1 | grep -q 'group.com.fitnesslife.app' || { echo "::error::Widget App Group entitlement missing"; exit 1; }
           codesign --force --sign - --entitlements ios/App/App/App.entitlements "$app"
           codesign -d --entitlements - "$app" 2>&1 | tee "$RUNNER_TEMP/entitlements.txt"
           grep -q 'com.apple.developer.healthkit' "$RUNNER_TEMP/entitlements.txt" || { echo "::error::HealthKit entitlement missing"; exit 1; }
           grep -q 'aps-environment' "$RUNNER_TEMP/entitlements.txt" || { echo "::error::Push notifications entitlement missing"; exit 1; }
+          grep -q 'group.com.fitnesslife.app' "$RUNNER_TEMP/entitlements.txt" || { echo "::error::App Group entitlement missing"; exit 1; }
       # The icon colors in Settings need the alternate icon sets inside the app.
       - name: Check the app icons
         run: |

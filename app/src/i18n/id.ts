@@ -1944,4 +1944,8 @@ export const id: Dict = {
     'tprog.none': "Kamu belum punya program.",
     'tprog.failed': "Program gagal disimpan. Periksa datanya.",
     'pay.err.already_bought': "Kamu sudah membeli program ini: ada di Rutinitas.",
+    'widget.streak': "hari beruntun",
+    'widget.steps': "langkah hari ini",
+    'widget.next': "Latihan hari ini",
+    'widget.done': "Selesai! 💪",
 };

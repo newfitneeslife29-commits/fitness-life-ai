@@ -1951,4 +1951,8 @@ export const en: Dict = {
     'tprog.none': "You don't have programs yet.",
     'tprog.failed': "Couldn't save the program. Check the details.",
     'pay.err.already_bought': "You already bought this program: it's in Routines.",
+    'widget.streak': "day streak",
+    'widget.steps': "steps today",
+    'widget.next': "Today's workout",
+    'widget.done': "Done! 💪",
 };

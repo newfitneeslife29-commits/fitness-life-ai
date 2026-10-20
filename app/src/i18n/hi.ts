@@ -1944,4 +1944,8 @@ export const hi: Dict = {
     'tprog.none': "अभी आपके पास कोई प्रोग्राम नहीं है।",
     'tprog.failed': "प्रोग्राम सेव नहीं हो सका। जानकारी जांचें।",
     'pay.err.already_bought': "आप यह प्रोग्राम खरीद चुके हैं: यह रूटीन में है।",
+    'widget.streak': "दिन की स्ट्रीक",
+    'widget.steps': "आज के कदम",
+    'widget.next': "आज का वर्कआउट",
+    'widget.done': "हो गया! 💪",
 };

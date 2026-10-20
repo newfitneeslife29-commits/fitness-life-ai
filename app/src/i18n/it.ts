@@ -1944,4 +1944,8 @@ export const it: Dict = {
     'tprog.none': "Non hai ancora programmi.",
     'tprog.failed': "Impossibile salvare il programma. Controlla i dati.",
     'pay.err.already_bought': "Hai già acquistato questo programma: è in Schede.",
+    'widget.streak': "giorni di serie",
+    'widget.steps': "passi oggi",
+    'widget.next': "Allenamento di oggi",
+    'widget.done': "Fatto! 💪",
 };

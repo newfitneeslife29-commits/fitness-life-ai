@@ -1944,4 +1944,8 @@ export const ko: Dict = {
     'tprog.none': "아직 프로그램이 없어요.",
     'tprog.failed': "프로그램을 저장하지 못했어요. 내용을 확인하세요.",
     'pay.err.already_bought': "이미 구매한 프로그램이에요: 루틴에 있어요.",
+    'widget.streak': "일 연속",
+    'widget.steps': "오늘 걸음",
+    'widget.next': "오늘의 운동",
+    'widget.done': "완료! 💪",
 };

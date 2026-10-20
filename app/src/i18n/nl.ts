@@ -1944,4 +1944,8 @@ export const nl: Dict = {
     'tprog.none': "Je hebt nog geen programma's.",
     'tprog.failed': "Programma opslaan mislukt. Controleer de gegevens.",
     'pay.err.already_bought': "Je hebt dit programma al gekocht: het staat bij Schema's.",
+    'widget.streak': "dagen reeks",
+    'widget.steps': "stappen vandaag",
+    'widget.next': "Training van vandaag",
+    'widget.done': "Gedaan! 💪",
 };

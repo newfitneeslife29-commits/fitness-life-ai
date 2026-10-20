@@ -163,6 +163,14 @@
              location plugin's background service (and the foreground service
              declaration Google Play asks for it) is left out. -->
         <service android:name="com.capgo.capacitor_background_geolocation.BackgroundGeolocationService" tools:node="remove" />
+
+        <!-- Home screen widget: streak, steps and today's workout. -->
+        <receiver android:name=".TodayWidget" android:exported="false" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today_info" />
+        </receiver>
     </application>
 
     <!-- Apps the share buttons open directly (Android 11+ package visibility). -->

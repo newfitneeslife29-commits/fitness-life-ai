@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
         // App-only plugins (not from npm) are registered before the bridge starts.
         registerPlugin(StorySharePlugin.class);
         registerPlugin(LauncherIconPlugin.class);
+        registerPlugin(WidgetBridgePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

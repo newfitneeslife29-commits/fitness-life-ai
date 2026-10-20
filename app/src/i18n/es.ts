@@ -1952,4 +1952,8 @@ export const es = {
     'tprog.none': "Aún no tienes programas.",
     'tprog.failed': "No se pudo guardar el programa. Revisa los datos.",
     'pay.err.already_bought': "Ya compraste este programa: está en Rutinas.",
+    'widget.streak': "días de racha",
+    'widget.steps': "pasos hoy",
+    'widget.next': "Entreno de hoy",
+    'widget.done': "¡Hecho! 💪",
 };

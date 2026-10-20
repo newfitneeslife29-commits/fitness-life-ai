@@ -1944,4 +1944,8 @@ export const zh: Dict = {
     'tprog.none': "你还没有方案。",
     'tprog.failed': "无法保存方案，请检查信息。",
     'pay.err.already_bought': "你已购买该方案：在训练计划中。",
+    'widget.streak': "天连续",
+    'widget.steps': "今日步数",
+    'widget.next': "今日训练",
+    'widget.done': "完成！💪",
 };

@@ -18,6 +18,7 @@ import { useCoachRoutines } from './lib/trainerTools';
 import { useChallenges } from './lib/challenges';
 import { useWaterReminders } from './lib/waterReminders';
 import { useFriendsWeekSync } from './lib/friendsWeek';
+import { useHomeWidget } from './lib/widget';
 import { useRecoveryAlerts } from './lib/recovery';
 import { useTrainingReminders } from './lib/reminders';
 import { useTracking } from './lib/tracker';
@@ -166,6 +167,7 @@ export default function App() {
     useChallenges();
     useWaterReminders();
     useFriendsWeekSync();
+    useHomeWidget();
     // A finished or discarded workout has no rest left to announce (the
     // workout page unmounts before it could cancel the alert itself).
     const workoutOpen = useStore(s => s.active !== null);
