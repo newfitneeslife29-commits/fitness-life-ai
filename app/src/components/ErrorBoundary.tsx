@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { t } from '../i18n';
+import { reportError } from '../lib/errors';
 
 // If a screen fails to draw, show what happened and a way back instead of a
 // blank screen. The message helps when someone sends a screenshot.
@@ -13,6 +14,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error('screen failed', error, info.componentStack);
+        reportError(error, info.componentStack ?? undefined);
     }
 
     render() {

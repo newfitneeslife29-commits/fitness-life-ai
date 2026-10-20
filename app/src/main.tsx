@@ -7,9 +7,11 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getLang, loadLang } from './i18n';
 import { restoreTabIcon } from './lib/appIcon';
+import { startErrorReports } from './lib/errors';
 import { startUpdateChecks } from './lib/updates';
 import { hydrateFromNative } from './store/store';
 
+startErrorReports();
 startUpdateChecks();
 restoreTabIcon();
 
