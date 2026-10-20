@@ -123,6 +123,15 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
+      # When the export fails, show why from Xcode's own distribution log
+      # (without request headers or tokens).
+      - name: Show the signing errors
+        if: failure()
+        run: |
+          for log in $(find "${TMPDIR:-/tmp}" /var/folders -name 'IDEDistribution*.log' -path '*xcdistributionlogs*' 2>/dev/null); do
+            echo "== $log"
+            grep -v -i -E 'bearer|authorization|eyJ' "$log" | grep -i -E -B2 -A8 'error|fail|denied|forbidden|unauthori|401|403|409|profile|capabilit|group' | tail -150
+          done
       - name: Remove the key
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
