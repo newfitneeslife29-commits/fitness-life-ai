@@ -476,7 +476,11 @@ export const workoutAround = <T extends { exerciseId: string }>(exercises: T[], 
         });
         if (swap) {
             ids.push(swap);
-            out.push({ ...e, exerciseId: swap });
+            // From reps to a timed hold (seconds) or back: a range that fits the new one.
+            const timed = !!getExercise(swap)?.timed;
+            const range = 'repMin' in e && timed !== !!getExercise(e.exerciseId)?.timed
+                ? (timed ? { repMin: 20, repMax: 40 } : { repMin: 8, repMax: 12 }) : {};
+            out.push({ ...e, exerciseId: swap, ...range });
             swapped++;
         } else removed++;
     }

@@ -44,12 +44,14 @@ export const activitySummary = (activeDays: string[], sessions: Session[], now =
     const active = activeSet(activeDays, trained);
     const month = localDay(now).slice(0, 7);
     const inMonth = (s: Set<string>) => [...s].filter(k => k.startsWith(month)).length;
+    const activeStreak = streakIn(active, now, paused);
     return {
         activeThisMonth: inMonth(active),
         trainedThisMonth: inMonth(trained),
-        activeStreak: streakIn(active, now, paused),
+        activeStreak,
         trainedStreak: streakIn(trained, now, paused),
-        bestStreak: longestRun(active),
+        // A streak kept through a rest is the best one too.
+        bestStreak: Math.max(longestRun(active), activeStreak),
         activeTotal: active.size,
         trainedTotal: trained.size,
     };

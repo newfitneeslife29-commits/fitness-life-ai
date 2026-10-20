@@ -16,7 +16,8 @@ import { isNative } from './native';
 interface WidgetBridge { update(options: { data: string }): Promise<void> }
 const Bridge = registerPlugin<WidgetBridge>('WidgetBridge');
 
-export interface WidgetData { streak: string; streakLabel: string; steps: string; stepsLabel: string; next: string; nextLabel: string }
+// `day` and `later` let the widget show a new day before the app is opened.
+export interface WidgetData { streak: string; streakLabel: string; steps: string; stepsLabel: string; next: string; nextLabel: string; day: string; later: string }
 
 let last = '';
 
@@ -39,6 +40,8 @@ export const useHomeWidget = () => {
             stepsLabel: t('widget.steps'),
             next: trainedToday ? t('widget.done') : next ? routineName(next) : '',
             nextLabel: t('widget.next'),
+            day: today,
+            later: next ? routineName(next) : '',
         };
     }, [activeStreak, sessions, steps, cardio, plan, routines, lang, today]);
     useEffect(() => {

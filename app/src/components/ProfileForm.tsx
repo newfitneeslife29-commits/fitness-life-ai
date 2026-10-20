@@ -267,10 +267,15 @@ export const ProfileDetailsSheet = ({ open, onClose }: { open: boolean; onClose:
     const [activity, setActivity] = useState<Activity>('ligero');
     const [limits, setLimits] = useState<Limitation[]>([]);
     const [goal, setGoal] = useState<GoalDraft>({ dir: 'mantener', target: '' });
+    // The weight as shown when opened: only a changed one is a new weigh-in
+    // (kg ↔ lb rounding would otherwise log a slightly different weight).
+    const [shownWeight, setShownWeight] = useState('');
 
     useEffect(() => {
         if (!open || !profile) return;
-        setAbout(aboutFromProfile(profile, currentKg, unit));
+        const draft = aboutFromProfile(profile, currentKg, unit);
+        setAbout(draft);
+        setShownWeight(draft.weight);
         setActivity(profile.activity ?? 'ligero');
         setLimits(profile.limitations ?? []);
         setGoal(goalFromProfile(profile.weightGoal, currentKg, unit, profile.goal === 'grasa' ? 'bajar' : 'mantener'));
@@ -283,7 +288,7 @@ export const ProfileDetailsSheet = ({ open, onClose }: { open: boolean; onClose:
 
     const save = () => {
         if (!parsed || weightGoal === undefined) return;
-        if (currentKg === undefined || Math.abs(currentKg - parsed.weightKg) >= 0.05) actions.logBodyWeight(parsed.weightKg);
+        if (currentKg === undefined || (about.weight.trim() !== shownWeight.trim() && Math.abs(currentKg - parsed.weightKg) >= 0.05)) actions.logBodyWeight(parsed.weightKg);
         // Keep the original start when the goal itself didn't change.
         const keep = profile.weightGoal && weightGoal && Math.abs(profile.weightGoal.targetKg - weightGoal.targetKg) < 0.05;
         actions.updateProfile({
@@ -293,7 +298,7 @@ export const ProfileDetailsSheet = ({ open, onClose }: { open: boolean; onClose:
         // New aches: rebuild the plan so the exercises that load them are swapped.
         const before = [...(profile.limitations ?? [])].sort().join();
         if (before !== [...limits].sort().join() && getState().plan) {
-            actions.regeneratePlan();
+            actions.adaptPlan();
             toast(t('profileDetails.planAdapted'));
         } else {
             toast(t('profileDetails.saved'));

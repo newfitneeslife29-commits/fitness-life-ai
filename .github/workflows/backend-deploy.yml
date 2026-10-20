@@ -309,7 +309,7 @@ jobs:
         if: env.STRIPE_SECRET_KEY != ''
         run: |
           endpoint="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/stripe-webhook"
-          events=(checkout.session.completed customer.subscription.created customer.subscription.updated customer.subscription.deleted)
+          events=(checkout.session.completed checkout.session.async_payment_succeeded checkout.session.async_payment_failed customer.subscription.created customer.subscription.updated customer.subscription.deleted)
           stripe_api() { curl -sS -o /tmp/stripe.json -w "%{http_code}" -H "Authorization: Bearer $STRIPE_SECRET_KEY" "$@"; }
           status=$(stripe_api "https://api.stripe.com/v1/webhook_endpoints?limit=100")
           if [ "$status" = 401 ]; then

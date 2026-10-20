@@ -93,7 +93,10 @@ export const finishCheckout = async (admin: SupabaseClient, session: Stripe.Chec
     const sub = typeof session.subscription === 'string' ? await stripe.subscriptions.retrieve(session.subscription) : session.subscription;
     linkId = await saveSubscription(admin, sub, row?.client_name ?? '');
   }
-  if (row && !row.done && session.status !== 'open') {
+  // A delayed payment still on its way keeps the checkout pending (its
+  // async_payment_* event or the sync finishes it).
+  const waiting = session.status === 'complete' && session.payment_status === 'unpaid';
+  if (row && !row.done && session.status !== 'open' && !waiting) {
     await admin.from('trainer_checkouts').update({ done: true }).eq('session_id', session.id);
   }
   return linkId;

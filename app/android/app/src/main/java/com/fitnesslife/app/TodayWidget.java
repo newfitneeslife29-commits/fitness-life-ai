@@ -7,6 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.view.View;
 import android.widget.RemoteViews;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import org.json.JSONObject;
 
 // Home screen widget: the streak, today's steps and today's workout, as the
@@ -31,13 +34,16 @@ public class TodayWidget extends AppWidgetProvider {
         Intent open = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         PendingIntent tap = open == null ? null
             : PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        // Saved on an earlier day: 0 steps and the next workout (today's isn't done).
+        String day = data.optString("day", "");
+        boolean stale = !day.isEmpty() && !day.equals(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date()));
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_today);
             views.setTextViewText(R.id.widget_streak, data.optString("streak", "0"));
             views.setTextViewText(R.id.widget_streak_label, data.optString("streakLabel", ""));
-            views.setTextViewText(R.id.widget_steps, data.optString("steps", "0"));
+            views.setTextViewText(R.id.widget_steps, stale ? "0" : data.optString("steps", "0"));
             views.setTextViewText(R.id.widget_steps_label, data.optString("stepsLabel", ""));
-            String next = data.optString("next", "");
+            String next = stale ? data.optString("later", data.optString("next", "")) : data.optString("next", "");
             views.setTextViewText(R.id.widget_next_label, data.optString("nextLabel", ""));
             views.setTextViewText(R.id.widget_next, next);
             views.setViewVisibility(R.id.widget_next_row, next.isEmpty() ? View.GONE : View.VISIBLE);

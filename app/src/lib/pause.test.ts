@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { workoutAround } from '../data/programs';
 import { activitySummary } from './activity';
 import { currentPause, daysLeft, endPause, injuryPause, pausedDays, restPause } from './pause';
+import { pauseEndAt } from './reminders';
 
 const at = (d: number, h = 10) => new Date(2026, 9, d, h);
 
@@ -54,5 +55,20 @@ describe('rest and injury mode', () => {
         const out = workoutAround([ex('curl-barra'), ex('curl-martillo')], ['munecas'], 'gimnasio');
         expect(out.exercises.map(e => e.exerciseId)).toEqual(['curl-martillo']);
         expect(out).toMatchObject({ swapped: 0, removed: 1 });
+    });
+});
+
+describe('launch fixes', () => {
+    it('an injury swap from reps to a hold gets seconds, and back', () => {
+        const ex = (exerciseId: string, repMin: number, repMax: number) => ({ exerciseId, sets: 3, repMin, repMax, restSec: 60 });
+        const knees = workoutAround([ex('escaladores', 20, 45)], ['rodillas'], 'casa').exercises[0];
+        expect(knees).toMatchObject({ exerciseId: 'dead-bug', repMin: 8, repMax: 12 });
+        const back = workoutAround([ex('crunch', 12, 15)], ['espalda'], 'casa').exercises[0];
+        expect(back).toMatchObject({ exerciseId: 'dead-bug', repMin: 12, repMax: 15 });
+    });
+
+    it('the morning after a rest, a reminder to come back', () => {
+        expect(pauseEndAt('2026-10-31')).toEqual(new Date(2026, 10, 1, 9, 0, 0));
+        expect(pauseEndAt('2026-10-22', '18:30')).toEqual(new Date(2026, 9, 23, 18, 30, 0));
     });
 });

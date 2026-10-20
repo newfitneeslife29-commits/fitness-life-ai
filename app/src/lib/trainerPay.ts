@@ -12,7 +12,7 @@ import { getSupabase } from './supabase';
 
 export type PayErrorCode =
     | 'stripe_not_configured' | 'connect_disabled' | 'country_unsupported' | 'not_trainer' | 'trainer_unavailable'
-    | 'already_hired' | 'own_trainer' | 'not_connected' | 'already_bought' | 'network' | 'failed';
+    | 'already_hired' | 'own_trainer' | 'not_connected' | 'already_bought' | 'payment_pending' | 'network' | 'failed';
 
 export class PayError extends Error {
     constructor(public code: PayErrorCode) {
@@ -20,7 +20,7 @@ export class PayError extends Error {
     }
 }
 
-const KNOWN: PayErrorCode[] = ['stripe_not_configured', 'connect_disabled', 'country_unsupported', 'not_trainer', 'trainer_unavailable', 'already_hired', 'own_trainer', 'not_connected', 'already_bought'];
+const KNOWN: PayErrorCode[] = ['stripe_not_configured', 'connect_disabled', 'country_unsupported', 'not_trainer', 'trainer_unavailable', 'already_hired', 'own_trainer', 'not_connected', 'already_bought', 'payment_pending'];
 
 const call = async <T>(body: Record<string, unknown>): Promise<T> => {
     const supabase = await getSupabase().catch(() => { throw new PayError('network'); });

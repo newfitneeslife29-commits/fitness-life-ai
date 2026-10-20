@@ -59,6 +59,15 @@ describe('finishWorkout', () => {
         expect(session.routineId).toBe('r1');
     });
 
+    it('a workout left open overnight ends a few minutes after its last set', () => {
+        const active = createActiveWorkout(routine, history, new Date('2026-10-07T18:00:00.000Z'));
+        active.exercises[0].sets[0].done = true;
+        active.exercises[0].sets[0].completedAt = '2026-10-07T18:40:00.000Z';
+        const session = finishWorkout(active, new Date('2026-10-08T08:00:00.000Z'))!;
+        expect(session.endedAt).toBe('2026-10-07T18:45:00.000Z');
+        expect(session.activeSec).toBe(45 * 60);
+    });
+
     it('discards a workout without completed sets', () => {
         expect(finishWorkout(createActiveWorkout(routine, history))).toBeNull();
     });

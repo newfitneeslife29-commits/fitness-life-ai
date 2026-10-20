@@ -26,7 +26,7 @@ import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
 import { appVersion, checkForUpdate, useUpdate } from '../lib/updates';
-import { actions, getSaveError, useStore } from '../store/store';
+import { actions, getSaveError, getState, useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
 import type { Goal, Level, Setup } from '../store/types';
 import { PauseRow } from '../components/PauseCard';
@@ -89,7 +89,11 @@ export default function Settings() {
 
     const reset = async () => {
         const ok = await confirm({ title: t('settings.reset.title'), message: t('settings.reset.message'), confirmLabel: t('settings.reset.confirm'), danger: true });
-        if (ok) actions.resetAll();
+        if (!ok) return;
+        // Signed in: signing out clears this device and keeps the account's
+        // copy (resetting while signed in would send the empty data to it).
+        if (getState().account) await signOut();
+        else actions.resetAll();
     };
 
     return (

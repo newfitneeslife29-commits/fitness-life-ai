@@ -175,6 +175,19 @@ Deno.serve(async req => {
         if (trainer.user_id === user.id) throw new HttpError(409, 'own_trainer');
         const { data: owned } = await admin.from('program_purchases').select('program_id').eq('program_id', program.id).eq('buyer_id', user.id).maybeSingle();
         if (owned) throw new HttpError(409, 'already_bought');
+        // A checkout of this program not finished yet: paid (the webhook hasn't
+        // saved it) or still open. Never a second charge.
+        const { data: pending } = await admin.from('trainer_checkouts').select('session_id')
+          .eq('client_id', user.id).eq('program_id', program.id).eq('done', false)
+          .gte('created_at', new Date(Date.now() - 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(3);
+        for (const p of pending ?? []) {
+          const earlier = await stripe.checkout.sessions.retrieve(p.session_id);
+          if (earlier.status === 'complete') {
+            await finishCheckout(admin, earlier);
+            throw new HttpError(409, earlier.payment_status === 'unpaid' ? 'payment_pending' : 'already_bought');
+          }
+          if (earlier.status === 'open' && earlier.url) return json({ url: earlier.url });
+        }
         const account = await stripe.accounts.retrieve(trainer.stripe_account_id);
         if (!accountReady(account)) {
           await admin.from('trainer_applications').update({ payouts_ready: false }).eq('id', trainer.id);
