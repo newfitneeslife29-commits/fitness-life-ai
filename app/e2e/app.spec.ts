@@ -1572,7 +1572,7 @@ test('hire a trainer in the app: pay with Stripe, chat, and cancel', async ({ pa
     await expect(page.getByText(/Se renueva el/)).toBeVisible();
 
     await page.getByLabel('Escribe un mensaje…').fill('¡Hola Ana! Quiero ganar fuerza.');
-    await page.getByRole('button', { name: 'Enviar' }).click();
+    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
     await expect(page.getByText('¡Hola Ana! Quiero ganar fuerza.')).toBeVisible();
     expect(messages[0]).toEqual(expect.objectContaining({ link_id: 'h1', body: '¡Hola Ana! Quiero ganar fuerza.' }));
     await expect.poll(() => pushes).toEqual([{ messageId: 1 }]);
@@ -1643,6 +1643,186 @@ test('trainer dashboard: connect payouts with Stripe and see clients', async ({ 
     await expect(page.getByText(/Cobros activos/)).toBeVisible();
     expect(calls).toContainEqual(expect.objectContaining({ action: 'connect', country: 'MX', platform: 'web' }));
     await expect(page.getByRole('button', { name: /Ver mis ganancias/ })).toBeVisible();
+});
+
+// A tiny PNG for photo uploads.
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+
+test('client and trainer tools: reviews, a routine from the trainer, photos in the chat', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    const messages: Record<string, unknown>[] = [];
+    let routineSent = false;
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/|storage\/v1\/|functions\/v1\/chat-push)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (!/trainer|storage|chat-push/.test(url)) return route.fallback();
+        if (req.method() !== 'GET') sent.push({ url, method: req.method(), body: (() => { try { return req.postDataJSON(); } catch { return null; } })() });
+        if (url.includes('trainers_listed')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
+                certifications: '', languages: 'es', country: 'España', app_price: '', payment_url: '', contact: '', avatar_path: null, profile_updated_at: null,
+                price_cents: 4900, currency: 'usd', hire_in_app: true,
+            }] });
+        }
+        if (url.includes('trainer_ratings')) return route.fulfill({ headers: cors, json: [{ trainer_id: 't1', stars: 4.5, reviews: 2 }] });
+        if (url.includes('trainer_reviews_of')) {
+            return route.fulfill({ headers: cors, json: [{ client_id: 'leo', stars: 5, body: 'Me cambió la forma de entrenar.', updated_at: '2026-10-10T10:00:00Z', name: 'Leo', avatar_path: null, avatar_updated: null }] });
+        }
+        if (url.includes('trainer_reviews')) return route.fulfill({ status: req.method() === 'GET' ? 200 : 201, headers: cors, json: req.method() === 'GET' ? null : [] });
+        if (url.includes('trainer_links')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 'h1', role: 'client', status: 'active', trainer_id: 't1', trainer_name: 'Ana Coach', trainer_avatar: null, trainer_avatar_updated: null,
+                client_name: 'Sebas', client_avatar: null, client_avatar_updated: null, amount_cents: 4900, currency: 'usd', fee_percent: 25,
+                current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: false, open: true, unread: 0, last_message_at: null, created_at: '2026-10-19T10:00:00Z',
+            }] });
+        }
+        if (url.includes('trainer_mark_read')) return route.fulfill({ status: 204, headers: cors });
+        if (url.includes('trainer_routines')) {
+            if (req.method() === 'PATCH') {
+                routineSent = true;
+                return route.fulfill({ status: 204, headers: cors });
+            }
+            return route.fulfill({ headers: cors, json: routineSent ? [] : [{ id: 'r1', routine: { name: 'Pierna de Ana', exercises: [{ exerciseId: 'sentadilla', sets: 4, repMin: 6, repMax: 8, restSec: 120 }] } }] });
+        }
+        if (url.includes('trainer_messages')) {
+            if (req.method() === 'POST') {
+                const body = req.postDataJSON() as { body: string; image_path?: string };
+                const row = { id: messages.length + 1, sender_id: ME, body: body.body, image_path: body.image_path ?? null, created_at: new Date().toISOString() };
+                messages.push(row);
+                return route.fulfill({ status: 201, headers: cors, json: row });
+            }
+            return route.fulfill({ headers: cors, json: [...messages].reverse() });
+        }
+        if (url.includes('trainer_applications')) return route.fulfill({ headers: cors, json: [] });
+        if (url.includes('/storage/v1/object/sign/')) return route.fulfill({ headers: cors, json: { signedURL: '/object/sign/trainer-chat/photo.png?token=t' } });
+        if (url.includes('/storage/v1/object/sign') || url.includes('photo.png')) return route.fulfill({ headers: cors, contentType: 'image/png', body: PNG });
+        if (url.includes('/storage/v1/object/trainer-chat/')) return route.fulfill({ headers: cors, json: { Key: 'k' } });
+        if (url.includes('chat-push')) return route.fulfill({ headers: cors, json: { sent: 1 } });
+        return route.fulfill({ headers: cors, json: [] });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores');
+
+    // The routine the trainer sent goes straight into Routines.
+    await expect(page.getByText('Tu entrenador te envió la rutina «Pierna de Ana». Ya está en Rutinas.')).toBeVisible();
+    await expect.poll(() => sent.some(r => r.url.includes('trainer_routines') && r.method === 'PATCH')).toBe(true);
+
+    // Reviews, and rating the hired trainer.
+    const card = page.getByRole('article', { name: 'Ana Coach' });
+    await card.getByRole('button', { name: /4,5 · 2 reseñas/ }).click();
+    const reviews = page.getByRole('dialog', { name: 'Reseñas de Ana Coach' });
+    await expect(reviews.getByText('Me cambió la forma de entrenar.')).toBeVisible();
+    await reviews.getByRole('button', { name: 'Calificar a Ana Coach' }).click();
+    const rate = page.getByRole('dialog', { name: 'Calificar a Ana Coach' });
+    await rate.getByRole('radio', { name: '5 de 5 estrellas' }).click();
+    await rate.getByLabel(/Cuenta cómo te va/).fill('Muy atenta y clara.');
+    await rate.getByRole('button', { name: 'Publicar reseña' }).click();
+    await expect(page.getByText('¡Gracias por tu reseña!')).toBeVisible();
+    expect(sent.find(r => r.url.includes('/rest/v1/trainer_reviews') && r.method === 'POST')?.body).toEqual({ trainer_id: 't1', client_id: ME, stars: 5, body: 'Muy atenta y clara.' });
+
+    // A photo in the chat.
+    await card.getByRole('button', { name: 'Abrir chat' }).click();
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Enviar una foto' }).click();
+    await (await chooser).setFiles({ name: 'comida.png', mimeType: 'image/png', buffer: PNG });
+    await expect(page.getByRole('img', { name: 'Foto enviada en el chat' })).toBeVisible();
+    expect(messages[0]).toMatchObject({ body: '', image_path: expect.stringMatching(/^h1\/.+\.jpg$/) });
+    expect(sent.some(r => r.url.includes('/storage/v1/object/trainer-chat/h1/') && r.method === 'POST')).toBe(true);
+
+    // Sharing workouts with the trainer is on, and can be turned off.
+    await page.getByRole('button', { name: 'Opciones' }).click();
+    const share = page.getByRole('menuitemcheckbox', { name: /Compartir mis entrenamientos con mi entrenador/ });
+    await expect(share).toHaveAttribute('aria-checked', 'true');
+    await share.click();
+    await expect(share).toHaveAttribute('aria-checked', 'false');
+
+    // The routine is there to train.
+    await page.goto('/#/rutinas');
+    await expect(page.getByRole('link', { name: /Pierna de Ana/ })).toHaveCount(1);
+});
+
+test("trainer tools: the client's workouts and sending a routine", async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    const messages: Record<string, unknown>[] = [];
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/|functions\/v1\/(trainer-pay|chat-push))/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (!/trainer|chat-push/.test(url)) return route.fallback();
+        if (req.method() !== 'GET') sent.push({ url, method: req.method(), body: (() => { try { return req.postDataJSON(); } catch { return null; } })() });
+        if (url.includes('trainer_applications')) {
+            return route.fulfill({ headers: cors, json: {
+                id: 't1', user_id: ME, name: 'Sebas Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.',
+                experience_years: 10, certifications: '', languages: 'es', price: '', contact: '+34600111222', country: 'México', status: 'approved',
+                app_price: '', payment_url: '', price_cents: 4900, currency: 'usd', fee_percent: 25, payouts_ready: true, profile: null,
+            } });
+        }
+        if (url.includes('trainer_links')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 'h9', role: 'trainer', status: 'active', trainer_id: 't1', trainer_name: 'Sebas Coach', trainer_avatar: null, trainer_avatar_updated: null,
+                client_name: 'Carla', client_avatar: null, client_avatar_updated: null, amount_cents: 4900, currency: 'usd', fee_percent: 25,
+                current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: false, open: true, unread: 0, last_message_at: null, created_at: '2026-10-01T10:00:00Z',
+            }] });
+        }
+        if (url.includes('trainer_last_sessions')) return route.fulfill({ headers: cors, json: [{ link_id: 'h9', started_at: '2026-10-19T18:00:00Z' }] });
+        if (url.includes('trainer_client_sessions')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 'w1', started_at: '2026-10-19T18:00:00Z',
+                summary: { name: 'Pierna', durationMin: 52, sets: 12, volumeKg: 4200, exercises: [{ id: 'sentadilla', name: 'Sentadilla con barra', sets: [{ kg: 80, reps: 8 }, { kg: 85, reps: 6 }] }] },
+            }] });
+        }
+        if (url.includes('trainer_mark_read')) return route.fulfill({ status: 204, headers: cors });
+        if (url.includes('trainer_routines')) return route.fulfill({ status: 201, headers: cors, json: [] });
+        if (url.includes('trainer_messages')) {
+            if (req.method() === 'POST') {
+                const body = req.postDataJSON() as { body: string };
+                const row = { id: messages.length + 1, sender_id: ME, body: body.body, image_path: null, created_at: new Date().toISOString() };
+                messages.push(row);
+                return route.fulfill({ status: 201, headers: cors, json: row });
+            }
+            return route.fulfill({ headers: cors, json: [...messages].reverse() });
+        }
+        if (url.includes('trainer-pay')) return route.fulfill({ headers: cors, json: { connected: true, ready: true, detailsSubmitted: true } });
+        return route.fulfill({ headers: cors, json: { sent: 1 } });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores/panel');
+
+    await expect(page.getByText(/Último entreno: .*19 oct/)).toBeVisible();
+    await page.getByRole('button', { name: /Carla/ }).click();
+
+    // Her workouts.
+    await page.getByRole('button', { name: 'Ver sus entrenamientos' }).click();
+    const workouts = page.getByRole('dialog', { name: 'Entrenamientos de Carla' });
+    await expect(workouts.getByText(/52 min · 12 series · 4\.?200 kg/)).toBeVisible();
+    await workouts.getByRole('button', { name: /Pierna/ }).click();
+    await expect(workouts.getByText('80 kg × 8 · 85 kg × 6')).toBeVisible();
+    await workouts.getByRole('button', { name: 'Cerrar' }).click();
+
+    // Send one of my routines: it reaches her Routines and the chat says so.
+    await page.getByRole('button', { name: 'Opciones' }).click();
+    await page.getByRole('button', { name: 'Enviar una rutina' }).click();
+    const pick = page.getByRole('dialog', { name: 'Enviar una rutina' });
+    const first = pick.getByRole('button').filter({ hasText: /ejercicios/ }).first();
+    const name = (await first.locator('span.truncate').textContent()) ?? '';
+    await first.click();
+    await expect(page.getByText('Rutina enviada')).toBeVisible();
+    const routine = sent.find(r => r.url.includes('trainer_routines'))?.body as { link_id: string; routine: { name: string; exercises: unknown[] } };
+    expect(routine.link_id).toBe('h9');
+    expect(routine.routine.name).toBe(name);
+    expect(routine.routine.exercises.length).toBeGreaterThan(0);
+    await expect(page.getByText(`📋 Te envié la rutina «${name}». Ya la tienes en Rutinas.`)).toBeVisible();
 });
 
 test('guided: fat burning keeps an active clock that only stops in the rests', async ({ page }) => {

@@ -6,6 +6,7 @@ import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { locale, t } from '../i18n';
 import { enablePush } from '../lib/push';
+import { fetchLastWorkouts } from '../lib/trainerTools';
 import { displayPrice, fetchMyApplication, formatMoney, trainerShareCents, type Trainer } from '../lib/trainers';
 import {
     connectPayouts, fetchHires, guessCountry, hireState, openPayoutDashboard, PAYOUT_COUNTRIES, PayError, payoutStatus, STRIPE_RETURN_EVENT, type Hire, type PayoutStatus,
@@ -29,6 +30,7 @@ export default function TrainerPanel() {
     const [mine, setMine] = useState<Trainer | null | undefined>(undefined);
     const [payouts, setPayouts] = useState<PayoutStatus | null | 'error'>(null);
     const [clients, setClients] = useState<Hire[] | null>(null);
+    const [lastWorkout, setLastWorkout] = useState<Record<string, string>>({});
     const [country, setCountry] = useState(guessCountry);
     const [busy, setBusy] = useState(false);
 
@@ -36,6 +38,7 @@ export default function TrainerPanel() {
         fetchMyApplication().then(setMine, () => setMine(null));
         payoutStatus().then(setPayouts, e => setPayouts(e instanceof PayError && e.code === 'not_trainer' ? null : 'error'));
         fetchHires().then(h => setClients(h.filter(x => x.role === 'trainer')), () => setClients([]));
+        void fetchLastWorkouts().then(setLastWorkout);
     };
     useEffect(() => {
         if (!account) return;
@@ -157,6 +160,9 @@ export default function TrainerPanel() {
                                             <span className="block truncate text-xs text-white/55">
                                                 {t(`hire.${hireState(c)}`)} · {t('panel.since', { date: new Date(c.createdAt).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' }) })}
                                             </span>
+                                            {lastWorkout[c.id] && (
+                                                <span className="block truncate text-xs text-good">{t('clientWorkouts.last', { date: new Date(lastWorkout[c.id]).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' }) })}</span>
+                                            )}
                                         </span>
                                         {c.unread > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink" aria-label={t('chat.unread', { n: c.unread })}>{c.unread}</span>}
                                         <MessageCircle size={18} className="shrink-0 text-white/40" />

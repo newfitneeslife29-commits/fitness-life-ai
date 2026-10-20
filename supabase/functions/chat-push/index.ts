@@ -30,7 +30,7 @@ Deno.serve(async req => {
     const { data: message, error } = await admin.from('trainer_messages').update({ pushed_at: new Date().toISOString() })
       .eq('id', messageId).eq('sender_id', user.id).is('pushed_at', null)
       .gt('created_at', new Date(Date.now() - 10 * 60_000).toISOString())
-      .select('link_id, body').maybeSingle();
+      .select('link_id, body, image_path').maybeSingle();
     if (error) throw error;
     if (!message) return json({ sent: 0 });
 
@@ -50,7 +50,7 @@ Deno.serve(async req => {
       name = profile?.name || 'Fitness Life';
     }
 
-    const push = { title: name, body: preview(message.body), link: `/entrenadores/chat/${message.link_id}`, thread: String(message.link_id) };
+    const push = { title: name, body: preview(message.body) || (message.image_path ? '📷' : ''), link: `/entrenadores/chat/${message.link_id}`, thread: String(message.link_id) };
     const sent = await pushToUser(admin, to, () => push);
     return json({ sent });
   } catch (e) {

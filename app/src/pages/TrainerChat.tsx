@@ -1,10 +1,14 @@
-import { ChevronLeft, MoreVertical, Send, Video, XCircle } from 'lucide-react';
+import { Check, ChevronLeft, ClipboardList, Dumbbell, ImagePlus, Loader2, MoreVertical, Send, Star, Video, XCircle } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm, toast } from '../components/feedback';
+import { ChatPhoto, ClientWorkoutsSheet, ReviewSheet, SendRoutineSheet } from '../components/TrainerExtras';
 import { locale, t } from '../i18n';
+import { pickImage } from '../lib/image';
 import { enablePush } from '../lib/push';
+import { receiveRoutines, sendPhoto } from '../lib/trainerTools';
+import { actions, useStore } from '../store/store';
 import { formatMoney } from '../lib/trainers';
 import {
     cancelHire, fetchHires, fetchMessages, hireState, markRead, otherSide, PayError, sendMessage, watchMessages, type ChatMessage, type Hire,
@@ -31,12 +35,17 @@ export default function TrainerChat() {
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const [menu, setMenu] = useState(false);
+    const [sheet, setSheet] = useState<'review' | 'routine' | 'workouts' | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const shareOn = useStore(s => s.profile?.shareWithTrainer !== false);
     const bottom = useRef<HTMLDivElement>(null);
 
     const add = (m: ChatMessage) => setMessages(list => (list && !list.some(x => x.id === m.id) ? [...list, m] : list));
 
     useEffect(() => {
         void enablePush();
+        // Routines the trainer sent: straight into Routines.
+        void receiveRoutines().then(names => names.forEach(name => toast(t('coachRoutine.received', { name }), 4500))).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -76,6 +85,19 @@ export default function TrainerChat() {
         }
     };
 
+    const photo = async () => {
+        const file = await pickImage();
+        if (!file) return;
+        setUploading(true);
+        try {
+            add(await sendMessage(id, '', await sendPhoto(id, file)));
+        } catch {
+            toast(t('chat.photoFailed'), 3500);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const cancel = async () => {
         setMenu(false);
         if (!hire || !(await confirm({ title: t('chat.cancelTitle'), message: t('chat.cancelMessage'), confirmLabel: t('chat.cancel'), danger: true }))) return;
@@ -107,14 +129,36 @@ export default function TrainerChat() {
                         </p>
                     )}
                 </div>
-                {hire && hire.role === 'client' && state !== 'ended' && !hire.cancelAtPeriodEnd && (
+                {hire && hire.role === 'trainer' && (
+                    <button onClick={() => setSheet('workouts')} aria-label={t('clientWorkouts.open')} className="rounded-lg p-2 text-white/60 hover:bg-ink-3"><Dumbbell size={20} /></button>
+                )}
+                {hire && (
                     <div className="relative">
                         <button onClick={() => setMenu(m => !m)} aria-label={t('chat.options')} aria-expanded={menu} className="rounded-lg p-2 text-white/60 hover:bg-ink-3"><MoreVertical size={20} /></button>
                         {menu && (
-                            <div className="absolute right-0 top-full z-20 mt-1 w-60 rounded-xl border border-line bg-ink-2 p-1 shadow-xl">
-                                <button onClick={() => void cancel()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-red-400 hover:bg-ink-3">
-                                    <XCircle size={16} /> {t('chat.cancel')}
-                                </button>
+                            <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-xl border border-line bg-ink-2 p-1 shadow-xl">
+                                {hire.role === 'trainer' && hire.open && (
+                                    <button onClick={() => { setMenu(false); setSheet('routine'); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink-3">
+                                        <ClipboardList size={16} /> {t('coachRoutine.send')}
+                                    </button>
+                                )}
+                                {hire.role === 'client' && hire.trainerId && (
+                                    <button onClick={() => { setMenu(false); setSheet('review'); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink-3">
+                                        <Star size={16} /> {t('review.rate', { name: hire.trainerName })}
+                                    </button>
+                                )}
+                                {hire.role === 'client' && (
+                                    <button role="menuitemcheckbox" aria-checked={shareOn} onClick={() => actions.updateProfile({ shareWithTrainer: !shareOn })}
+                                        className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink-3">
+                                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${shareOn ? 'border-brand bg-brand text-ink' : 'border-white/40'}`}>{shareOn && <Check size={12} />}</span>
+                                        <span>{t('clientWorkouts.share')}<span className="block text-xs text-white/50">{t('clientWorkouts.shareHint')}</span></span>
+                                    </button>
+                                )}
+                                {hire.role === 'client' && state !== 'ended' && !hire.cancelAtPeriodEnd && (
+                                    <button onClick={() => void cancel()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-red-400 hover:bg-ink-3">
+                                        <XCircle size={16} /> {t('chat.cancel')}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -142,6 +186,7 @@ export default function TrainerChat() {
                                     {newDay && <p className="my-3 text-center text-[11px] font-semibold uppercase tracking-wide text-white/40">{day(m.createdAt)}</p>}
                                     <div className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
                                         <p className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${m.mine ? 'rounded-br-md bg-brand text-ink' : 'rounded-bl-md bg-ink-3 text-white/90'}`}>
+                                            {m.imagePath && <span className={`-mx-2 -mt-0.5 block ${m.body ? 'mb-1.5' : ''}`}><ChatPhoto path={m.imagePath} /></span>}
                                             <Linked text={m.body} />
                                             <span className={`ml-2 inline-block translate-y-0.5 text-[10px] ${m.mine ? 'text-ink/60' : 'text-white/40'}`}>{time(m.createdAt)}</span>
                                         </p>
@@ -163,6 +208,10 @@ export default function TrainerChat() {
                 </div>
             ) : (
                 <form onSubmit={send} className="pb-safe flex items-end gap-2 border-t border-line px-3 pt-2">
+                    <button type="button" onClick={() => void photo()} disabled={!hire || uploading} aria-label={t('chat.photo')}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/60 hover:bg-ink-3 disabled:opacity-40">
+                        {uploading ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
+                    </button>
                     <label htmlFor="chat-input" className="sr-only">{t('chat.placeholder')}</label>
                     <textarea id="chat-input" value={text} onChange={e => setText(e.target.value)} rows={1} maxLength={2000} placeholder={t('chat.placeholder')}
                         disabled={!hire}
@@ -171,6 +220,16 @@ export default function TrainerChat() {
                     <button type="submit" disabled={!text.trim() || sending || !hire} aria-label={t('chat.send')}
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-ink disabled:opacity-40"><Send size={18} /></button>
                 </form>
+            )}
+
+            {hire && hire.role === 'client' && hire.trainerId && (
+                <ReviewSheet open={sheet === 'review'} trainerId={hire.trainerId} name={hire.trainerName} onClose={() => setSheet(null)} />
+            )}
+            {hire && hire.role === 'trainer' && (
+                <>
+                    <SendRoutineSheet open={sheet === 'routine'} linkId={hire.id} name={hire.clientName} onClose={() => setSheet(null)} onSent={add} />
+                    <ClientWorkoutsSheet open={sheet === 'workouts'} linkId={hire.id} name={hire.clientName} onClose={() => setSheet(null)} />
+                </>
             )}
         </div>
     );

@@ -177,32 +177,42 @@ export interface ChatMessage {
     id: number;
     mine: boolean;
     body: string;
+    imagePath?: string | null;
     createdAt: string;
 }
 
-type MessageRow = { id: number; sender_id: string; body: string; created_at: string };
+type MessageRow = { id: number; sender_id: string; body: string; image_path?: string | null; created_at: string };
 
 const myId = async () => (await (await getSupabase()).auth.getSession()).data.session?.user.id ?? '';
 
-const toMessage = (me: string) => (r: MessageRow): ChatMessage => ({ id: r.id, mine: r.sender_id === me, body: r.body, createdAt: r.created_at });
+const toMessage = (me: string) => (r: MessageRow): ChatMessage => ({ id: r.id, mine: r.sender_id === me, body: r.body, imagePath: r.image_path ?? null, createdAt: r.created_at });
+
+// With photos once the database has them (before that, text only).
+let withImages = true;
+const columns = () => `id, sender_id, body, created_at${withImages ? ', image_path' : ''}`;
+const noImageColumn = (e: { code?: string; message?: string } | null) => e?.code === '42703' || /image_path/.test(e?.message ?? '');
 
 // The latest messages, oldest first.
 export const fetchMessages = async (linkId: string, limit = 100): Promise<ChatMessage[]> => {
     const supabase = await getSupabase();
     const me = await myId();
-    const { data, error } = await supabase.from('trainer_messages').select('id, sender_id, body, created_at')
-        .eq('link_id', linkId).order('id', { ascending: false }).limit(limit);
+    const query = () => supabase.from('trainer_messages').select(columns()).eq('link_id', linkId).order('id', { ascending: false }).limit(limit);
+    let { data, error } = await query();
+    if (noImageColumn(error) && withImages) {
+        withImages = false;
+        ({ data, error } = await query());
+    }
     if (error) throw error;
-    return ((data ?? []) as MessageRow[]).map(toMessage(me)).reverse();
+    return ((data ?? []) as unknown as MessageRow[]).map(toMessage(me)).reverse();
 };
 
-export const sendMessage = async (linkId: string, body: string): Promise<ChatMessage> => {
+export const sendMessage = async (linkId: string, body: string, imagePath: string | null = null): Promise<ChatMessage> => {
     const supabase = await getSupabase();
     const me = await myId();
-    const { data, error } = await supabase.from('trainer_messages').insert({ link_id: linkId, body: body.trim() })
-        .select('id, sender_id, body, created_at').single();
+    const { data, error } = await supabase.from('trainer_messages').insert({ link_id: linkId, body: body.trim(), ...(imagePath ? { image_path: imagePath } : {}) })
+        .select(columns()).single();
     if (error) throw error;
-    const message = toMessage(me)(data as MessageRow);
+    const message = toMessage(me)(data as unknown as MessageRow);
     void notifyChat(message.id).catch(() => {});
     return message;
 };
