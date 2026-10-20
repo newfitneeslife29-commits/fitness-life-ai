@@ -402,6 +402,11 @@ export const actions = {
         });
     },
 
+    // A bought trainer program's routines were added (lib/programs.ts).
+    markProgramAdded(id: string) {
+        set(s => (s.programsAdded?.includes(id) ? s : { ...s, programsAdded: [...(s.programsAdded ?? []), id] }));
+    },
+
     // The shopping list's checks (pages/Shopping.tsx); another list starts clean.
     toggleShopping(list: string, item: string) {
         set(s => {

@@ -11,12 +11,13 @@
 //   { action: 'dashboard' }                   → { url }  the trainer's Stripe Express dashboard
 //   Clients
 //   { action: 'checkout', trainerId, name, lang, platform } → { url }  Stripe Checkout
+//   { action: 'buyProgram', programId, lang, platform }     → { url }  a trainer's program, one payment
 //   Both
 //   { action: 'sync' }            → { hired: linkId | null }  saves finished checkouts, refreshes hires
 //   { action: 'cancel', linkId }  → { ok }  cancels at the end of the paid month
 // Errors: { error: code } with 400/401/403/404/409/503; codes the app explains:
 //   stripe_not_configured · connect_disabled · country_unsupported · not_trainer
-//   · trainer_unavailable · already_hired · own_trainer
+//   · trainer_unavailable · already_hired · own_trainer · already_bought
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { accountReady, finishCheckout, LIVE, returnUrl, saveSubscription, stripe, stripeConfigured } from '../_shared/stripe.ts';
@@ -156,6 +157,51 @@ Deno.serve(async req => {
         const { error } = await admin.from('trainer_checkouts').insert({
           session_id: session.id, client_id: user.id, trainer_id: trainer.id,
           client_name: String(body.name ?? '').trim().slice(0, 60),
+        });
+        if (error) throw error;
+        return json({ url: session.url });
+      }
+
+      case 'buyProgram': {
+        const programId = String(body.programId ?? '');
+        if (!/^[0-9a-f-]{36}$/i.test(programId)) throw new HttpError(400, 'bad program');
+        const { data: program } = await admin.from('trainer_programs')
+          .select('id, title, price_cents, currency, published, trainer:trainer_applications(id, user_id, name, status, fee_percent, stripe_account_id)')
+          .eq('id', programId).maybeSingle();
+        const trainer = program?.trainer as unknown as { id: string; user_id: string; name: string; status: string; fee_percent: number; stripe_account_id: string | null } | null;
+        if (!program || !program.published || !trainer || trainer.status !== 'approved' || !trainer.stripe_account_id) {
+          throw new HttpError(404, 'trainer_unavailable');
+        }
+        if (trainer.user_id === user.id) throw new HttpError(409, 'own_trainer');
+        const { data: owned } = await admin.from('program_purchases').select('program_id').eq('program_id', program.id).eq('buyer_id', user.id).maybeSingle();
+        if (owned) throw new HttpError(409, 'already_bought');
+        const account = await stripe.accounts.retrieve(trainer.stripe_account_id);
+        if (!accountReady(account)) {
+          await admin.from('trainer_applications').update({ payouts_ready: false }).eq('id', trainer.id);
+          throw new HttpError(404, 'trainer_unavailable');
+        }
+        const lang = String(body.lang ?? '');
+        const metadata = { program_id: program.id, buyer_id: user.id, trainer_id: trainer.id };
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          line_items: [{
+            quantity: 1,
+            price_data: { currency: program.currency, unit_amount: program.price_cents, product_data: { name: `${program.title} · ${trainer.name}` } },
+          }],
+          payment_intent_data: {
+            application_fee_amount: Math.round((program.price_cents * trainer.fee_percent) / 100),
+            transfer_data: { destination: trainer.stripe_account_id },
+            metadata,
+          },
+          metadata,
+          client_reference_id: user.id,
+          ...(user.email ? { customer_email: user.email } : {}),
+          locale: (CHECKOUT_LOCALES.includes(lang) ? lang : 'auto') as 'auto',
+          success_url: returnUrl('bought', platform),
+          cancel_url: returnUrl('canceled', platform),
+        });
+        const { error } = await admin.from('trainer_checkouts').insert({
+          session_id: session.id, client_id: user.id, trainer_id: trainer.id, program_id: program.id,
         });
         if (error) throw error;
         return json({ url: session.url });

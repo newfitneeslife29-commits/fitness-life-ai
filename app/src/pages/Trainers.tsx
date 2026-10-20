@@ -1,9 +1,11 @@
-import { BadgeCheck, ChevronDown, ChevronRight, CreditCard, Globe2, GraduationCap, Info, Languages, Loader2, MessageCircle, RefreshCw, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ChevronRight, ClipboardList, CreditCard, Globe2, GraduationCap, Info, Languages, Loader2, MessageCircle, RefreshCw, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
+import { ProgramsSheet } from '../components/Programs';
 import { RatingLine, ReviewSheet, ReviewsSheet } from '../components/TrainerExtras';
+import { fetchPrograms, receivePrograms, type Program } from '../lib/programs';
 import { BackHeader, Section } from '../components/ui';
 import { t, tp } from '../i18n';
 import { errorText } from '../lib/errorText';
@@ -13,8 +15,9 @@ import { fetchRatings, receiveRoutines, type Rating } from '../lib/trainerTools'
 import { contactLink, displayPrice, fetchMyApplication, fetchTrainers, isTrainerAdmin, trainerLanguages, trainersAvailable, type Trainer } from '../lib/trainers';
 import { useStore } from '../store/store';
 
-const TrainerCard = ({ trainer, hire, busy, onHire, rating, onReviews }: {
+const TrainerCard = ({ trainer, hire, busy, onHire, rating, onReviews, programs, onPrograms }: {
     trainer: Trainer; hire?: Hire; busy: boolean; onHire: (tr: Trainer) => void; rating?: Rating; onReviews: (tr: Trainer) => void;
+    programs: number; onPrograms: (tr: Trainer) => void;
 }) => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
@@ -31,6 +34,11 @@ const TrainerCard = ({ trainer, hire, busy, onHire, rating, onReviews }: {
                     <p className="flex items-center gap-1.5 font-bold">{trainer.name} <BadgeCheck size={16} className="shrink-0 text-sky-400" aria-label={t('trainers.verified')} /></p>
                     <p className="text-sm font-medium text-brand">{trainer.specialty}</p>
                     <RatingLine rating={rating} onClick={() => onReviews(trainer)} />
+                    {programs > 0 && (
+                        <button onClick={() => onPrograms(trainer)} className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline">
+                            <ClipboardList size={13} /> {tp('tprog.count', programs)}
+                        </button>
+                    )}
                     <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/55">
                         {trainer.experienceYears > 0 && <span>{tp('trainers.years', trainer.experienceYears)}</span>}
                         {trainer.country && <span className="flex items-center gap-1"><Globe2 size={12} /> {trainer.country}</span>}
@@ -93,6 +101,14 @@ export default function Trainers() {
     const [ratings, setRatings] = useState<Record<string, Rating>>({});
     const [reviewsOf, setReviewsOf] = useState<Trainer | null>(null);
     const [rating, setRating] = useState<Trainer | null>(null);
+    const [programs, setPrograms] = useState<Program[]>([]);
+    const [programsOf, setProgramsOf] = useState<Trainer | null>(null);
+    // Programs on sale; the ones bought go into Routines.
+    const loadPrograms = async () => {
+        const list = await fetchPrograms().catch(() => [] as Program[]);
+        setPrograms(list);
+        if (account) for (const name of await receivePrograms(list).catch(() => [])) toast(t('tprog.received', { name }), 4500);
+    };
     const load = () => {
         setFailed(null);
         setTrainers(null);
@@ -113,6 +129,9 @@ export default function Trainers() {
         void isTrainerAdmin().then(setAdmin, () => setAdmin(false));
     }, []);
     useEffect(() => {
+        if (trainersAvailable()) void loadPrograms();
+    }, [account?.id]);
+    useEffect(() => {
         if (!account || !trainersAvailable()) return;
         void loadHires();
         void fetchMyApplication().then(a => setCoach(!!a), () => {});
@@ -121,10 +140,14 @@ export default function Trainers() {
     // Back from Stripe: save the hire and open its chat.
     const backFromStripe = async (to: string) => {
         if (to === 'canceled' || !account) return;
-        if (to === 'hired') toast(t('trainers.checkingPayment'));
+        if (to === 'hired' || to === 'bought') toast(t('trainers.checkingPayment'));
         try {
             const hired = await syncHires();
             await loadHires();
+            if (to === 'bought') {
+                await loadPrograms();
+                return;
+            }
             if (hired) {
                 toast(t('trainers.hiredToast'), 4000);
                 navigate(`/entrenadores/chat/${hired}`);
@@ -223,7 +246,8 @@ export default function Trainers() {
                                 ))}
                             </div>
                         )}
-                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} hire={current(tr.id)} busy={hiring === tr.id} onHire={hire} rating={ratings[tr.id]} onReviews={setReviewsOf} />)}</div>
+                        <div className="space-y-3">{shown.map(tr => <TrainerCard key={tr.id} trainer={tr} hire={current(tr.id)} busy={hiring === tr.id} onHire={hire} rating={ratings[tr.id]} onReviews={setReviewsOf}
+                            programs={programs.filter(p => p.trainerId === tr.id).length} onPrograms={setProgramsOf} />)}</div>
                     </>
                 )}
             </Section>
@@ -264,6 +288,9 @@ export default function Trainers() {
             {reviewsOf && (
                 <ReviewsSheet open trainerId={reviewsOf.id} name={reviewsOf.name} onClose={() => setReviewsOf(null)}
                     onRate={hires.some(h => h.role === 'client' && h.trainerId === reviewsOf.id) ? () => { setRating(reviewsOf); setReviewsOf(null); } : undefined} />
+            )}
+            {programsOf && (
+                <ProgramsSheet name={programsOf.name} programs={programs.filter(p => p.trainerId === programsOf.id)} onClose={() => setProgramsOf(null)} />
             )}
             {rating && (
                 <ReviewSheet open trainerId={rating.id} name={rating.name} onClose={() => { setRating(null); void fetchRatings().then(setRatings, () => {}); }} />

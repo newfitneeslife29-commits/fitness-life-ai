@@ -12,7 +12,7 @@ import { getSupabase } from './supabase';
 
 export type PayErrorCode =
     | 'stripe_not_configured' | 'connect_disabled' | 'country_unsupported' | 'not_trainer' | 'trainer_unavailable'
-    | 'already_hired' | 'own_trainer' | 'not_connected' | 'network' | 'failed';
+    | 'already_hired' | 'own_trainer' | 'not_connected' | 'already_bought' | 'network' | 'failed';
 
 export class PayError extends Error {
     constructor(public code: PayErrorCode) {
@@ -20,7 +20,7 @@ export class PayError extends Error {
     }
 }
 
-const KNOWN: PayErrorCode[] = ['stripe_not_configured', 'connect_disabled', 'country_unsupported', 'not_trainer', 'trainer_unavailable', 'already_hired', 'own_trainer', 'not_connected'];
+const KNOWN: PayErrorCode[] = ['stripe_not_configured', 'connect_disabled', 'country_unsupported', 'not_trainer', 'trainer_unavailable', 'already_hired', 'own_trainer', 'not_connected', 'already_bought'];
 
 const call = async <T>(body: Record<string, unknown>): Promise<T> => {
     const supabase = await getSupabase().catch(() => { throw new PayError('network'); });
@@ -36,7 +36,7 @@ const call = async <T>(body: Record<string, unknown>): Promise<T> => {
 
 // ---------- Coming back from Stripe ----------
 
-// 'hired' | 'canceled' | 'connected' | 'refresh' from stripe-return.html, or
+// 'hired' | 'bought' | 'canceled' | 'connected' | 'refresh' from stripe-return.html, or
 // 'closed' when the in-app browser is closed by hand.
 export const STRIPE_RETURN_EVENT = 'fitness-life:stripe-return';
 const RETURN_URL = 'com.fitnesslife.app://stripe-return';
@@ -113,6 +113,12 @@ export const guessCountry = () => {
 
 export const hireTrainer = async (trainerId: string, name: string) => {
     const { url } = await call<{ url: string }>({ action: 'checkout', trainerId, name, lang: getLang() });
+    await openStripe(url);
+};
+
+// A trainer's program, paid once.
+export const buyProgram = async (programId: string) => {
+    const { url } = await call<{ url: string }>({ action: 'buyProgram', programId, lang: getLang() });
     await openStripe(url);
 };
 

@@ -690,6 +690,39 @@ test('invite a friend: my code, and entering the code of who invited me', async 
     expect(redeemed).toEqual([{ action: 'redeem', code: 'ABC234' }, { action: 'redeem', code: 'ZX9K7M' }]);
 });
 
+test('weekly ranking with the people I follow', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const upserts: unknown[] = [];
+    await page.route(/http:\/\/ai\.test\/rest\/v1\/(rpc\/friends_week|weekly_stats)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        if (req.url().includes('weekly_stats')) {
+            upserts.push(req.postDataJSON());
+            return route.fulfill({ status: 201, headers: cors, json: [] });
+        }
+        return route.fulfill({ headers: cors, json: [
+            { user_id: 'leo', name: 'Leo', avatar_path: null, avatar_updated: null, workouts: 5, minutes: 240, steps: 30000, me: false },
+            { user_id: 'ana', name: 'Ana', avatar_path: null, avatar_updated: null, workouts: 1, minutes: 300, steps: 80000, me: false },
+            { user_id: ME, name: 'Sebas', avatar_path: null, avatar_updated: null, workouts: 3, minutes: 100, steps: 1000, me: true },
+        ] });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    // This week's totals go up for the ranking.
+    await expect.poll(() => upserts.length).toBeGreaterThan(0);
+    expect(upserts[0]).toMatchObject({ user_id: ME, workouts: 0, minutes: 0, steps: 0 });
+
+    await page.goto('/#/comunidad/ranking');
+    const names = () => page.locator('main ol, ol').first().getByRole('listitem').allInnerTexts();
+    await expect(page.getByRole('heading', { name: 'Ranking semanal' })).toBeVisible();
+    await expect.poll(async () => (await names()).map(n => n.replace(/\s+/g, ' ').trim())).toEqual(['🥇 L Leo 5', '🥈 S Tú 3', '🥉 A Ana 1']);
+    await page.getByRole('radio', { name: 'Pasos' }).click();
+    await expect.poll(async () => (await names())[0]).toContain('Ana');
+});
+
 test('30-day challenges: join, progress on the home screen, leaderboard and leaving', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
@@ -1904,6 +1937,119 @@ test("trainer tools: the client's workouts and sending a routine", async ({ page
     expect(routine.routine.name).toBe(name);
     expect(routine.routine.exercises.length).toBeGreaterThan(0);
     await expect(page.getByText(`📋 Te envié la rutina «${name}». Ya la tienes en Rutinas.`)).toBeVisible();
+});
+
+test('trainer programs: a trainer sells one, a client buys it and gets its routines', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const sent: { url: string; method: string; body: unknown }[] = [];
+    let bought = false;
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/|functions\/v1\/trainer-pay)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (!/trainer|program/.test(url)) return route.fallback();
+        if (req.method() !== 'GET') sent.push({ url, method: req.method(), body: (() => { try { return req.postDataJSON(); } catch { return null; } })() });
+        if (url.includes('trainers_listed')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
+                certifications: '', languages: 'es', country: 'España', app_price: '', payment_url: '', contact: '', avatar_path: null, profile_updated_at: null,
+                price_cents: 4900, currency: 'usd', hire_in_app: true,
+            }] });
+        }
+        if (url.includes('programs_listed')) {
+            return route.fulfill({ headers: cors, json: [{
+                id: 'p1', trainer_id: 't1', trainer_name: 'Ana Coach', title: 'Fuerza en 8 semanas', description: 'Para ganar fuerza con 3 días por semana.',
+                weeks: 8, price_cents: 2900, currency: 'usd', routine_count: 2, owned: bought, sales: bought ? 1 : 0,
+            }] });
+        }
+        if (url.includes('program_content')) {
+            return route.fulfill({ headers: cors, json: [{ title: 'Fuerza en 8 semanas', routines: [
+                { name: 'Día A', exercises: [{ exerciseId: 'sentadilla', sets: 5, repMin: 5, repMax: 5, restSec: 180 }] },
+                { name: 'Día B', exercises: [{ exerciseId: 'press-banca', sets: 5, repMin: 5, repMax: 5, restSec: 180 }] },
+            ] }] });
+        }
+        if (url.includes('trainer-pay')) {
+            const body = req.postDataJSON() as { action: string };
+            if (body.action === 'buyProgram') return route.fulfill({ headers: cors, json: { url: 'https://checkout.stripe.com/c/pay/cs_test_p1' } });
+            if (body.action === 'sync') {
+                bought = true;
+                return route.fulfill({ headers: cors, json: { hired: null } });
+            }
+            return route.fulfill({ headers: cors, json: {} });
+        }
+        return route.fulfill({ headers: cors, json: [] });
+    });
+    await page.route('https://checkout.stripe.com/**', route => route.fulfill({
+        contentType: 'text/html',
+        body: '<script>location.replace("http://localhost:4321/stripe-return.html?to=bought&app=web")</script>',
+    }));
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores');
+
+    await page.getByRole('article', { name: 'Ana Coach' }).getByRole('button', { name: '1 programa' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Programas de Ana Coach' });
+    await expect(sheet.getByText('Para ganar fuerza con 3 días por semana.')).toBeVisible();
+    await expect(sheet.getByText('8 semanas', { exact: true })).toBeVisible();
+    await sheet.getByRole('button', { name: /Comprar · .*29/ }).click();
+
+    // Back from Stripe: the routines are in Routines.
+    await expect(page.getByText('El programa «Fuerza en 8 semanas» ya está en Rutinas.')).toBeVisible();
+    expect(sent.find(r => r.url.includes('trainer-pay'))?.body).toMatchObject({ action: 'buyProgram', programId: 'p1', platform: 'web' });
+    await page.goto('/#/rutinas');
+    await expect(page.getByRole('link', { name: /Fuerza en 8 semanas · Día A/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Fuerza en 8 semanas · Día B/ })).toBeVisible();
+});
+
+test('trainer programs: the trainer creates one from their routines', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const ME = '00000000-0000-0000-0000-0000000000aa';
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const created: Record<string, unknown>[] = [];
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/|functions\/v1\/trainer-pay)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        const url = decodeURIComponent(req.url());
+        if (!/trainer|program/.test(url)) return route.fallback();
+        if (url.includes('trainer_applications')) {
+            return route.fulfill({ headers: cors, json: {
+                id: 't1', user_id: ME, name: 'Sebas Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.',
+                experience_years: 10, certifications: '', languages: 'es', price: '', contact: '+34600111222', country: 'México', status: 'approved',
+                app_price: '', payment_url: '', price_cents: 4900, currency: 'usd', fee_percent: 25, payouts_ready: true, profile: null,
+            } });
+        }
+        if (url.includes('trainer_programs')) {
+            if (req.method() === 'POST') {
+                created.push(req.postDataJSON() as Record<string, unknown>);
+                return route.fulfill({ status: 201, headers: cors, json: [] });
+            }
+            return route.fulfill({ headers: cors, json: created.map((c, i) => ({ id: `p${i}`, published: true, ...c })) });
+        }
+        if (url.includes('my_program_sales')) return route.fulfill({ headers: cors, json: [] });
+        if (url.includes('trainer-pay')) return route.fulfill({ headers: cors, json: { connected: true, ready: true, detailsSubmitted: true } });
+        return route.fulfill({ headers: cors, json: [] });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.goto('/#/entrenadores/panel');
+
+    await expect(page.getByText('Aún no tienes programas.')).toBeVisible();
+    await page.getByRole('button', { name: 'Crear programa' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Crear programa' });
+    await sheet.getByLabel('Nombre del programa').fill('Fuerza en 8 semanas');
+    await sheet.getByLabel(/Descripción/).fill('Para ganar fuerza.');
+    await sheet.getByLabel('Semanas').fill('8');
+    await sheet.getByLabel(/Precio/).fill('29');
+    await expect(sheet.getByRole('button', { name: 'Guardar programa' })).toBeDisabled();
+    await sheet.getByRole('checkbox').first().click();
+    await sheet.getByRole('button', { name: 'Guardar programa' }).click();
+    await expect(page.getByText('Programa guardado')).toBeVisible();
+    expect(created[0]).toMatchObject({ trainer_id: 't1', title: 'Fuerza en 8 semanas', weeks: 8, price_cents: 2900, currency: 'usd' });
+    expect((created[0].routines as unknown[]).length).toBe(1);
+    await expect(page.getByRole('listitem', { name: 'Fuerza en 8 semanas' })).toContainText('0 ventas');
 });
 
 test('guided: fat burning keeps an active clock that only stops in the rests', async ({ page }) => {
