@@ -47,6 +47,7 @@ jobs:
           VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
           VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
           VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

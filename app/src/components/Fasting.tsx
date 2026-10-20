@@ -5,11 +5,14 @@ import { FAST_PLANS, fastProgress, fmtHoursMin } from '../lib/fasting';
 import { haptic } from '../lib/native';
 import { useNow } from '../lib/useNow';
 import { actions, useStore } from '../store/store';
+import { usePremiumActive } from '../lib/premium';
+import { PremiumLock } from './AiParts';
 import { toast } from './feedback';
 
 // Intermittent fasting: pick the plan, start, and see the time go by until
 // the goal; the app notifies when it's reached (lib/fasting.ts).
 export const FastingCard = () => {
+    const premium = usePremiumActive();
     const fasting = useStore(s => s.fasting);
     const hours = fasting?.hours ?? 16;
     const startedAt = fasting?.startedAt ?? null;
@@ -50,6 +53,9 @@ export const FastingCard = () => {
             </div>
         );
     }
+
+    // Premium (a fast already running still shows until it ends).
+    if (!premium) return <PremiumLock text={t('fasting.locked')} />;
 
     return (
         <div className="card p-4">

@@ -69,6 +69,7 @@ jobs:
           VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}
           VITE_RC_ANDROID_KEY: ${{ vars.VITE_RC_ANDROID_KEY }}
           VITE_RC_WEB_KEY: ${{ vars.VITE_RC_WEB_KEY }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
       # The archive is built unsigned: a development-signed archive needs a
       # registered device. The export below signs it for the App Store with a
       # certificate and profiles made for this run, so nothing else is stored.

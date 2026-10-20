@@ -52,6 +52,16 @@ const answerPlanQuestions = async (page: Page, opts: PlanAnswers = {}) => {
 };
 
 // Every exercise demo shows real photos (or an animation with its still), not broken images.
+// Premium bought on this phone: the store copy is enough for the app.
+const goPremium = async (page: Page) => {
+    await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem('fitness-life:v1')!);
+        s.premium = { active: true, expiresAt: null, willRenew: false, manageUrl: null, checkedAt: new Date().toISOString() };
+        localStorage.setItem('fitness-life:v1', JSON.stringify(s));
+    });
+    await page.reload();
+};
+
 const expectPhotosLoaded = async (page: Page) => {
     const demo = page.getByRole('img', { name: /^Cómo se hace/ }).first();
     const video = demo.locator('video');
@@ -638,6 +648,7 @@ test('nutrition: intermittent fasting with a plan, the time to the goal and the 
     await page.clock.install({ time: new Date('2026-10-20T20:00:00') });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await goPremium(page);
     await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
 
     await page.getByRole('radio', { name: '18 h de ayuno y 6 h para comer' }).click();
@@ -753,6 +764,7 @@ test('30-day challenges: join, progress on the home screen, leaderboard and leav
 test('nutrition: shopping list of a free plan, checked as you shop', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await goPremium(page);
     await page.goto('/#/nutricion/planes');
     await page.getByRole('link', { name: 'Lista de compras' }).click();
     await expect(page.getByRole('heading', { name: 'Lista de compras' })).toBeVisible();
@@ -888,7 +900,7 @@ test('free users: AI is Premium-only, with yearly and monthly plans', async ({ p
 
     // The coach shows what Premium unlocks instead of the chat.
     await expect(page.getByText(/Pregúntale qué comer según tu objetivo/)).toBeVisible();
-    await expect(page.getByText('Desde 3,33 US$/mes')).toBeVisible();
+    await expect(page.getByText('Desde 3,33 US$/mes').first()).toBeVisible();
     await expect(page.getByLabel('Escribe tu pregunta')).toHaveCount(0);
 
     // Meals open by hand; the AI tab leads to Premium.
@@ -955,6 +967,7 @@ test('food table: a packaged food by its barcode (Open Food Facts)', async ({ pa
     });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await goPremium(page);
     await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
     await page.getByRole('link', { name: 'Escanear código de barras' }).click();
     await expect(page.getByRole('heading', { name: 'Tabla de alimentos' })).toBeVisible();
@@ -2199,6 +2212,12 @@ test('weekly summary: the page, its tip and the Sunday notification switch', asy
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     // Opened from Sunday's notification (and from Progress once there are workouts).
     await page.goto('/#/resumen');
+    // Free: the summary is part of Premium, and so is its notification.
+    await expect(page.getByText(/Tu semana en números/)).toBeVisible();
+    await page.goto('/#/ajustes');
+    await expect(page.getByRole('switch', { name: 'Resumen semanal · Premium' })).toHaveAttribute('aria-checked', 'false');
+    await page.goto('/#/resumen');
+    await goPremium(page);
     await expect(page.getByRole('heading', { name: 'Resumen semanal' })).toBeVisible();
     await expect(page.getByText('0/3')).toBeVisible();
     await expect(page.getByText('Empieza la semana con un entreno corto')).toBeVisible();
@@ -2241,6 +2260,7 @@ test('guided: hands-free, the voice moves the workout on', async ({ page }) => {
     const say = (text: string) => page.evaluate(t => (window as unknown as { __say: (t: string) => void }).__say(t), text);
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await goPremium(page);
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
     await page.getByTestId('hands-free').click();
     await expect(page.getByText(/Manos libres activado/)).toBeVisible();

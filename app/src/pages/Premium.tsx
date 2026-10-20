@@ -20,12 +20,18 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.training', true, true],
     ['premium.row.extras', true, true],
     ['premium.row.nutrition', true, true],
+    ['premium.row.community', true, true],
+    ['premium.row.habits', true, true],
     ['premium.row.trainer', false, true],
     ['premium.row.aiRoutines', false, true],
     ['premium.row.programs', false, true],
     ['premium.row.mealPlan', false, true],
     ['premium.row.coach', false, true],
     ['premium.row.estimate', false, true],
+    ['premium.row.handsFree', false, true],
+    ['premium.row.shopping', false, true],
+    ['premium.row.fasting', false, true],
+    ['premium.row.weekly', false, true],
 ];
 const PLAN_IDS: PlanId[] = ['annual', 'monthly'];
 // The AI features Premium unlocks, shown as tiles with their own icons.
