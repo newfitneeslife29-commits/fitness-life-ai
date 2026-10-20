@@ -657,6 +657,33 @@ test('nutrition: intermittent fasting with a plan, the time to the goal and the 
     await expect(page.getByRole('button', { name: 'Empezar ayuno' })).toBeVisible();
 });
 
+test('30-day challenges: join, progress on the home screen, leaderboard and leaving', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Retos de 30 días/ }).click();
+    await expect(page.getByRole('heading', { name: 'Retos de 30 días' })).toBeVisible();
+
+    const workouts = page.getByRole('article', { name: '12 entrenamientos' });
+    await workouts.getByRole('button', { name: 'Unirme' }).click();
+    await expect(page.getByText('¡Te uniste al reto! Tienes 30 días.')).toBeVisible();
+    await expect(workouts.getByText('0 de 12')).toBeVisible();
+    await expect(workouts.getByText('Quedan 30 días')).toBeVisible();
+
+    // Without an account, the leaderboard asks for one.
+    await workouts.getByRole('button', { name: 'Clasificación' }).click();
+    await expect(page.getByText('Crea una cuenta para aparecer en la clasificación.')).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click();
+
+    // The home screen shows it.
+    await page.goto('/#/');
+    await expect(page.getByText('12 entrenamientos · 0 de 12')).toBeVisible();
+
+    await page.goto('/#/retos');
+    await page.getByRole('article', { name: '12 entrenamientos' }).getByRole('button', { name: 'Salir del reto' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Salir del reto' }).click();
+    await expect(page.getByRole('article', { name: '12 entrenamientos' }).getByRole('button', { name: 'Unirme' })).toBeVisible();
+});
+
 test('movement: a walk of the walking plan with GPS, a ride by hand, steps and sleep', async ({ page, context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });

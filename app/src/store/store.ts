@@ -402,6 +402,19 @@ export const actions = {
         });
     },
 
+    // 30-day challenges (lib/challenges.ts): joining again starts over.
+    joinChallenge(id: string, at = new Date()) {
+        set(s => ({ ...s, challenges: [...(s.challenges ?? []).filter(c => c.id !== id), { id, joinedAt: at.toISOString() }] }));
+    },
+
+    leaveChallenge(id: string) {
+        set(s => ({ ...s, challenges: (s.challenges ?? []).filter(c => c.id !== id) }));
+    },
+
+    markChallengeDone(id: string, at = new Date()) {
+        set(s => ({ ...s, challenges: (s.challenges ?? []).map(c => (c.id === id && !c.doneAt ? { ...c, doneAt: at.toISOString() } : c)) }));
+    },
+
     // Intermittent fasting (components/Fasting.tsx).
     setFastingPlan(hours: number) {
         set(s => ({ ...s, fasting: { history: [], startedAt: null, ...s.fasting, hours } }));

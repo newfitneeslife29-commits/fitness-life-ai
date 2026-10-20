@@ -17,6 +17,7 @@ import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition'
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { activitySummary } from '../lib/activity';
+import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
 import { localDay } from '../lib/activity';
@@ -364,6 +365,16 @@ export default function Today() {
     const stepsMap = useStore(s => s.steps);
     const cardio = useStore(s => s.cardio);
     const activity = useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions]);
+    // The first running challenge, in one line.
+    const joined = useStore(s => s.challenges);
+    const challengeLine = useMemo(() => {
+        for (const j of joined ?? []) {
+            if (!challengeDef(j.id)) continue;
+            const st = challengeStatus(j, { sessions, cardio, steps: stepsMap, activeDays });
+            if (st.state === 'running') return `${challengeName(j.id)} · ${t('challenges.progress', { n: st.progress, target: st.target })}`;
+        }
+        return null;
+    }, [joined, sessions, cardio, stepsMap, activeDays]);
     if (!profile) return null;
 
     const next = plan ? routines.find(r => r.id === plan.routineIds[plan.nextIndex]) : undefined;
@@ -480,6 +491,14 @@ export default function Today() {
                     <div className="min-w-0 flex-1">
                         <p className="font-semibold">{t('activity.card')}</p>
                         <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
+                <Link to="/retos" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('challenges.title')}</p>
+                        <p className="text-sm text-white/50">{challengeLine ?? t('challenges.cardHint')}</p>
                     </div>
                     <ChevronRight className="shrink-0 text-white/40" />
                 </Link>

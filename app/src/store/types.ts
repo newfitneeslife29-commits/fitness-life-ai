@@ -269,6 +269,13 @@ export interface PremiumStatus {
     checkedAt: string;
 }
 
+// A 30-day challenge the person joined (lib/challenges.ts).
+export interface JoinedChallenge {
+    id: string;
+    joinedAt: string; // ISO; the challenge lasts 30 days from then
+    doneAt?: string; // reached the goal
+}
+
 // Intermittent fasting: the chosen plan (hours fasting), the fast in
 // progress and the latest ones.
 export interface Fasting {
@@ -309,6 +316,7 @@ export interface AppState {
     mealPlan?: MealPlan | null;
     water?: Record<string, number>; // ml drunk by local day "YYYY-MM-DD"
     fasting?: Fasting;
+    challenges?: JoinedChallenge[];
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
     sleep?: SleepEntry[]; // newest first
