@@ -349,6 +349,68 @@ export const heatmapStory = (o: { bg?: CardBackground; eyebrow: string; title: s
 
 // Before/after: two photos side by side, stacked, or one over the other with
 // a divider, with labels and the logo as a watermark.
+// 4. A medal: achievements and streak milestones, ready for a story.
+export const badgeStory = (o: { bg?: CardBackground; eyebrow: string; title: string; description: string; emoji: string; date: string; footer: string }) => {
+    const { canvas, ctx } = newCanvas(W, H);
+    if (o.bg?.kind === 'photo') photoBackground(ctx, o.bg.image, W, H);
+    else if (o.bg?.kind === 'gym') gymPoster(ctx, W, H);
+    else darkBackground(ctx, W, H);
+    drawLogo(ctx, W / 2, 130, 84, { align: 'center' });
+    text(ctx, o.eyebrow.toUpperCase(), W / 2, 360, { size: 40, weight: 700, color: ORANGE, align: 'center' });
+
+    const cx = W / 2, cy = 830, r = 300;
+    // Ribbons behind the medal.
+    ctx.save();
+    for (const [side, color] of [[-1, '#e2541a'], [1, '#f59e0b']] as const) {
+        ctx.beginPath();
+        ctx.moveTo(cx + side * 70, cy + 120);
+        ctx.lineTo(cx + side * 230, cy + 560);
+        ctx.lineTo(cx + side * 150, cy + 520);
+        ctx.lineTo(cx + side * 110, cy + 610);
+        ctx.lineTo(cx + side * -40, cy + 170);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+    ctx.restore();
+    // Glow, golden rim and the face.
+    const glow = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 1.7);
+    glow.addColorStop(0, 'rgba(251,191,36,0.45)');
+    glow.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, cy - r * 1.8, W, r * 3.6);
+    const rim = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    rim.addColorStop(0, '#fde68a');
+    rim.addColorStop(0.45, '#f59e0b');
+    rim.addColorStop(1, '#b45309');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = rim;
+    ctx.fill();
+    const face = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.1, cx, cy, r * 0.82);
+    face.addColorStop(0, '#2b2f36');
+    face.addColorStop(1, INK);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+    ctx.fillStyle = face;
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(253,230,138,0.55)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.74, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `260px ${FONT}`;
+    ctx.fillText(o.emoji, cx, cy + 12);
+
+    text(ctx, o.title, W / 2, 1500, { size: 84, weight: 900, align: 'center', maxWidth: W - PAD * 2 });
+    paragraph(ctx, o.description, W / 2, 1590, W - PAD * 2, { size: 44, weight: 500, align: 'center', color: 'rgba(255,255,255,0.75)' });
+    text(ctx, o.date, W / 2, 1730, { size: 34, weight: 600, align: 'center', color: 'rgba(255,255,255,0.5)' });
+    footer(ctx, o.footer);
+    return canvas;
+};
+
 export type CompareLayout = 'side' | 'stack' | 'overlay';
 export interface ComparePhoto { image: CanvasImageSource & { width: number; height: number }; label: string; note?: string }
 

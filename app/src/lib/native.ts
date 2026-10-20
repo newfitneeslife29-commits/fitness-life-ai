@@ -168,15 +168,19 @@ export const scheduleWaterAlerts = async (alerts: { at: Date; title: string; bod
     });
 };
 
-// One-off alerts that replace themselves each time (streak, fasting).
-const ALERT_IDS = { streak: 5401, fasting: 5402 } as const;
-export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: Date; title: string; body: string } | null) => {
+// One-off alerts that replace themselves each time (streak, fasting, the
+// weekly summary). A `link` opens that screen when the notification is tapped.
+const ALERT_IDS = { streak: 5401, fasting: 5402, weekly: 5403 } as const;
+export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: Date; title: string; body: string; link?: string } | null) => {
     if (!isNative()) return;
     await quiet(async () => {
         await LocalNotifications.cancel({ notifications: [{ id: ALERT_IDS[kind] }] });
         if (!alert || alert.at.getTime() <= Date.now() + 60_000 || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
-            notifications: [{ id: ALERT_IDS[kind], title: alert.title, body: alert.body, schedule: { at: alert.at, allowWhileIdle: true }, isExactNotification: false }],
+            notifications: [{
+                id: ALERT_IDS[kind], title: alert.title, body: alert.body, schedule: { at: alert.at, allowWhileIdle: true }, isExactNotification: false,
+                ...(alert.link && { extra: { link: alert.link } }),
+            }],
         });
     });
 };
@@ -331,6 +335,11 @@ export const initNative = (onBack: () => void) => {
     initialized = true;
     // Status bar colors follow the theme (src/lib/theme.ts).
     void quiet(() => SplashScreen.hide());
+    // Tapping a local notification with a link opens that screen.
+    void quiet(() => LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
+        const link = String(notification.extra?.link ?? '');
+        if (/^\/[a-z0-9/-]*$/.test(link)) window.location.hash = `#${link}`;
+    }));
     void quiet(() => App.addListener('backButton', ({ canGoBack }) => {
         // An open sheet or dialog closes first (they close on Escape).
         if (document.querySelector('[aria-modal="true"]')) {

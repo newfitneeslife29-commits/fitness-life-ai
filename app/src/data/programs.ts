@@ -459,6 +459,30 @@ export const ALLOWED: Record<Setup, Equipment[]> = {
 
 export const avoided = (exerciseId: string, limitations: Limitation[]) => limitations.some(l => exerciseId in AVOID[l]);
 
+// A workout around sore zones (injury mode): each exercise that loads one
+// takes its first safe swap the setup allows, or leaves the workout.
+export const workoutAround = <T extends { exerciseId: string }>(exercises: T[], zones: Limitation[], setup: Setup) => {
+    const ids = exercises.map(e => e.exerciseId);
+    let swapped = 0, removed = 0;
+    const out: T[] = [];
+    for (const e of exercises) {
+        if (!avoided(e.exerciseId, zones)) {
+            out.push(e);
+            continue;
+        }
+        const swap = zones.flatMap(z => AVOID[z][e.exerciseId] ?? []).find(id => {
+            const x = getExercise(id);
+            return x && !x.kind && ALLOWED[setup].includes(x.equipment) && !ids.includes(id) && !avoided(id, zones);
+        });
+        if (swap) {
+            ids.push(swap);
+            out.push({ ...e, exerciseId: swap });
+            swapped++;
+        } else removed++;
+    }
+    return { exercises: out, swapped, removed };
+};
+
 // The program's days with exercises swapped around the user's limitations.
 // An exercise with no safe swap stays: the coach note tells them to go light.
 export const adaptDays = (program: Program, limitations: Limitation[] = []): ProgramDay[] => {

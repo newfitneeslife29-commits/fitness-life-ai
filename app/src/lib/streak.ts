@@ -3,6 +3,7 @@ import { toast } from '../components/feedback';
 import { t } from '../i18n';
 import { activitySummary, localDay } from './activity';
 import { scheduleAlert } from './native';
+import { currentPause, pausedDays } from './pause';
 import { useStore } from '../store/store';
 
 // The streak: days in a row using the app (training counts too). At 8 pm
@@ -19,13 +20,19 @@ export const streakAlertAt = (streak: number, now = new Date()) =>
 export const useStreak = () => {
     const activeDays = useStore(s => s.activeDays);
     const sessions = useStore(s => s.sessions);
+    const pause = useStore(s => s.profile?.pause);
+    const past = useStore(s => s.profile?.pastPauses);
     const today = localDay(new Date());
-    return useMemo(() => activitySummary(activeDays ?? [], sessions), [activeDays, sessions, today]);
+    return useMemo(
+        () => activitySummary(activeDays ?? [], sessions, new Date(), pausedDays({ pause, pastPauses: past })),
+        [activeDays, sessions, pause, past, today],
+    );
 };
 
 export const useStreakAlerts = () => {
     const { activeStreak } = useStreak();
-    const on = useStore(s => s.profile !== null && s.profile.streakReminder !== false);
+    // No reminder while resting or injured: the streak waits.
+    const on = useStore(s => s.profile !== null && s.profile.streakReminder !== false && !currentPause(s.profile));
     const lang = useStore(s => s.lang);
     const openedToday = useStore(s => s.activeDays?.includes(localDay(new Date())) ?? false);
     useEffect(() => {

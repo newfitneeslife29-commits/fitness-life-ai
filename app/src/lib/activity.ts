@@ -11,12 +11,16 @@ export const trainedDays = (sessions: Session[]) => new Set(sessions.map(s => lo
 // Training counts as being active even if the open was not recorded (older data).
 const activeSet = (activeDays: string[], trained: Set<string>) => new Set([...activeDays, ...trained]);
 
-// Consecutive days counting back from today (or yesterday, if today is not in yet).
-const streakIn = (days: Set<string>, now: Date) => {
-    let d = days.has(localDay(now)) ? now : addDays(now, -1);
+// Consecutive days counting back from today (or yesterday, if today is not in
+// yet). Paused days (rest or injury mode, lib/pause.ts) neither break nor add.
+const streakIn = (days: Set<string>, now: Date, paused: Set<string> = new Set()) => {
+    const today = localDay(now);
+    let d = days.has(today) || paused.has(today) ? now : addDays(now, -1);
     let n = 0;
-    while (days.has(localDay(d))) {
-        n++;
+    for (;;) {
+        const k = localDay(d);
+        if (days.has(k)) n++;
+        else if (!paused.has(k)) break;
         d = addDays(d, -1);
     }
     return n;
@@ -35,7 +39,7 @@ const longestRun = (days: Set<string>) => {
     return best;
 };
 
-export const activitySummary = (activeDays: string[], sessions: Session[], now = new Date()) => {
+export const activitySummary = (activeDays: string[], sessions: Session[], now = new Date(), paused?: Set<string>) => {
     const trained = trainedDays(sessions);
     const active = activeSet(activeDays, trained);
     const month = localDay(now).slice(0, 7);
@@ -43,8 +47,8 @@ export const activitySummary = (activeDays: string[], sessions: Session[], now =
     return {
         activeThisMonth: inMonth(active),
         trainedThisMonth: inMonth(trained),
-        activeStreak: streakIn(active, now),
-        trainedStreak: streakIn(trained, now),
+        activeStreak: streakIn(active, now, paused),
+        trainedStreak: streakIn(trained, now, paused),
         bestStreak: longestRun(active),
         activeTotal: active.size,
         trainedTotal: trained.size,

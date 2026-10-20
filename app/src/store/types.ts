@@ -59,6 +59,21 @@ export interface Profile {
     stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)
     // "Time to train" on the chosen days (0 = Monday … 6 = Sunday); off when null.
     trainingReminder?: { time: string; days: number[] } | null;
+    // A summary of the week every Sunday evening (on by default).
+    weeklySummary?: boolean;
+    // Voice commands in the guided workout: "next", "done" (off by default).
+    handsFree?: boolean;
+    // Resting or injured (lib/pause.ts): the streak waits and, when injured,
+    // the workouts avoid the sore zones. Past pauses keep the streak whole.
+    pause?: Pause | null;
+    pastPauses?: { from: string; to: string }[];
+}
+
+export interface Pause {
+    kind: 'rest' | 'injury';
+    zones: Limitation[]; // injury only
+    from: string; // local day "YYYY-MM-DD"
+    until: string | null; // last day of a rest; null: until the person ends it
 }
 
 export interface RoutineExercise {
@@ -158,6 +173,8 @@ export interface ActiveWorkout {
     restTotalSec: number;
     // Time spent in rests that already ended (ms): the active clock leaves it out.
     restedMs?: number;
+    // Exercises changed for an injury when it started (lib/pause.ts).
+    injury?: { zones: Limitation[]; swapped: number; removed: number };
 }
 
 export interface Macros {
