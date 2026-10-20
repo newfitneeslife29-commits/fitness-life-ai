@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm, toast } from '../components/feedback';
 import { locale, t } from '../i18n';
+import { enableChatPush } from '../lib/push';
 import { formatMoney } from '../lib/trainers';
 import {
     cancelHire, fetchHires, fetchMessages, hireState, markRead, otherSide, PayError, sendMessage, watchMessages, type ChatMessage, type Hire,
@@ -33,6 +34,10 @@ export default function TrainerChat() {
     const bottom = useRef<HTMLDivElement>(null);
 
     const add = (m: ChatMessage) => setMessages(list => (list && !list.some(x => x.id === m.id) ? [...list, m] : list));
+
+    useEffect(() => {
+        void enableChatPush();
+    }, []);
 
     useEffect(() => {
         let alive = true;

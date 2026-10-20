@@ -5,6 +5,7 @@ import { Avatar } from '../components/Avatar';
 import { toast } from '../components/feedback';
 import { BackHeader, Section } from '../components/ui';
 import { locale, t } from '../i18n';
+import { enableChatPush } from '../lib/push';
 import { displayPrice, fetchMyApplication, formatMoney, trainerShareCents, type Trainer } from '../lib/trainers';
 import {
     connectPayouts, fetchHires, guessCountry, hireState, openPayoutDashboard, PAYOUT_COUNTRIES, PayError, payoutStatus, STRIPE_RETURN_EVENT, type Hire, type PayoutStatus,
@@ -44,6 +45,11 @@ export default function TrainerPanel() {
         window.addEventListener(STRIPE_RETURN_EVENT, back);
         return () => window.removeEventListener(STRIPE_RETURN_EVENT, back);
     }, [account?.id]);
+
+    // Approved trainers hear about their clients' messages.
+    useEffect(() => {
+        if (mine?.status === 'approved') void enableChatPush();
+    }, [mine?.status]);
 
     const run = async (action: () => Promise<void>) => {
         setBusy(true);

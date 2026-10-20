@@ -1442,15 +1442,21 @@ test('hire a trainer in the app: pay with Stripe, chat, and cancel', async ({ pa
     let canceled = false;
     const messages: Record<string, unknown>[] = [];
     const calls: Record<string, unknown>[] = [];
+    const pushes: Record<string, unknown>[] = [];
     const link = () => ({
         id: 'h1', role: 'client', status: 'active', trainer_id: 't1', trainer_name: 'Ana Coach', trainer_avatar: null, trainer_avatar_updated: null,
         client_name: 'Sebas', client_avatar: null, client_avatar_updated: null, amount_cents: 4900, currency: 'usd', fee_percent: 25,
         current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: canceled, open: true, unread: 0, last_message_at: null, created_at: '2026-10-19T10:00:00Z',
     });
-    await page.route(/http:\/\/ai\.test\/(rest\/v1\/(rpc\/(trainers_listed|trainer_links|trainer_mark_read)|app_admins|trainer_applications|trainer_messages)|functions\/v1\/trainer-pay)/, async route => {
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/(rpc\/(trainers_listed|trainer_links|trainer_mark_read)|app_admins|trainer_applications|trainer_messages)|functions\/v1\/(trainer-pay|chat-push))/, async route => {
         const req = route.request();
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
         const url = req.url();
+        // The other person's phone gets a notification.
+        if (url.includes('chat-push')) {
+            pushes.push(req.postDataJSON() as Record<string, unknown>);
+            return route.fulfill({ headers: cors, json: { sent: 1 } });
+        }
         if (url.includes('trainers_listed')) {
             return route.fulfill({ headers: cors, json: [{
                 id: 't1', user_id: 'ana', name: 'Ana Coach', specialty: 'Fuerza', bio: 'Diez años entrenando fuerza con gente real.', experience_years: 10,
@@ -1506,6 +1512,7 @@ test('hire a trainer in the app: pay with Stripe, chat, and cancel', async ({ pa
     await page.getByRole('button', { name: 'Enviar' }).click();
     await expect(page.getByText('¡Hola Ana! Quiero ganar fuerza.')).toBeVisible();
     expect(messages[0]).toEqual(expect.objectContaining({ link_id: 'h1', body: '¡Hola Ana! Quiero ganar fuerza.' }));
+    await expect.poll(() => pushes).toEqual([{ messageId: 1 }]);
 
     // Cancel: the trainer stays until the end of the paid month.
     await page.getByRole('button', { name: 'Opciones' }).click();

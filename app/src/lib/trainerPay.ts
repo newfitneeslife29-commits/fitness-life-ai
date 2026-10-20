@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getLang } from '../i18n';
 import { publicUrl } from './community';
 import { isNative } from './native';
+import { notifyChat } from './push';
 import { getSupabase } from './supabase';
 
 // Hiring trainers in the app. Payments and payouts go through Stripe (the
@@ -201,7 +202,9 @@ export const sendMessage = async (linkId: string, body: string): Promise<ChatMes
     const { data, error } = await supabase.from('trainer_messages').insert({ link_id: linkId, body: body.trim() })
         .select('id, sender_id, body, created_at').single();
     if (error) throw error;
-    return toMessage(me)(data as MessageRow);
+    const message = toMessage(me)(data as MessageRow);
+    void notifyChat(message.id).catch(() => {});
+    return message;
 };
 
 export const markRead = async (linkId: string) => {
