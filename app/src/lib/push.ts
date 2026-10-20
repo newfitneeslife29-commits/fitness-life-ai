@@ -13,7 +13,7 @@ import { getSupabase } from './supabase';
 
 const TOKEN_KEY = 'fitness-life:push-token';
 // The screens a notification may open.
-const LINK = /^\/(entrenadores\/chat\/[0-9a-f-]{36}|comunidad(\/u\/[0-9a-f-]{36})?)$/;
+const LINK = /^\/(entrenadores\/chat\/[0-9a-f-]{36}|comunidad(\/u\/[0-9a-f-]{36})?|invitar)$/;
 
 // Android needs the Firebase settings (google-services.json) in the build:
 // the release build adds them when the GOOGLE_SERVICES_JSON secret exists.

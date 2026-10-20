@@ -24,3 +24,7 @@ verify_jwt = true
 [functions.community-push]
 # Signed-in accounts only: who liked, commented or followed (checked inside).
 verify_jwt = true
+
+[functions.referral]
+# Signed-in accounts only (checked again inside).
+verify_jwt = true

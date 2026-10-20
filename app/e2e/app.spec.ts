@@ -657,6 +657,39 @@ test('nutrition: intermittent fasting with a plan, the time to the goal and the 
     await expect(page.getByRole('button', { name: 'Empezar ayuno' })).toBeVisible();
 });
 
+test('invite a friend: my code, and entering the code of who invited me', async ({ page }) => {
+    const cloud = { row: null, pushed: [] as Record<string, unknown>[] };
+    await mockAccount(page, cloud);
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    const redeemed: unknown[] = [];
+    await page.route(/http:\/\/ai\.test\/(rest\/v1\/rpc\/referral_my_code|functions\/v1\/referral)/, async route => {
+        const req = route.request();
+        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        if (req.url().includes('referral_my_code')) return route.fulfill({ headers: cors, json: [{ code: 'ABC234', friends: 2 }] });
+        const body = req.postDataJSON() as { code: string };
+        redeemed.push(body);
+        if (body.code === 'ABC234') return route.fulfill({ status: 400, headers: cors, json: { error: 'own_code' } });
+        return route.fulfill({ headers: cors, json: { ok: true, days: 7 } });
+    });
+    await signUpWithAccount(page);
+    await expect(page.getByText(/Copia en la nube/)).toBeVisible();
+    await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await page.getByRole('link', { name: /Invita a un amigo/ }).click();
+
+    await expect(page.getByLabel('Tu código: A B C 2 3 4')).toBeVisible();
+    await expect(page.getByText('2 amigos se unieron con tu código')).toBeVisible();
+
+    const input = page.getByLabel('Código de invitación');
+    await input.fill('abc-234');
+    await expect(input).toHaveValue('ABC234');
+    await page.getByRole('button', { name: 'Canjear' }).click();
+    await expect(page.getByText('Ese es tu propio código 😉')).toBeVisible();
+    await input.fill('zx9k7m');
+    await page.getByRole('button', { name: 'Canjear' }).click();
+    await expect(page.getByText('¡Listo! Tienes 1 semana de Premium gratis.')).toBeVisible();
+    expect(redeemed).toEqual([{ action: 'redeem', code: 'ABC234' }, { action: 'redeem', code: 'ZX9K7M' }]);
+});
+
 test('30-day challenges: join, progress on the home screen, leaderboard and leaving', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
