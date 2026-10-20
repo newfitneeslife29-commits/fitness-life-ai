@@ -1,4 +1,4 @@
-import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, ScanBarcode, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -643,6 +643,7 @@ export default function Nutrition() {
 
             <Section title={t('foods.title')}>
                 <FoodTablePreview />
+                <Link to="/nutricion/alimentos?escanear=1" className="btn-ghost mt-2 w-full"><ScanBarcode size={18} /> {t('barcode.scan')}</Link>
             </Section>
 
             <Section title={t('coach.section')}>

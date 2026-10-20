@@ -826,6 +826,41 @@ test('AI refused by the server opens Premium and keeps the question', async ({ p
     await expect(page.getByLabel('Escribe tu pregunta')).toHaveValue('¿Qué ceno para llegar a mi proteína?');
 });
 
+test('food table: a packaged food by its barcode (Open Food Facts)', async ({ page }) => {
+    const asked: string[] = [];
+    await page.route('https://world.openfoodfacts.org/**', route => {
+        asked.push(route.request().url());
+        if (route.request().url().includes('/00000000.json')) return route.fulfill({ status: 404, json: { status: 0 } });
+        return route.fulfill({
+            headers: { 'access-control-allow-origin': '*' },
+            json: { status: 1, product: {
+                product_name: 'Greek yogurt', product_name_es: 'Yogur griego natural', brands: 'Lala', serving_quantity: 150, serving_quantity_unit: 'g',
+                nutriments: { 'energy-kcal_100g': 97, proteins_100g: 9, carbohydrates_100g: 4, fat_100g: 5, fiber_100g: 0 },
+            } },
+        });
+    });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+    await page.getByRole('link', { name: 'Escanear código de barras' }).click();
+    await expect(page.getByRole('heading', { name: 'Tabla de alimentos' })).toBeVisible();
+    // On the web the number is typed (the phone apps open the camera).
+    const sheet = page.getByRole('dialog', { name: 'Escribir el número del código' });
+    await sheet.getByLabel('Número del código de barras').fill('00000000');
+    await sheet.getByRole('button', { name: 'Buscar producto' }).click();
+    await expect(page.getByText('No encontramos ese producto. Búscalo en la lista o anótalo a mano.')).toBeVisible();
+    await sheet.getByLabel('Número del código de barras').fill('7501055300075');
+    await sheet.getByRole('button', { name: 'Buscar producto' }).click();
+
+    const food = page.getByRole('dialog', { name: 'Yogur griego natural' });
+    await expect(food.getByText('Lala · Datos de Open Food Facts')).toBeVisible();
+    await expect(food.getByRole('radio', { name: '1 porción (150 g)' })).toHaveAttribute('aria-checked', 'true');
+    await expect(food.getByText('146 kcal')).toBeVisible();
+    await food.getByRole('button', { name: 'Añadir a mis comidas de hoy' }).click();
+    await expect(page.getByText('Comida añadida')).toBeVisible();
+    expect(asked.at(-1)).toContain('/api/v2/product/7501055300075.json?fields=');
+});
+
 test('food table: search, filter, details and add to today', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
