@@ -16,3 +16,7 @@ verify_jwt = true
 [functions.stripe-webhook]
 # Called by Stripe: checked with the webhook's signing secret instead.
 verify_jwt = false
+
+[functions.chat-push]
+# Signed-in accounts only: the sender of the message (checked inside).
+verify_jwt = true

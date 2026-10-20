@@ -47,6 +47,26 @@ jobs:
         run: .github/scripts/supabase-env.sh
         env:
           ANON_KEY_VARIABLE: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      # Chat notifications on Android need the Firebase settings: Firebase →
+      # Project settings → Your apps → Android app → google-services.json,
+      # pasted whole into the GOOGLE_SERVICES_JSON secret. Without it the
+      # app works the same, without chat notifications.
+      - name: Add the Firebase settings
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::notice::GOOGLE_SERVICES_JSON not set: this build has no chat notifications."
+            exit 0
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          package=$(jq -r '[.client[].client_info.android_client_info.package_name] | join(" ")' android/app/google-services.json 2>/dev/null || true)
+          if ! [[ " $package " == *" com.fitnesslife.app "* ]]; then
+            echo "::error::GOOGLE_SERVICES_JSON is not the google-services.json of the com.fitnesslife.app Android app in Firebase (found: ${package:-not a google-services.json})."
+            exit 1
+          fi
+          echo "VITE_ANDROID_PUSH=on" >> "$GITHUB_ENV"
+          echo "::notice::Chat notifications are on in this build."
       - run: npm run native
         env:
           VITE_RC_IOS_KEY: ${{ vars.VITE_RC_IOS_KEY }}

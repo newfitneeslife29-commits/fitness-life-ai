@@ -12,7 +12,13 @@ name: Deploy backend
 #            GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (optional: "Continue with Google"),
 #            STRIPE_SECRET_KEY (optional: hire trainers in the app; Stripe →
 #            Developers → API keys → Secret key, sk_live_…; needs Stripe Connect on)
+#            Chat notifications (optional):
+#            FIREBASE_SERVICE_ACCOUNT (Android: Firebase → Project settings →
+#            Service accounts → Generate new private key; the whole .json file),
+#            APNS_KEY + APNS_KEY_ID (iPhone: developer.apple.com → Keys → a key
+#            with Apple Push Notifications service; the whole .p8 file and its Key ID)
 # Variables: SUPABASE_PROJECT_REF,
+#            APPLE_TEAM_ID (with APNS_KEY: the same one the iOS build uses),
 #            ADMIN_EMAIL (optional: the e-mail of your account in the app; it can
 #            approve trainers and set their price from the app),
 #            AUTH_CONFIRM_EMAIL=true (optional: ask new accounts to confirm their
@@ -36,6 +42,10 @@ jobs:
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      APNS_KEY: ${{ secrets.APNS_KEY }}
+      APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
       AUTH_CONFIRM_EMAIL: ${{ vars.AUTH_CONFIRM_EMAIL }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
       # The published web app (GitHub Pages): where sign-in comes back to.
@@ -93,6 +103,26 @@ jobs:
             [[ "$STRIPE_SECRET_KEY" != sk_live_* && "$STRIPE_SECRET_KEY" != sk_test_* ]] && fail "STRIPE_SECRET_KEY must be the Secret key (starts with sk_live_): Stripe → Developers → API keys."
           else
             echo "::notice::STRIPE_SECRET_KEY not set: trainers are hired through payment links or their contact, not in the app."
+          fi
+          # Chat notifications: Android (Firebase) and iPhone (Apple), each optional.
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            kind=$(printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | jq -r '.type // empty' 2>/dev/null || true)
+            if [ "$kind" != service_account ]; then
+              if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | jq -e '.client[0].client_info' > /dev/null 2>&1; then
+                fail "FIREBASE_SERVICE_ACCOUNT has the google-services.json file: that one goes in GOOGLE_SERVICES_JSON. Here goes the service account key (Firebase → Project settings → Service accounts → Generate new private key)."
+              else
+                fail "FIREBASE_SERVICE_ACCOUNT must be the whole service account .json file (Firebase → Project settings → Service accounts → Generate new private key)."
+              fi
+            fi
+          else
+            echo "::notice::FIREBASE_SERVICE_ACCOUNT not set: no chat notifications on Android."
+          fi
+          if [ -n "$APNS_KEY$APNS_KEY_ID" ]; then
+            [[ "$APNS_KEY" == *"BEGIN PRIVATE KEY"* ]] || fail "APNS_KEY must be the whole content of the .p8 file, from -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----."
+            [[ "$APNS_KEY_ID" =~ ^[A-Z0-9]{10}$ ]] || fail "APNS_KEY_ID must be the 10-character Key ID of the push key (developer.apple.com → Keys)."
+            [[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]] || fail "The APPLE_TEAM_ID variable (10 characters) is needed with APNS_KEY."
+          else
+            echo "::notice::APNS_KEY not set: no chat notifications on iPhone."
           fi
           [ -z "$REVENUECAT_SECRET_KEY" ] && echo "::notice::REVENUECAT_SECRET_KEY not set: everyone gets the free AI allowance until Premium is configured."
           exit $problems
@@ -255,6 +285,12 @@ jobs:
           if [ -n "$STRIPE_SECRET_KEY" ]; then
             supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
           fi
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT"
+          fi
+          if [ -n "$APNS_KEY" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" APNS_KEY="$APNS_KEY" APNS_KEY_ID="$APNS_KEY_ID" APPLE_TEAM_ID="$APPLE_TEAM_ID"
+          fi
 
       - name: Deploy the functions
         run: |
@@ -262,6 +298,7 @@ jobs:
           supabase functions deploy account --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy trainer-pay --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy stripe-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy chat-push --project-ref "$SUPABASE_PROJECT_REF"
 
       # Stripe tells the app about hires (paid, renewed, canceled) through a
       # webhook. Created once; its signing secret is only shown at creation,
