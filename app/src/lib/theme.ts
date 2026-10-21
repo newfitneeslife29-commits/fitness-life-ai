@@ -7,8 +7,11 @@ export type Theme = 'system' | 'light' | 'dark';
 // native bars around the app.
 const BACKGROUND = { dark: '#0b0d10', light: '#f4f5f7' } as const;
 
+// Light unless the person picks Dark or System in Settings.
+export const DEFAULT_THEME: Theme = 'light';
+
 const media = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-color-scheme: dark)') : undefined;
-let preference: Theme = 'system';
+let preference: Theme = DEFAULT_THEME;
 
 export const resolvedTheme = (pref: Theme = preference): 'light' | 'dark' =>
     pref === 'system' ? (media?.matches === false ? 'light' : 'dark') : pref;
