@@ -1,8 +1,7 @@
 import { isNative } from './native';
 
-// The Fitness Life Edition clothing store (Shopify). The myshopify address
-// always works: once the store has its own domain, Shopify sends visitors on.
-export const SHOP_URL = 'https://afwmau-e9.myshopify.com';
+// The Fitness Life Edition clothing store (Shopify, at its own domain).
+export const SHOP_URL = 'https://fitnesslifeedition.com';
 
 // In the app's browser on phones (people come back with Done), a new tab on the web.
 export const openShop = async () => {
