@@ -315,7 +315,7 @@ export interface Account {
 export interface AppState {
     version: 1;
     lang?: Lang;
-    theme?: Theme; // default: follow the phone
+    theme?: Theme; // default: light
     account?: Account | null;
     authPrompted?: boolean; // the sign-in screen was offered once
     cloudSyncedAt?: string | null; // last copy to or from the account

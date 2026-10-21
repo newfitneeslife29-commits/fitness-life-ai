@@ -20,7 +20,7 @@ import { useCloudStatus } from '../lib/useOnline';
 import { blobToDataUrl, pickImage, resizeImage } from '../lib/image';
 import { streakWeeks } from '../lib/stats';
 import { planName } from '../lib/names';
-import type { Theme } from '../lib/theme';
+import { DEFAULT_THEME, type Theme } from '../lib/theme';
 import { appIconTiming, getAppIcon, setAppIcon } from '../lib/appIcon';
 import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
@@ -58,7 +58,7 @@ export default function Settings() {
     const premiumSwitch = (apply: (on: boolean) => void) => (on: boolean) => (premium ? apply(on) : navigate('/premium'));
     const plan = useStore(s => s.plan);
     const sessionsCount = useStore(s => s.sessions.length);
-    const theme = useStore(s => s.theme ?? 'system');
+    const theme = useStore(s => s.theme ?? DEFAULT_THEME);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const proposed = programFor(profile);

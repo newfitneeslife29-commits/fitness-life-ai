@@ -323,27 +323,31 @@ test('welcome screen leads to onboarding and back', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Empezar gratis' })).toBeVisible();
 });
 
-test('light and dark mode follow the phone and can be chosen in settings', async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'light' });
+test('light by default, dark can be chosen, and System follows the phone', async ({ page }) => {
+    // Even on a phone set to dark, the app starts light.
+    await page.emulateMedia({ colorScheme: 'dark' });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     const html = page.locator('html');
     await expect(html).toHaveClass(/light/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f4f5f7');
 
     await page.getByRole('link', { name: 'Ajustes', exact: true }).click();
+    await expect(page.getByRole('radio', { name: 'Claro' })).toHaveAttribute('aria-checked', 'true');
     await page.getByRole('radio', { name: 'Oscuro' }).click();
     await expect(html).not.toHaveClass(/light/);
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0b0d10');
     await page.reload();
     await expect(html).not.toHaveClass(/light/);
 
-    await page.getByRole('radio', { name: 'Claro' }).click();
-    await expect(html).toHaveClass(/light/);
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f4f5f7');
-
     await page.getByRole('radio', { name: 'Sistema' }).click();
-    await page.emulateMedia({ colorScheme: 'dark' });
     await expect(html).not.toHaveClass(/light/);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect(html).toHaveClass(/light/);
+
+    await page.getByRole('radio', { name: 'Claro' }).click();
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(html).toHaveClass(/light/);
 });
 
 // Fake Supabase: anonymous sign-in plus the nutrition-coach function.

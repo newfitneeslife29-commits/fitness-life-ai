@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { detectLang, loadLang, setLang, t, type Lang } from '../i18n';
 import { uid } from '../lib/id';
 import { routineName } from '../lib/names';
-import { applyTheme, type Theme } from '../lib/theme';
+import { applyTheme, DEFAULT_THEME, type Theme } from '../lib/theme';
 import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
@@ -64,7 +64,7 @@ const mirrorSoon = () => {
 let state: AppState = typeof localStorage === 'undefined' ? EMPTY : load();
 // First run: follow the phone's language (if the app has it, otherwise English) and appearance.
 setLang(state.lang ?? detectLang());
-applyTheme(state.theme ?? 'system');
+applyTheme(state.theme ?? DEFAULT_THEME);
 const listeners = new Set<() => void>();
 let saveError: string | null = null;
 
@@ -91,7 +91,7 @@ export const hydrateFromNative = async () => {
         if (saved && !local) {
             state = saved;
             setLang(state.lang ?? detectLang());
-            applyTheme(state.theme ?? 'system');
+            applyTheme(state.theme ?? DEFAULT_THEME);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             listeners.forEach(l => l());
         } else if (local) {
@@ -106,7 +106,7 @@ const set = (updater: (s: AppState) => AppState) => {
     const before = state.theme;
     state = updater(state);
     if (state.lang) setLang(state.lang);
-    if (state.theme !== before) applyTheme(state.theme ?? 'system');
+    if (state.theme !== before) applyTheme(state.theme ?? DEFAULT_THEME);
     persist();
     listeners.forEach(l => l());
 };
@@ -125,7 +125,7 @@ if (typeof window !== 'undefined') {
         const lang = state.lang ?? detectLang();
         void loadLang(lang).catch(() => {}).finally(() => {
             setLang(lang);
-            applyTheme(state.theme ?? 'system');
+            applyTheme(state.theme ?? DEFAULT_THEME);
             listeners.forEach(l => l());
         });
     });
