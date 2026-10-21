@@ -1,4 +1,4 @@
-import { BookOpen, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, ShoppingBag, ExternalLink, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -26,6 +26,7 @@ import { APP_ICONS, appIconUrl, type AppIconId } from '../lib/appIcons';
 import { fallbackPlan, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { primeSound, restOver, saveFile } from '../lib/native';
 import { appVersion, checkForUpdate, useUpdate } from '../lib/updates';
+import { openShop } from '../lib/shop';
 import { actions, getSaveError, getState, useStore } from '../store/store';
 import { errorText } from '../lib/errorText';
 import type { Goal, Level, Setup } from '../store/types';
@@ -515,6 +516,14 @@ function HelpSection() {
                 <NavRow to="/guia" icon={<BookOpen size={20} />} title={t('guide.title')} hint={t('guide.hint')} />
                 <NavRow to="/comentarios" icon={<MessageSquareHeart size={20} />} title={t('feedback.title')} hint={t('feedback.hint')} />
                 <NavRow to="/entrenadores/aplicar" icon={<UserPlus size={20} />} title={t('settings.trainer')} hint={t('trainers.applyTitle')} />
+                <button onClick={() => void openShop()} className="flex w-full items-center gap-3 p-4 text-left hover:bg-ink-3">
+                    <ShoppingBag size={20} className="shrink-0 text-brand" />
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-medium">{t('shop.title')}</span>
+                        <span className="block text-sm text-white/55">{t('shop.hint')}</span>
+                    </span>
+                    <ExternalLink size={18} className="shrink-0 text-white/40" />
+                </button>
                 <NavRow to="/sobre-nosotros" icon={<Info size={20} />} title={t('aboutUs.title')} hint={t('aboutUs.hint')} />
                 <NavRow to="/privacidad" icon={<ShieldCheck size={20} />} title={t('privacy.title')} hint={t('privacy.hint')} />
                 <div className="flex items-center gap-3 p-4">

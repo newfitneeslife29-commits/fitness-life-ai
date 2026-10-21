@@ -2041,4 +2041,6 @@ export const zh: Dict = {
     'privacy.s16.body': "购买课程或聘请教练时，由 Stripe 使用你的邮箱处理付款，我们看不到你的银行卡。我们会保存你的购买记录以提供训练计划，删除账号时一并删除。",
     'privacy.s17.title': "错误报告",
     'privacy.s17.body': "应用崩溃时，我们会向 Sentry 发送技术报告以便修复：错误、页面、应用版本以及手机型号和系统。不包含你的姓名、邮箱、照片或训练、健康、饮食数据。",
+    'shop.title': "Fitness Life Edition 商店",
+    'shop.hint': "健身T恤、连帽衫等更多商品",
 };
