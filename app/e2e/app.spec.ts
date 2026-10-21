@@ -2208,6 +2208,8 @@ test('injury mode: workouts avoid the sore zone and it can be ended; then a rest
 });
 
 test('weekly summary: the page, its tip and the Sunday notification switch', async ({ page }) => {
+    // A Monday: only the workouts read 0/3 (steps and water count the days so far).
+    await page.clock.install({ time: new Date('2026-10-19T10:00:00') });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     // Opened from Sunday's notification (and from Progress once there are workouts).

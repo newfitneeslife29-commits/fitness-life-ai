@@ -22,7 +22,9 @@ export type HealthState =
 const READ = ['steps', 'calories', 'heartRate', 'sleep'] as const;
 const CONNECTED_KEY = 'fitness-life:health';
 
-const plugin = async () => (await import('@capgo/capacitor-health')).Health;
+// The module, not the plugin: a Capacitor plugin can't be the value of a
+// promise (awaiting it calls a native "then" that doesn't exist).
+const plugin = () => import('@capgo/capacitor-health');
 
 export const summarizeHeart = (samples: { value: number; startDate: string }[]): HeartSummary | null => {
     const values = samples.filter(s => s.value > 0);
@@ -54,7 +56,7 @@ const remember = (on: boolean) => {
 };
 
 export const readToday = async (now = new Date()): Promise<HealthToday> => {
-    const Health = await plugin();
+    const { Health } = await plugin();
     const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const endDate = now.toISOString();
     const sum = async (dataType: 'steps' | 'calories') => {
@@ -73,7 +75,7 @@ export const readToday = async (now = new Date()): Promise<HealthToday> => {
 const status = async (): Promise<HealthState> => {
     if (!isNative()) return { kind: 'unsupported' };
     try {
-        const Health = await plugin();
+        const { Health } = await plugin();
         const { available, platform } = await Health.isAvailable();
         // Android 9–13 need the Health Connect app from Google Play (or an update of it).
         if (!available) return platform === 'android' ? { kind: 'install' } : { kind: 'unsupported' };
@@ -86,7 +88,7 @@ const status = async (): Promise<HealthState> => {
 
 // Steps of each of the last `days` local days.
 export const readStepDays = async (days: number, now = new Date()): Promise<Record<string, number>> => {
-    const Health = await plugin();
+    const { Health } = await plugin();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
     const { samples } = await Health.queryAggregated({ dataType: 'steps', startDate: start.toISOString(), endDate: now.toISOString(), bucket: 'day', aggregation: 'sum' });
     // Keyed by the middle of the bucket: on Android the buckets are 24 h long,
@@ -142,14 +144,14 @@ export const sleepNights = (samples: { startDate: string; endDate: string; sleep
 };
 
 export const readSleep = async (nights: number, now = new Date()) => {
-    const Health = await plugin();
+    const { Health } = await plugin();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - nights, 12);
     const { samples } = await Health.readSamples({ dataType: 'sleep', startDate: start.toISOString(), endDate: now.toISOString(), limit: 1000 });
     return sleepNights(samples);
 };
 
 export const connectHealth = async (): Promise<boolean> => {
-    const Health = await plugin();
+    const { Health } = await plugin();
     const result = await Health.requestAuthorization({ read: [...READ] });
     // HealthKit never says what was refused (privacy); Health Connect does.
     const ok = result.readAuthorized.length > 0 || result.readDenied.length < READ.length;
@@ -159,7 +161,7 @@ export const connectHealth = async (): Promise<boolean> => {
 
 export const disconnectHealth = () => remember(false);
 
-export const openHealthSettings = async () => (await plugin()).openHealthConnectSettings();
+export const openHealthSettings = async () => (await plugin()).Health.openHealthConnectSettings();
 
 // The card's state, refreshed when the app comes back to the foreground.
 export const useHealth = () => {
