@@ -2286,3 +2286,18 @@ test('guided: hands-free, the voice moves the workout on', async ({ page }) => {
         await expect(squat.getByText('Serie 2 de 3')).toBeVisible({ timeout: 500 });
     }).toPass({ timeout: 8000 });
 });
+
+test('the Fitness Life Edition store opens from the home screen and from settings', async ({ page, context }) => {
+    await context.route(/myshopify\.com/, route => route.fulfill({ body: '<title>Fitness Life Edition</title>' }));
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    const fromHome = page.waitForEvent('popup');
+    await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
+    const shop = await fromHome;
+    expect(shop.url()).toContain('https://afwmau-e9.myshopify.com/?utm_source=fitness-life-app');
+    await shop.close();
+    await page.goto('/#/ajustes');
+    const fromSettings = page.waitForEvent('popup');
+    await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
+    expect((await fromSettings).url()).toContain('afwmau-e9.myshopify.com');
+});

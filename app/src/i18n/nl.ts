@@ -2041,4 +2041,6 @@ export const nl: Dict = {
     'privacy.s16.body': "Koop je een programma of huur je een trainer in, dan verwerkt Stripe de betaling met je e-mail; we zien je kaart nooit. We bewaren wat je kocht om je de schema's te geven, en het wordt verwijderd met je account.",
     'privacy.s17.title': "Foutrapporten",
     'privacy.s17.body': "Als de app crasht, sturen we een technisch rapport naar Sentry om het op te lossen: de fout, het scherm, de appversie en het model en systeem van je telefoon. Het bevat niet je naam, e-mail, foto's of trainings-, gezondheids- of voedingsgegevens.",
+    'shop.title': "Fitness Life Edition-winkel",
+    'shop.hint': "Gymshirts, hoodies en nog veel meer",
 };

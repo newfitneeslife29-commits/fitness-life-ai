@@ -2041,4 +2041,6 @@ export const tr: Dict = {
     'privacy.s16.body': "Bir program alır veya antrenör tutarsan ödemeyi e-postanla Stripe işler; kartını asla görmeyiz. Rutinleri verebilmek için ne aldığını saklarız; hesabını silince silinir.",
     'privacy.s17.title': "Hata raporları",
     'privacy.s17.body': "Uygulama çökerse düzeltebilmek için Sentry'ye teknik bir rapor göndeririz: hata, ekran, uygulama sürümü ve telefonun modeli ile sistemi. Adını, e-postanı, fotoğraflarını veya antrenman, sağlık ya da yemek verilerini içermez.",
+    'shop.title': "Fitness Life Edition Mağazası",
+    'shop.hint': "Spor tişörtleri, kapüşonlular ve çok daha fazlası",
 };

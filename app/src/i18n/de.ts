@@ -2041,4 +2041,6 @@ export const de: Dict = {
     'privacy.s16.body': "Kaufst du ein Programm oder buchst einen Trainer, wickelt Stripe die Zahlung mit deiner E-Mail ab; deine Karte sehen wir nie. Wir speichern, was du gekauft hast, um dir die Routinen zu geben; es wird mit deinem Konto gelöscht.",
     'privacy.s17.title': "Fehlerberichte",
     'privacy.s17.body': "Wenn die App abstürzt, senden wir einen technischen Bericht an Sentry, um den Fehler zu beheben: Fehler, Bildschirm, App-Version sowie Modell und System des Handys. Er enthält weder Namen, E-Mail, Fotos noch Trainings-, Gesundheits- oder Ernährungsdaten.",
+    'shop.title': "Fitness Life Edition Shop",
+    'shop.hint': "Gym-Shirts, Hoodies und vieles mehr",
 };

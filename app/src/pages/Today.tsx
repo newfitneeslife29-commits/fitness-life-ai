@@ -22,6 +22,7 @@ import { PauseBanner } from '../components/PauseCard';
 import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
+import { ShopCard } from '../components/ShopCard';
 import { localDay } from '../lib/activity';
 import { stepsOn } from '../lib/movement';
 import { groupLabel, recoveryStatus } from '../lib/recovery';
@@ -451,6 +452,8 @@ export default function Today() {
             {profile.sex === 'mujer' && <Section><WomenCard /></Section>}
 
             {!premium && <Section><PremiumBanner /></Section>}
+
+            <Section><ShopCard /></Section>
 
             <Section title={t('home.week')}>
                 <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>

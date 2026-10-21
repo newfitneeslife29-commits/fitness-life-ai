@@ -2049,4 +2049,6 @@ export const es = {
     'privacy.s16.body': "Si compras un programa o contratas a un entrenador, Stripe procesa el pago con tu correo; nunca vemos tu tarjeta. Guardamos qué compraste para darte sus rutinas, y se borra al eliminar tu cuenta.",
     'privacy.s17.title': "Informes de errores",
     'privacy.s17.body': "Si la app falla, enviamos un informe técnico a Sentry para poder arreglarlo: el error, la pantalla, la versión de la app y el modelo y sistema del teléfono. No incluye tu nombre, tu correo, tus fotos ni tus datos de entrenos, salud o comidas.",
+    'shop.title': "Tienda Fitness Life Edition",
+    'shop.hint': "Camisetas, sudaderas de gym y mucho más",
 };
