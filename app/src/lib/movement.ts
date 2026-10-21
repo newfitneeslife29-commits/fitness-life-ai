@@ -23,10 +23,12 @@ const flag = {
 export const pedometerSupported = () => isNative() && Capacitor.getPlatform() === 'ios';
 export const pedometerOn = () => pedometerSupported() && flag.get();
 
-const pedometer = async () => (await import('@capgo/capacitor-pedometer')).CapacitorPedometer;
+// The module, not the plugin: a Capacitor plugin can't be the value of a
+// promise (awaiting it calls a native "then" that doesn't exist).
+const pedometer = () => import('@capgo/capacitor-pedometer');
 
 export const enablePedometer = async () => {
-    const P = await pedometer();
+    const { CapacitorPedometer: P } = await pedometer();
     const status = await P.requestPermissions();
     const ok = Object.values(status).some(v => v === 'granted');
     if (ok) flag.set();
@@ -34,7 +36,7 @@ export const enablePedometer = async () => {
 };
 
 const readPedometerDays = async (days: number, now = new Date()) => {
-    const P = await pedometer();
+    const { CapacitorPedometer: P } = await pedometer();
     const out: Record<string, number> = {};
     for (let i = 0; i < days; i++) {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);

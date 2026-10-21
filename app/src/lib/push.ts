@@ -19,7 +19,9 @@ const LINK = /^\/(entrenadores\/chat\/[0-9a-f-]{36}|comunidad(\/u\/[0-9a-f-]{36}
 // the release build adds them when the GOOGLE_SERVICES_JSON secret exists.
 const available = () => isNative() && (Capacitor.getPlatform() !== 'android' || import.meta.env.VITE_ANDROID_PUSH === 'on');
 
-const plugin = () => import('@capacitor/push-notifications').then(m => m.PushNotifications);
+// The module, not the plugin: a Capacitor plugin can't be the value of a
+// promise (awaiting it calls a native "then" that doesn't exist).
+const plugin = () => import('@capacitor/push-notifications');
 
 let listening: Promise<void> | null = null;
 
@@ -42,7 +44,7 @@ const saveToken = async (token: string) => {
 
 const listen = () => {
     listening ??= (async () => {
-        const push = await plugin();
+        const { PushNotifications: push } = await plugin();
         await push.addListener('registration', ({ value }) => { void saveToken(value).catch(() => {}); });
         // Tapping a notification opens its screen (also when it started the app).
         await push.addListener('pushNotificationActionPerformed', ({ notification }) => {
@@ -73,7 +75,7 @@ export const enablePush = async () => {
     if (!available() || !getState().account) return;
     try {
         await listen();
-        const push = await plugin();
+        const { PushNotifications: push } = await plugin();
         let { receive } = await push.checkPermissions();
         if (receive === 'prompt' || receive === 'prompt-with-rationale') receive = (await push.requestPermissions()).receive;
         if (receive === 'granted') await push.register();
@@ -91,7 +93,7 @@ export const usePush = () => {
         void listen().catch(() => {});
         if (!accountId) return;
         void (async () => {
-            const push = await plugin();
+            const { PushNotifications: push } = await plugin();
             if ((await push.checkPermissions()).receive === 'granted') await push.register();
         })().catch(() => {});
     }, [accountId, lang]);
