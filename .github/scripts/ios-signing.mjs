@@ -2,12 +2,18 @@
 // Store, through the App Store Connect API: a distribution certificate (from
 // the CSR the workflow made) and an App Store profile for each bundle ID, with
 // the capabilities set on its App ID (App Groups included, which Xcode's own
-// cloud signing can't read with an API key). "cleanup" removes them again.
+// cloud signing can't read with an API key).
+//
+// A build stays valid only while its certificate does: Apple rejects one whose
+// certificate was revoked (ITMS-90035). So "cleanup" keeps them after an upload
+// (UPLOADED=true), and "setup" removes those of older runs, keeping the latest
+// run's, whose build may still be in review.
 //
 //   node ios-signing.mjs setup | cleanup
 //
 // Reads KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH (the .p8), SIGNING_DIR (with
-// csr.pem) and RUN (a label for the profile names) from the environment.
+// csr.pem), RUN (a label for the profile names, "<run>-<attempt>") and UPLOADED
+// from the environment.
 // setup writes cert.cer, the profiles, export.plist and state.json there.
 import { createHash, createPrivateKey, sign } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -16,7 +22,8 @@ import { join } from 'node:path';
 
 const BUNDLES = ['com.fitnesslife.app', 'com.fitnesslife.app.widget'];
 const API = 'https://api.appstoreconnect.apple.com/v1';
-const { KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH, SIGNING_DIR, RUN = 'ci' } = process.env;
+const { KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH, SIGNING_DIR, RUN = 'ci', UPLOADED } = process.env;
+const PREFIX = 'Fitness Life CI ';
 const statePath = join(SIGNING_DIR, 'state.json');
 
 function token() {
@@ -46,14 +53,48 @@ async function api(method, path, body) {
 
 const xml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
+// Removes the profiles and certificates of earlier runs, except the newest `keep` runs.
+async function prune(keep) {
+    const list = await api('GET', '/profiles?limit=200&include=certificates');
+    const runs = new Map();
+    for (const p of list.data) {
+        const m = p.attributes.name.startsWith(PREFIX) && p.attributes.name.slice(PREFIX.length).match(/^(\d+)-(\d+) /);
+        if (!m) continue;
+        const run = Number(m[1]) * 1000 + Number(m[2]);
+        const certs = (p.relationships?.certificates?.data ?? []).map(c => c.id);
+        const entry = runs.get(run) ?? { profiles: [], certs: new Set() };
+        entry.profiles.push(p.id);
+        certs.forEach(c => entry.certs.add(c));
+        runs.set(run, entry);
+    }
+    const ordered = [...runs.entries()].sort((a, b) => b[0] - a[0]);
+    const kept = new Set(ordered.slice(0, keep).flatMap(([, e]) => [...e.certs]));
+    for (const [run, e] of ordered.slice(keep)) {
+        for (const id of e.profiles) await api('DELETE', `/profiles/${id}`);
+        for (const id of e.certs) if (!kept.has(id)) await api('DELETE', `/certificates/${id}`);
+        console.log(`Removed the signing of CI run ${Math.floor(run / 1000)}`);
+    }
+}
+
+async function newCertificate(csr) {
+    const body = { data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } } };
+    try {
+        return await api('POST', '/certificates', body);
+    } catch (e) {
+        // Apple allows only a few distribution certificates at a time.
+        console.log(`::warning::${e.message}. Removing every earlier CI certificate and trying again.`);
+        await prune(0);
+        return api('POST', '/certificates', body);
+    }
+}
+
 async function setup() {
     const state = { certificateId: null, profileIds: [] };
     const save = () => writeFileSync(statePath, JSON.stringify(state));
 
+    await prune(1);
     const csr = readFileSync(join(SIGNING_DIR, 'csr.pem'), 'utf8');
-    const cert = await api('POST', '/certificates', {
-        data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } },
-    });
+    const cert = await newCertificate(csr);
     state.certificateId = cert.data.id;
     save();
     const der = Buffer.from(cert.data.attributes.certificateContent, 'base64');
@@ -73,7 +114,7 @@ async function setup() {
         const profile = await api('POST', '/profiles', {
             data: {
                 type: 'profiles',
-                attributes: { name: `Fitness Life CI ${RUN} ${identifier}`, profileType: 'IOS_APP_STORE' },
+                attributes: { name: `${PREFIX}${RUN} ${identifier}`, profileType: 'IOS_APP_STORE' },
                 relationships: {
                     bundleId: { data: { type: 'bundleIds', id: bundle.id } },
                     certificates: { data: [{ type: 'certificates', id: state.certificateId }] },
@@ -108,6 +149,10 @@ ${profiles}
 }
 
 async function cleanup() {
+    if (UPLOADED === 'true') {
+        console.log('Keeping the CI certificate and profiles: the uploaded build is signed with them');
+        return;
+    }
     let state;
     try {
         state = JSON.parse(readFileSync(statePath, 'utf8'));
