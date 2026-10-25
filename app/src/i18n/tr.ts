@@ -2043,4 +2043,5 @@ export const tr: Dict = {
     'privacy.s17.body': "Uygulama çökerse düzeltebilmek için Sentry'ye teknik bir rapor göndeririz: hata, ekran, uygulama sürümü ve telefonun modeli ile sistemi. Adını, e-postanı, fotoğraflarını veya antrenman, sağlık ya da yemek verilerini içermez.",
     'shop.title': "Fitness Life Edition Mağazası",
     'shop.hint': "Spor tişörtleri, kapüşonlular ve çok daha fazlası",
+    'shop.offer': "Uygulama kullanıcılarına %10 indirim · {code}",
 };

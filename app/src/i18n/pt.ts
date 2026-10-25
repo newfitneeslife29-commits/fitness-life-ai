@@ -2051,4 +2051,5 @@ export const pt: Dict = {
     'privacy.s17.body': "Se o app falhar, enviamos um relatório técnico ao Sentry para poder corrigir: o erro, a tela, a versão do app e o modelo e sistema do celular. Não inclui seu nome, e-mail, fotos nem seus dados de treinos, saúde ou refeições.",
     'shop.title': "Loja Fitness Life Edition",
     'shop.hint': "Camisetas, moletons de academia e muito mais",
+    'shop.offer': "10% de desconto por usar o app · {code}",
 };

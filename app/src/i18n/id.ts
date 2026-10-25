@@ -2043,4 +2043,5 @@ export const id: Dict = {
     'privacy.s17.body': "Jika aplikasi bermasalah, kami mengirim laporan teknis ke Sentry agar bisa memperbaikinya: kesalahan, layar, versi aplikasi, serta model dan sistem ponsel. Tidak termasuk nama, email, foto, atau data latihan, kesehatan, maupun makananmu.",
     'shop.title': "Toko Fitness Life Edition",
     'shop.hint': "Kaus, hoodie gym, dan banyak lagi",
+    'shop.offer': "Diskon 10% untuk pengguna aplikasi · {code}",
 };

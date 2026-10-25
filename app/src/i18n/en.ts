@@ -2050,4 +2050,5 @@ export const en: Dict = {
     'privacy.s17.body': "If the app crashes, we send a technical report to Sentry so we can fix it: the error, the screen, the app version and the phone's model and system. It doesn't include your name, e-mail, photos or your workout, health or food data.",
     'shop.title': "Fitness Life Edition Store",
     'shop.hint': "Gym tees, hoodies and much more",
+    'shop.offer': "10% off for app users · {code}",
 };

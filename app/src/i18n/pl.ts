@@ -2043,4 +2043,5 @@ export const pl: Dict = {
     'privacy.s17.body': "Gdy aplikacja ulegnie awarii, wysyłamy raport techniczny do Sentry, by ją naprawić: błąd, ekran, wersję aplikacji oraz model i system telefonu. Nie zawiera imienia, e-maila, zdjęć ani danych o treningach, zdrowiu czy posiłkach.",
     'shop.title': "Sklep Fitness Life Edition",
     'shop.hint': "Koszulki, bluzy na siłownię i wiele więcej",
+    'shop.offer': "10% zniżki dla użytkowników aplikacji · {code}",
 };

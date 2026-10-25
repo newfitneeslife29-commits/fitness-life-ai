@@ -2051,4 +2051,5 @@ export const es = {
     'privacy.s17.body': "Si la app falla, enviamos un informe técnico a Sentry para poder arreglarlo: el error, la pantalla, la versión de la app y el modelo y sistema del teléfono. No incluye tu nombre, tu correo, tus fotos ni tus datos de entrenos, salud o comidas.",
     'shop.title': "Tienda Fitness Life Edition",
     'shop.hint': "Camisetas, sudaderas de gym y mucho más",
+    'shop.offer': "10% de descuento por usar la app · {code}",
 };

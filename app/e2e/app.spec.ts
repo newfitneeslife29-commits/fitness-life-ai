@@ -2296,9 +2296,11 @@ test('the Fitness Life Edition store opens from the home screen and from setting
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     const fromHome = page.waitForEvent('popup');
+    await expect(page.getByText('10% de descuento por usar la app · APP10')).toBeVisible();
     await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
     const shop = await fromHome;
-    expect(shop.url()).toContain('https://fitnesslifeedition.com/?utm_source=fitness-life-app');
+    // The link carries the app users' discount and lands on the home page with the app's utm tags.
+    expect(shop.url()).toContain('https://fitnesslifeedition.com/discount/APP10?redirect=%2F%3Futm_source%3Dfitness-life-app');
     await shop.close();
     await page.goto('/#/ajustes');
     const fromSettings = page.waitForEvent('popup');

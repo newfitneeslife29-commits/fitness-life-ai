@@ -2043,4 +2043,5 @@ export const zh: Dict = {
     'privacy.s17.body': "应用崩溃时，我们会向 Sentry 发送技术报告以便修复：错误、页面、应用版本以及手机型号和系统。不包含你的姓名、邮箱、照片或训练、健康、饮食数据。",
     'shop.title': "Fitness Life Edition 商店",
     'shop.hint': "健身T恤、连帽衫等更多商品",
+    'shop.offer': "应用用户享 9 折 · {code}",
 };
