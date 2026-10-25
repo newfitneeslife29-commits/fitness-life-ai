@@ -2043,4 +2043,5 @@ export const ko: Dict = {
     'privacy.s17.body': "앱에 오류가 나면 고치기 위해 Sentry로 기술 보고서를 보내요. 오류, 화면, 앱 버전, 휴대폰 기종과 시스템만 포함하며 이름, 이메일, 사진, 운동·건강·식사 데이터는 포함하지 않아요.",
     'shop.title': "Fitness Life Edition 스토어",
     'shop.hint': "운동용 티셔츠, 후디 등 다양한 제품",
+    'shop.offer': "앱 사용자 10% 할인 · {code}",
 };

@@ -2043,4 +2043,5 @@ export const de: Dict = {
     'privacy.s17.body': "Wenn die App abstürzt, senden wir einen technischen Bericht an Sentry, um den Fehler zu beheben: Fehler, Bildschirm, App-Version sowie Modell und System des Handys. Er enthält weder Namen, E-Mail, Fotos noch Trainings-, Gesundheits- oder Ernährungsdaten.",
     'shop.title': "Fitness Life Edition Shop",
     'shop.hint': "Gym-Shirts, Hoodies und vieles mehr",
+    'shop.offer': "10 % Rabatt für App-Nutzer · {code}",
 };

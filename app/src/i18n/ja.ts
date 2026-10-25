@@ -2043,4 +2043,5 @@ export const ja: Dict = {
     'privacy.s17.body': "アプリに不具合が起きると、修正のため Sentry に技術レポートを送ります。内容はエラー、画面、アプリのバージョン、端末の機種とOSです。名前、メール、写真、トレーニング・健康・食事のデータは含みません。",
     'shop.title': "Fitness Life Edition ストア",
     'shop.hint': "ジム用Tシャツ、パーカーなど多数",
+    'shop.offer': "アプリ利用者は10%オフ · {code}",
 };

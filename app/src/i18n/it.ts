@@ -2043,4 +2043,5 @@ export const it: Dict = {
     'privacy.s17.body': "Se l'app si blocca, inviamo un rapporto tecnico a Sentry per sistemarla: l'errore, la schermata, la versione dell'app e modello e sistema del telefono. Non include nome, e-mail, foto né dati di allenamento, salute o pasti.",
     'shop.title': "Negozio Fitness Life Edition",
     'shop.hint': "Magliette, felpe da palestra e molto altro",
+    'shop.offer': "10% di sconto per chi usa l'app · {code}",
 };

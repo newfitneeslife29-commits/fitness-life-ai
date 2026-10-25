@@ -2043,4 +2043,5 @@ export const fr: Dict = {
     'privacy.s17.body': "Si l'app plante, nous envoyons un rapport technique à Sentry pour corriger le problème : l'erreur, l'écran, la version de l'app, le modèle et le système du téléphone. Il ne contient ni ton nom, ni ton e-mail, ni tes photos, ni tes données d'entraînement, de santé ou de repas.",
     'shop.title': "Boutique Fitness Life Edition",
     'shop.hint': "T-shirts, sweats de sport et bien plus",
+    'shop.offer': "-10 % pour les utilisateurs de l'app · {code}",
 };

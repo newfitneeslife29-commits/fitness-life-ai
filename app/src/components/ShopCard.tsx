@@ -1,6 +1,6 @@
 import { ChevronRight, ShoppingBag } from 'lucide-react';
 import { t } from '../i18n';
-import { openShop } from '../lib/shop';
+import { openShop, SHOP_CODE } from '../lib/shop';
 
 // The clothing store, on the home screen.
 export const ShopCard = () => (
@@ -11,6 +11,7 @@ export const ShopCard = () => (
         <span className="relative min-w-0 flex-1 pr-16">
             <span className="block font-bold">{t('shop.title')}</span>
             <span className="block text-sm text-snow/80">{t('shop.hint')}</span>
+            <span className="mt-1.5 inline-block rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-snow">{t('shop.offer', { code: SHOP_CODE })}</span>
         </span>
         <ChevronRight className="relative shrink-0" />
     </button>

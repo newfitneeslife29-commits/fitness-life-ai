@@ -2043,4 +2043,5 @@ export const nl: Dict = {
     'privacy.s17.body': "Als de app crasht, sturen we een technisch rapport naar Sentry om het op te lossen: de fout, het scherm, de appversie en het model en systeem van je telefoon. Het bevat niet je naam, e-mail, foto's of trainings-, gezondheids- of voedingsgegevens.",
     'shop.title': "Fitness Life Edition-winkel",
     'shop.hint': "Gymshirts, hoodies en nog veel meer",
+    'shop.offer': "10% korting voor app-gebruikers · {code}",
 };
