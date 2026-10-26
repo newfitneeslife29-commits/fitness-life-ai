@@ -1,6 +1,6 @@
 import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, ScanBarcode, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { MealPlanSection } from '../components/MealPlan';
@@ -526,11 +526,6 @@ export default function Nutrition() {
     const weightKg = useStore(s => s.bodyWeights[0]?.weightKg ?? null);
     const sessions = useStore(s => s.sessions);
     const [day, setDay] = useState(() => startOfDay(new Date()));
-    // From the home shortcuts: open on the water, fasting or meal plan part.
-    const jumpTo = (useLocation().state as { section?: string } | null)?.section;
-    useEffect(() => {
-        if (jumpTo) document.getElementById(jumpTo)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, [jumpTo]);
     // Showing today when the date changes (left open overnight): follow to the new today.
     const now = useNow(true, 60_000);
     const [shownToday, setShownToday] = useState(() => startOfDay(new Date()).getTime());
@@ -598,11 +593,11 @@ export default function Nutrition() {
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
             </Section>
 
-            <Section id="agua" title={t('water.title')}>
+            <Section title={t('water.title')}>
                 <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
             </Section>
 
-            <Section id="ayuno" title={t('fasting.title')}>
+            <Section title={t('fasting.title')}>
                 <FastingCard />
             </Section>
 
@@ -619,7 +614,7 @@ export default function Nutrition() {
                 </Link>
             </Section>
 
-            <Section id="plan" title={t('mealPlan.section')}>
+            <Section title={t('mealPlan.section')}>
                 <MealPlanSection context={context} />
             </Section>
 

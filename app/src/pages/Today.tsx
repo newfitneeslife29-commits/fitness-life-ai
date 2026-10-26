@@ -1,4 +1,4 @@
-import { Apple, ArrowRight, BatteryCharging, BookOpen, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, Footprints, GlassWater, GraduationCap, Lightbulb, PartyPopper, Play, Plus, Share2, ShoppingBag, Sparkles, Target, Timer, Trophy, UserRound, UtensilsCrossed, Weight } from 'lucide-react';
+import { Apple, ArrowRight, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, PartyPopper, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -23,7 +23,6 @@ import { challengeDef, challengeName, challengeStatus } from '../lib/challenges'
 import { HealthCard } from '../components/HealthCard';
 import { MoveCard } from '../components/MoveCard';
 import { ShopCard } from '../components/ShopCard';
-import { openShop } from '../lib/shop';
 import { localDay } from '../lib/activity';
 import { stepsOn } from '../lib/movement';
 import { groupLabel, recoveryStatus } from '../lib/recovery';
@@ -113,44 +112,6 @@ const Tile = ({ icon, value, label, delay, color }: { icon: ReactNode; value: Re
         <span className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-snow shadow-md ${color}`}>{icon}</span>
         <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
         <p className="text-xs text-white/50">{label}</p>
-    </div>
-);
-
-// Round shortcuts under the header: the things people open most, one tap away.
-const QUICK: { key: string; icon: ReactNode; tone: string; to?: string; state?: { section: string }; onClick?: () => void }[] = [
-    { key: 'steps', icon: <Footprints size={22} />, tone: 'from-emerald-500 to-teal-500 shadow-emerald-500/30', to: '/movimiento' },
-    { key: 'water', icon: <GlassWater size={22} />, tone: 'from-sky-500 to-cyan-500 shadow-sky-500/30', to: '/nutricion', state: { section: 'agua' } },
-    { key: 'meals', icon: <UtensilsCrossed size={22} />, tone: 'from-lime-500 to-green-600 shadow-lime-500/30', to: '/nutricion' },
-    { key: 'fasting', icon: <Timer size={22} />, tone: 'from-violet-500 to-indigo-600 shadow-violet-500/30', to: '/nutricion', state: { section: 'ayuno' } },
-    { key: 'exercises', icon: <Dumbbell size={22} />, tone: 'from-orange-500 to-red-500 shadow-orange-500/30', to: '/ejercicios' },
-    { key: 'challenges', icon: <Trophy size={22} />, tone: 'from-amber-400 to-orange-500 shadow-amber-400/30', to: '/retos' },
-    { key: 'shop', icon: <ShoppingBag size={22} />, tone: 'from-slate-700 to-slate-900 shadow-slate-700/30', onClick: () => void openShop() },
-    { key: 'guide', icon: <BookOpen size={22} />, tone: 'from-pink-500 to-rose-500 shadow-pink-500/30', to: '/guia' },
-];
-
-const QuickActions = () => (
-    <div className="card grid grid-cols-4 gap-y-3 p-3">
-        {QUICK.map(q => {
-            const body = (
-                <>
-                    <span className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-snow shadow-md ${q.tone}`}>{q.icon}</span>
-                    <span className="text-center text-[11px] font-semibold leading-tight text-white/75">{t(`home.qa.${q.key}` as Parameters<typeof t>[0])}</span>
-                </>
-            );
-            const cls = 'flex flex-col items-center gap-1.5 rounded-2xl p-1 active:scale-95';
-            return q.to
-                ? <Link key={q.key} to={q.to} state={q.state} className={cls}>{body}</Link>
-                : <button key={q.key} onClick={q.onClick} className={cls}>{body}</button>;
-        })}
-    </div>
-);
-
-// A bigger title that starts each part of the home screen.
-const Group = ({ title, icon }: { title: string; icon: ReactNode }) => (
-    <div className="flex items-center gap-2 px-4 pt-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/15 text-brand">{icon}</span>
-        <h2 className="text-lg font-extrabold tracking-tight">{title}</h2>
-        <span aria-hidden className="ml-1 h-px flex-1 bg-line" />
     </div>
 );
 
@@ -467,10 +428,6 @@ export default function Today() {
                 </div>
             </header>
 
-            <Section><QuickActions /></Section>
-
-            <Group title={t('home.groupTrain')} icon={<Dumbbell size={16} />} />
-
             {currentPause(profile) && <Section><PauseBanner /></Section>}
 
             <Section>
@@ -490,6 +447,14 @@ export default function Today() {
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 
+            <Section><TrainerCard premium={premium} /></Section>
+
+            {profile.sex === 'mujer' && <Section><WomenCard /></Section>}
+
+            {!premium && <Section><PremiumBanner /></Section>}
+
+            <Section><ShopCard /></Section>
+
             <Section title={t('home.week')}>
                 <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>
                     <div className="flex items-center gap-4">
@@ -507,17 +472,46 @@ export default function Today() {
                 </div>
             </Section>
 
+            <Section><MoveCard /></Section>
+
+            <Section><HealthCard /></Section>
+
             {sessions.length > 0 && (
                 <Section title={t('recovery.title')}>
                     <RecoveryCard sessions={sessions} />
                 </Section>
             )}
 
-            <Group title={t('home.groupDay')} icon={<CalendarDays size={16} />} />
+            <Section title={t('weightGoal.title')}>
+                <WeightGoalCard />
+            </Section>
 
-            <Section><MoveCard /></Section>
+            <Section title={t('home.stats')}>
+                <div className="grid grid-cols-2 gap-2">
+                    <Tile delay={120} color="from-brand to-amber-500 shadow-brand/30" icon={<Flame size={16} />} value={<CountUp value={streak} />} label={tp('today.streak', streak)} />
+                    <Tile delay={160} color="from-amber-400 to-yellow-500 shadow-amber-400/30" icon={<Trophy size={16} />} value={<CountUp value={sessions.length} />} label={t('today.total')} />
+                    <Tile delay={200} color="from-sky-500 to-indigo-500 shadow-sky-500/30" icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
+                    <Tile delay={240} color="from-violet-500 to-fuchsia-500 shadow-violet-500/30" icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
+                </div>
+                <Link to="/actividad" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-snow"><CalendarDays size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('activity.card')}</p>
+                        <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
+                <Link to="/retos" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{t('challenges.title')}</p>
+                        <p className="text-sm text-white/50">{challengeLine ?? t('challenges.cardHint')}</p>
+                    </div>
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
+            </Section>
 
-            <Section><HealthCard /></Section>
+            {sessions.length > 0 && <Section title={t('share.section')}><ShareLinks /></Section>}
 
             <Section title={t('home.nutrition')}>
                 <NutritionToday />
@@ -531,82 +525,38 @@ export default function Today() {
                 </div>
             </Section>
 
-            <Section><ShopCard /></Section>
-
-            <Group title={t('home.groupProgress')} icon={<Trophy size={16} />} />
-
-            <Section title={t('home.stats')}>
-                <div className="grid grid-cols-2 gap-2">
-                    <Tile delay={120} color="from-brand to-amber-500 shadow-brand/30" icon={<Flame size={16} />} value={<CountUp value={streak} />} label={tp('today.streak', streak)} />
-                    <Tile delay={160} color="from-amber-400 to-yellow-500 shadow-amber-400/30" icon={<Trophy size={16} />} value={<CountUp value={sessions.length} />} label={t('today.total')} />
-                    <Tile delay={200} color="from-sky-500 to-indigo-500 shadow-sky-500/30" icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
-                    <Tile delay={240} color="from-violet-500 to-fuchsia-500 shadow-violet-500/30" icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
-                </div>
+            <Section title={t('nav.achievements')}>
+                <Link to="/logros" className="card flex items-center gap-3 p-3 hover:bg-ink-3">
+                    {latestMedal
+                        ? <Medal achievement={ACHIEVEMENTS.find(a => a.id === latestMedal.id)!} unlocked />
+                        : <Medal achievement={ACHIEVEMENTS[0]} unlocked={false} />}
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold">
+                            {latestMedal ? achievementTitle(ACHIEVEMENTS.find(a => a.id === latestMedal.id)!) : t('today.firstMedal')}
+                        </p>
+                        <p className="text-sm text-white/50">{t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })}</p>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-4">
+                            <div className="h-full rounded-full bg-brand transition-[width] duration-700" style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />
+                        </div>
+                    </div>
+                    {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">{tp('today.newMedals', unseen)}</span>}
+                    <ChevronRight className="shrink-0 text-white/40" />
+                </Link>
             </Section>
 
-            <Section title={t('weightGoal.title')}>
-                <WeightGoalCard />
-            </Section>
-
-            <Section>
-                <div className="card divide-y divide-line overflow-hidden">
-                    <Link to="/actividad" className="flex items-center gap-3 p-3 hover:bg-ink-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-snow"><CalendarDays size={20} /></span>
-                        <div className="min-w-0 flex-1">
-                            <p className="font-semibold">{t('activity.card')}</p>
-                            <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
-                        </div>
-                        <ChevronRight className="shrink-0 text-white/40" />
-                    </Link>
-                    <Link to="/retos" className="flex items-center gap-3 p-3 hover:bg-ink-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
-                        <div className="min-w-0 flex-1">
-                            <p className="font-semibold">{t('challenges.title')}</p>
-                            <p className="text-sm text-white/50">{challengeLine ?? t('challenges.cardHint')}</p>
-                        </div>
-                        <ChevronRight className="shrink-0 text-white/40" />
-                    </Link>
-                    <Link to="/logros" className="flex items-center gap-3 p-3 hover:bg-ink-3">
-                        {latestMedal
-                            ? <Medal achievement={ACHIEVEMENTS.find(a => a.id === latestMedal.id)!} unlocked />
-                            : <Medal achievement={ACHIEVEMENTS[0]} unlocked={false} />}
-                        <div className="min-w-0 flex-1">
-                            <p className="font-semibold">
-                                {latestMedal ? achievementTitle(ACHIEVEMENTS.find(a => a.id === latestMedal.id)!) : t('today.firstMedal')}
+            {lastSession && (
+                <Section title={t('today.last')}>
+                    <Link to={`/sesion/${lastSession.id}`} className="card flex items-center justify-between gap-3 p-4 hover:bg-ink-3">
+                        <div className="min-w-0">
+                            <p className="truncate font-semibold">{sessionName(lastSession)}</p>
+                            <p className="text-sm text-white/50">
+                                {fmtDate(lastSession.startedAt)} · {durationMin(lastSession)} min · {fmtVolume(volume(lastSession.sets), profile.unit)}
                             </p>
-                            <p className="text-sm text-white/50">{t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })}</p>
-                            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-4">
-                                <div className="h-full rounded-full bg-brand transition-[width] duration-700" style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />
-                            </div>
                         </div>
-                        {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">{tp('today.newMedals', unseen)}</span>}
                         <ChevronRight className="shrink-0 text-white/40" />
                     </Link>
-                    {lastSession && (
-                        <Link to={`/sesion/${lastSession.id}`} className="flex items-center gap-3 p-3 hover:bg-ink-3">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500 text-snow"><Dumbbell size={20} /></span>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-white/45">{t('today.last')}</p>
-                                <p className="truncate font-semibold">{sessionName(lastSession)}</p>
-                                <p className="text-sm text-white/50">
-                                    {fmtDate(lastSession.startedAt)} · {durationMin(lastSession)} min · {fmtVolume(volume(lastSession.sets), profile.unit)}
-                                </p>
-                            </div>
-                            <ChevronRight className="shrink-0 text-white/40" />
-                        </Link>
-                    )}
-                </div>
-            </Section>
-
-            {sessions.length > 0 && <Section title={t('share.section')}><ShareLinks /></Section>}
-
-            <Group title={t('home.groupMore')} icon={<Sparkles size={16} />} />
-
-            <Section><TrainerCard premium={premium} /></Section>
-
-            {profile.sex === 'mujer' && <Section><WomenCard /></Section>}
-
-            {!premium && <Section><PremiumBanner /></Section>}
+                </Section>
+            )}
         </div>
     );
 }
