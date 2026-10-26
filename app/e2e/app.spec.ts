@@ -315,6 +315,10 @@ test('switch language in onboarding and settings', async ({ page }) => {
 test('welcome screen leads to onboarding and back', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
+    // The training video behind the welcome and sign-up screens is bundled.
+    const video = await page.request.get('./welcome.mp4');
+    expect(video.ok()).toBe(true);
+    expect((await video.body()).length).toBeGreaterThan(100_000);
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
     await page.getByRole('button', { name: 'Continuar sin cuenta' }).click();

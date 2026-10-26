@@ -2,7 +2,7 @@ import { ChevronLeft, Cloud, Eye, EyeOff, Mail } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from '../components/feedback';
 import { Sheet } from '../components/ui';
-import { Logo } from '../components/Welcome';
+import { BackgroundVideo, Logo } from '../components/Welcome';
 import { t } from '../i18n';
 import { AuthFailure, enabledProviders, PASSWORD_RECOVERY_EVENT, sendPasswordReset, signInWithEmail, signInWithProvider, signUpWithEmail, updatePassword, type OAuthProvider, type Providers } from '../lib/auth';
 import { waitForSync } from '../lib/cloud';
@@ -152,6 +152,7 @@ export default function AuthScreen({ initialMode = 'signUp', onDone, onSkip, onB
     const title = mode === 'signUp' ? t('auth.titleSignUp') : t('auth.titleSignIn');
     return (
         <main className="relative min-h-dvh overflow-hidden bg-ink">
+            <BackgroundVideo shade="strong" />
             <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(70%_60%_at_50%_0%,rgb(var(--brand)/0.25),transparent_70%)]" />
             <div className="pt-safe relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
                 <div className="flex h-14 items-center">
