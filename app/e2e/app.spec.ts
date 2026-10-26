@@ -2137,8 +2137,10 @@ test('guided: cover, get ready, the exercise full screen, a full-screen rest, th
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
 
     // The cover of the session with its exercises.
+    // (Wait for it first: the home screen behind it also has the session's name and "ejercicios".)
+    await expect(page.getByRole('button', { name: '¡Empezar!' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Cuerpo completo A' })).toBeVisible();
-    await expect(page.getByText('Ejercicios')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Ejercicios \(\d+\)$/ })).toBeVisible();
     await expect(page.getByText('Intermedio')).toBeVisible();
     await page.getByRole('button', { name: '¡Empezar!' }).click();
 
