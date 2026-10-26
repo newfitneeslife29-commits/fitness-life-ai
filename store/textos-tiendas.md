@@ -7,7 +7,7 @@ Listos para copiar en **App Store Connect** y en **Google Play Console**. En cad
 ## Capturas
 
 Cada idioma tiene sus 8 capturas, en este orden:
-`01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-resumen`, `08-premium`.
+`01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-pasos`, `08-premium`.
 
 | Tienda | Tamaño | Carpeta |
 |---|---|---|
@@ -87,7 +87,7 @@ MIRA Y COMPARTE TU PROGRESO
 • Racha de días, calendario de actividad y widget en tu pantalla de inicio.
 • Insignias y Gym Wrapped listos para tus historias de Instagram, Facebook y TikTok.
 • Antes y después con tus fotos.
-• Pasos, caminatas y paseos en bici con GPS, sueño y datos de Salud.
+• Pasos de cada día con historial de 30 días, caminatas y paseos en bici con GPS, sueño y datos de Salud.
 
 NUTRICIÓN SIN COMPLICARTE
 • Calorías, proteína, carbohidratos y grasa con objetivos según tu meta.
@@ -119,11 +119,10 @@ Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a u
 
 ### Novedades de esta versión (las dos tiendas)
 ```
-• Manos libres (Premium): di «listo» o «siguiente» durante el entreno guiado.
-• Resumen semanal cada domingo con un consejo (Premium).
-• Modo descanso o lesión: tu racha no se pierde y los entrenos cuidan la zona.
-• Insignias para compartir en tus historias.
-• Widget en la pantalla de inicio, lista de la compra (Premium), recordatorios de agua, ranking con amigos, programas de entrenadores y tu música en el entreno.
+• Pasos: historial de 7 y 30 días con promedio, mejor día y días con meta. Anota a mano los pasos de días anteriores.
+• Guía para nuevos usuarios con todas las funciones de la app.
+• Plan de comidas con IA más estable, y ves en qué paso va mientras se crea (Premium).
+• Tienda Fitness Life Edition renovada: 10% de descuento en la ropa por usar la app.
 ```
 
 ---
@@ -197,7 +196,7 @@ SEE AND SHARE YOUR PROGRESS
 • Day streak, activity calendar and a home screen widget.
 • Badges and Gym Wrapped ready for your Instagram, Facebook and TikTok stories.
 • Before and after with your photos.
-• Steps, walks and bike rides with GPS, sleep and Health data.
+• Daily steps with a 30-day history, walks and bike rides with GPS, sleep and Health data.
 
 NUTRITION MADE SIMPLE
 • Calories, protein, carbs and fat with targets for your goal.
@@ -229,11 +228,10 @@ Fitness Life does not replace the advice of a doctor or nutritionist. Talk to a 
 
 ### What's new (both stores)
 ```
-• Hands-free (Premium): say "done" or "next" during guided workouts.
-• A weekly summary every Sunday with a tip (Premium).
-• Rest or injury mode: keep your streak, and workouts protect the sore area.
-• Badges to share in your stories.
-• Home screen widget, shopping list (Premium), water reminders, friends ranking, trainer programs and your music in the workout.
+• Steps: 7 and 30-day history with your average, best day and goal days. Log past days by hand.
+• A guide for new users that explains every feature of the app.
+• A more reliable AI meal plan that shows its progress while it is made (Premium).
+• A new look for the Fitness Life Edition store card: app users get 10% off the gear.
 ```
 
 ---
@@ -307,7 +305,7 @@ VEJA E COMPARTILHE SEU PROGRESSO
 • Sequência de dias, calendário de atividade e widget na tela inicial.
 • Insígnias e Gym Wrapped prontos para seus stories do Instagram, Facebook e TikTok.
 • Antes e depois com suas fotos.
-• Passos, caminhadas e pedaladas com GPS, sono e dados de Saúde.
+• Passos de cada dia com histórico de 30 dias, caminhadas e pedaladas com GPS, sono e dados de Saúde.
 
 NUTRIÇÃO SEM COMPLICAÇÃO
 • Calorias, proteína, carboidratos e gordura com metas para o seu objetivo.
@@ -339,9 +337,8 @@ O Fitness Life não substitui o conselho de um médico ou nutricionista. Consult
 
 ### Novidades desta versão (as duas lojas)
 ```
-• Mãos livres (Premium): diga «pronto» ou «próximo» durante o treino guiado.
-• Resumo semanal todo domingo com uma dica (Premium).
-• Modo descanso ou lesão: sua sequência não se perde e os treinos protegem a região.
-• Insígnias para compartilhar nos seus stories.
-• Widget na tela inicial, lista de compras (Premium), lembretes de água, ranking com amigos, programas de personais e sua música no treino.
+• Passos: histórico de 7 e 30 dias com média, melhor dia e dias com meta. Registre à mão os passos de dias anteriores.
+• Guia para novos usuários com todas as funções do app.
+• Plano de refeições com IA mais estável, mostrando em que etapa está enquanto é criado (Premium).
+• Loja Fitness Life Edition renovada: 10% de desconto nas roupas por usar o app.
 ```
