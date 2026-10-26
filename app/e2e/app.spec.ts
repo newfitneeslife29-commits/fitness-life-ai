@@ -439,7 +439,7 @@ test('tour: new users see the app guide once, and Ajustes has it, feedback, priv
     await expect(tour.getByRole('heading', { name: '¡Bienvenido a Fitness Life!' })).toBeVisible();
     await tour.getByRole('button', { name: 'Siguiente' }).click();
     await expect(tour.getByRole('heading', { name: 'Inicio: tu entreno de hoy' })).toBeVisible();
-    for (let i = 0; i < 7; i++) await tour.getByRole('button', { name: 'Siguiente' }).click();
+    for (let i = 0; i < 12; i++) await tour.getByRole('button', { name: 'Siguiente' }).click();
     await expect(tour.getByRole('heading', { name: 'Ajustes' })).toBeVisible();
     await tour.getByRole('button', { name: '¡A entrenar!' }).click();
     await expect(tour).toHaveCount(0);
@@ -2306,4 +2306,28 @@ test('the Fitness Life Edition store opens from the home screen and from setting
     const fromSettings = page.waitForEvent('popup');
     await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
     expect((await fromSettings).url()).toContain('fitnesslifeedition.com');
+});
+
+test('steps: log a past day by hand and see it in the history', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.goto('/#/movimiento');
+    await page.getByRole('button', { name: 'Registrar pasos' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Registrar pasos' });
+    await sheet.getByRole('button', { name: 'Día anterior' }).click();
+    await expect(sheet.getByText('Ayer', { exact: true })).toBeVisible();
+    await sheet.getByLabel('Pasos del día').fill('8.500');
+    await sheet.getByRole('button', { name: 'Guardar pasos' }).click();
+    await expect(page.getByText(/Guardado: 8[.,\s]?500 pasos/)).toBeVisible();
+    await expect(sheet).toHaveCount(0);
+    // The history shows yesterday; tapping it opens that day to change it.
+    const yesterday = page.getByRole('button', { name: /^Ayer/ });
+    await expect(yesterday).toContainText(/8[.,\s]?500/);
+    await expect(page.getByText('Mejor día')).toBeVisible();
+    await page.getByRole('button', { name: '30 días' }).click();
+    await yesterday.click();
+    await expect(sheet.getByText(/Ese día tienes 8[.,\s]?500 pasos/)).toBeVisible();
+    await sheet.getByLabel('Pasos del día').fill('0');
+    await sheet.getByRole('button', { name: 'Guardar pasos' }).click();
+    await expect(yesterday).toContainText('–');
 });

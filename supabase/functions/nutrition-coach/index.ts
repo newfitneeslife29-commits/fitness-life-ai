@@ -210,16 +210,27 @@ async function routine(lang: Lang, context: TrainerContext, request: string, cat
 // Two short steps instead of one long answer (which ran out of room and
 // took over a minute): the outline of the week, then the 7 days in detail
 // at the same time. A day that fails is filled in from the others.
+// A step that runs out of room or fails gets one more try, with more room
+// (the SDK already retries rate limits and server errors on its own).
 async function structured<T>(system: string, note: string, content: string, schema: Record<string, unknown>): Promise<T> {
-  const res = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 8000,
-    output_config: { effort: 'low', format: { type: 'json_schema', schema } },
-    system: [{ type: 'text', text: system }, { type: 'text', text: note }],
-    messages: [{ role: 'user', content }],
-  });
-  if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
-  return JSON.parse(textOf(res)) as T;
+  let lastError: unknown;
+  for (const maxTokens of [8000, 16000]) {
+    try {
+      const res = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: maxTokens,
+        output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+        system: [{ type: 'text', text: system }, { type: 'text', text: note }],
+        messages: [{ role: 'user', content }],
+      });
+      if (res.stop_reason === 'max_tokens') throw new HttpError(502, 'truncated');
+      return JSON.parse(textOf(res)) as T;
+    } catch (error) {
+      console.error('nutrition-coach: meal plan step failed', error);
+      lastError = error;
+    }
+  }
+  throw lastError;
 }
 
 type OutlineMeal = { slot: string; time: string; name: string };
@@ -288,7 +299,7 @@ async function isPremium(userId: string) {
     const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
       headers: { Authorization: `Bearer ${REVENUECAT_SECRET_KEY}` },
     });
-    if (!res.ok) throw new Error(`RevenueCat ${res.status}`);
+    if (!res.ok) throw new Error(`RevenueCat ${res.status} for ${userId}`);
     return hasEntitlement(await res.json(), ENTITLEMENT);
   } catch (error) {
     console.error('nutrition-coach: subscription check failed', error);

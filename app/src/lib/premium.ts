@@ -240,6 +240,20 @@ export const refreshPremium = async () => {
     return status;
 };
 
+// When the server says "not Premium" but this phone says Premium: make sure the
+// store's purchases belong to the signed-in user id, then read the status again.
+export const resyncPremium = async () => {
+    try {
+        const b = await getBackend();
+        await b.switchUser(await getUserId());
+        const status = await b.restore();
+        actions.setPremium(status);
+        return status.active;
+    } catch {
+        return false;
+    }
+};
+
 export const restorePremium = async () => {
     const status = await (await getBackend()).restore();
     actions.setPremium(status);

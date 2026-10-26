@@ -526,6 +526,17 @@ export const actions = {
         });
     },
 
+    // A day's steps typed by hand: replaces that day's count (0 clears it).
+    setSteps(day: string, n: number) {
+        set(s => {
+            const steps = { ...(s.steps ?? {}) };
+            if (n > 0) steps[day] = Math.round(n);
+            else delete steps[day];
+            const keep = Object.keys(steps).sort().slice(-400);
+            return { ...s, steps: Object.fromEntries(keep.map(d => [d, steps[d]])) };
+        });
+    },
+
     // One night per day: a new entry replaces that day's (Health never replaces one typed by hand).
     logSleep(entries: Omit<SleepEntry, 'id'>[]) {
         set(s => {

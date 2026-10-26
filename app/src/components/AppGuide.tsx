@@ -1,4 +1,4 @@
-import { Apple, ArrowRight, ChevronLeft, Crown, Footprints, LineChart, ListChecks, Play, Settings, Sparkles, Users, X } from 'lucide-react';
+import { Apple, ArrowRight, ChevronLeft, Crown, Dumbbell, Footprints, GlassWater, LineChart, ListChecks, Play, Settings, ShoppingBag, Sparkles, Trophy, UserCheck, Users, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { t, type Key } from '../i18n';
 
@@ -8,12 +8,17 @@ import { t, type Key } from '../i18n';
 const STEPS: { id: string; icon: ReactNode; tone: string }[] = [
     { id: 'welcome', icon: <Sparkles size={34} />, tone: 'from-brand via-orange-500 to-amber-500' },
     { id: 'today', icon: <Play size={34} />, tone: 'from-brand via-orange-500 to-amber-500' },
+    { id: 'workout', icon: <Dumbbell size={34} />, tone: 'from-red-500 via-orange-600 to-amber-500' },
     { id: 'routines', icon: <ListChecks size={34} />, tone: 'from-violet-600 via-indigo-600 to-fuchsia-600' },
     { id: 'progress', icon: <LineChart size={34} />, tone: 'from-sky-500 via-blue-600 to-indigo-600' },
     { id: 'nutrition', icon: <Apple size={34} />, tone: 'from-emerald-500 via-green-600 to-teal-600' },
+    { id: 'water', icon: <GlassWater size={34} />, tone: 'from-sky-400 via-cyan-500 to-teal-500' },
     { id: 'move', icon: <Footprints size={34} />, tone: 'from-amber-600 via-orange-600 to-rose-600' },
+    { id: 'challenges', icon: <Trophy size={34} />, tone: 'from-amber-400 via-orange-500 to-red-500' },
     { id: 'community', icon: <Users size={34} />, tone: 'from-rose-500 via-pink-600 to-fuchsia-600' },
+    { id: 'trainers', icon: <UserCheck size={34} />, tone: 'from-teal-500 via-emerald-600 to-green-700' },
     { id: 'premium', icon: <Crown size={34} />, tone: 'from-amber-500 via-yellow-500 to-orange-500' },
+    { id: 'shop', icon: <ShoppingBag size={34} />, tone: 'from-slate-800 via-slate-900 to-orange-700' },
     { id: 'settings', icon: <Settings size={34} />, tone: 'from-slate-500 via-slate-600 to-slate-700' },
 ];
 
