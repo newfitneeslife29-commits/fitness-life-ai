@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(StorySharePlugin.class);
         registerPlugin(LauncherIconPlugin.class);
         registerPlugin(WidgetBridgePlugin.class);
+        registerPlugin(RestLivePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

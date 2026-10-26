@@ -1,5 +1,5 @@
 import { ArrowRight, Camera, Dumbbell, LogIn, Sparkles, Upload } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { exercisePhotos } from '../data/exercises';
 import { t } from '../i18n';
 import { LEGAL_URL } from '../lib/premium';
@@ -16,6 +16,33 @@ export const Logo = ({ size = 40 }: { size?: number }) => (
         <path className="fill-brand" transform="translate(256 262) scale(2.5) translate(0 -51)" d={MARK_PATH} />
     </svg>
 );
+
+// Looping, muted video of people training behind the first screens
+// (public/welcome.mp4, bundled so it plays offline). Shown once it can play;
+// without the file, or with "reduce motion" on, `fallback` stays instead.
+export const WELCOME_VIDEO = './welcome.mp4';
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+export const BackgroundVideo = ({ shade = 'light', fallback = null }: { shade?: 'light' | 'strong'; fallback?: ReactNode }) => {
+    const [state, setState] = useState<'loading' | 'playing' | 'failed'>(reducedMotion() ? 'failed' : 'loading');
+    // Light: the top of the screen, fading into the page like the mosaic, so the
+    // text below stays on a plain background. Strong: the whole screen, darkened.
+    const area = shade === 'strong' ? 'h-full' : 'h-[62dvh]';
+    return (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            {state !== 'playing' && fallback}
+            {state !== 'failed' && (
+                <video src={WELCOME_VIDEO} autoPlay muted loop playsInline preload="auto" data-testid="welcome-video"
+                    onPlaying={() => setState('playing')} onError={() => setState('failed')}
+                    className={`absolute inset-x-0 top-0 w-full object-cover transition-opacity duration-700 ${area} ${state === 'playing' ? 'opacity-100' : 'opacity-0'}`} />
+            )}
+            {state === 'playing' && (
+                <div className={`absolute inset-x-0 top-0 ${area} ${shade === 'strong'
+                    ? 'bg-[linear-gradient(to_bottom,rgb(var(--ink)/0.72),rgb(var(--ink)/0.86)_45%,rgb(var(--ink)/0.95))]'
+                    : 'bg-[linear-gradient(to_bottom,rgb(var(--ink)/0.15)_0%,rgb(var(--ink)/0.5)_40%,rgb(var(--ink)/0.92)_68%,rgb(var(--ink))_86%)]'}`} />
+            )}
+        </div>
+    );
+};
 
 const MOSAIC = ['sentadilla', 'press-banca', 'dominadas', 'peso-muerto', 'curl-mancuernas', 'hip-thrust', 'press-militar', 'remo-barra'];
 
@@ -55,8 +82,9 @@ export const Welcome = ({ onStart, onSignIn }: { onStart: () => void; onSignIn?:
 
     return (
         <main className="relative flex min-h-dvh flex-col overflow-hidden bg-ink">
-            {/* Photo mosaic, slowly drifting, fading into the page. */}
-            <div aria-hidden className="pointer-events-none"><PhotoMosaic /></div>
+            {/* A video of people training; until it plays (or without it), the photo
+                mosaic slowly drifting, fading into the page. */}
+            <BackgroundVideo fallback={<PhotoMosaic />} />
 
             <GetTheAppBar />
             <header className="relative z-10 mx-auto flex w-full max-w-lg items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))]">

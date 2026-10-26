@@ -315,6 +315,10 @@ test('switch language in onboarding and settings', async ({ page }) => {
 test('welcome screen leads to onboarding and back', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Entrena con un plan/ })).toBeVisible();
+    // The training video behind the welcome and sign-up screens is bundled.
+    const video = await page.request.get('./welcome.mp4');
+    expect(video.ok()).toBe(true);
+    expect((await video.body()).length).toBeGreaterThan(100_000);
     await page.getByRole('button', { name: 'Empezar gratis' }).click();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta' })).toBeVisible();
     await page.getByRole('button', { name: 'Continuar sin cuenta' }).click();
@@ -2332,4 +2336,33 @@ test('steps: log a past day by hand and see it in the history', async ({ page })
     await sheet.getByLabel('Pasos del día').fill('0');
     await sheet.getByRole('button', { name: 'Guardar pasos' }).click();
     await expect(yesterday).toContainText('–');
+});
+
+test('a finished 30-day challenge earns a store discount, and the streak protector covers one missed day', async ({ page, context }) => {
+    await context.route(/fitnesslifeedition\.com/, route => route.fulfill({ body: '<title>Fitness Life Edition</title>' }));
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    // 26 days in a row with the app, except the day before yesterday, and the consistency challenge joined 29 days ago.
+    await page.evaluate(() => {
+        const key = 'fitness-life:v1';
+        const s = JSON.parse(localStorage.getItem(key)!);
+        const local = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const now = new Date();
+        s.activeDays = Array.from({ length: 27 }, (_, i) => new Date(now.getFullYear(), now.getMonth(), now.getDate() - i))
+            .filter((_, i) => i !== 2).map(local).reverse();
+        s.challenges = [{ id: 'consistency', joinedAt: new Date(Date.now() - 29 * 86_400_000).toISOString() }];
+        localStorage.setItem(key, JSON.stringify(s));
+    });
+    await page.goto('/#/retos');
+    await page.reload();
+    await expect(page.getByText('Premio: 15% en la tienda')).toBeVisible();
+    await expect(page.getByText(/Código: CHALLENGE15/)).toBeVisible();
+    const shop = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Usar mi premio' }).click();
+    expect((await shop).url()).toContain('fitnesslifeedition.com/discount/CHALLENGE15');
+
+    // The missed day didn't break the streak.
+    await page.goto('/#/actividad');
+    await expect(page.getByText('Protector de racha')).toBeVisible();
+    await expect(page.getByText(/26 días/).first()).toBeVisible();
 });

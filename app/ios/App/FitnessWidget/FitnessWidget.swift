@@ -1,3 +1,4 @@
+import ActivityKit
 import SwiftUI
 import WidgetKit
 
@@ -92,7 +93,6 @@ struct FitnessWidgetView: View {
     }
 }
 
-@main
 struct FitnessWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "FitnessWidget", provider: Provider()) { entry in
@@ -101,5 +101,74 @@ struct FitnessWidget: Widget {
         .configurationDisplayName("Fitness Life")
         .description("🔥 👟 🏋️")
         .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// ---------- Rest countdown on the lock screen ----------
+
+// Same type, field for field, as in the app (WidgetBridgePlugin.swift), which
+// starts and ends the activity.
+struct RestActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var startedAt: Date
+        var endsAt: Date
+        var subtitle: String
+    }
+    var title: String
+}
+
+// The rest between sets: a countdown that runs without the app, on the lock
+// screen and in the Dynamic Island.
+struct RestLiveActivity: Widget {
+    private let brand = Color(red: 0.95, green: 0.42, blue: 0.11)
+
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: RestActivityAttributes.self) { context in
+            HStack(spacing: 14) {
+                Image(systemName: "timer").font(.title2.bold()).foregroundStyle(brand)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.attributes.title).font(.headline).foregroundStyle(.white)
+                    if !context.state.subtitle.isEmpty {
+                        Text(context.state.subtitle).font(.caption).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 8)
+                countdown(context.state).font(.system(size: 36, weight: .bold).monospacedDigit()).foregroundStyle(brand).frame(width: 96, alignment: .trailing)
+            }
+            .padding(16)
+            .activityBackgroundTint(Color(red: 0.07, green: 0.08, blue: 0.10))
+            .activitySystemActionForegroundColor(.white)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Label(context.attributes.title, systemImage: "timer").font(.headline).foregroundStyle(brand)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    countdown(context.state).font(.title2.bold().monospacedDigit()).foregroundStyle(.white).frame(width: 80, alignment: .trailing)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text(context.state.subtitle).font(.caption).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
+                }
+            } compactLeading: {
+                Image(systemName: "timer").foregroundStyle(brand)
+            } compactTrailing: {
+                countdown(context.state).monospacedDigit().foregroundStyle(brand).frame(width: 46)
+            } minimal: {
+                Image(systemName: "timer").foregroundStyle(brand)
+            }
+        }
+    }
+
+    // Counts down to the end of the rest by itself; stays at 0:00 after it.
+    private func countdown(_ state: RestActivityAttributes.ContentState) -> Text {
+        Text(timerInterval: state.startedAt...max(state.startedAt, state.endsAt), countsDown: true)
+    }
+}
+
+@main
+struct FitnessWidgets: WidgetBundle {
+    var body: some Widget {
+        FitnessWidget()
+        RestLiveActivity()
     }
 }

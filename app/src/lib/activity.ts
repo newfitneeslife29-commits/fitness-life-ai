@@ -11,19 +11,28 @@ export const trainedDays = (sessions: Session[]) => new Set(sessions.map(s => lo
 // Training counts as being active even if the open was not recorded (older data).
 const activeSet = (activeDays: string[], trained: Set<string>) => new Set([...activeDays, ...trained]);
 
+// The Monday that starts the week of a day, as a local day.
+const weekOf = (d: Date) => localDay(addDays(d, -((d.getDay() + 6) % 7)));
+
 // Consecutive days counting back from today (or yesterday, if today is not in
 // yet). Paused days (rest or injury mode, lib/pause.ts) neither break nor add.
-const streakIn = (days: Set<string>, now: Date, paused: Set<string> = new Set()) => {
+// With `protect`, one missed day a week (Monday to Sunday) doesn't break it
+// either, never two in a row: the streak protector. `saved` lists those days.
+const streakIn = (days: Set<string>, now: Date, paused: Set<string> = new Set(), protect = false) => {
     const today = localDay(now);
     let d = days.has(today) || paused.has(today) ? now : addDays(now, -1);
     let n = 0;
+    const saved: string[] = [];
     for (;;) {
         const k = localDay(d);
         if (days.has(k)) n++;
-        else if (!paused.has(k)) break;
+        else if (paused.has(k)) { /* neither breaks nor adds */ }
+        else if (protect && n > 0 && saved.at(-1) !== localDay(addDays(d, 1)) && !saved.some(s => weekOf(new Date(`${s}T12:00`)) === weekOf(d))
+            && days.has(localDay(addDays(d, -1)))) saved.push(k);
+        else break;
         d = addDays(d, -1);
     }
-    return n;
+    return { n, saved };
 };
 
 const longestRun = (days: Set<string>) => {
@@ -44,12 +53,15 @@ export const activitySummary = (activeDays: string[], sessions: Session[], now =
     const active = activeSet(activeDays, trained);
     const month = localDay(now).slice(0, 7);
     const inMonth = (s: Set<string>) => [...s].filter(k => k.startsWith(month)).length;
-    const activeStreak = streakIn(active, now, paused);
+    const { n: activeStreak, saved } = streakIn(active, now, paused, true);
     return {
         activeThisMonth: inMonth(active),
         trainedThisMonth: inMonth(trained),
         activeStreak,
-        trainedStreak: streakIn(trained, now, paused),
+        // Days the protector kept the streak, and whether this week's is still free.
+        streakSaved: saved,
+        protectorLeft: !saved.some(k => weekOf(new Date(`${k}T12:00`)) === weekOf(now)),
+        trainedStreak: streakIn(trained, now, paused).n,
         // A streak kept through a rest is the best one too.
         bestStreak: Math.max(longestRun(active), activeStreak),
         activeTotal: active.size,
