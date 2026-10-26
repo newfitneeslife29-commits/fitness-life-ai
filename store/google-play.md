@@ -4,7 +4,7 @@ Todo lo que pide Play Console, listo para copiar. Las imágenes están en [`goog
 - **Icono de la app:** `icon-512.png` (512×512).
 - **Gráfico de funciones:** `feature-graphic.png` (1024×500).
 - **Capturas de pantalla del teléfono** (1080×1920), una carpeta por idioma: [`google-play/es`](google-play/es), [`google-play/en`](google-play/en) y [`google-play/pt`](google-play/pt), en este orden:
-  `01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-resumen`, `08-premium`.
+  `01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-pasos`, `08-premium`.
 - **Capturas para computadoras y Chromebook:** en horizontal (1920×1080), en [`google-play/chromebook/`](google-play/chromebook/).
 
 ## Ficha de Play Store principal
