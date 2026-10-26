@@ -1,6 +1,6 @@
 import { Bell, Check, Plus, RotateCcw, ShoppingCart, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AiUsageLine, PremiumLock, useAiErrorHandler } from './AiParts';
 import { confirm, toast } from './feedback';
 import { ReportAiButton } from './ReportAi';
@@ -8,12 +8,12 @@ import { Chips, Photo, Sheet } from './ui';
 import type { Cover } from '../data/covers';
 import { foodPhoto, mealPhotos } from '../data/photos';
 import { getLang, locale, t } from '../i18n';
-import { aiAvailable, designMealPlan, type CoachContext } from '../lib/ai';
+import { AiError, aiAvailable, designMealPlan, type CoachContext } from '../lib/ai';
 import { fmtDate, fmtNumber } from '../lib/format';
 import { uid } from '../lib/id';
 import { dayTotals, loggedKeys, mealDate, planDayOf, planKey } from '../lib/mealplan';
 import { isNative } from '../lib/native';
-import { usePremiumActive } from '../lib/premium';
+import { resyncPremium, usePremiumActive } from '../lib/premium';
 import { actions, useStore } from '../store/store';
 import type { MealPlan, PlannedMeal } from '../store/types';
 
@@ -39,6 +39,35 @@ const dayText = (plan: MealPlan, day: number) => [
     ...plan.days[day].meals.map(m => `${m.time} ${m.name}: ${m.foods.join(', ')} (${m.kcal} kcal)`),
 ].join('\n');
 
+// While the AI works (up to about a minute): what it's doing, step by step.
+const BUSY_STEPS = ['mealPlan.step1', 'mealPlan.step2', 'mealPlan.step3', 'mealPlan.step4'] as const;
+const MealPlanBusy = () => {
+    const [step, setStep] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setStep(s => Math.min(s + 1, BUSY_STEPS.length - 1)), 12000);
+        return () => clearInterval(id);
+    }, []);
+    return (
+        <div className="py-2 text-center" role="status" aria-live="polite">
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-snow shadow-lg shadow-emerald-500/30">
+                <Sparkles size={30} className="animate-pulse" />
+            </span>
+            <p className="mt-4 text-lg font-bold">{t('mealPlan.busy')}</p>
+            <ol className="mx-auto mt-4 max-w-xs space-y-2 text-left">
+                {BUSY_STEPS.map((k, i) => (
+                    <li key={k} className={`flex items-center gap-2 text-sm ${i <= step ? 'text-white' : 'text-white/35'}`}>
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${i < step ? 'bg-emerald-500 text-snow' : i === step ? 'border-2 border-emerald-400' : 'border border-white/25'}`}>
+                            {i < step && <Check size={12} strokeWidth={3} />}
+                        </span>
+                        {t(k)}
+                    </li>
+                ))}
+            </ol>
+            <p className="mt-5 rounded-xl bg-warn/10 px-3 py-2 text-xs font-medium text-warn">{t('mealPlan.keepOpen')}</p>
+        </div>
+    );
+};
+
 const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () => void; context: CoachContext }) => {
     const premium = usePremiumActive();
     const onAiError = useAiErrorHandler();
@@ -52,7 +81,18 @@ const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () 
         if (busy) return;
         setBusy(true);
         try {
-            const result = await designMealPlan(getLang(), context, request.trim(), perDay);
+            const ask = () => designMealPlan(getLang(), context, request.trim(), perDay);
+            let result;
+            try {
+                result = await ask();
+            } catch (e) {
+                // Premium on this phone but not for the server: the purchase belongs to
+                // another user id (after signing in or out). Fix that and try again.
+                if (e instanceof AiError && e.code === 'upgrade' && premium && (await resyncPremium())) result = await ask();
+                // The connection dropped during the long wait: once more.
+                else if (e instanceof AiError && (e.code === 'network' || e.code === 'failed')) result = await ask();
+                else throw e;
+            }
             if (!result.days.length) {
                 toast(result.note || t('mealPlan.empty'), 4000);
                 return;
@@ -76,6 +116,8 @@ const MealPlanSheet = ({ open, onClose, context }: { open: boolean; onClose: () 
                 <PremiumLock text={t('mealPlan.locked')} onOpen={onClose} />
             ) : !aiAvailable() ? (
                 <p className="card p-4 text-sm text-white/60">{t('ai.error.unavailable')}</p>
+            ) : busy ? (
+                <MealPlanBusy />
             ) : (
                 <>
                     <p className="mb-4 text-sm text-white/60">{t('mealPlan.createHint')}</p>

@@ -1,4 +1,4 @@
-import { Bike, ChevronLeft, ChevronRight, Footprints, Moon, Play, Plus, Route, Smartphone, Trash2, Zap } from 'lucide-react';
+import { Bike, Check, ChevronLeft, ChevronRight, Footprints, Moon, Pencil, Play, Plus, Route, Smartphone, Trash2, Zap } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -56,7 +56,132 @@ const WeekBars = ({ values, goal, color, label }: { values: { day: Date; value: 
     );
 };
 
-const StepsCard = () => {
+const dayFrom = (key: string) => {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+};
+const shiftDay = (key: string, by: number) => {
+    const d = dayFrom(key);
+    return localDay(new Date(d.getFullYear(), d.getMonth(), d.getDate() + by));
+};
+const HISTORY_DAYS = 60;
+const dayTitle = (key: string) => {
+    const today = localDay(new Date());
+    if (key === today) return t('steps.today');
+    if (key === shiftDay(today, -1)) return t('steps.yesterday');
+    const text = dayFrom(key).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'short' });
+    return text.charAt(0).toLocaleUpperCase(locale()) + text.slice(1);
+};
+
+// Type the steps of any of the last days by hand (for days without Health or the phone sensor).
+const LogStepsSheet = ({ day, onClose }: { day: string | null; onClose: () => void }) => {
+    const state = useStore(s => s);
+    const [key, setKey] = useState(day ?? localDay(new Date()));
+    const [value, setValue] = useState('');
+    const today = localDay(new Date());
+    const oldest = shiftDay(today, -(HISTORY_DAYS - 1));
+    const current = stepsOn(state, key);
+    const pick = (k: string) => {
+        setKey(k);
+        setValue('');
+    };
+    const save = () => {
+        // Steps are whole numbers: "8.500", "8,500" and "8500" are all 8500.
+        const digits = value.replace(/\D/g, '');
+        const n = Number(digits);
+        if (!digits || n > 100000) {
+            toast(t('steps.logInvalid'));
+            return;
+        }
+        actions.setSteps(key, n);
+        toast(t('steps.logged', { n: fmtNumber(n) }));
+        onClose();
+    };
+    return (
+        <Sheet open={day !== null} onClose={onClose} title={t('steps.logTitle')}>
+            <div className="flex items-center justify-between gap-2 rounded-2xl bg-ink-3 p-2">
+                <button onClick={() => pick(shiftDay(key, -1))} disabled={key <= oldest} aria-label={t('steps.prevDay')} className="btn-ghost h-10 w-10 p-0 disabled:opacity-30"><ChevronLeft size={20} /></button>
+                <p className="text-center font-semibold">{dayTitle(key)}</p>
+                <button onClick={() => pick(shiftDay(key, 1))} disabled={key >= today} aria-label={t('steps.nextDay')} className="btn-ghost h-10 w-10 p-0 disabled:opacity-30"><ChevronRight size={20} /></button>
+            </div>
+            <p className="mt-3 text-sm text-white/55">{t('steps.logNow', { n: fmtNumber(current) })}</p>
+            <label className="mt-3 block">
+                <span className="label mb-1 block">{t('steps.logCount')}</span>
+                <input value={value} onChange={e => setValue(e.target.value)} inputMode="numeric" placeholder={current ? String(current) : '8000'} autoFocus
+                    className="w-full rounded-xl border border-line bg-ink px-3 py-3 text-2xl font-bold tabular-nums outline-none focus:border-brand" />
+            </label>
+            <p className="mt-2 text-xs text-white/45">{t('steps.logHint')}</p>
+            <button onClick={save} className="btn-primary mt-4 w-full py-3.5"><Check size={18} /> {t('steps.logSave')}</button>
+        </Sheet>
+    );
+};
+
+// Steps day by day: summary of the period and one row per day, tap a day to change it.
+const StepsHistory = ({ onEdit }: { onEdit: (day: string) => void }) => {
+    const state = useStore(s => s);
+    const goal = stepGoalOf(state);
+    const [range, setRange] = useState<7 | 30>(7);
+    const [more, setMore] = useState(false);
+    const today = localDay(new Date());
+    const days = Array.from({ length: range }, (_, i) => shiftDay(today, -i));
+    const values = days.map(d => stepsOn(state, d));
+    const counted = values.filter(v => v > 0);
+    const avg = counted.length ? Math.round(counted.reduce((a, b) => a + b, 0) / counted.length) : 0;
+    const best = Math.max(0, ...values);
+    const metGoal = values.filter(v => v >= goal).length;
+    const total = values.reduce((a, b) => a + b, 0);
+    const list = more ? Array.from({ length: HISTORY_DAYS }, (_, i) => shiftDay(today, -i)) : days.slice(0, Math.min(range, 10));
+    const max = Math.max(goal, ...list.map(d => stepsOn(state, d)), 1);
+    return (
+        <div className="card overflow-hidden">
+            <div className="flex gap-1 p-2">
+                {([7, 30] as const).map(n => (
+                    <button key={n} onClick={() => { setRange(n); setMore(false); }}
+                        className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${range === n ? 'bg-emerald-500 text-snow shadow-md shadow-emerald-500/30' : 'text-white/60 hover:bg-ink-3'}`}>
+                        {t('steps.range', { n })}
+                    </button>
+                ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 px-4 pb-3 pt-1 sm:grid-cols-4">
+                {[
+                    [t('steps.avg'), fmtNumber(avg)],
+                    [t('steps.best'), fmtNumber(best)],
+                    [t('steps.goalDays'), `${metGoal}/${range}`],
+                    [t('steps.total'), fmtNumber(total)],
+                ].map(([label, v]) => (
+                    <div key={label} className="rounded-xl bg-ink-3 px-3 py-2">
+                        <p className="text-lg font-extrabold tabular-nums">{v}</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-white/50">{label}</p>
+                    </div>
+                ))}
+            </div>
+            <ul className="divide-y divide-line border-t border-line">
+                {list.map(d => {
+                    const v = stepsOn(state, d);
+                    return (
+                        <li key={d}>
+                            <button onClick={() => onEdit(d)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-ink-3">
+                                <span className="w-28 shrink-0 truncate text-sm font-medium">{dayTitle(d)}</span>
+                                <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink-4">
+                                    <span className={`block h-full rounded-full ${v >= goal ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-emerald-500/50'}`} style={{ width: `${Math.max(v ? 3 : 0, (v / max) * 100)}%` }} />
+                                </span>
+                                <span className="w-16 shrink-0 text-right text-sm font-bold tabular-nums">{v ? fmtNumber(v) : '–'}</span>
+                                {v >= goal ? <Check size={16} className="shrink-0 text-emerald-400" /> : <Pencil size={14} className="shrink-0 text-white/30" />}
+                            </button>
+                        </li>
+                    );
+                })}
+            </ul>
+            {!more && (
+                <button onClick={() => setMore(true)} className="w-full border-t border-line py-3 text-sm font-semibold text-emerald-400 hover:bg-ink-3">
+                    {t('steps.seeMore', { n: HISTORY_DAYS })}
+                </button>
+            )}
+        </div>
+    );
+};
+
+const StepsCard = ({ onLog }: { onLog: () => void }) => {
     const state = useStore(s => s);
     const today = localDay(new Date());
     const steps = stepsOn(state, today);
@@ -95,7 +220,8 @@ const StepsCard = () => {
                 <div className="min-w-0 flex-1 space-y-2">
                     <p className="text-lg font-bold leading-tight">{steps >= goal ? t('steps.goalDone') : t('steps.toGo', { n: fmtNumber(goal - steps) })}</p>
                     <p className="text-sm text-white/60">≈ {fmtDist(meters, unit)}</p>
-                    {!state.walkPlan && <button onClick={() => setEditGoal(true)} className="text-sm font-semibold text-emerald-400">{t('steps.changeGoal')}</button>}
+                    <button onClick={onLog} className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-sm font-bold text-snow shadow-md shadow-emerald-500/30"><Plus size={15} /> {t('steps.log')}</button>
+                    {!state.walkPlan && <button onClick={() => setEditGoal(true)} className="block text-sm font-semibold text-emerald-400">{t('steps.changeGoal')}</button>}
                 </div>
             </div>
             <div className="px-4 pb-4">
@@ -344,6 +470,7 @@ const CardioHistory = () => {
 export default function Move() {
     const navigate = useNavigate();
     const active = useStore(s => s.cardioActive ?? null);
+    const [logDay, setLogDay] = useState<string | null>(null);
     const start = (kind: CardioKind) => {
         if (!getState().cardioActive) actions.startCardio(kind);
         navigate('/cardio');
@@ -369,8 +496,13 @@ export default function Move() {
             )}
 
             <Section title={t('steps.title')}>
-                <StepsCard />
+                <StepsCard onLog={() => setLogDay(localDay(new Date()))} />
             </Section>
+
+            <Section title={t('steps.history')}>
+                <StepsHistory onEdit={setLogDay} />
+            </Section>
+            {logDay && <LogStepsSheet key={logDay} day={logDay} onClose={() => setLogDay(null)} />}
 
             {isNative() && <Section><HealthCard /></Section>}
 
