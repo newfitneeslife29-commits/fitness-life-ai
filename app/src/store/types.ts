@@ -342,6 +342,7 @@ export interface AppState {
     shopping?: { list: string; checked: string[] }; // what's in the cart, for one list at a time
     recipes?: Recipe[]; // the user's own, newest first
     steps?: Record<string, number>; // steps by local day
+    stepsFrom?: string; // local day steps count from: Health and the phone sensor's older history is left out
     sleep?: SleepEntry[]; // newest first
     cardio?: CardioSession[]; // newest first
     cardioActive?: ActiveCardio | null;

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { addPoint, cardioKcal, distanceM, movingSec, pace, stepsFor, toDist } from './cardio';
 import { sleepNights } from './health';
 import { manualSleep, stepGoalOf, stepsOn, walkPlanStatus } from './movement';
-import type { ActiveCardio } from '../store/types';
+import { actions, getState, stepsStart } from '../store/store';
+import type { ActiveCardio, AppState } from '../store/types';
 
 const start = (kind: ActiveCardio['kind'] = 'walk'): ActiveCardio =>
     ({ kind, startedAt: new Date(0).toISOString(), pausedAt: null, pausedMs: 0, distanceM: 0, last: null, gps: 'waiting' });
@@ -94,5 +95,20 @@ describe('walking plan', () => {
         expect(status).toMatchObject({ week: 1, walk: 1, doneThisWeek: 1, finished: false });
         expect(status.spec).toMatchObject({ minutes: 20, steps: 6000 });
         expect(stepGoalOf({ profile: null, walkPlan: null })).toBe(8000);
+    });
+});
+
+describe('steps from Health and the phone sensor', () => {
+    const profile = { createdAt: '2026-10-20T15:00:00.000Z' } as AppState['profile'];
+    it('count from the first day the app was used', () => {
+        expect(stepsStart({ profile, sessions: [], activeDays: [] }, new Date(2026, 9, 26))).toBe('2026-10-20');
+        expect(stepsStart({ profile, sessions: [], activeDays: ['2026-10-12', '2026-10-20'] }, new Date(2026, 9, 26))).toBe('2026-10-12');
+        expect(stepsStart({ profile: null, sessions: [], activeDays: [] }, new Date(2026, 9, 26))).toBe('2026-10-26');
+    });
+    it('leave out the weeks before, and clear them once', () => {
+        actions.importData(JSON.stringify({ ...JSON.parse(actions.exportData()), profile, sessions: [], activeDays: [], steps: { '2026-10-01': 5000, '2026-10-21': 3000 } }));
+        actions.recordSteps({ '2026-10-02': 7000, '2026-10-21': 4000, '2026-10-22': 6000 });
+        expect(getState().steps).toEqual({ '2026-10-21': 4000, '2026-10-22': 6000 });
+        expect(getState().stepsFrom).toBe('2026-10-20');
     });
 });

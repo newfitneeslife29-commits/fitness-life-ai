@@ -159,6 +159,15 @@ const updateSet = (a: ActiveWorkout, exIndex: number, setIndex: number, fn: (w: 
     }),
 });
 
+// The first day the app was used: sign-up, the first workout or the first day it was opened.
+export const stepsStart = (s: Pick<AppState, 'profile' | 'sessions' | 'activeDays'>, today = new Date()) => {
+    const days = [localDay(today), ...(s.activeDays ?? []).slice(0, 1)];
+    if (s.profile?.createdAt) days.push(localDay(new Date(s.profile.createdAt)));
+    const first = s.sessions.at(-1);
+    if (first) days.push(localDay(new Date(first.startedAt)));
+    return days.sort()[0];
+};
+
 export const actions = {
     // `weightKg`: the weight given at sign-up, saved as the first weigh-in.
     completeOnboarding(profile: Omit<Profile, 'createdAt'>, weightKg?: number) {
@@ -515,14 +524,20 @@ export const actions = {
     // ---------- Movement ----------
 
     // Steps by local day; a day only goes up (a later reading has more steps).
+    // Health and the phone sensor also know the weeks before the app was used:
+    // only days from the start of use count. The first time, older days
+    // already saved from them are cleared too.
     recordSteps(days: Record<string, number>) {
+        const from = state.stepsFrom ?? stepsStart(state);
+        const fresh = Object.entries(days).filter(([d]) => d >= from);
         const current = state.steps ?? {};
-        if (Object.entries(days).every(([d, n]) => (current[d] ?? 0) >= Math.round(n))) return;
+        if (state.stepsFrom && fresh.every(([d, n]) => (current[d] ?? 0) >= Math.round(n))) return;
         set(s => {
             const steps = { ...(s.steps ?? {}) };
-            for (const [d, n] of Object.entries(days)) steps[d] = Math.max(steps[d] ?? 0, Math.round(n));
+            if (!s.stepsFrom) for (const d of Object.keys(steps)) if (d < from) delete steps[d];
+            for (const [d, n] of fresh) steps[d] = Math.max(steps[d] ?? 0, Math.round(n));
             const keep = Object.keys(steps).sort().slice(-400);
-            return { ...s, steps: Object.fromEntries(keep.map(d => [d, steps[d]])) };
+            return { ...s, stepsFrom: from, steps: Object.fromEntries(keep.map(d => [d, steps[d]])) };
         });
     },
 
