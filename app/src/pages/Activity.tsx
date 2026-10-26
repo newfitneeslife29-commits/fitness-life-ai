@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Dumbbell, Flame, Smartphone, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Flame, ShieldCheck, Smartphone, Trophy } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader, Section } from '../components/ui';
@@ -48,6 +48,13 @@ export default function Activity() {
                     <Tile icon={<Dumbbell size={20} />} value={summary.trainedThisMonth} label={t('activity.trainedMonth')} />
                     <Tile icon={<Flame size={20} />} value={tp('activity.days', summary.activeStreak)} label={t('activity.streak')} />
                     <Tile icon={<Trophy size={20} />} value={tp('activity.days', summary.bestStreak)} label={t('activity.best')} />
+                </div>
+                <div className="card mt-2 flex items-start gap-3 p-3">
+                    <ShieldCheck size={22} className={`mt-0.5 shrink-0 ${summary.protectorLeft ? 'text-emerald-400' : 'text-amber-300'}`} aria-hidden />
+                    <div>
+                        <p className="text-sm font-semibold">{t('streak.protectTitle')}</p>
+                        <p className="text-xs text-white/55">{summary.protectorLeft ? t('streak.protectReady') : t('streak.protectUsed')}</p>
+                    </div>
                 </div>
             </Section>
 

@@ -6,6 +6,7 @@ import { actions, getState, useStore } from '../store/store';
 import type { AppState, JoinedChallenge } from '../store/types';
 import { localDay } from './activity';
 import { stepsOn } from './movement';
+import { CHALLENGE_OFF } from './shop';
 import { getSupabase } from './supabase';
 
 // 30-day challenges: the app counts the progress from the person's own data
@@ -146,7 +147,7 @@ export const useChallenges = () => {
             const status = challengeStatus(j, data);
             if (status.state === 'done' && !j.doneAt) {
                 actions.markChallengeDone(j.id);
-                toast(t('challenges.completedToast', { name: challengeName(j.id) }), 5000);
+                toast(`${t('challenges.completedToast', { name: challengeName(j.id) })} ${t('challenges.rewardToast', { n: CHALLENGE_OFF })}`, 6000);
             }
             if (account && status.state !== 'ended') void sendProgress(j, status.progress).catch(() => {});
         }

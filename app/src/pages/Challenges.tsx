@@ -1,4 +1,4 @@
-import { Medal, Trophy, Users } from 'lucide-react';
+import { Gift, Medal, Trophy, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -10,6 +10,7 @@ import {
 } from '../lib/challenges';
 import { publicUrl } from '../lib/community';
 import { haptic } from '../lib/native';
+import { CHALLENGE_CODE, CHALLENGE_OFF, openShop } from '../lib/shop';
 import { actions, useStore } from '../store/store';
 import type { JoinedChallenge } from '../store/types';
 
@@ -110,6 +111,13 @@ export default function Challenges() {
                                             <div className="h-2.5 overflow-hidden rounded-full bg-ink-4" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={challengeName(c.id)}>
                                                 <div className={`h-full rounded-full transition-[width] duration-500 ${status.state === 'done' ? 'bg-amber-300' : 'bg-gradient-to-r from-brand to-amber-500'}`} style={{ width: `${pct}%` }} />
                                             </div>
+                                        </div>
+                                    )}
+                                    {status?.state === 'done' && (
+                                        <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
+                                            <p className="flex items-center gap-1.5 font-bold text-amber-300"><Gift size={18} aria-hidden /> {t('challenges.rewardTitle', { n: CHALLENGE_OFF })}</p>
+                                            <p className="mt-1 text-sm text-white/70">{t('challenges.rewardText', { n: CHALLENGE_OFF, code: CHALLENGE_CODE })}</p>
+                                            <button onClick={() => void openShop(CHALLENGE_CODE)} className="btn-primary mt-2 w-full">{t('challenges.rewardCta')}</button>
                                         </div>
                                     )}
                                     <div className="mt-3 flex gap-2">

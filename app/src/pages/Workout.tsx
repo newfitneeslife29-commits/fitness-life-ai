@@ -18,6 +18,7 @@ import { t, tp } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtVolume, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
 import { cancelRestAlert, haptic, keepAwake, primeSound, scheduleRestAlert } from '../lib/native';
 import { sessionName } from '../lib/names';
+import { endRestLive, showRestLive } from '../lib/restLive';
 import { displayToKg, kgToDisplay, stepForUnit } from '../lib/progression';
 import { useNow } from '../lib/useNow';
 import { useRestCountdown } from '../lib/useRest';
@@ -357,12 +358,19 @@ export default function Workout() {
         };
     }, []);
 
-    // Notification when the rest ends, even with the phone locked (apps only).
+    // Notification when the rest ends, even with the phone locked, and the
+    // countdown on the lock screen while resting (apps only).
     const restEndsAt = active?.restEndsAt ?? null;
     useEffect(() => {
-        if (restEndsAt) void scheduleRestAlert(restEndsAt);
-        else void cancelRestAlert();
+        if (restEndsAt) {
+            void scheduleRestAlert(restEndsAt);
+            void showRestLive(restEndsAt);
+        } else {
+            void cancelRestAlert();
+            void endRestLive();
+        }
     }, [restEndsAt]);
+    useEffect(() => () => void endRestLive(), []);
     if (!active) return null;
 
     const sets = active.exercises.flatMap(e => e.sets);
