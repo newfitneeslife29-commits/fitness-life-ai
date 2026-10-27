@@ -1,10 +1,11 @@
-import { Check, ChevronLeft, ClipboardList, Dumbbell, ImagePlus, Loader2, MoreVertical, Send, Star, Video, XCircle } from 'lucide-react';
+import { Check, ChevronLeft, ClipboardList, Dumbbell, Flag, ImagePlus, Loader2, MoreVertical, Send, Star, Video, XCircle } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm, toast } from '../components/feedback';
 import { ChatPhoto, ClientWorkoutsSheet, ReviewSheet, SendRoutineSheet } from '../components/TrainerExtras';
 import { locale, t } from '../i18n';
+import { sendFeedback } from '../lib/feedbackApi';
 import { pickImage } from '../lib/image';
 import { enablePush } from '../lib/push';
 import { receiveRoutines, sendPhoto } from '../lib/trainerTools';
@@ -110,6 +111,19 @@ export default function TrainerChat() {
         }
     };
 
+    // App Review asks for a way to report what other people send (1.2): the
+    // report goes to the team with the feedback.
+    const reportChat = async () => {
+        setMenu(false);
+        if (!hire || !(await confirm({ title: t('community.reportTitle'), message: t('chat.reportMessage'), confirmLabel: t('community.report'), danger: true }))) return;
+        try {
+            await sendFeedback({ kind: 'problem', rating: null, message: `Chat report · hire ${hire.id} · ${hire.role} · ${otherSide(hire).name}`, email: '' });
+            toast(t('community.reported'), 3500);
+        } catch {
+            toast(t('pay.err.failed'), 3500);
+        }
+    };
+
     const other = hire ? otherSide(hire) : null;
     const state = hire ? hireState(hire) : 'ended';
     const status = !hire ? '' : hire.cancelAtPeriodEnd && hire.periodEnd && state !== 'ended'
@@ -154,6 +168,9 @@ export default function TrainerChat() {
                                         <span>{t('clientWorkouts.share')}<span className="block text-xs text-white/50">{t('clientWorkouts.shareHint')}</span></span>
                                     </button>
                                 )}
+                                <button onClick={() => void reportChat()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink-3">
+                                    <Flag size={16} /> {t('chat.report')}
+                                </button>
                                 {hire.role === 'client' && state !== 'ended' && !hire.cancelAtPeriodEnd && (
                                     <button onClick={() => void cancel()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-red-400 hover:bg-ink-3">
                                         <XCircle size={16} /> {t('chat.cancel')}

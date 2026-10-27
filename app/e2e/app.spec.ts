@@ -1712,6 +1712,19 @@ test('hire a trainer in the app: pay with Stripe, chat, and cancel', async ({ pa
     expect(messages[0]).toEqual(expect.objectContaining({ link_id: 'h1', body: '¡Hola Ana! Quiero ganar fuerza.' }));
     await expect.poll(() => pushes).toEqual([{ messageId: 1 }]);
 
+    // The conversation can be reported to the team (App Review 1.2).
+    const reports: Record<string, unknown>[] = [];
+    await page.route(/http:\/\/ai\.test\/rest\/v1\/app_feedback/, async route => {
+        if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+        reports.push(route.request().postDataJSON() as Record<string, unknown>);
+        return route.fulfill({ status: 201, headers: cors, body: '' });
+    });
+    await page.getByRole('button', { name: 'Opciones' }).click();
+    await page.getByRole('button', { name: 'Reportar conversación' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Reportar' }).click();
+    await expect(page.getByText('Gracias, lo revisaremos')).toBeVisible();
+    expect(reports[0]).toEqual(expect.objectContaining({ kind: 'problem', message: expect.stringContaining('Chat report · hire h1') }));
+
     // Cancel: the trainer stays until the end of the paid month.
     await page.getByRole('button', { name: 'Opciones' }).click();
     await page.getByRole('button', { name: 'Cancelar suscripción' }).click();

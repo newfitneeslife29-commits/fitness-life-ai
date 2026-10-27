@@ -68,5 +68,15 @@ Las capturas para iPhone de 6,9" (1290×2796) están en [`app-store/es`](app-sto
 
 **Notas para el revisor de Apple:**
 ```
-Fitness Life works without an account: tap "Start for free" and then "Continue without account". Premium is an auto-renewable subscription (monthly with a 7-day free trial, or annual) and unlocks the AI personal trainer and the AI nutrition coach. The community has report and block buttons on every post and comment.
+Fitness Life works without an account: tap "Start for free" and then "Continue without account". An account (email or Sign in with Apple) is only needed for the cloud backup, the community and online trainers.
+
+Premium is an auto-renewable subscription sold with In-App Purchase (monthly with a 7-day free trial, or annual). It unlocks the AI personal trainer and the AI nutrition coach. "Restore purchases", the Terms of Use and the Privacy Policy are on the Premium screen.
+
+Online trainers: people can hire a real, human personal trainer for 1:1 coaching (chat, routines and follow-up). This is a person-to-person service, so it is paid outside In-App Purchase as allowed by guideline 3.1.3(d). The iPhone app does not sell any digital content outside In-App Purchase.
+
+Location: the GPS is used only while the app is open and a walk or ride is being recorded, to measure the distance. The app has no background location mode.
+
+Apple Health: read-only (steps, active energy, heart rate, sleep), shown in the app; nothing is written.
+
+User-generated content: the community has report and block buttons on every post, comment and story, community rules that must be accepted before posting, and reported content is hidden automatically. The trainer chat has a "Report conversation" option.
 ```
