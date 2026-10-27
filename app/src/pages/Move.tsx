@@ -13,7 +13,6 @@ import { fmtClock, fmtDate, fmtNumber, parseDecimal } from '../lib/format';
 import { healthRemembered } from '../lib/health';
 import { cardioTotals, enablePedometer, manualSleep, pedometerOn, pedometerSupported, sleepRating, stepGoalOf, stepsOn, syncMovement, walkPlanStatus } from '../lib/movement';
 import { isNative } from '../lib/native';
-import { tracksInBackground } from '../lib/tracker';
 import { weekStart } from '../lib/stats';
 import { actions, getState, useStore } from '../store/store';
 import type { CardioKind, CardioSession, Unit } from '../store/types';
@@ -519,7 +518,7 @@ export default function Move() {
                         </button>
                     ))}
                 </div>
-                <p className="mt-2 text-xs text-white/45">{t(tracksInBackground() ? 'cardio.gpsNote' : 'cardio.gpsNoteOpen')}</p>
+                <p className="mt-2 text-xs text-white/45">{t('cardio.gpsNoteOpen')}</p>
             </Section>
 
             <Section title={t('walkPlan.title')}>
