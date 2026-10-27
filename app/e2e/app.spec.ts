@@ -4,9 +4,12 @@ import path from 'node:path';
 const fixture = (name: string) => path.join(import.meta.dirname, 'fixtures', name);
 
 // New users get a tour of the app once; tests skip it, except the one about it.
+// The same for the AI permission.
 // Workout tests use the list of sets, except the ones about the guided mode.
 test.beforeEach(async ({ page }, info) => {
     if (!info.title.startsWith('guided:')) await page.addInitScript(() => localStorage.setItem('fitness-life:workout-view', 'list'));
+    // The AI permission is asked once; only its own test sees it.
+    if (!info.title.startsWith('ai permission:')) await page.addInitScript(() => localStorage.setItem('fitness-life:ai-consent', '1'));
     if (info.title.startsWith('tour:')) return;
     await page.addInitScript(() => localStorage.setItem('fitness-life:guide-seen', '1'));
 });
@@ -887,6 +890,28 @@ test('AI personal trainer (Premium): chat with the plan as context and a routine
     await dialog.getByRole('button', { name: 'Guardar en mis rutinas' }).click();
     await expect(page.getByText('Rutina guardada: Pierna express')).toBeVisible();
     await expect(page.getByRole('link', { name: /Pierna express/ })).toBeVisible();
+});
+
+test('ai permission: asked before the first question, nothing sent on "no", asked once on "yes"', async ({ page }) => {
+    const calls: Record<string, unknown>[] = [];
+    await mockAi(page, calls, { premium: true });
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: /Entrenador IA/ }).click();
+
+    await page.getByRole('button', { name: '¿Qué entreno hoy y con cuánto peso?' }).click();
+    const ask = page.getByRole('alertdialog');
+    await expect(ask.getByText('Antes de usar la IA')).toBeVisible();
+    await expect(ask.getByText(/Anthropic/)).toBeVisible();
+    await ask.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.getByText('Sin tu permiso no podemos usar la IA.', { exact: false })).toBeVisible();
+    expect(calls.filter(c => c.action === 'trainer')).toEqual([]);
+
+    await page.getByRole('button', { name: '¿Qué entreno hoy y con cuánto peso?' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Sí, acepto' }).click();
+    await expect(page.getByText('Hoy toca Cuerpo completo A: sentadilla 3×6–10 con 80 kg.')).toBeVisible();
+    expect(calls.filter(c => c.action === 'trainer')).toHaveLength(1);
+    expect(await page.evaluate(() => localStorage.getItem('fitness-life:ai-consent'))).toBe('1');
 });
 
 test('the AI trainer is Premium-only', async ({ page }) => {

@@ -76,6 +76,8 @@ Online trainers: people can hire a real, human personal trainer for 1:1 coaching
 
 Location: the GPS is used only while the app is open and a walk or ride is being recorded, to measure the distance. The app has no background location mode.
 
+AI: the AI features use Claude, by Anthropic. Before the first request the app explains what is sent and asks for permission; nothing is sent without it. This is also in the Privacy Policy.
+
 Apple Health: read-only (steps, active energy, heart rate, sleep), shown in the app; nothing is written.
 
 User-generated content: the community has report and block buttons on every post, comment and story, community rules that must be accepted before posting, and reported content is hidden automatically. The trainer chat has a "Report conversation" option.
