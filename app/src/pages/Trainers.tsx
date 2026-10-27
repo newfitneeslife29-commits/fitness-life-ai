@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { BadgeCheck, ChevronDown, ChevronRight, ClipboardList, CreditCard, Globe2, GraduationCap, Info, Languages, Loader2, MessageCircle, RefreshCw, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -103,10 +104,13 @@ export default function Trainers() {
     const [rating, setRating] = useState<Trainer | null>(null);
     const [programs, setPrograms] = useState<Program[]>([]);
     const [programsOf, setProgramsOf] = useState<Trainer | null>(null);
-    // Programs on sale; the ones bought go into Routines.
+    // Programs on sale; the ones bought go into Routines. The iPhone app
+    // doesn't sell them: they are digital content, which App Review only
+    // allows through in-app purchase (3.1.1). It only lists the ones already
+    // bought. Hiring a trainer is a 1:1 service and stays (3.1.3(d)).
     const loadPrograms = async () => {
         const list = await fetchPrograms().catch(() => [] as Program[]);
-        setPrograms(list);
+        setPrograms(Capacitor.getPlatform() === 'ios' ? list.filter(p => p.owned) : list);
         if (account) for (const name of await receivePrograms(list).catch(() => [])) toast(t('tprog.received', { name }), 4500);
     };
     const load = () => {

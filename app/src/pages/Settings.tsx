@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { BookOpen, ShoppingBag, ExternalLink, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -432,14 +433,16 @@ const PremiumCard = () => {
                 </div>
                 <ChevronRight className="shrink-0 text-white/40" />
             </Link>
-            <Link to="/invitar" className="card mt-2 flex items-center gap-3 p-4 hover:bg-ink-3">
+            {/* Codes that unlock Premium aren't In-App Purchase (App Review 3.1.1),
+                so the iPhone app leaves "invite a friend" out. */}
+            {Capacitor.getPlatform() !== 'ios' && <Link to="/invitar" className="card mt-2 flex items-center gap-3 p-4 hover:bg-ink-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-brand text-snow"><Gift size={20} /></span>
                 <div className="min-w-0 flex-1">
                     <p className="font-semibold">{t('invite.title')}</p>
                     <p className="text-sm text-white/55">{t('invite.subtitle')}</p>
                 </div>
                 <ChevronRight className="shrink-0 text-white/40" />
-            </Link>
+            </Link>}
         </Section>
     );
 };

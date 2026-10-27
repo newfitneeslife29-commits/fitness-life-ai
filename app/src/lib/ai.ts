@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { blobToBase64 } from './image';
 import { backendAvailable, getSessionClient } from './supabase';
-import type { Lang } from '../i18n';
+import { t, type Lang } from '../i18n';
 import { actions } from '../store/store';
 import type { Activity, AiUsage, ChatMessage, Goal, Level, Limitation, Macros, MealPlan, Setup, Sex } from '../store/types';
 
@@ -14,7 +14,7 @@ export const aiAvailable = backendAvailable;
 
 // upgrade: the free uses of this month are spent → offer Premium.
 // quota: even Premium has a monthly ceiling.
-export type AiErrorCode = 'unavailable' | 'upgrade' | 'quota' | 'refused' | 'network' | 'failed';
+export type AiErrorCode = 'unavailable' | 'upgrade' | 'quota' | 'refused' | 'network' | 'consent' | 'failed';
 export class AiError extends Error {
     constructor(public code: AiErrorCode) {
         super(code);
@@ -48,8 +48,30 @@ export interface MealEstimate {
 
 const getClient = getSessionClient;
 
+// App Review 5.1.2(i): before the first request that sends personal data to
+// Anthropic, people are told what goes there and asked. The answer is kept
+// on the phone; a "no" is asked again next time.
+const CONSENT_KEY = 'fitness-life:ai-consent';
+const hasConsent = () => {
+    try {
+        return localStorage.getItem(CONSENT_KEY) === '1';
+    } catch {
+        return false;
+    }
+};
+const askConsent = async () => {
+    if (hasConsent()) return;
+    const { confirm } = await import('../components/feedback');
+    const ok = await confirm({ title: t('ai.consentTitle'), message: t('ai.consentMessage'), confirmLabel: t('ai.consentAccept') });
+    if (!ok) throw new AiError('consent');
+    try {
+        localStorage.setItem(CONSENT_KEY, '1');
+    } catch { /* asked again next time */ }
+};
+
 const call = async <T>(body: Record<string, unknown>): Promise<T> => {
     if (!aiAvailable()) throw new AiError('unavailable');
+    if (body.action !== 'status') await askConsent();
     let supabase: SupabaseClient;
     try {
         supabase = await getClient();

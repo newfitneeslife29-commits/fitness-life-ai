@@ -1,9 +1,12 @@
+import { Capacitor } from '@capacitor/core';
 import { Apple, ArrowRight, ChevronLeft, Crown, Dumbbell, Footprints, GlassWater, LineChart, ListChecks, Play, Settings, ShoppingBag, Sparkles, Trophy, UserCheck, Users, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { t, type Key } from '../i18n';
 
 // The tour of the app: what each part does, one card at a time. Shown once to
 // new users after setting up their plan, and any time from Ajustes → Guía.
+// On iPhone the challenges card leaves out the invite-a-friend tip (no
+// Premium from codes there, App Review 3.1.1).
 
 const STEPS: { id: string; icon: ReactNode; tone: string }[] = [
     { id: 'welcome', icon: <Sparkles size={34} />, tone: 'from-brand via-orange-500 to-amber-500' },
@@ -55,7 +58,7 @@ export const AppGuide = ({ onClose, page = false }: { onClose: () => void; page?
                 <h2 className="mt-7 text-[1.75rem] font-extrabold leading-tight tracking-tight">{k('title')}</h2>
                 <p className="mt-2 text-white/65">{k('text')}</p>
                 <ul className="mt-5 space-y-2.5">
-                    {[1, 2, 3].map(n => (
+                    {[1, 2, 3].filter(n => !(n === 3 && step.id === 'challenges' && Capacitor.getPlatform() === 'ios')).map(n => (
                         <li key={n} className="flex gap-3 text-[15px] text-white/80">
                             <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand" />
                             {k(`p${n}`)}

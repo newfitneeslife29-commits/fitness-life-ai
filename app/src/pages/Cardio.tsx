@@ -12,8 +12,8 @@ import { openLocationSettings, stopTracking } from '../lib/tracker';
 import { useNow } from '../lib/useNow';
 import { actions, getState, useStore } from '../store/store';
 
-// The walk, run or ride being recorded: distance from the GPS (it keeps
-// counting with the screen locked), moving time, pace or speed, steps and
+// The walk, run or ride being recorded: distance from the GPS (while the
+// app is open, with the screen kept on), moving time, pace or speed, steps and
 // calories. Pause leaves the time and the distance out.
 
 const THEME = {

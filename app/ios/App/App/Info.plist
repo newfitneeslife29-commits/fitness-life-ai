@@ -11,7 +11,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Fitness Life usa tu ubicación solo mientras registras una caminata o un paseo en bicicleta, para medir la distancia. La ruta no sale de tu teléfono.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Fitness Life sigue midiendo la distancia de tu caminata o paseo en bicicleta con la pantalla bloqueada, solo mientras lo registras. La ruta no sale de tu teléfono.</string>
+	<string>Fitness Life usa tu ubicación solo mientras registras una caminata o un paseo en bicicleta, para medir la distancia. La ruta no sale de tu teléfono.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Fitness Life escucha el micrófono solo durante el entreno guiado con manos libres activado, para entender órdenes como «listo» o «siguiente».</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
@@ -20,10 +20,6 @@
 	<string>Fitness Life cuenta tus pasos del día con el sensor de movimiento del iPhone.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Fitness Life guarda en tus Fotos las tarjetas e imágenes que decides guardar para compartir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

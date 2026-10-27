@@ -1,20 +1,19 @@
 import { useEffect } from 'react';
-import { t } from '../i18n';
 import { Capacitor } from '@capacitor/core';
 import { addPoint } from './cardio';
 import { isNative, keepAwake } from './native';
 import { actions, getState, useStore } from '../store/store';
 
-// GPS for the walk or ride being recorded. On iPhone it keeps going with the
-// screen locked. On Android and the web it works while the app is open, with
-// the screen kept on (a background location service would need a Google Play
-// declaration with a video). Points only update the distance on the phone:
-// the route itself is never stored or sent.
+// GPS for the walk or ride being recorded, while the app is open, with the
+// screen kept on. No background location: App Review rejects it for anything
+// but navigation (2.5.4), and Google Play wants a declaration with a video.
+// On iPhone it goes through the native plugin, asking only "while using the
+// app"; on Android and the web, through the web view. Points only update the
+// distance on the phone: the route itself is never stored or sent.
 
 let running = false;
 
-// The GPS keeps going with the screen locked (iPhone only).
-export const tracksInBackground = () => isNative() && Capacitor.getPlatform() !== 'android';
+const nativeGps = () => isNative() && Capacitor.getPlatform() === 'ios';
 
 const onFix = (lat: number, lon: number, accuracy: number, at: number) =>
     actions.updateCardio(a => addPoint(a, { lat, lon, accuracy, at }));
@@ -31,12 +30,12 @@ const fail = (denied: boolean) => {
 export const startTracking = async () => {
     if (running || !getState().cardioActive) return;
     running = true;
-    if (!tracksInBackground()) {
+    void keepAwake(true);
+    if (!nativeGps()) {
         if (!('geolocation' in navigator)) {
             running = false;
             return fail(false);
         }
-        void keepAwake(true);
         webWatch = navigator.geolocation.watchPosition(
             p => onFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp),
             e => fail(e.code === e.PERMISSION_DENIED),
@@ -46,9 +45,8 @@ export const startTracking = async () => {
     }
     try {
         const { BackgroundGeolocation } = await import('@capgo/background-geolocation');
+        // Without backgroundMessage the plugin stays in the foreground.
         await BackgroundGeolocation.start({
-            backgroundTitle: t('cardio.trackingTitle'),
-            backgroundMessage: t('cardio.trackingMessage'),
             requestPermissions: true,
             stale: false,
             distanceFilter: 5,
@@ -65,10 +63,10 @@ export const startTracking = async () => {
 export const stopTracking = async () => {
     if (!running) return;
     running = false;
+    void keepAwake(false);
     if (webWatch !== null) {
         navigator.geolocation.clearWatch(webWatch);
         webWatch = null;
-        void keepAwake(false);
         return;
     }
     try {
