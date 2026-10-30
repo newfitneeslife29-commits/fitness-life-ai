@@ -12,6 +12,8 @@ import { getLang, l10n, t } from '../i18n';
 import { fmtNumber } from '../lib/format';
 import { actions, useStore } from '../store/store';
 import type { Activity, Goal, HomeGear, Level, Limitation, Setup, Unit } from '../store/types';
+import { offerTrialSoon, takeTrialOffer } from '../lib/premium';
+import { guideSeen } from '../components/AppGuide';
 
 // One photo per question (public/covers, public/move, public/food).
 const BACKDROPS = [
@@ -71,7 +73,12 @@ export default function Onboarding() {
     };
     const targets = parsed ? autoTargets(profileDraft, parsed.weightKg) : null;
 
-    const finish = () => actions.completeOnboarding(profileDraft, parsed?.weightKg);
+    const finish = () => {
+        actions.completeOnboarding(profileDraft, parsed?.weightKg);
+        // The plan is ready: a good moment to offer the free Premium trial (once, easy to skip).
+        offerTrialSoon();
+        if (guideSeen() && takeTrialOffer()) window.location.hash = '#/premium?bienvenida';
+    };
 
     if (stage === 'welcome') {
         return (

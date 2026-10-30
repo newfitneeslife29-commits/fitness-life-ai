@@ -2404,3 +2404,25 @@ test('a finished 30-day challenge earns a store discount, and the streak protect
     await expect(page.getByText('Protector de racha')).toBeVisible();
     await expect(page.getByText(/26 días/).first()).toBeVisible();
 });
+
+test('first week: welcome challenge, travel workouts and the trial offer', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    // The welcome challenge: four steps in the first 7 days.
+    await expect(page.getByText('Reto de bienvenida')).toBeVisible();
+    await expect(page.getByText('0 de 4 hechos · quedan 7 días')).toBeVisible();
+
+    // A travel workout starts in one tap, without touching the plan.
+    await page.getByRole('link', { name: 'Rutinas' }).first().click();
+    await expect(page.getByText('De viaje o en el hotel')).toBeVisible();
+    await page.getByText('De viaje o en el hotel').scrollIntoViewIfNeeded();
+    await page.getByRole('button', { name: 'Empezar Hotel: cuerpo completo' }).click();
+    await expect(page.getByText('Hotel: cuerpo completo').first()).toBeVisible();
+    await expect(page.getByText('Sentadilla sin peso').first()).toBeVisible();
+
+    // The trial offer after the plan has a clear way out.
+    await page.goto('/#/premium?bienvenida');
+    await expect(page.getByRole('heading', { name: '¡Tu plan está listo! 🎉' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ahora no' }).click();
+    await expect(page.getByText('Reto de bienvenida')).toBeVisible();
+});

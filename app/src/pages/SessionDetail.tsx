@@ -39,19 +39,19 @@ export default function SessionDetail() {
     useEffect(() => {
         if (isNew && medals.length) actions.markAchievementsSeen(medals.map(m => m.id));
     }, [isNew, medals]);
-    // A good moment to ask for a rating: right after a finished workout,
-    // once the summary has been seen.
-    useEffect(() => {
-        if (!isNew) return;
-        const timer = window.setTimeout(() => void maybeAskReview(sessions.length), 2500);
-        return () => window.clearTimeout(timer);
-    }, [isNew]);
-
     const records = useMemo(() => {
         if (!session) return [];
         const before = sessions.slice(index + 1).flatMap(s => s.sets);
         return newRecords(before, session.sets);
     }, [sessions, session, index]);
+
+    // A good moment to ask for a rating: right after a finished workout
+    // (sooner if it beat a record), once the summary has been seen.
+    useEffect(() => {
+        if (!isNew) return;
+        const timer = window.setTimeout(() => void maybeAskReview(sessions.length, records.length > 0), 2500);
+        return () => window.clearTimeout(timer);
+    }, [isNew]);
 
     if (!session) {
         return (

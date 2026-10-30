@@ -31,6 +31,7 @@ import { actions, useStore } from '../store/store';
 import type { PlanUpdate, Routine, Session } from '../store/types';
 import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
+import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
 
@@ -257,6 +258,44 @@ const BeginnerCard = () => (
     </Link>
 );
 
+// The first week: four small steps (lib/welcome.ts), each one a tap away.
+const WELCOME_LINKS = { workout: '/rutinas', meal: '/nutricion', water: '/nutricion', three: '/rutinas' } as const;
+const WelcomeCard = ({ startedAt }: { startedAt: string }) => {
+    const sessions = useStore(s => s.sessions);
+    const meals = useStore(s => s.meals);
+    const water = useStore(s => s.water);
+    const status = useMemo(() => welcomeStatus({ sessions, meals, water }, startedAt), [sessions, meals, water, startedAt]);
+    if (status.daysLeft === 0) return null;
+    const all = status.count === WELCOME_STEPS.length;
+    return (
+        <Section>
+            <div className="card border-amber-400/40 bg-gradient-to-br from-amber-500/15 to-brand/10 p-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-brand text-snow">{all ? <PartyPopper size={22} /> : <Trophy size={22} />}</span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('welcome.title')}</span>
+                        <span className="block text-sm text-white/60">{all ? t('welcome.done') : tp('welcome.hint', status.daysLeft, { done: status.count, total: WELCOME_STEPS.length })}</span>
+                    </span>
+                </div>
+                {!all && (
+                    <ul className="mt-3 space-y-1.5">
+                        {WELCOME_STEPS.map(step => (
+                            <li key={step}>
+                                <Link to={WELCOME_LINKS[step]} className="flex items-center gap-2.5 rounded-lg px-1 py-1 text-sm hover:bg-ink-3">
+                                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${status.done[step] ? 'bg-good text-snow' : 'border-2 border-white/30'}`}>
+                                        {status.done[step] && <Check size={13} strokeWidth={3} />}
+                                    </span>
+                                    <span className={status.done[step] ? 'text-white/45 line-through' : 'font-medium'}>{t(`welcome.step.${step}`)}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </Section>
+    );
+};
+
 // The Premium personal trainer: shown to everyone, unlocked with Premium.
 const TrainerCard = ({ premium }: { premium: boolean }) => (
     <Link to="/entrenador" className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-snow shadow-lg shadow-violet-600/25 active:scale-[0.99]">
@@ -445,6 +484,8 @@ export default function Today() {
             </Section>
 
             {plan?.update && !plan.update.seen && <Section><PlanUpdateCard update={plan.update} /></Section>}
+
+            {profile.createdAt && <WelcomeCard startedAt={profile.createdAt} />}
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 

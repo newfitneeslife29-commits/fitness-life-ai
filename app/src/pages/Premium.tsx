@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, Minus } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '../components/feedback';
 import PremiumArt from '../components/PremiumArt';
@@ -49,6 +49,8 @@ const Mark = ({ value }: { value: Cell }) =>
 
 export default function Premium() {
     const navigate = useNavigate();
+    // Right after the plan was made (Onboarding): the trial, with a way out.
+    const welcome = useSearchParams()[0].has('bienvenida');
     const premium = useStore(s => s.premium);
     const usage = useStore(s => s.aiUsage);
     const [offer, setOffer] = useState<Offer | null>(null);
@@ -116,8 +118,8 @@ export default function Premium() {
             <Section>
                 <div className="flex flex-col items-center pt-8 text-center">
                     <PremiumArt className="h-auto w-full max-w-[320px]" />
-                    <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">Fitness Life Premium</h1>
-                    <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-white/60">{t('premium.subtitle')}</p>
+                    <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">{welcome && !active ? t('premium.welcomeTitle') : 'Fitness Life Premium'}</h1>
+                    <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-white/60">{welcome && !active ? t('premium.welcomeText') : t('premium.subtitle')}</p>
                 </div>
             </Section>
 
@@ -174,6 +176,7 @@ export default function Premium() {
                                     {t('premium.trialTerms', { n: plan.trialDays, price: plan.price, period: t(plan.id === 'annual' ? 'premium.year' : 'premium.month'), store: Capacitor.getPlatform() === 'ios' ? 'App Store' : 'Google Play' })}
                                 </p>
                             )}
+                            {welcome && <button className="btn-ghost mt-3 w-full" onClick={() => navigate('/', { replace: true })}>{t('premium.notNow')}</button>}
                     </>
                 </Section>
             )}

@@ -234,8 +234,9 @@ export const actions = {
         }));
     },
 
-    startWorkout(routineId: string | null) {
-        let routine = state.routines.find(r => r.id === routineId) ?? null;
+    // `given`: a routine that isn't saved (the travel workouts).
+    startWorkout(routineId: string | null, given?: Routine) {
+        let routine = given ?? state.routines.find(r => r.id === routineId) ?? null;
         // Injured: the exercises that load the sore zones are swapped or left out.
         const pause = currentPause(state.profile);
         let injury: ActiveWorkout['injury'];
