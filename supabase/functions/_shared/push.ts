@@ -29,7 +29,12 @@ export interface Push {
   // belongs to (notifications of one chat, or of the community, are grouped).
   link: string;
   thread: string;
+  // How long the notification is worth delivering: a phone that was off or
+  // offline longer doesn't get it days later.
+  ttlSeconds?: number;
 }
+
+const DEFAULT_TTL = 24 * 3600;
 
 // 'gone': the token no longer exists (app removed, notifications reset).
 export type PushResult = 'sent' | 'gone' | 'failed';
@@ -82,7 +87,7 @@ const sendAndroid = async (token: string, push: Push): Promise<PushResult> => {
         token,
         notification: { ...(push.title ? { title: push.title } : {}), body: push.body },
         data: { link: push.link },
-        android: { priority: 'high', notification: { channel_id: 'chat', tag: push.thread, icon: 'ic_stat_notify', color: '#f26b1d', sound: 'default' } },
+        android: { priority: 'high', ttl: `${push.ttlSeconds ?? DEFAULT_TTL}s`, notification: { channel_id: 'chat', tag: push.thread, icon: 'ic_stat_notify', color: '#f26b1d', sound: 'default' } },
       },
     }),
   });
@@ -115,6 +120,7 @@ const sendIos = async (token: string, push: Push): Promise<PushResult> => {
       'apns-topic': BUNDLE_ID,
       'apns-push-type': 'alert',
       'apns-priority': '10',
+      'apns-expiration': String(Math.floor(Date.now() / 1000) + (push.ttlSeconds ?? DEFAULT_TTL)),
       'content-type': 'application/json',
     },
     body: JSON.stringify({ aps: { alert: { ...(push.title ? { title: push.title } : {}), body: push.body }, sound: 'default', 'thread-id': push.thread }, link: push.link }),

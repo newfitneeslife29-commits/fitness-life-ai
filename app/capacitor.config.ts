@@ -19,6 +19,10 @@ const config: CapacitorConfig = {
             backgroundColor: '#0b0d10',
             showSpinner: false,
         },
+        // With the app open, a notification plays its sound while the app shows it as a note.
+        PushNotifications: {
+            presentationOptions: ['sound'],
+        },
         LocalNotifications: {
             smallIcon: 'ic_stat_notify', // res/drawable/ic_stat_notify.xml
             iconColor: '#f26b1d',

@@ -289,8 +289,10 @@ export const ProfileDetailsSheet = ({ open, onClose }: { open: boolean; onClose:
     const save = () => {
         if (!parsed || weightGoal === undefined) return;
         if (currentKg === undefined || (about.weight.trim() !== shownWeight.trim() && Math.abs(currentKg - parsed.weightKg) >= 0.05)) actions.logBodyWeight(parsed.weightKg);
-        // Keep the original start when the goal itself didn't change.
-        const keep = profile.weightGoal && weightGoal && Math.abs(profile.weightGoal.targetKg - weightGoal.targetKg) < 0.05;
+        // Keep the original start when the goal itself didn't change: same target, same direction.
+        const old = profile.weightGoal;
+        const keep = old && weightGoal && Math.abs(old.targetKg - weightGoal.targetKg) < 0.05
+            && Math.sign(old.targetKg - old.startKg) === Math.sign(weightGoal.targetKg - weightGoal.startKg);
         actions.updateProfile({
             sex: parsed.sex, birthYear: parsed.birthYear, heightCm: parsed.heightCm, activity, limitations: limits,
             weightGoal: keep ? profile.weightGoal : weightGoal,

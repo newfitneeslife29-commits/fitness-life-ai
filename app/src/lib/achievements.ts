@@ -1,7 +1,7 @@
 import { l10n, type L10n } from '../i18n';
 import { getExercise } from '../data/exercises';
 import type { BodyWeight, Session, WeightGoal } from '../store/types';
-import { goalProgress } from './nutrition';
+import { goalProgress, liveGoal } from './nutrition';
 import { newRecords, volume } from './progression';
 import { streakWeeks, weekStart } from './stats';
 
@@ -162,7 +162,7 @@ const replay = (sessions: Session[], daysPerWeek: number, body?: BodyData) => {
         const goal = body.goal;
         if (goal && Math.abs(goal.targetKg - goal.startKg) >= 0.5) {
             for (const w of weighIns.filter(x => x.date >= goal.startedAt)) {
-                const p = goalProgress(goal, w.weightKg);
+                const p = goalProgress(liveGoal(goal, w.weightKg), w.weightKg);
                 if (p >= 0.5) mark('meta-mitad', w.date);
                 if (p >= 1) mark('meta-peso', w.date);
             }

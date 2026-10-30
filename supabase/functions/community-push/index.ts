@@ -70,7 +70,7 @@ Deno.serve(async req => {
 
     const { data: profile } = await admin.from('community_profiles').select('name').eq('id', user.id).maybeSingle();
     const name = profile?.name || 'Fitness Life';
-    const sent = await pushToUser(admin, to, lang => ({ body: communityText(lang, kind, { name, text }), link, thread: 'community' }));
+    const sent = await pushToUser(admin, to, lang => ({ body: communityText(lang, kind, { name, text }), link, thread: 'community', ttlSeconds: 3 * 3600 }));
 
     // Old keys are no longer needed (likes and follows only count recent ones).
     if (Math.random() < 0.02) await admin.from('push_sent').delete().lt('created_at', new Date(Date.now() - 30 * 86_400_000).toISOString());

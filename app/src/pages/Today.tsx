@@ -13,7 +13,7 @@ import { planName, routineName, sessionName } from '../lib/names';
 import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
 import { useUnlocked } from '../lib/useAchievements';
 import { fmtDate, fmtNumber, fmtVolume, fmtWeight, greeting } from '../lib/format';
-import { autoTargets, goalProgress, mealsOn, sumMacros } from '../lib/nutrition';
+import { autoTargets, goalProgress, liveGoal, mealsOn, sumMacros } from '../lib/nutrition';
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { volume } from '../lib/progression';
 import { useStreak } from '../lib/streak';
@@ -184,7 +184,7 @@ const WeightGoalCard = () => {
     if (!profile) return null;
     const unit = profile.unit;
     const current = bodyWeights[0]?.weightKg;
-    const goal = profile.weightGoal;
+    const savedGoal = profile.weightGoal;
     const sheet = <ProfileDetailsSheet open={editing} onClose={() => setEditing(false)} />;
 
     const prompt = (title: string, hint: string, icon: ReactNode) => (
@@ -201,7 +201,7 @@ const WeightGoalCard = () => {
         </>
     );
     if (detailsMissing(profile)) return prompt(t('profileDetails.incomplete'), t('profileDetails.incompleteHint'), <UserRound size={20} />);
-    if (!goal) return prompt(t('weightGoal.set'), t('weightGoal.setHint'), <Target size={20} />);
+    if (!savedGoal) return prompt(t('weightGoal.set'), t('weightGoal.setHint'), <Target size={20} />);
     if (current === undefined) {
         return (
             <Link to="/progreso" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
@@ -212,6 +212,7 @@ const WeightGoalCard = () => {
         );
     }
 
+    const goal = liveGoal(savedGoal, current);
     const keep = Math.abs(goal.targetKg - goal.startKg) < 0.1;
     const progress = goalProgress(goal, current);
     const left = Math.abs(goal.targetKg - current);

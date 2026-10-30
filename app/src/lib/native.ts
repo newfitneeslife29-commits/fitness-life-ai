@@ -97,6 +97,9 @@ export const keepAwake = async (on: boolean) => {
 // Rest timer alert that fires even with the phone locked (native only;
 // the web app vibrates while it is open).
 const REST_NOTIFICATION_ID = 4711;
+// The phone's notification sound: without one, an iPhone shows reminders in silence.
+const SOUND = 'default';
+
 // Asks only the first time; a refusal isn't remembered here, so allowing
 // notifications later in the phone's Settings works without a restart.
 const notificationsOk = async () => {
@@ -126,7 +129,7 @@ export const scheduleRestAlert = async (atMs: number) => {
         if (atMs <= Date.now() + 1000) return;
         await LocalNotifications.schedule({
             notifications: [{
-                id: REST_NOTIFICATION_ID, title: t('notify.restTitle'), body: t('notify.restBody'),
+                id: REST_NOTIFICATION_ID, title: t('notify.restTitle'), body: t('notify.restBody'), sound: SOUND,
                 schedule: { at: new Date(atMs), allowWhileIdle: true }, isExactNotification: await exactAlarms(),
             }],
         });
@@ -149,7 +152,7 @@ export const scheduleRecoveryAlerts = async (alerts: { at: Date; title: string; 
         if (!due.length || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
             // Hours away: an inexact alarm is fine and needs no special permission.
-            notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
+            notifications: due.map((a, i) => ({ id: RECOVERY_IDS[i], title: a.title, body: a.body, sound: SOUND, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
         });
     });
 };
@@ -163,7 +166,7 @@ export const scheduleWaterAlerts = async (alerts: { at: Date; title: string; bod
         const due = alerts.filter(a => a.at.getTime() > Date.now() + 60_000).slice(0, WATER_IDS.length);
         if (!due.length || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
-            notifications: due.map((a, i) => ({ id: WATER_IDS[i], title: a.title, body: a.body, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
+            notifications: due.map((a, i) => ({ id: WATER_IDS[i], title: a.title, body: a.body, sound: SOUND, schedule: { at: a.at, allowWhileIdle: true }, isExactNotification: false })),
         });
     });
 };
@@ -178,7 +181,7 @@ export const scheduleAlert = async (kind: keyof typeof ALERT_IDS, alert: { at: D
         if (!alert || alert.at.getTime() <= Date.now() + 60_000 || !(await notificationsOk())) return;
         await LocalNotifications.schedule({
             notifications: [{
-                id: ALERT_IDS[kind], title: alert.title, body: alert.body, schedule: { at: alert.at, allowWhileIdle: true }, isExactNotification: false,
+                id: ALERT_IDS[kind], title: alert.title, body: alert.body, sound: SOUND, schedule: { at: alert.at, allowWhileIdle: true }, isExactNotification: false,
                 ...(alert.link && { extra: { link: alert.link } }),
             }],
         });
@@ -212,7 +215,7 @@ export const scheduleWeeklyReminders = (group: keyof typeof REMINDER_IDS, remind
         const exact = await exactAlarms();
         await LocalNotifications.schedule({
             notifications: reminders.map(r => ({
-                id: r.id, title: r.title, body: r.body,
+                id: r.id, title: r.title, body: r.body, sound: SOUND,
                 schedule: { on: { weekday: r.weekday, hour: r.hour, minute: r.minute }, allowWhileIdle: true }, isExactNotification: exact,
             })),
         });
