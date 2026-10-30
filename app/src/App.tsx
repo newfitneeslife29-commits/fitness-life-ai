@@ -70,6 +70,7 @@ import Wrapped from './pages/Wrapped';
 import Workout from './pages/Workout';
 import { actions, useStore } from './store/store';
 import { showFemaleDemos } from './data/motion';
+import { takeTrialOffer } from './lib/premium';
 
 const TABS = [
     { to: '/', label: () => t('nav.today'), icon: House },
@@ -196,7 +197,7 @@ export default function App() {
             <FeedbackHost />
             <PasswordRecovery />
             {splash}
-            {tour && newUser && <AppGuide onClose={() => setTour(false)} />}
+            {tour && newUser && <AppGuide onClose={() => { setTour(false); if (takeTrialOffer()) navigate('/premium?bienvenida'); }} />}
             <Routes key={lang}>
                 <Route path="/entreno" element={<ErrorBoundary><Workout /></ErrorBoundary>} />
                 <Route path="/cardio" element={<ErrorBoundary><Cardio /></ErrorBoundary>} />

@@ -1,4 +1,4 @@
-import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Play, Plus, Sparkles, Baby, Users } from 'lucide-react';
+import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Luggage, Play, Plus, Sparkles, Baby, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
@@ -6,6 +6,7 @@ import { HeroStat, PageHeader, Photo, Section } from '../components/ui';
 import { namedCover, routineCovers, type Cover } from '../data/covers';
 import { kindPhoto } from '../data/photos';
 import { exerciseName } from '../data/exercises';
+import { TRAVEL_WORKOUTS, travelRoutine, type TravelWorkout } from '../data/travel';
 import { t, tp } from '../i18n';
 import { planName, routineName } from '../lib/names';
 import { weekPhase } from '../lib/plan';
@@ -41,6 +42,22 @@ const RoutineRow = ({ routine, cover, badge, index, onStart }: { routine: Routin
     );
 };
 
+// Away from home: a short workout with no equipment, started in one tap.
+const TravelRow = ({ workout, onStart }: { workout: TravelWorkout; onStart: () => void }) => {
+    const routine = travelRoutine(workout);
+    const name = routineName(routine);
+    return (
+        <button onClick={onStart} aria-label={t('routines.start', { name })} className="card flex w-full items-center gap-3 p-3 text-left hover:bg-ink-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-snow shadow-md shadow-sky-500/30"><Luggage size={22} /></span>
+            <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{name}</span>
+                <span className="block truncate text-sm text-white/50">{t('travel.line', { min: workout.minutes, n: workout.exercises.length })}</span>
+            </span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-amber-500 text-snow shadow-md shadow-brand/30"><Play size={18} fill="currentColor" /></span>
+        </button>
+    );
+};
+
 // A photo tile: the icon keeps its colour, the text sits on a dark fade.
 const Explore = ({ to, icon, title, hint, color, photo }: { to: string; icon: ReactNode; title: string; hint: string; color: string; photo: Cover }) => (
     <Link to={to} className="relative flex min-h-[10.5rem] flex-col justify-end gap-1 overflow-hidden rounded-2xl bg-black p-3.5 text-snow shadow-md active:scale-[0.98]">
@@ -60,12 +77,12 @@ export default function Routines() {
     const planCovers = routineCovers(planRoutines);
     const customCovers = routineCovers(custom);
 
-    const start = async (id: string) => {
+    const start = async (id: string, given?: Routine) => {
         if (active && (active.routineId === id || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
             navigate('/entreno');
             return;
         }
-        actions.startWorkout(id);
+        actions.startWorkout(id, given);
         navigate('/entreno');
     };
 
@@ -108,6 +125,12 @@ export default function Routines() {
                         <ChevronRight className="shrink-0 text-violet-400" />
                     </Link>
                 )}
+            </Section>
+
+            <Section title={t('travel.title')}>
+                <div className="space-y-2">
+                    {TRAVEL_WORKOUTS.map(w => <TravelRow key={w.id} workout={w} onStart={() => start(w.id, travelRoutine(w))} />)}
+                </div>
             </Section>
 
             <Section title={t('learn.title')}>

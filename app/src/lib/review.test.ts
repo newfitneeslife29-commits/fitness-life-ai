@@ -10,6 +10,11 @@ describe('asking for a store rating', () => {
         expect(shouldAskReview(3, null)).toBe(true);
     });
 
+    it('asks after the second workout when it beat a record', () => {
+        expect(shouldAskReview(2, null, Date.now(), true)).toBe(true);
+        expect(shouldAskReview(1, null, Date.now(), true)).toBe(false);
+    });
+
     it('asks again only four months later, three times at most', () => {
         const now = 1_000 * DAY;
         expect(shouldAskReview(20, { at: now - 30 * DAY, count: 1 }, now)).toBe(false);
