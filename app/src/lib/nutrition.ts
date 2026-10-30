@@ -67,6 +67,15 @@ export const weeksToGoal = (fromKg: number, toKg: number) => {
 };
 
 // How far along the weight goal is, 0..1 (moving the wrong way counts as 0).
+// A goal whose start is on the wrong side of the target (a weight typed wrong
+// at first, or a target kept while the direction changed) would read as reached
+// at once, far past the target: such a goal counts from the current weight.
+export const liveGoal = <G extends { startKg: number; targetKg: number }>(goal: G, currentKg: number): G => {
+    const total = goal.targetKg - goal.startKg;
+    const pastTarget = (currentKg - goal.targetKg) * Math.sign(total);
+    return pastTarget > Math.max(1, Math.abs(total)) ? { ...goal, startKg: currentKg } : goal;
+};
+
 export const goalProgress = (goal: { startKg: number; targetKg: number }, currentKg: number) => {
     const total = goal.targetKg - goal.startKg;
     if (Math.abs(total) < 0.1) return 1;

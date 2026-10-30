@@ -4,7 +4,7 @@ import { setLang, t, tp } from '../i18n';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
 import { pt } from '../i18n/pt';
-import { autoTargets, bmr, goalProgress, kcalFromMacros, mealsOn, onDay, sumMacros, weeksToGoal } from './nutrition';
+import { autoTargets, bmr, goalProgress, liveGoal, kcalFromMacros, mealsOn, onDay, sumMacros, weeksToGoal } from './nutrition';
 import { existsSync } from 'node:fs';
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
@@ -87,6 +87,12 @@ describe('nutrition', () => {
         expect(goalProgress({ startKg: 80, targetKg: 70 }, 75)).toBe(0.5);
         expect(goalProgress({ startKg: 80, targetKg: 70 }, 82)).toBe(0);
         expect(goalProgress({ startKg: 60, targetKg: 64 }, 65)).toBe(1);
+        // Lost a bit more than planned: reached. A start typed wrong (95 kg to lose
+        // down to 90, now 70): far past the target, so it counts from today.
+        expect(goalProgress(liveGoal({ startKg: 80, targetKg: 75 }, 74), 74)).toBe(1);
+        const wrongStart = liveGoal({ startKg: 95, targetKg: 90.7 }, 70.3);
+        expect(wrongStart.startKg).toBe(70.3);
+        expect(goalProgress(wrongStart, 70.3)).toBe(0);
     });
 
     it('sums meals of one day', () => {
