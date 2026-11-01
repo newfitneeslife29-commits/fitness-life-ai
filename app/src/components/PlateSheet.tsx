@@ -11,7 +11,7 @@ const COLOR: Record<string, string> = {
     '45': '#3b82f6', '35': '#eab308',
 };
 
-const Bar = ({ perSide, unit }: { perSide: number[]; unit: Unit }) => {
+export const Bar = ({ perSide, unit }: { perSide: number[]; unit: Unit }) => {
     const max = unit === 'kg' ? 25 : 45;
     return (
         <div className="flex h-24 items-center" aria-hidden>

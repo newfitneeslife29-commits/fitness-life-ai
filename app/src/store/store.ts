@@ -9,6 +9,7 @@ import { advancePlan, buildPlan } from '../lib/plan';
 import { localDay } from '../lib/activity';
 import { sessionsThisWeek, weekStart } from '../lib/stats';
 import { activeExerciseFrom, createActiveWorkout, endRest, finishWorkout } from '../lib/workout';
+import { adjustForFeel, type Feel } from '../lib/feel';
 import { currentPause, endPause } from '../lib/pause';
 import { workoutAround } from '../data/programs';
 import type { Account, ActiveCardio, ActiveWorkout, AiUsage, AppState, CardioKind, CardioSession, ChatMessage, Macros, Meal, MealPlan, Pause, PremiumStatus, Recipe, SleepEntry, Profile, Routine, RoutineExercise, WorkingSet } from './types';
@@ -257,6 +258,17 @@ export const actions = {
         });
     },
 
+    // Only before the first set: afterwards the workout is already under way.
+    // Adding, swapping or removing an exercise also settles the answer
+    // (feelBase is dropped), so a later change can't undo those edits.
+    setFeel(feel: Feel) {
+        updateActive(a => {
+            if (a.exercises.some(e => e.sets.some(x => x.done)) || (a.feel && !a.feelBase)) return a;
+            const base = a.feelBase ?? a.exercises;
+            return { ...a, feel, feelBase: base, exercises: adjustForFeel(base, feel, unitOf(state)) };
+        });
+    },
+
     discardWorkout() {
         set(s => ({ ...s, active: null }));
     },
@@ -354,6 +366,7 @@ export const actions = {
     addExercise(exerciseId: string) {
         updateActive(a => ({
             ...a,
+            feelBase: undefined,
             exercises: [...a.exercises, activeExerciseFrom(state.sessions, { exerciseId, sets: 3, repMin: 8, repMax: 12, restSec: 90 }, unitOf(state))],
         }));
     },
@@ -363,6 +376,7 @@ export const actions = {
     swapExercise(exIndex: number, exerciseId: string) {
         updateActive(a => ({
             ...a,
+            feelBase: undefined,
             exercises: a.exercises.flatMap((ex, i) => {
                 if (i !== exIndex) return [ex];
                 const done = ex.sets.filter(s => s.done);
@@ -375,7 +389,7 @@ export const actions = {
     },
 
     removeExercise(exIndex: number) {
-        updateActive(a => ({ ...a, exercises: a.exercises.filter((_, i) => i !== exIndex) }));
+        updateActive(a => ({ ...a, feelBase: undefined, exercises: a.exercises.filter((_, i) => i !== exIndex) }));
     },
 
     adjustRest(deltaSec: number) {

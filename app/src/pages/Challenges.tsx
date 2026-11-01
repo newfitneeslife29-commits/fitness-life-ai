@@ -6,7 +6,7 @@ import { confirm, toast } from '../components/feedback';
 import { BackHeader, Section, Sheet } from '../components/ui';
 import { t, tp } from '../i18n';
 import {
-    CHALLENGES, challengeGoal, challengeName, challengeStatus, fetchBoard, fetchPeople, leaveBoard, type BoardRow,
+    CHALLENGES, challengeAvailable, challengeDef, challengeGoal, challengeName, challengeStatus, fetchBoard, fetchPeople, leaveBoard, type BoardRow,
 } from '../lib/challenges';
 import { publicUrl } from '../lib/community';
 import { haptic } from '../lib/native';
@@ -64,13 +64,17 @@ export default function Challenges() {
     }, []);
 
     const data = useMemo(() => ({ sessions, cardio, steps, activeDays }), [sessions, cardio, steps, activeDays]);
-    // Joined ones first.
-    const list = [...CHALLENGES].sort((a, b) => Number(joined.some(j => j.id === b.id)) - Number(joined.some(j => j.id === a.id)));
+    // Calendar ones only in their season (or once joined); joined ones first,
+    // then the seasonal one.
+    const isIn = (id: string) => joined.some(j => j.id === id);
+    const list = CHALLENGES
+        .filter(c => challengeAvailable(c) || isIn(c.id))
+        .sort((a, b) => Number(isIn(b.id)) - Number(isIn(a.id)) || Number(!!b.season) - Number(!!a.season));
 
     const join = (id: string) => {
         haptic('success');
         actions.joinChallenge(id);
-        toast(t('challenges.joined'), 3000);
+        toast(t(challengeDef(id)?.season ? 'challenges.joinedAdvent' : 'challenges.joined'), 3000);
     };
     const leave = async (id: string) => {
         if (!(await confirm({ title: t('challenges.leave'), message: t('challenges.leaveConfirm'), confirmLabel: t('challenges.leave'), danger: true }))) return;
@@ -123,7 +127,7 @@ export default function Challenges() {
                                     <div className="mt-3 flex gap-2">
                                         {!mine ? (
                                             <button onClick={() => join(c.id)} className="btn-primary flex-1">{t('challenges.join')}</button>
-                                        ) : status?.state === 'ended' || (status?.state === 'done' && status.daysLeft === 0) ? (
+                                        ) : (status?.state === 'ended' || (status?.state === 'done' && status.daysLeft === 0)) && challengeAvailable(c) && !c.season ? (
                                             <button onClick={() => join(c.id)} className="btn-primary flex-1">{t('challenges.retry')}</button>
                                         ) : (
                                             <button onClick={() => void leave(c.id)} className="btn-ghost flex-1 text-sm">{t('challenges.leave')}</button>

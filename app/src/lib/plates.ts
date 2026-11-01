@@ -48,3 +48,17 @@ export const warmupSets = (workKg: number, unit: Unit): { weightKg: number; reps
     }
     return sets.map(s => ({ weightKg: displayToKg(s.weight, unit), reps: s.reps }));
 };
+
+// Training weights from a one-rep max (in the user's unit), each with the
+// reps it usually allows. Rounded down to a real plate jump.
+export const PERCENT_REPS: [number, string][] = [
+    [100, '1'], [95, '2'], [90, '3–4'], [85, '5–6'], [80, '7–8'], [75, '9–10'], [70, '11–12'], [65, '13–15'],
+];
+
+export const percentTable = (max: number, unit: Unit) => {
+    const step = unit === 'kg' ? 2.5 : 5;
+    return PERCENT_REPS.map(([pct, reps]) => ({
+        pct, reps,
+        weight: pct === 100 ? Math.round(max * 10) / 10 : Math.floor((max * pct) / 100 / step) * step,
+    }));
+};

@@ -176,6 +176,10 @@ export interface ActiveWorkout {
     restedMs?: number;
     // Exercises changed for an injury when it started (lib/pause.ts).
     injury?: { zones: Limitation[]; swapped: number; removed: number };
+    // "How do you feel today?" (lib/feel.ts) and the workout as planned, to
+    // reshape it again if the answer changes before the first set.
+    feel?: 'tired' | 'normal' | 'strong';
+    feelBase?: ActiveExercise[];
 }
 
 export interface Macros {

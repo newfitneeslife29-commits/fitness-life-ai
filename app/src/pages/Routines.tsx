@@ -1,7 +1,8 @@
-import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Luggage, Play, Plus, Sparkles, Baby, Users } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Bot, CalendarSync, ChevronRight, Dumbbell, Footprints, GraduationCap, Layers, Luggage, Play, Plus, Sparkles, Baby, Users, Calculator } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm } from '../components/feedback';
+import { GymCalculator } from '../components/GymCalculator';
 import { HeroStat, PageHeader, Photo, Section } from '../components/ui';
 import { namedCover, routineCovers, type Cover } from '../data/covers';
 import { kindPhoto } from '../data/photos';
@@ -72,6 +73,7 @@ const Explore = ({ to, icon, title, hint, color, photo }: { to: string; icon: Re
 export default function Routines() {
     const { plan, routines, active } = useStore();
     const navigate = useNavigate();
+    const [calc, setCalc] = useState(false);
     const planRoutines = plan ? plan.routineIds.map(id => routines.find(r => r.id === id)).filter((r): r is Routine => !!r) : [];
     const custom = routines.filter(r => r.source === 'custom');
     const planCovers = routineCovers(planRoutines);
@@ -132,6 +134,18 @@ export default function Routines() {
                     {TRAVEL_WORKOUTS.map(w => <TravelRow key={w.id} workout={w} onStart={() => start(w.id, travelRoutine(w))} />)}
                 </div>
             </Section>
+
+            <Section title={t('calc.section')}>
+                <button onClick={() => setCalc(true)} className="card flex w-full items-center gap-3 p-3 text-left hover:bg-ink-3">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-snow shadow-md shadow-emerald-500/30"><Calculator size={22} /></span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{t('calc.title')}</span>
+                        <span className="block truncate text-sm text-white/50">{t('calc.hint')}</span>
+                    </span>
+                    <ChevronRight size={20} className="text-white/40" />
+                </button>
+            </Section>
+            {calc && <GymCalculator open onClose={() => setCalc(false)} />}
 
             <Section title={t('learn.title')}>
                 <div className="grid grid-cols-2 gap-2">

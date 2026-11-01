@@ -33,6 +33,7 @@ import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
 import { estimateMinutes } from '../lib/reminders';
 import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
+import { adventWorkout, isAdventKey, travelRoutine } from '../data/travel';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
 
@@ -296,6 +297,55 @@ const WelcomeCard = ({ startedAt }: { startedAt: string }) => {
     );
 };
 
+// December 1–25: today's 10-minute mini workout and the "25 days to
+// Christmas" challenge (lib/challenges.ts, data/travel.ts).
+const AdventCard = ({ onStart }: { onStart: (routine: Routine) => void }) => {
+    const sessions = useStore(s => s.sessions);
+    const cardio = useStore(s => s.cardio);
+    const steps = useStore(s => s.steps);
+    const activeDays = useStore(s => s.activeDays);
+    const mine = useStore(s => s.challenges?.find(c => c.id === 'advent'));
+    const now = new Date();
+    if (now.getMonth() !== 11 || now.getDate() > 25) return null;
+    const day = now.getDate();
+    const workout = adventWorkout(day);
+    const routine = travelRoutine(workout);
+    const today = localDay(now);
+    const doneToday = sessions.some(x => isAdventKey(x.dayKey) && localDay(new Date(x.startedAt)) === today);
+    const status = mine ? challengeStatus(mine, { sessions, cardio, steps, activeDays }, now) : null;
+    return (
+        <Section>
+            <div className="card overflow-hidden border-emerald-400/40 bg-gradient-to-br from-emerald-600/25 via-ink-2 to-rose-600/20 p-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-rose-500 text-2xl" aria-hidden>🎄</span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('advent.title')}</span>
+                        <span className="block text-sm text-white/60">{t('advent.day', { n: day })} · {routineName(routine)} · {workout.minutes} min</span>
+                    </span>
+                </div>
+                {doneToday ? (
+                    <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-good"><Check size={16} strokeWidth={3} /> {t('advent.doneToday')}</p>
+                ) : (
+                    <button onClick={() => onStart(routine)} className="btn-primary mt-3 w-full"><Play size={18} fill="currentColor" /> {t('advent.start')}</button>
+                )}
+                {status ? (
+                    <div className="mt-3">
+                        <div className="mb-1 flex justify-between text-xs text-white/60">
+                            <span>{t('challenges.progress', { n: status.progress, target: status.target })}</span>
+                            {status.state === 'done' && <span className="font-semibold text-amber-300">{t('challenges.done')}</span>}
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-ink-4">
+                            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-rose-400" style={{ width: `${Math.round((status.progress / status.target) * 100)}%` }} />
+                        </div>
+                    </div>
+                ) : (
+                    <Link to="/retos" className="mt-2 flex items-center justify-center gap-1 text-sm font-semibold text-emerald-300">{t('advent.join')} <ChevronRight size={16} /></Link>
+                )}
+            </div>
+        </Section>
+    );
+};
+
 // The Premium personal trainer: shown to everyone, unlocked with Premium.
 const TrainerCard = ({ premium }: { premium: boolean }) => (
     <Link to="/entrenador" className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-snow shadow-lg shadow-violet-600/25 active:scale-[0.99]">
@@ -434,12 +484,12 @@ export default function Today() {
     const tip = (dayOfYear % TIPS) + 1;
     const stepsToday = stepsOn({ steps: stepsMap, cardio }, localDay(now));
 
-    const start = async (routineId: string | null) => {
+    const start = async (routineId: string | null, given?: Routine) => {
         if (active && (active.routineId === routineId || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
             navigate('/entreno');
             return;
         }
-        actions.startWorkout(routineId);
+        actions.startWorkout(routineId, given);
         navigate('/entreno');
     };
 
@@ -484,6 +534,8 @@ export default function Today() {
             </Section>
 
             {plan?.update && !plan.update.seen && <Section><PlanUpdateCard update={plan.update} /></Section>}
+
+            <AdventCard onStart={r => void start(r.id, r)} />
 
             {profile.createdAt && <WelcomeCard startedAt={profile.createdAt} />}
 
