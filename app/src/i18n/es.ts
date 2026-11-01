@@ -2128,4 +2128,9 @@ export const es = {
     'premium.welcomeTitle': "¡Tu plan está listo! 🎉",
     'premium.welcomeText': "Pruébalo con todo: entrenador personal con IA, plan de comidas y coach de nutrición. Los primeros días son gratis.",
     'premium.notNow': "Ahora no",
+    'reminder.evening': "La noche antes (8 pm), avísame qué toca mañana",
+    'reminder.eveningTitle': "Mañana toca: {name} 💪",
+    'reminder.eveningTitleFree': "Mañana toca entrenar 💪",
+    'reminder.eveningBody': "{n} ejercicios · unos {min} min. Deja tu ropa lista.",
+    'reminder.eveningBodyFree': "Deja tu ropa lista y descansa bien.",
 };

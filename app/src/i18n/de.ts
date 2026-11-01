@@ -2120,4 +2120,9 @@ export const de: Dict = {
     'premium.welcomeTitle': "Dein Plan ist fertig! 🎉",
     'premium.welcomeText': "Probier ihn mit allem: KI-Personal-Trainer, Essensplan und Ernährungscoach. Die ersten Tage sind kostenlos.",
     'premium.notNow': "Nicht jetzt",
+    'reminder.evening': "Am Vorabend (20 Uhr) sagen, was morgen dran ist",
+    'reminder.eveningTitle': "Morgen: {name} 💪",
+    'reminder.eveningTitleFree': "Morgen ist Trainingstag 💪",
+    'reminder.eveningBody': "{n} Übungen · ca. {min} Min. Leg deine Sachen bereit.",
+    'reminder.eveningBodyFree': "Leg deine Sachen bereit und schlaf gut.",
 };

@@ -2120,4 +2120,9 @@ export const ru: Dict = {
     'premium.welcomeTitle': "Ваш план готов! 🎉",
     'premium.welcomeText': "Попробуйте его со всем: персональный ИИ-тренер, план питания и коуч по питанию. Первые дни бесплатно.",
     'premium.notNow': "Не сейчас",
+    'reminder.evening': "Накануне вечером (20:00) напоминать, что завтра",
+    'reminder.eveningTitle': "Завтра: {name} 💪",
+    'reminder.eveningTitleFree': "Завтра тренировка 💪",
+    'reminder.eveningBody': "Упражнений: {n} · около {min} мин. Подготовьте форму.",
+    'reminder.eveningBodyFree': "Подготовьте форму и хорошо выспитесь.",
 };

@@ -5,7 +5,7 @@ import { routineName } from './names';
 import { reminderId, scheduleAlert, scheduleWeeklyReminders, type WeeklyReminder } from './native';
 import { currentPause } from './pause';
 import { useStore } from '../store/store';
-import type { AppState } from '../store/types';
+import type { AppState, Routine } from '../store/types';
 
 // "Time to train": a notification at the time the user picked, on their
 // training days, with the routine that is next in the plan.
@@ -28,6 +28,25 @@ export const trainingReminders = (state: Pick<AppState, 'profile' | 'plan' | 'ro
     }));
 };
 
+// Rough length of a routine: each set plus its rest, rounded to 5 minutes.
+export const estimateMinutes = (r: Pick<Routine, 'exercises'>) =>
+    Math.max(5, Math.round(r.exercises.reduce((m, e) => m + e.sets * (e.restSec + 45), 0) / 60 / 5) * 5);
+
+// "Tomorrow: Upper body": at 20:00 the night before each training day, so
+// the gear and the plan are ready (part of the training reminder).
+export const EVENING_HOUR = 20;
+export const eveningReminders = (state: Pick<AppState, 'profile' | 'plan' | 'routines'>): WeeklyReminder[] => {
+    const reminder = state.profile?.trainingReminder;
+    if (!reminder || reminder.evening === false) return [];
+    const next = state.plan ? state.routines.find(r => r.id === state.plan!.routineIds[state.plan!.nextIndex]) : undefined;
+    const title = next ? t('reminder.eveningTitle', { name: routineName(next) }) : t('reminder.eveningTitleFree');
+    const body = next?.exercises.length ? t('reminder.eveningBody', { n: next.exercises.length, min: estimateMinutes(next) }) : t('reminder.eveningBodyFree');
+    return [...new Set(reminder.days)].sort().map(day => {
+        const before = (day + 6) % 7;
+        return { id: reminderId('evening', before), weekday: notificationWeekday(before), hour: EVENING_HOUR, minute: 0, title, body };
+    });
+};
+
 // The day after a rest's last day, at the training reminder's time (or 9:00).
 export const pauseEndAt = (until: string, time?: string) => {
     const [y, m, d] = until.split('-').map(Number);
@@ -48,6 +67,7 @@ export const useTrainingReminders = () => {
     const paused = !!pause;
     useEffect(() => {
         void scheduleWeeklyReminders('training', paused ? [] : trainingReminders({ profile, plan, routines }));
+        void scheduleWeeklyReminders('evening', paused ? [] : eveningReminders({ profile, plan, routines }));
         // The routine name only matters when the next day changes.
     }, [JSON.stringify(reminder), next, lang, paused]);
     const until = pause?.kind === 'rest' ? pause.until : null;

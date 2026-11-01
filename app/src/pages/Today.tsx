@@ -31,6 +31,7 @@ import { actions, useStore } from '../store/store';
 import type { PlanUpdate, Routine, Session } from '../store/types';
 import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
+import { estimateMinutes } from '../lib/reminders';
 import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
@@ -38,7 +39,6 @@ import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
 const TIPS = 12;
 
 // About how long a routine takes: every set plus its rest.
-const estimateMin = (r: Routine) => Math.max(5, Math.round(r.exercises.reduce((m, e) => m + e.sets * (e.restSec + 45), 0) / 60 / 5) * 5);
 
 // Numbers count up when the screen opens (not with reduced motion).
 const useCountUp = (target: number, ms = 700) => {
@@ -130,7 +130,7 @@ const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onSta
                 <h2 className="text-[1.7rem] font-extrabold leading-tight tracking-tight">{routineName(routine)}</h2>
                 <p className="mt-1 flex items-center gap-3 text-sm text-snow/80">
                     <span className="flex items-center gap-1"><Dumbbell size={14} /> {tp('home.exercises', routine.exercises.length)}</span>
-                    <span className="flex items-center gap-1"><Clock size={14} /> {t('home.minutes', { n: estimateMin(routine) })}</span>
+                    <span className="flex items-center gap-1"><Clock size={14} /> {t('home.minutes', { n: estimateMinutes(routine) })}</span>
                 </p>
                 <p className="mt-2 line-clamp-1 text-xs text-snow/60">{routine.exercises.map(e => exerciseName(e.exerciseId)).join(' · ')}</p>
                 <button onClick={onStart} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-semibold text-snow shadow-lg shadow-brand/30 transition hover:bg-brand-strong active:scale-[0.98]">

@@ -2120,4 +2120,9 @@ export const ja: Dict = {
     'premium.welcomeTitle': "プランの準備ができました！🎉",
     'premium.welcomeText': "すべての機能で試してみましょう：AIパーソナルトレーナー、食事プラン、栄養コーチ。最初の数日は無料です。",
     'premium.notNow': "今はしない",
+    'reminder.evening': "前日の夜（20時）に明日のメニューを知らせる",
+    'reminder.eveningTitle': "明日：{name} 💪",
+    'reminder.eveningTitleFree': "明日はトレーニングの日 💪",
+    'reminder.eveningBody': "{n}種目 · 約{min}分。ウェアを準備しておこう。",
+    'reminder.eveningBodyFree': "ウェアを準備して、よく眠ろう。",
 };

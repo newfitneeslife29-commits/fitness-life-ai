@@ -2120,4 +2120,9 @@ export const ko: Dict = {
     'premium.welcomeTitle': "플랜이 준비됐어요! 🎉",
     'premium.welcomeText': "모든 기능으로 써 보세요: AI 퍼스널 트레이너, 식단 플랜, 영양 코치. 처음 며칠은 무료예요.",
     'premium.notNow': "나중에",
+    'reminder.evening': "전날 밤(오후 8시)에 내일 운동 알려 주기",
+    'reminder.eveningTitle': "내일: {name} 💪",
+    'reminder.eveningTitleFree': "내일은 운동하는 날 💪",
+    'reminder.eveningBody': "운동 {n}개 · 약 {min}분. 운동복을 준비해 두세요.",
+    'reminder.eveningBodyFree': "운동복을 준비하고 푹 주무세요.",
 };

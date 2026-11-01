@@ -2120,4 +2120,9 @@ export const nl: Dict = {
     'premium.welcomeTitle': "Je plan is klaar! 🎉",
     'premium.welcomeText': "Probeer het met alles: AI-personal trainer, maaltijdplan en voedingscoach. De eerste dagen zijn gratis.",
     'premium.notNow': "Niet nu",
+    'reminder.evening': "De avond ervoor (20:00) laten weten wat morgen komt",
+    'reminder.eveningTitle': "Morgen: {name} 💪",
+    'reminder.eveningTitleFree': "Morgen is een trainingsdag 💪",
+    'reminder.eveningBody': "{n} oefeningen · ongeveer {min} min. Leg je spullen klaar.",
+    'reminder.eveningBodyFree': "Leg je spullen klaar en slaap goed.",
 };

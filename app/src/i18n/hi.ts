@@ -2120,4 +2120,9 @@ export const hi: Dict = {
     'premium.welcomeTitle': "आपका प्लान तैयार है! 🎉",
     'premium.welcomeText': "सब कुछ के साथ आज़माएँ: AI पर्सनल ट्रेनर, मील प्लान और न्यूट्रिशन कोच। पहले दिन मुफ़्त हैं।",
     'premium.notNow': "अभी नहीं",
+    'reminder.evening': "एक रात पहले (रात 8 बजे) बताएँ कि कल क्या है",
+    'reminder.eveningTitle': "कल: {name} 💪",
+    'reminder.eveningTitleFree': "कल वर्कआउट का दिन है 💪",
+    'reminder.eveningBody': "{n} एक्सरसाइज़ · लगभग {min} मिनट। अपने कपड़े तैयार रखें।",
+    'reminder.eveningBodyFree': "अपने कपड़े तैयार रखें और अच्छी नींद लें।",
 };

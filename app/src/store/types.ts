@@ -58,7 +58,8 @@ export interface Profile {
     mealReminders?: boolean;
     stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)
     // "Time to train" on the chosen days (0 = Monday … 6 = Sunday); off when null.
-    trainingReminder?: { time: string; days: number[] } | null;
+    // `evening`: the night before each training day, what is next (on unless false).
+    trainingReminder?: { time: string; days: number[]; evening?: boolean } | null;
     // A summary of the week every Sunday evening (on by default).
     weeklySummary?: boolean;
     // Voice commands in the guided workout: "next", "done" (off by default).

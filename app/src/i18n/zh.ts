@@ -2120,4 +2120,9 @@ export const zh: Dict = {
     'premium.welcomeTitle': "你的计划已准备好！🎉",
     'premium.welcomeText': "体验全部功能：AI 私人教练、饮食计划和营养教练。前几天免费。",
     'premium.notNow': "以后再说",
+    'reminder.evening': "前一天晚上（20:00）告诉我明天练什么",
+    'reminder.eveningTitle': "明天：{name} 💪",
+    'reminder.eveningTitleFree': "明天是训练日 💪",
+    'reminder.eveningBody': "{n} 个动作 · 约 {min} 分钟。提前准备好装备。",
+    'reminder.eveningBodyFree': "准备好装备，好好休息。",
 };

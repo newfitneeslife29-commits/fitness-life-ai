@@ -2120,4 +2120,9 @@ export const tr: Dict = {
     'premium.welcomeTitle': "Planın hazır! 🎉",
     'premium.welcomeText': "Her şeyiyle dene: yapay zekâ kişisel antrenör, yemek planı ve beslenme koçu. İlk günler ücretsiz.",
     'premium.notNow': "Şimdi değil",
+    'reminder.evening': "Önceki akşam (20:00) yarın ne var söyle",
+    'reminder.eveningTitle': "Yarın: {name} 💪",
+    'reminder.eveningTitleFree': "Yarın antrenman günü 💪",
+    'reminder.eveningBody': "{n} egzersiz · yaklaşık {min} dk. Kıyafetlerini hazırla.",
+    'reminder.eveningBodyFree': "Kıyafetlerini hazırla ve iyi uyu.",
 };

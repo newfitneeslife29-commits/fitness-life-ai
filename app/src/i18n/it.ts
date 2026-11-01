@@ -2120,4 +2120,9 @@ export const it: Dict = {
     'premium.welcomeTitle': "Il tuo piano è pronto! 🎉",
     'premium.welcomeText': "Provalo con tutto: personal trainer con IA, piano dei pasti e coach di nutrizione. I primi giorni sono gratis.",
     'premium.notNow': "Non ora",
+    'reminder.evening': "La sera prima (20:00), dimmi cosa tocca domani",
+    'reminder.eveningTitle': "Domani: {name} 💪",
+    'reminder.eveningTitleFree': "Domani si allena 💪",
+    'reminder.eveningBody': "{n} esercizi · circa {min} min. Prepara la borsa.",
+    'reminder.eveningBodyFree': "Prepara la borsa e riposa bene.",
 };

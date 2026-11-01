@@ -2120,4 +2120,9 @@ export const id: Dict = {
     'premium.welcomeTitle': "Rencanamu sudah siap! 🎉",
     'premium.welcomeText': "Coba dengan semua fitur: pelatih pribadi AI, rencana makan, dan coach nutrisi. Hari-hari pertama gratis.",
     'premium.notNow': "Nanti saja",
+    'reminder.evening': "Malam sebelumnya (20.00), beri tahu latihan besok",
+    'reminder.eveningTitle': "Besok: {name} 💪",
+    'reminder.eveningTitleFree': "Besok hari latihan 💪",
+    'reminder.eveningBody': "{n} latihan · sekitar {min} mnt. Siapkan perlengkapanmu.",
+    'reminder.eveningBodyFree': "Siapkan perlengkapanmu dan tidur yang cukup.",
 };
