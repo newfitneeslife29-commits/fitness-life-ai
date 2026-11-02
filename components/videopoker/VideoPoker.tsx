@@ -203,7 +203,7 @@ const VideoPoker: React.FC = () => {
 
   return (
     <div
-      className="relative flex-1 w-full min-h-[calc(100dvh-4.5rem)] md:min-h-screen flex flex-col select-none"
+      className="vp-root relative flex-1 w-full min-h-[calc(100dvh-4.5rem)] md:min-h-screen flex flex-col select-none"
       style={{
         fontFamily: FONT,
         background: 'linear-gradient(180deg, #3f86e0 0%, #2456b8 22%, #13307a 48%, #07123a 72%, #000 100%)',
