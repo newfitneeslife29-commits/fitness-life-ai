@@ -10,6 +10,7 @@ export interface SavedData {
   muted?: boolean;
   fourColor?: boolean;
   showHints?: boolean;
+  fast?: boolean;
 }
 
 export function loadSaved(): Partial<SavedData> {

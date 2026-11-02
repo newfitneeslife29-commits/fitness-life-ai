@@ -8,7 +8,15 @@ interface Option {
   onClick: () => void;
 }
 
-const SettingsMenu: React.FC<{ text: Texts; options: Option[] }> = ({ text, options }) => {
+interface Props {
+  text: Texts;
+  options: Option[];
+  /** Dibuja el botón que abre el menú. Por defecto, un engranaje. */
+  renderTrigger?: (p: { open: boolean; toggle: () => void }) => React.ReactNode;
+  up?: boolean; // abrir hacia arriba
+}
+
+const SettingsMenu: React.FC<Props> = ({ text, options, renderTrigger, up }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,7 +34,10 @@ const SettingsMenu: React.FC<{ text: Texts; options: Option[] }> = ({ text, opti
 
   return (
     <div ref={ref} className="relative">
-      <button
+      {renderTrigger ? (
+        renderTrigger({ open, toggle: () => setOpen((v) => !v) })
+      ) : (
+        <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -36,11 +47,12 @@ const SettingsMenu: React.FC<{ text: Texts; options: Option[] }> = ({ text, opti
         className="flex items-center justify-center size-9 sm:size-10 rounded-full bg-black/40 text-yellow-200 hover:bg-black/60 ring-1 ring-yellow-200/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200"
       >
         <span className="material-symbols-outlined text-xl">settings</span>
-      </button>
+        </button>
+      )}
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 z-20 w-64 rounded-xl bg-zinc-900/95 backdrop-blur ring-1 ring-white/10 shadow-2xl p-2 text-sm text-zinc-100"
+          className={`absolute z-30 w-64 ${up ? 'bottom-full mb-2 left-1/2 -translate-x-1/2' : 'right-0 top-full mt-2'} rounded-xl bg-zinc-900/95 backdrop-blur ring-1 ring-white/10 shadow-2xl p-2 text-sm text-zinc-100 normal-case`}
         >
           {options.map((o) => (
             <button
