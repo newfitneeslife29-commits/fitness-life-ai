@@ -5,8 +5,8 @@ import { initialState, reducer } from '../../src/games/videopoker/reducer';
 import { loadSaved, save } from '../../src/games/videopoker/storage';
 import { recommendHolds } from '../../src/games/videopoker/strategy';
 import { Card, HandRank, STARTING_CREDITS } from '../../src/games/videopoker/types';
-import Controls from './Controls';
-import CreditBar from './CreditBar';
+import BetChips from './BetChips';
+import Deck from './Deck';
 import Hand from './Hand';
 import { getTexts } from './i18n';
 import PayTable from './PayTable';
@@ -14,8 +14,10 @@ import SettingsMenu from './SettingsMenu';
 import { playSound, SoundName } from './sound';
 import StatsPanel from './StatsPanel';
 
-const FLIP_DELAY_MS = 120;
-const FLIP_STAGGER_MS = 80;
+const DEAL_DELAY_MS = 120; // antes de la primera carta cuando la mesa está vacía
+const RETURN_DELAY_MS = 500; // tiempo para que las cartas descartadas vuelvan al mazo
+const DEAL_STAGGER_MS = 110;
+const NO_HOLDS = [false, false, false, false, false];
 const BIG_WINS: HandRank[] = ['ROYAL_FLUSH', 'STRAIGHT_FLUSH', 'FOUR_OF_A_KIND'];
 
 const VideoPoker: React.FC = () => {
@@ -27,7 +29,7 @@ const VideoPoker: React.FC = () => {
   const [muted, setMuted] = useState(saved.muted ?? false);
   const [fourColor, setFourColor] = useState(saved.fourColor ?? false);
   const [showHints, setShowHints] = useState(saved.showHints ?? false);
-  const [showStats, setShowStats] = useState(false);
+  const [sheet, setSheet] = useState<'paytable' | 'stats' | null>(null);
   const [sessionStart] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
 
@@ -45,6 +47,8 @@ const VideoPoker: React.FC = () => {
   // Volteo escalonado de las cartas nuevas tras Repartir/Cambiar.
   useEffect(() => {
     const pending = [0, 1, 2, 3, 4].filter((i) => state.hand[i] && revealedRef.current[i] !== state.hand[i]);
+    // Si había cartas en la mesa, primero vuelven al mazo y después salen las nuevas.
+    const delay = pending.some((i) => revealedRef.current[i]) ? RETURN_DELAY_MS : DEAL_DELAY_MS;
     const timers = pending.map((i, k) =>
       window.setTimeout(() => {
         setRevealed((r) => {
@@ -53,7 +57,7 @@ const VideoPoker: React.FC = () => {
           return next;
         });
         sound('deal');
-      }, FLIP_DELAY_MS + k * FLIP_STAGGER_MS),
+      }, delay + k * DEAL_STAGGER_MS),
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,6 +115,11 @@ const VideoPoker: React.FC = () => {
     (index: number) => {
       if (!canHold) return;
       sound('hold');
+      try {
+        navigator.vibrate?.(8); // respuesta háptica en móviles
+      } catch {
+        // sin vibración
+      }
       dispatch({ type: 'TOGGLE_HOLD', index });
     },
     [canHold, sound],
@@ -119,8 +128,8 @@ const VideoPoker: React.FC = () => {
   // Atajos de teclado: 1–5 retener, Espacio/Enter repartir/cambiar, B apostar 1, M apuesta máx.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (showStats) {
-        if (e.key === 'Escape') setShowStats(false);
+      if (sheet) {
+        if (e.key === 'Escape') setSheet(null);
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -138,159 +147,176 @@ const VideoPoker: React.FC = () => {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [toggleHold, main, betOne, betMax, showStats]);
+  }, [toggleHold, main, betOne, betMax, sheet]);
 
-  let status = '';
-  if (!animating) {
-    if (!canDeal && state.phase !== 'DEALT') status = text.noCredits;
-    else if (state.phase === 'BETTING') status = text.placeBet;
-    else if (state.phase === 'DEALT') status = text.pickHolds;
-    else if (state.result && state.lastWin > 0) status = text.youWin(state.lastWin, text.hands[state.result]);
-    else status = text.noWin;
-  }
+  const noCredits = !canDeal && state.phase !== 'DEALT';
   const showWin = state.phase === 'RESULT' && !animating;
+  const won = showWin && state.lastWin > 0 && state.result;
 
-  const glow = { textShadow: '0 0 10px rgba(253,224,71,.7)' };
+  let message: React.ReactNode = null;
+  if (!animating) {
+    if (noCredits) message = <span className="text-amber-100/80">{text.noCredits}</span>;
+    else if (state.phase === 'BETTING') message = <span className="text-amber-100/80">{text.placeBet}</span>;
+    else if (state.phase === 'DEALT')
+      message = (
+        <span className="text-amber-100/80">
+          {text.pickHolds}
+          <span className="block text-[11px] sm:text-xs text-amber-100/50 font-semibold normal-case tracking-normal">{text.drawHint}</span>
+        </span>
+      );
+    else if (won)
+      message = (
+        <span className="flex flex-col items-center leading-tight">
+          <span className="text-xl sm:text-3xl text-amber-300" style={{ fontFamily: 'Georgia, serif', textShadow: '0 2px 10px rgba(0,0,0,.5)' }}>
+            {text.hands[state.result as HandRank]}
+          </span>
+          <span className="text-sm sm:text-base text-amber-100">+{state.lastWin}</span>
+        </span>
+      );
+    else message = <span className="text-amber-100/60">{text.noWin}</span>;
+  }
+
+  const announce = won ? text.youWin(state.lastWin, text.hands[state.result as HandRank]) : '';
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 py-4 sm:p-8 flex flex-col gap-3">
-      {/* Mueble de la máquina: marco cromado */}
-      <div
-        className="rounded-[26px] p-[6px] sm:p-2 shadow-[0_25px_60px_rgba(0,0,0,.55)]"
-        style={{ background: 'linear-gradient(160deg, #f4f4f5 0%, #a1a1aa 25%, #52525b 50%, #d4d4d8 75%, #3f3f46 100%)' }}
-      >
-        <div className="rounded-[20px] bg-gradient-to-b from-zinc-800 via-zinc-900 to-black p-2.5 sm:p-5 flex flex-col gap-3 sm:gap-4">
-          {/* Marquesina */}
+    <div
+      className="relative flex-1 w-full min-h-[calc(100dvh-4.5rem)] md:min-h-screen flex flex-col select-none overflow-hidden"
+      style={{
+        // Tapete de fieltro verde con textura sutil
+        backgroundColor: '#0f5132',
+        backgroundImage:
+          'radial-gradient(ellipse at 50% 40%, rgba(46,160,96,.55) 0%, rgba(15,81,50,0) 65%), radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.45), transparent 60%), url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.9\' numOctaves=\'2\' stitchTiles=\'stitch\'/%3E%3CfeColorMatrix values=\'0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .35 0\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        boxShadow: 'inset 0 0 120px rgba(0,0,0,.55)',
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {/* Barra superior mínima */}
+      <div className="relative z-20 flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-6">
+        <div className="flex flex-col leading-none">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[.2em] text-amber-100/60">{text.credits}</span>
+          <span className="mt-1 text-2xl sm:text-3xl font-black tabular-nums text-white" style={{ textShadow: '0 2px 6px rgba(0,0,0,.4)' }}>
+            {state.credits}
+          </span>
+        </div>
+        <SettingsMenu
+          text={text}
+          options={[
+            { icon: 'table_rows', label: text.paytable, onClick: () => setSheet('paytable') },
+            { icon: 'lightbulb', label: text.hints, on: showHints, onClick: () => setShowHints((v) => !v) },
+            { icon: muted ? 'volume_off' : 'volume_up', label: text.sound, on: !muted, onClick: () => setMuted((m) => !m) },
+            { icon: 'palette', label: text.fourColor, on: fourColor, onClick: () => setFourColor((v) => !v) },
+            { icon: 'bar_chart', label: text.stats, onClick: () => setSheet('stats') },
+          ]}
+        />
+      </div>
+
+      {/* Mesa: mazo, mensaje y mano. Las medidas salen del ancho disponible. */}
+      <div className="flex-1 flex flex-col items-center justify-center px-3 pb-6" style={{ containerType: 'inline-size' }}>
+        <div
+          className="w-full flex flex-col items-center"
+          style={
+            {
+              '--cw': 'min(18cqw, 150px)',
+              '--gap': 'min(1.8cqw, 18px)',
+              '--dy': 'clamp(4.5rem, 12cqw, 7rem)',
+            } as React.CSSProperties
+          }
+        >
+          <Deck
+            label={state.phase === 'DEALT' ? text.deckDraw : text.deckDeal}
+            active={!animating && !noCredits}
+            onClick={main}
+          />
+
           <div
-            className="relative z-10 rounded-xl px-4 py-2.5 sm:py-3 flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(180deg, #7f1d1d 0%, #b91c1c 45%, #7f1d1d 100%)',
-              boxShadow: 'inset 0 0 0 2px #fbbf24, inset 0 0 0 5px #7f1d1d, inset 0 0 0 6px #fde68a88, 0 0 20px rgba(220,38,38,.35)',
-            }}
+            className="flex items-center justify-center text-center px-2 font-black uppercase tracking-wide text-sm sm:text-lg"
+            style={{ height: 'var(--dy)' }}
           >
-            <div
-              aria-hidden="true"
-              className="absolute inset-[3px] rounded-[10px] pointer-events-none animate-pulse"
-              style={{ backgroundImage: 'radial-gradient(circle, #fde68a 0 1.6px, transparent 2px)', backgroundSize: '12px 12px', opacity: 0.18 }}
-            />
-            <div className="relative text-center leading-none">
-              <h1
-                className="text-xl sm:text-3xl font-black italic uppercase tracking-wider text-yellow-300"
-                style={{ textShadow: '0 2px 0 #7c2d12, 0 0 14px rgba(253,224,71,.6)' }}
-              >
-                {text.title}
-              </h1>
-              <p className="mt-1 text-[9px] sm:text-xs font-bold uppercase tracking-[.3em] text-yellow-100/90">{text.subtitle}</p>
-            </div>
-            <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2">
-              <SettingsMenu
-                text={text}
-                options={[
-                  { icon: muted ? 'volume_off' : 'volume_up', label: text.sound, on: !muted, onClick: () => setMuted((m) => !m) },
-                  { icon: 'lightbulb', label: text.hints, on: showHints, onClick: () => setShowHints((v) => !v) },
-                  { icon: 'palette', label: text.fourColor, on: fourColor, onClick: () => setFourColor((v) => !v) },
-                  { icon: 'bar_chart', label: text.stats, onClick: () => setShowStats(true) },
-                ]}
-              />
-            </div>
-          </div>
-
-          {/* Pantalla */}
-          <div
-            className="relative rounded-xl p-2 sm:p-4 flex flex-col gap-3 sm:gap-4 overflow-hidden"
-            style={{
-              background: 'radial-gradient(ellipse at 50% 35%, #1638c9 0%, #0b1f8f 55%, #050f4d 100%)',
-              boxShadow: 'inset 0 0 0 3px #000, inset 0 0 40px rgba(0,0,0,.65), 0 0 0 1px #52525b',
-            }}
-          >
-            <PayTable bet={state.bet} winning={showWin && state.lastWin > 0 ? state.result : null} text={text} />
-
-            <p
-              className="min-h-[1.4rem] text-center text-sm sm:text-xl font-black uppercase tracking-wide text-yellow-300"
-              style={glow}
-              aria-live="polite"
-              role="status"
-            >
-              {status}
-            </p>
-
-            <Hand
-              hand={shown}
-              faceUp={faceUp}
-              held={state.held}
-              hints={hints}
-              canHold={canHold}
-              fourColor={fourColor}
-              text={text}
-              onToggle={toggleHold}
-            />
-
-            <CreditBar win={showWin ? state.lastWin : 0} bet={state.bet} credits={state.credits} text={text} />
-
-            {/* Reflejo del cristal y líneas de barrido */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(155deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 35%), repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px)',
-              }}
-            />
-          </div>
-
-          {/* Consola de botones */}
-          <div className="rounded-xl bg-gradient-to-b from-zinc-700 to-zinc-900 p-2.5 sm:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.15)]">
-            {!canDeal && state.phase !== 'DEALT' ? (
+            {message}
+            {noCredits && !animating && (
               <button
                 type="button"
                 onClick={() => dispatch({ type: 'ADD_CREDITS', amount: STARTING_CREDITS })}
-                className="w-full py-3 sm:py-4 rounded-lg font-black uppercase tracking-wider text-sm text-white border-b-[5px] border-red-950 bg-gradient-to-b from-orange-300 via-red-500 to-red-700 active:border-b-[1px] active:translate-y-[4px]"
+                className="ml-3 px-4 py-2 rounded-full bg-amber-300 text-amber-950 text-xs sm:text-sm font-black uppercase shadow-lg active:scale-95"
               >
-                {text.reload}
+                {text.reloadShort}
               </button>
-            ) : (
-              <Controls
-                phase={state.phase}
-                busy={animating}
-                canDeal={canDeal}
-                text={text}
-                onBetOne={betOne}
-                onBetMax={betMax}
-                onMain={main}
-              />
             )}
+          </div>
+
+          <Hand
+            hand={shown}
+            dealt={state.hand.length > 0}
+            faceUp={faceUp}
+            held={state.phase === 'DEALT' ? state.held : NO_HOLDS}
+            hints={hints}
+            canHold={canHold}
+            fourColor={fourColor}
+            text={text}
+            onToggle={toggleHold}
+          />
+
+          {/* Fichas apostadas */}
+          <div className="mt-12 sm:mt-14 flex items-center gap-3">
+            <BetChips
+              bet={state.bet}
+              label={text.chips(state.bet)}
+              disabled={animating || state.phase === 'DEALT' || noCredits}
+              onClick={betOne}
+            />
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[.2em] text-amber-100/60">
+              {text.bet} {state.bet}
+            </span>
           </div>
         </div>
       </div>
 
-      <p className="text-center text-[11px] text-slate-500 dark:text-slate-400">{text.disclaimer}</p>
+      {/* Leyenda impresa en el tapete */}
+      <p
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-3 sm:bottom-5 inset-x-0 text-center text-[10px] sm:text-xs uppercase tracking-[.35em] text-amber-200/25"
+        style={{ fontFamily: 'Georgia, serif' }}
+      >
+        {text.subtitle} · {text.feltNote}
+      </p>
 
-      {showStats && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowStats(false)}
-        >
+      <p className="sr-only" aria-live="polite" role="status">
+        {announce}
+      </p>
+
+      {sheet && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSheet(null)}>
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={text.stats}
-            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            aria-label={sheet === 'stats' ? text.stats : text.paytable}
+            className="relative w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
-              onClick={() => setShowStats(false)}
+              onClick={() => setSheet(null)}
               aria-label={text.close}
-              className="absolute right-3 top-3 z-10 p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+              className="absolute right-3 top-3 z-10 p-1.5 rounded-full text-slate-400 hover:bg-white/10"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-            <StatsPanel
-              stats={state.stats}
-              sessionSeconds={Math.floor((now - sessionStart) / 1000)}
-              text={text}
-              onReset={() => dispatch({ type: 'RESET_STATS' })}
-            />
+            {sheet === 'stats' ? (
+              <StatsPanel
+                stats={state.stats}
+                sessionSeconds={Math.floor((now - sessionStart) / 1000)}
+                text={text}
+                onReset={() => dispatch({ type: 'RESET_STATS' })}
+              />
+            ) : (
+              <section className="rounded-t-2xl sm:rounded-2xl bg-zinc-900 p-4 sm:p-6 flex flex-col gap-3">
+                <h2 className="text-lg font-black text-white">{text.paytable}</h2>
+                <p className="text-xs text-zinc-400">{text.subtitle}</p>
+                <PayTable bet={state.bet} winning={won ? state.result : null} text={text} />
+                <p className="text-[11px] text-zinc-500">{text.disclaimer}</p>
+              </section>
+            )}
           </div>
         </div>
       )}

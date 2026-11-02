@@ -95,9 +95,32 @@ const CardFace: React.FC<{ card: Card; fourColor: boolean }> = ({ card, fourColo
   );
 };
 
+/** Dorso clásico: rombos rojos con borde blanco. */
+export const CardBack: React.FC = () => (
+  <div
+    className="absolute inset-0 rounded-[7%/5%] overflow-hidden"
+    style={{ background: '#fbfaf7', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.18)' }}
+  >
+    <div
+      className="absolute rounded-[5%/3.5%]"
+      style={{
+        inset: '6%',
+        backgroundColor: '#a51c24',
+        backgroundImage:
+          'repeating-linear-gradient(45deg, rgba(255,255,255,.2) 0 1.5px, transparent 1.5px 8px), repeating-linear-gradient(-45deg, rgba(255,255,255,.2) 0 1.5px, transparent 1.5px 8px)',
+        boxShadow: 'inset 0 0 0 2px #6b0f14, inset 0 0 0 4px rgba(255,255,255,.35)',
+      }}
+    />
+  </div>
+);
+
+// Tamaño de carta compartido con el mazo (ver VideoPoker): --cw ancho, --gap separación, --dy distancia al mazo.
+const CARD_SIZE: React.CSSProperties = { width: 'var(--cw)', height: 'calc(var(--cw) * 1.4)' };
+
 interface Props {
   card?: Card;
   faceUp: boolean;
+  atDeck: boolean;
   held: boolean;
   hinted: boolean;
   disabled: boolean;
@@ -107,76 +130,79 @@ interface Props {
   onToggle: () => void;
 }
 
-const CardView: React.FC<Props> = ({ card, faceUp, held, hinted, disabled, fourColor, index, text, onToggle }) => {
+const CardView: React.FC<Props> = ({ card, faceUp, atDeck, held, hinted, disabled, fourColor, index, text, onToggle }) => {
   const label =
     card && faceUp
       ? `${text.ranks[card.rank]} ${text.of} ${text.suits[card.suit]}${held ? `, ${text.held.toLowerCase()}` : ''}`
       : text.faceDown;
 
+  // En el mazo la carta se apila sobre él; en su sitio, sube un poco si está retenida.
+  const transform = atDeck
+    ? `translate(calc(${2 - index} * (var(--cw) + var(--gap))), calc(-1 * (var(--cw) * 1.4 + var(--dy)))) rotate(${(index - 2) * 2}deg)`
+    : held
+      ? 'translateY(-12%)'
+      : 'none';
+
   return (
-    <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1 min-w-0 max-w-[124px]">
-      <span
-        className={`h-5 sm:h-6 text-[10px] sm:text-sm font-black uppercase sm:tracking-widest ${
-          held ? 'text-yellow-300' : hinted ? 'text-cyan-300' : 'text-transparent'
-        }`}
-        style={held ? { textShadow: '0 0 8px rgba(253,224,71,.8)' } : undefined}
-        aria-hidden="true"
-      >
-        {held ? text.held : hinted ? text.hint : '·'}
-      </span>
+    <div className="relative" style={CARD_SIZE}>
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
         aria-pressed={held}
         aria-label={`${index + 1}: ${label}`}
-        className={`relative w-full aspect-[5/7] rounded-[7%/5%] transition-transform duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-300 ${
-          disabled ? 'cursor-default' : 'cursor-pointer'
-        }`}
-        style={{ perspective: '900px', containerType: 'inline-size' }}
+        className="absolute inset-0 rounded-[7%/5%] focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-300 disabled:cursor-default"
+        style={{
+          transform,
+          transition: 'transform 450ms cubic-bezier(.2,.8,.2,1)',
+          zIndex: atDeck ? 5 : 1,
+          perspective: '900px',
+          containerType: 'inline-size',
+          WebkitTapHighlightColor: 'transparent',
+        }}
       >
         <div
-          className="absolute inset-0 transition-transform duration-300"
-          style={{ transformStyle: 'preserve-3d', transform: faceUp ? 'rotateY(0deg)' : 'rotateY(180deg)' }}
+          className="absolute inset-0"
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: faceUp ? 'rotateY(0deg)' : 'rotateY(180deg)',
+            transition: 'transform 450ms cubic-bezier(.2,.8,.2,1)',
+          }}
         >
           {/* Frente */}
           <div
             className="absolute inset-0 rounded-[7%/5%] overflow-hidden"
             style={{
               backfaceVisibility: 'hidden',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8f6f0 60%, #ece8dc 100%)',
+              background: 'linear-gradient(150deg, #ffffff 0%, #faf8f2 55%, #efebe0 100%)',
               boxShadow: held
-                ? '0 0 0 3px #fde047, 0 0 18px rgba(253,224,71,.55), 0 6px 14px rgba(0,0,0,.5)'
+                ? '0 0 0 2px #fcd34d, 0 0 22px rgba(252,211,77,.6), 0 14px 22px rgba(0,0,0,.45)'
                 : hinted
-                  ? '0 0 0 3px #22d3ee, 0 6px 14px rgba(0,0,0,.5)'
-                  : 'inset 0 0 0 1px rgba(0,0,0,.12), 0 6px 14px rgba(0,0,0,.5)',
+                  ? '0 0 0 2px #67e8f9, 0 0 16px rgba(103,232,249,.5), 0 8px 14px rgba(0,0,0,.4)'
+                  : 'inset 0 0 0 1px rgba(0,0,0,.14), 0 8px 14px rgba(0,0,0,.4)',
+              transition: 'box-shadow 200ms',
             }}
           >
             {card && <CardFace card={card} fourColor={fourColor} />}
           </div>
           {/* Dorso */}
           <div
-            className="absolute inset-0 rounded-[7%/5%] overflow-hidden"
-            style={{
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-              background: '#fff',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15), 0 6px 14px rgba(0,0,0,.5)',
-            }}
+            className="absolute inset-0 rounded-[7%/5%]"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', boxShadow: '0 6px 12px rgba(0,0,0,.4)' }}
           >
-            <div
-              className="absolute rounded-[5%/3.5%]"
-              style={{
-                inset: '6%',
-                backgroundColor: '#b91c1c',
-                backgroundImage:
-                  'repeating-linear-gradient(45deg, rgba(255,255,255,.22) 0 1.5px, transparent 1.5px 9px), repeating-linear-gradient(-45deg, rgba(255,255,255,.22) 0 1.5px, transparent 1.5px 9px)',
-                boxShadow: 'inset 0 0 0 2px #7f1d1d, inset 0 0 0 4px rgba(255,255,255,.35)',
-              }}
-            />
+            <CardBack />
           </div>
         </div>
       </button>
+      {/* Etiqueta bajo la carta */}
+      <span
+        aria-hidden="true"
+        className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 sm:mt-3 px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap transition-opacity ${
+          held ? 'bg-amber-300 text-amber-950 opacity-100' : hinted ? 'bg-cyan-300/90 text-cyan-950 opacity-100' : 'opacity-0'
+        }`}
+      >
+        {held ? text.held : hinted ? text.hint : '·'}
+      </span>
     </div>
   );
 };
