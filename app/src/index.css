@@ -22,6 +22,10 @@
   /* Paint the page on html too: some old WebViews leave it white otherwise. */
   html { -webkit-tap-highlight-color: transparent; background-color: rgb(var(--ink)); }
   body { min-height: 100dvh; overscroll-behavior-y: none; }
+  /* Like a native app: a long press doesn't select text or open the
+     copy / save-image menu. Fields people type in still can. */
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  input, textarea, [contenteditable='true'] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
   /* Number inputs: no spinners, big tap targets. */
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
