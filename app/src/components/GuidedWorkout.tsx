@@ -105,7 +105,7 @@ const BigNumber = ({ value, onCommit, label, decimals }: { value: number; onComm
                 if (e.target.value.trim() !== '' && Number.isFinite(n)) onCommit(n);
             }}
             onBlur={() => { focused.current = false; setText(typedNumber(value)); }}
-            style={{ fontSize: text.length > 4 ? '1.75rem' : text.length > 3 ? '2.1rem' : '2.6rem' }}
+            style={{ fontSize: text.length > 4 ? '1.5rem' : text.length > 3 ? '1.8rem' : '2.6rem' }}
             className="h-12 w-full bg-transparent text-center font-black leading-none tabular-nums outline-none" />
     );
 };
