@@ -105,7 +105,7 @@ const BigNumber = ({ value, onCommit, label, decimals }: { value: number; onComm
                 if (e.target.value.trim() !== '' && Number.isFinite(n)) onCommit(n);
             }}
             onBlur={() => { focused.current = false; setText(typedNumber(value)); }}
-            style={{ fontSize: text.length > 4 ? '1.5rem' : text.length > 3 ? '1.8rem' : '2.6rem' }}
+            style={{ fontSize: text.length > 4 ? '1.3rem' : text.length > 3 ? '1.55rem' : '2.6rem' }}
             className="h-12 w-full bg-transparent text-center font-black leading-none tabular-nums outline-none" />
     );
 };
@@ -186,9 +186,9 @@ const Overview = ({ active, onStart, onList, onClose, unit, handsFree }: { activ
             <div className="relative mx-auto -mt-10 max-w-lg rounded-t-[2rem] bg-ink px-5 pb-40 pt-6">
                 <h1 className="text-[2rem] font-black leading-tight tracking-tight">{sessionName(active)}</h1>
                 <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-2xl border border-line bg-ink-2 py-3">
-                    <div className="px-3"><dd className="truncate font-bold">{t(`level.${level}`)}</dd><dt className="text-xs text-white/50">{t('guided.level')}</dt></div>
-                    <div className="px-3"><dd className="truncate font-bold">{t('guided.minutes', { n: estimateMinutes(active) })}</dd><dt className="text-xs text-white/50">{t('workout.time')}</dt></div>
-                    <div className="px-3"><dd className="line-clamp-2 text-sm font-bold leading-tight">{focusArea(active) || '—'}</dd><dt className="text-xs text-white/50">{t('guided.focus')}</dt></div>
+                    <div className="px-2.5"><dd className="line-clamp-2 text-sm font-bold leading-tight">{t(`level.${level}`)}</dd><dt className="text-xs text-white/50">{t('guided.level')}</dt></div>
+                    <div className="px-2.5"><dd className="line-clamp-2 text-sm font-bold leading-tight">{t('guided.minutes', { n: estimateMinutes(active) })}</dd><dt className="text-xs text-white/50">{t('workout.time')}</dt></div>
+                    <div className="px-2.5"><dd className="line-clamp-2 text-sm font-bold leading-tight">{focusArea(active) || '—'}</dd><dt className="text-xs text-white/50">{t('guided.focus')}</dt></div>
                 </dl>
                 {active.injury && <InjuryNote injury={active.injury} className="mt-4" />}
                 <h2 className="mb-2 mt-7 text-xl font-extrabold">{t('guided.exercises')} <span className="font-medium text-white/45">({active.exercises.length})</span></h2>
@@ -252,7 +252,7 @@ const Ready = ({ id, index, total, onGo }: { id: string; index: number; total: n
                 <p className="mt-1 text-3xl font-extrabold leading-tight">{exerciseName(id)}</p>
             </div>
             <div className="relative px-6 pb-[calc(2rem+env(safe-area-inset-bottom))]">
-                <button onClick={onGo} className="mx-auto block h-14 w-full max-w-xs rounded-full bg-snow text-lg font-extrabold text-ink shadow-xl active:scale-[0.98]">{t('guided.goNow')}</button>
+                <button onClick={onGo} className="mx-auto block h-14 w-full max-w-xs rounded-full bg-snow text-lg font-extrabold text-neutral-900 shadow-xl active:scale-[0.98]">{t('guided.goNow')}</button>
             </div>
         </div>
     );

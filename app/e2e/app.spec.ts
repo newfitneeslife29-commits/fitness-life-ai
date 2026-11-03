@@ -187,7 +187,7 @@ test('log a workout, get a heavier suggestion next time, and keep data after rel
     await expect(again.getByText('Toca subir: 85 kg × 6 (+5 kg)')).toBeVisible();
     await expect(again.getByLabel('Peso serie 1')).toHaveValue('85');
     await expect(again.getByLabel('Repeticiones serie 1')).toHaveValue('6');
-    await expect(again.getByText('80 × 10').first()).toBeVisible(); // "Anterior" column
+    await expect(again.getByText('80×10').first()).toBeVisible(); // "Anterior" column
 
     await page.getByRole('button', { name: 'Descartar entreno' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Descartar' }).click();

@@ -206,14 +206,14 @@ export default function Foods() {
                         </button>
                     ))}
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                    <label className="flex items-center gap-2 text-sm text-white/60">
-                        {t('foods.sortBy')}
-                        <select value={sort} onChange={e => setSort(e.target.value as Sort)} className="rounded-lg border border-line bg-ink-2 px-2 py-1.5 text-white outline-none focus:border-brand">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <label className="flex min-w-0 items-center gap-2 text-sm text-white/60">
+                        <span className="shrink-0">{t('foods.sortBy')}</span>
+                        <select value={sort} onChange={e => setSort(e.target.value as Sort)} className="min-w-0 max-w-[11rem] truncate rounded-lg border border-line bg-ink-2 px-2 py-1.5 text-white outline-none focus:border-brand">
                             {SORTS.map(s => <option key={s} value={s}>{t(`foods.sort.${s}`)}</option>)}
                         </select>
                     </label>
-                    <div className="flex rounded-lg bg-ink-3 p-0.5 text-xs font-medium" role="radiogroup" aria-label={t('foods.amount')}>
+                    <div className="flex shrink-0 rounded-lg bg-ink-3 p-0.5 text-xs font-medium" role="radiogroup" aria-label={t('foods.amount')}>
                         <button role="radio" aria-checked={!per100} onClick={() => setPer100(false)} className={`rounded-md px-2.5 py-1.5 ${!per100 ? 'bg-ink-2 text-white shadow' : 'text-white/55'}`}>{t('foods.perPortion')}</button>
                         <button role="radio" aria-checked={per100} onClick={() => setPer100(true)} className={`rounded-md px-2.5 py-1.5 ${per100 ? 'bg-ink-2 text-white shadow' : 'text-white/55'}`}>100 g</button>
                     </div>
