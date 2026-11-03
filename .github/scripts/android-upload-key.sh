@@ -24,7 +24,7 @@ query() {
     -d @"$work/query.json")
   rm -f "$work/query.json"
   if [ "$status" -ge 300 ]; then
-    echo "::error::Supabase answered HTTP $status: $(jq -r '.message // .' "$work/answer.json" 2>/dev/null | head -c 300)"
+    echo "::error::Supabase answered HTTP $status: $(jq -r '.message // .' "$work/answer.json" 2>/dev/null | head -c 300)" >&2
     return 1
   fi
 }
