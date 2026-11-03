@@ -9,11 +9,11 @@ import { Bar } from './PlateSheet';
 import { Sheet } from './ui';
 
 const Field = ({ label, value, onChange, suffix }: { label: string; value: string; onChange: (v: string) => void; suffix?: string }) => (
-    <label className="block flex-1">
+    <label className="block min-w-0 flex-1">
         <span className="label mb-1 block">{label}</span>
         <span className="flex items-center gap-2 rounded-xl border border-line bg-ink-3 px-3">
             <input value={value} onChange={e => onChange(e.target.value)} inputMode="decimal" aria-label={label}
-                className="min-w-0 flex-1 bg-transparent py-2.5 text-lg font-bold tabular-nums outline-none" />
+                className="w-full min-w-0 flex-1 bg-transparent py-2.5 text-lg font-bold tabular-nums outline-none" size={1} />
             {suffix && <span className="text-sm text-white/50">{suffix}</span>}
         </span>
     </label>
