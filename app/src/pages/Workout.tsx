@@ -201,8 +201,8 @@ const ExerciseCard = ({ ex, index, unit, current, onSwap, others }: { ex: Active
                         <div key={s.id} className={`rounded-xl px-1.5 py-1.5 transition ${s.done ? 'bg-good/[0.08]' : isNext ? 'bg-brand/[0.07]' : ''}`}>
                             <div className={SET_GRID}>
                                 <span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${s.done ? 'bg-good/20 text-good' : isNext ? 'text-brand ring-2 ring-brand' : 'bg-ink-3 text-white/55'}`}>{j + 1}</span>
-                                <span className="truncate text-sm tabular-nums text-white/45">
-                                    {prev ? `${prev.weightKg > 0 ? `${fmtNumber(kgToDisplay(prev.weightKg, unit))} × ` : ''}${prev.reps}` : '—'}
+                                <span className="truncate text-xs tabular-nums text-white/45 min-[400px]:text-sm">
+                                    {prev ? `${prev.weightKg > 0 ? `${fmtNumber(kgToDisplay(prev.weightKg, unit))}×` : ''}${prev.reps}` : '—'}
                                 </span>
                                 <span>
                                     <NumberField label={t('workout.weightOf', { n: j + 1 })} decimals active={isNext} value={kgToDisplay(s.weightKg, unit)}
@@ -419,17 +419,18 @@ export default function Workout() {
         <div className="mx-auto min-h-dvh max-w-lg pb-44">
             {/* The safe-area padding lives in the sticky header so it never slides under the notch. */}
             <header className="sticky top-0 z-30 border-b border-line bg-ink/90 px-3 pb-3 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur-xl">
-                <div className="flex items-center gap-1.5">
+                {/* On narrow phones the name gets its own line under the buttons, so it is never cut to a couple of letters. */}
+                <div className="flex flex-wrap items-center gap-x-1.5 max-[399px]:gap-y-1">
                     <button onClick={() => navigate('/')} aria-label={t('workout.back')} className="-ml-1.5 rounded-lg p-2 text-white/60 hover:bg-ink-3 hover:text-white">
                         <ChevronLeft size={22} />
                     </button>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 max-[399px]:order-last max-[399px]:basis-full max-[399px]:px-1">
                         <p className="truncate text-[17px] font-bold leading-tight">{sessionName(active)}</p>
                         {active.exercises.length > 0 && (
-                            <p className="text-xs text-white/50">{t('workout.exerciseOf', { n: (currentIndex >= 0 ? currentIndex : active.exercises.length - 1) + 1, total: active.exercises.length })}</p>
+                            <p className="truncate text-xs text-white/50">{t('workout.exerciseOf', { n: (currentIndex >= 0 ? currentIndex : active.exercises.length - 1) + 1, total: active.exercises.length })}</p>
                         )}
                     </div>
-                    <MusicButton />
+                    <span className="max-[399px]:ml-auto"><MusicButton /></span>
                     <button onClick={() => changeView('guided')} aria-label={t('guided.guidedView')} className="rounded-lg p-2 text-brand hover:bg-ink-3"><Sparkles size={20} /></button>
                     <UnitToggle unit={unit} />
                     <button onClick={finish} className="btn-primary ml-1 px-4 py-2">{t('workout.finish')}</button>
