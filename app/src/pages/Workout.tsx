@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActiveClock } from '../components/ActiveClock';
 import { InjuryNote } from '../components/PauseCard';
+import { FeelPicker } from '../components/FeelPicker';
 import { ExerciseDemo } from '../components/ExerciseDemo';
 import { GuidedWorkout } from '../components/GuidedWorkout';
 import { ExercisePicker } from '../components/ExercisePicker';
@@ -441,6 +442,7 @@ export default function Workout() {
                 </div>
                 {isBurnWorkout(active, goal) && <div className="mt-2.5"><ActiveClock active={active} /></div>}
                 {active.injury && <InjuryNote injury={active.injury} className="mt-2.5" />}
+                {done === 0 && active.exercises.length > 0 && !(active.feel && !active.feelBase) && <FeelPicker feel={active.feel} className="mt-2.5" />}
 
                 {active.exercises.length > 1 && (
                     <nav aria-label={t('workout.exercises')} className="-mx-3 mt-2.5 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">

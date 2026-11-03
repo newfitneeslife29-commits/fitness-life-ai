@@ -2404,3 +2404,64 @@ test('a finished 30-day challenge earns a store discount, and the streak protect
     await expect(page.getByText('Protector de racha')).toBeVisible();
     await expect(page.getByText(/26 días/).first()).toBeVisible();
 });
+
+test('first week: welcome challenge, travel workouts and the trial offer', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    // The welcome challenge: four steps in the first 7 days.
+    await expect(page.getByText('Reto de bienvenida')).toBeVisible();
+    await expect(page.getByText('0 de 4 hechos · quedan 7 días')).toBeVisible();
+
+    // A travel workout starts in one tap, without touching the plan.
+    await page.getByRole('link', { name: 'Rutinas' }).first().click();
+    await expect(page.getByText('De viaje o en el hotel')).toBeVisible();
+    await page.getByText('De viaje o en el hotel').scrollIntoViewIfNeeded();
+    await page.getByRole('button', { name: 'Empezar Hotel: cuerpo completo' }).click();
+    await expect(page.getByText('Hotel: cuerpo completo').first()).toBeVisible();
+    await expect(page.getByText('Sentadilla sin peso').first()).toBeVisible();
+
+    // The trial offer after the plan has a clear way out.
+    await page.goto('/#/premium?bienvenida');
+    await expect(page.getByRole('heading', { name: '¡Tu plan está listo! 🎉' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ahora no' }).click();
+    await expect(page.getByText('Reto de bienvenida')).toBeVisible();
+});
+
+test('december: the advent mini workout, how you feel today and the gym calculator', async ({ page }) => {
+    await page.clock.setFixedTime(new Date(2026, 11, 3, 10));
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+
+    // Dec 3: today's 10-minute mini workout and the "25 days to Christmas" challenge.
+    await expect(page.getByText('25 días hasta Navidad 🎄')).toBeVisible();
+    await expect(page.getByText(/Día 3 de 25 · Mini entreno: abdomen/)).toBeVisible();
+    await page.getByRole('button', { name: 'Empezar el mini entreno' }).click();
+    await expect(page.getByText('Mini entreno: abdomen').first()).toBeVisible();
+
+    // How do you feel today? It reshapes the workout from the plan, never stacking.
+    await expect(page.getByText('¿Cómo te sientes hoy?')).toBeVisible();
+    await expect(page.getByText('0/8 series')).toBeVisible();
+    await page.getByRole('radio', { name: /Con energía/ }).click();
+    await expect(page.getByText('0/9 series')).toBeVisible();
+    await expect(page.getByText(/Una serie extra en el primer ejercicio/)).toBeVisible();
+    await page.getByRole('radio', { name: /Cansado/ }).click();
+    await expect(page.getByText('0/8 series')).toBeVisible();
+    await page.getByRole('radio', { name: /Normal/ }).click();
+    await expect(page.getByText('0/8 series')).toBeVisible();
+
+    // The gym calculator in Routines: plates for a total, and a max from a set.
+    await page.goto('/#/rutinas');
+    await page.getByRole('button', { name: /Calculadora del gym/ }).click();
+    await expect(page.getByText('Barra de 20 kg.')).toBeVisible();
+    await page.getByLabel('Peso total en la barra').fill('100');
+    await expect(page.getByText('25 + 15', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: 'Peso máximo' }).click();
+    await page.getByLabel('Peso', { exact: true }).fill('100');
+    await page.getByLabel('Repeticiones').fill('5');
+    await expect(page.getByText('116,7 kg').first()).toBeVisible();
+    await expect(page.getByText('92,5 kg')).toBeVisible();
+
+    // The challenge is on the Challenges page in its season.
+    await page.goto('/#/retos');
+    await expect(page.getByRole('article', { name: '25 días hasta Navidad' })).toBeVisible();
+});

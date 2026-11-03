@@ -58,7 +58,8 @@ export interface Profile {
     mealReminders?: boolean;
     stepGoal?: number; // daily steps (default 8000; a walking plan sets its own)
     // "Time to train" on the chosen days (0 = Monday … 6 = Sunday); off when null.
-    trainingReminder?: { time: string; days: number[] } | null;
+    // `evening`: the night before each training day, what is next (on unless false).
+    trainingReminder?: { time: string; days: number[]; evening?: boolean } | null;
     // A summary of the week every Sunday evening (on by default).
     weeklySummary?: boolean;
     // Voice commands in the guided workout: "next", "done" (off by default).
@@ -175,6 +176,10 @@ export interface ActiveWorkout {
     restedMs?: number;
     // Exercises changed for an injury when it started (lib/pause.ts).
     injury?: { zones: Limitation[]; swapped: number; removed: number };
+    // "How do you feel today?" (lib/feel.ts) and the workout as planned, to
+    // reshape it again if the answer changes before the first set.
+    feel?: 'tired' | 'normal' | 'strong';
+    feelBase?: ActiveExercise[];
 }
 
 export interface Macros {

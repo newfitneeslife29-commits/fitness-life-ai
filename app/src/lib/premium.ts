@@ -259,3 +259,14 @@ export const restorePremium = async () => {
     actions.setPremium(status);
     return status;
 };
+
+// Right after the plan is made, the free trial is offered once in the phone
+// apps (where the stores give the free days): after the app tour when there
+// is one (App.tsx), else straight away (Onboarding.tsx).
+let trialOffer = false;
+export const offerTrialSoon = () => { trialOffer = Capacitor.isNativePlatform() && premiumAvailable(); };
+export const takeTrialOffer = () => {
+    const offer = trialOffer;
+    trialOffer = false;
+    return offer;
+};

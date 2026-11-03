@@ -1,4 +1,5 @@
 import { dayName, getProgram, programName } from '../data/programs';
+import { travelName } from '../data/travel';
 import { t } from '../i18n';
 import type { Plan, Routine, Session } from '../store/types';
 
@@ -7,7 +8,7 @@ import type { Plan, Routine, Session } from '../store/types';
 
 const fromDayKey = (dayKey: string | undefined, fallback: string) => {
     if (dayKey === 'free') return t('workout.free');
-    return (dayKey && dayName(dayKey)) || fallback;
+    return (dayKey && (travelName(dayKey) ?? dayName(dayKey))) || fallback;
 };
 
 export const routineName = (r: Pick<Routine, 'name' | 'dayKey'>) => fromDayKey(r.dayKey, r.name);

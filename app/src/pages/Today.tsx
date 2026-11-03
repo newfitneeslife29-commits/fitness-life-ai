@@ -31,13 +31,15 @@ import { actions, useStore } from '../store/store';
 import type { PlanUpdate, Routine, Session } from '../store/types';
 import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
+import { estimateMinutes } from '../lib/reminders';
+import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
+import { adventWorkout, isAdventKey, travelRoutine } from '../data/travel';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
 
 const TIPS = 12;
 
 // About how long a routine takes: every set plus its rest.
-const estimateMin = (r: Routine) => Math.max(5, Math.round(r.exercises.reduce((m, e) => m + e.sets * (e.restSec + 45), 0) / 60 / 5) * 5);
 
 // Numbers count up when the screen opens (not with reduced motion).
 const useCountUp = (target: number, ms = 700) => {
@@ -129,7 +131,7 @@ const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onSta
                 <h2 className="text-[1.7rem] font-extrabold leading-tight tracking-tight">{routineName(routine)}</h2>
                 <p className="mt-1 flex items-center gap-3 text-sm text-snow/80">
                     <span className="flex items-center gap-1"><Dumbbell size={14} /> {tp('home.exercises', routine.exercises.length)}</span>
-                    <span className="flex items-center gap-1"><Clock size={14} /> {t('home.minutes', { n: estimateMin(routine) })}</span>
+                    <span className="flex items-center gap-1"><Clock size={14} /> {t('home.minutes', { n: estimateMinutes(routine) })}</span>
                 </p>
                 <p className="mt-2 line-clamp-1 text-xs text-snow/60">{routine.exercises.map(e => exerciseName(e.exerciseId)).join(' · ')}</p>
                 <button onClick={onStart} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-semibold text-snow shadow-lg shadow-brand/30 transition hover:bg-brand-strong active:scale-[0.98]">
@@ -256,6 +258,93 @@ const BeginnerCard = () => (
         <ChevronRight className="shrink-0 text-white/40" />
     </Link>
 );
+
+// The first week: four small steps (lib/welcome.ts), each one a tap away.
+const WELCOME_LINKS = { workout: '/rutinas', meal: '/nutricion', water: '/nutricion', three: '/rutinas' } as const;
+const WelcomeCard = ({ startedAt }: { startedAt: string }) => {
+    const sessions = useStore(s => s.sessions);
+    const meals = useStore(s => s.meals);
+    const water = useStore(s => s.water);
+    const status = useMemo(() => welcomeStatus({ sessions, meals, water }, startedAt), [sessions, meals, water, startedAt]);
+    if (status.daysLeft === 0) return null;
+    const all = status.count === WELCOME_STEPS.length;
+    return (
+        <Section>
+            <div className="card border-amber-400/40 bg-gradient-to-br from-amber-500/15 to-brand/10 p-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-brand text-snow">{all ? <PartyPopper size={22} /> : <Trophy size={22} />}</span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('welcome.title')}</span>
+                        <span className="block text-sm text-white/60">{all ? t('welcome.done') : tp('welcome.hint', status.daysLeft, { done: status.count, total: WELCOME_STEPS.length })}</span>
+                    </span>
+                </div>
+                {!all && (
+                    <ul className="mt-3 space-y-1.5">
+                        {WELCOME_STEPS.map(step => (
+                            <li key={step}>
+                                <Link to={WELCOME_LINKS[step]} className="flex items-center gap-2.5 rounded-lg px-1 py-1 text-sm hover:bg-ink-3">
+                                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${status.done[step] ? 'bg-good text-snow' : 'border-2 border-white/30'}`}>
+                                        {status.done[step] && <Check size={13} strokeWidth={3} />}
+                                    </span>
+                                    <span className={status.done[step] ? 'text-white/45 line-through' : 'font-medium'}>{t(`welcome.step.${step}`)}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </Section>
+    );
+};
+
+// December 1–25: today's 10-minute mini workout and the "25 days to
+// Christmas" challenge (lib/challenges.ts, data/travel.ts).
+const AdventCard = ({ onStart }: { onStart: (routine: Routine) => void }) => {
+    const sessions = useStore(s => s.sessions);
+    const cardio = useStore(s => s.cardio);
+    const steps = useStore(s => s.steps);
+    const activeDays = useStore(s => s.activeDays);
+    const mine = useStore(s => s.challenges?.find(c => c.id === 'advent'));
+    const now = new Date();
+    if (now.getMonth() !== 11 || now.getDate() > 25) return null;
+    const day = now.getDate();
+    const workout = adventWorkout(day);
+    const routine = travelRoutine(workout);
+    const today = localDay(now);
+    const doneToday = sessions.some(x => isAdventKey(x.dayKey) && localDay(new Date(x.startedAt)) === today);
+    const status = mine ? challengeStatus(mine, { sessions, cardio, steps, activeDays }, now) : null;
+    return (
+        <Section>
+            <div className="card overflow-hidden border-emerald-400/40 bg-gradient-to-br from-emerald-600/25 via-ink-2 to-rose-600/20 p-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-rose-500 text-2xl" aria-hidden>🎄</span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{t('advent.title')}</span>
+                        <span className="block text-sm text-white/60">{t('advent.day', { n: day })} · {routineName(routine)} · {workout.minutes} min</span>
+                    </span>
+                </div>
+                {doneToday ? (
+                    <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-good"><Check size={16} strokeWidth={3} /> {t('advent.doneToday')}</p>
+                ) : (
+                    <button onClick={() => onStart(routine)} className="btn-primary mt-3 w-full"><Play size={18} fill="currentColor" /> {t('advent.start')}</button>
+                )}
+                {status ? (
+                    <div className="mt-3">
+                        <div className="mb-1 flex justify-between text-xs text-white/60">
+                            <span>{t('challenges.progress', { n: status.progress, target: status.target })}</span>
+                            {status.state === 'done' && <span className="font-semibold text-amber-300">{t('challenges.done')}</span>}
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-ink-4">
+                            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-rose-400" style={{ width: `${Math.round((status.progress / status.target) * 100)}%` }} />
+                        </div>
+                    </div>
+                ) : (
+                    <Link to="/retos" className="mt-2 flex items-center justify-center gap-1 text-sm font-semibold text-emerald-300">{t('advent.join')} <ChevronRight size={16} /></Link>
+                )}
+            </div>
+        </Section>
+    );
+};
 
 // The Premium personal trainer: shown to everyone, unlocked with Premium.
 const TrainerCard = ({ premium }: { premium: boolean }) => (
@@ -395,12 +484,12 @@ export default function Today() {
     const tip = (dayOfYear % TIPS) + 1;
     const stepsToday = stepsOn({ steps: stepsMap, cardio }, localDay(now));
 
-    const start = async (routineId: string | null) => {
+    const start = async (routineId: string | null, given?: Routine) => {
         if (active && (active.routineId === routineId || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
             navigate('/entreno');
             return;
         }
-        actions.startWorkout(routineId);
+        actions.startWorkout(routineId, given);
         navigate('/entreno');
     };
 
@@ -445,6 +534,10 @@ export default function Today() {
             </Section>
 
             {plan?.update && !plan.update.seen && <Section><PlanUpdateCard update={plan.update} /></Section>}
+
+            <AdventCard onStart={r => void start(r.id, r)} />
+
+            {profile.createdAt && <WelcomeCard startedAt={profile.createdAt} />}
 
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 

@@ -32,6 +32,7 @@ const a = (id: string, icon: Achievement['icon'], title: [string, string, string
 export const ACHIEVEMENTS: Achievement[] = [
     // Workouts
     a('primer-entreno', 'dumbbell', ['Primer paso', 'First step', 'Primeiro passo'], ['Termina tu primer entreno', 'Finish your first workout', 'Termine seu primeiro treino']),
+    a('buen-comienzo', 'star', ['Buen comienzo', 'Good start', 'Bom começo'], ['3 entrenos en tu primera semana', '3 workouts in your first week', '3 treinos na sua primeira semana']),
     a('entrenos-5', 'dumbbell', ['Calentando motores', 'Warming up', 'Esquentando os motores'], ['5 entrenos completados', '5 workouts completed', '5 treinos concluídos'], { stat: 'workouts', target: 5 }),
     a('entrenos-10', 'dumbbell', ['Constante', 'Consistent', 'Constante'], ['10 entrenos completados', '10 workouts completed', '10 treinos concluídos'], { stat: 'workouts', target: 10 }),
     a('entrenos-25', 'star', ['Hábito', 'Habit', 'Hábito'], ['25 entrenos completados', '25 workouts completed', '25 treinos concluídos'], { stat: 'workouts', target: 25 }),
@@ -128,6 +129,8 @@ const replay = (sessions: Session[], daysPerWeek: number, body?: BodyData) => {
         for (const [n, id] of [[1, 'primer-record'], [10, 'records-10'], [25, 'records-25'], [50, 'records-50']] as const) {
             if (records >= n) unlock(id);
         }
+        // The welcome challenge: three workouts within 7 days of the first one.
+        if (count >= 3 && when.getTime() - Date.parse(ordered[0].startedAt) < 7 * 86_400_000) unlock('buen-comienzo');
         if (vol >= 5000) unlock('sesion-5t');
         if (vol >= 10_000) unlock('sesion-10t');
         for (const [n, id] of [[100_000, 'total-100t'], [500_000, 'total-500t'], [1_000_000, 'total-1000t']] as const) {

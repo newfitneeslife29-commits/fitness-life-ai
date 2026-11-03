@@ -201,11 +201,12 @@ export interface WeeklyReminder {
 const REMINDER_IDS = {
     meals: Array.from({ length: 70 }, (_, i) => 5200 + i),
     training: Array.from({ length: 7 }, (_, i) => 5300 + i),
+    evening: Array.from({ length: 7 }, (_, i) => 5600 + i),
 };
 export const reminderId = (group: keyof typeof REMINDER_IDS, index: number) => REMINDER_IDS[group][index];
 // One change at a time per group: two quick changes (days toggled fast)
 // would otherwise interleave and leave a removed day scheduled.
-const reminderQueue: Record<keyof typeof REMINDER_IDS, Promise<unknown>> = { meals: Promise.resolve(), training: Promise.resolve() };
+const reminderQueue: Record<keyof typeof REMINDER_IDS, Promise<unknown>> = { meals: Promise.resolve(), training: Promise.resolve(), evening: Promise.resolve() };
 export const scheduleWeeklyReminders = (group: keyof typeof REMINDER_IDS, reminders: WeeklyReminder[]) => {
     if (!isNative()) return Promise.resolve();
     const run = reminderQueue[group].then(() => quiet(async () => {

@@ -22,6 +22,9 @@ export interface ChallengeDef {
     id: string;
     emoji: string;
     target: number;
+    // Calendar challenges run on fixed dates of the year (month, day), not 30
+    // days from joining: they can be joined from `open` until `end`.
+    season?: { open: [number, number]; start: [number, number]; end: [number, number] };
     // Progress between `from` and `to` (local days "YYYY-MM-DD", both included).
     count: (data: Data, from: string, to: string) => number;
 }
@@ -40,15 +43,20 @@ const days = (from: string, to: string) => {
     return out;
 };
 
+const activeDaysIn = (data: Data, from: string, to: string) => new Set([
+    ...(data.activeDays ?? []),
+    ...data.sessions.map(s => dayOf(s.startedAt)),
+    ...(data.cardio ?? []).map(c => dayOf(c.startedAt)),
+].filter(d => inRange(d, from, to))).size;
+
 export const CHALLENGES: ChallengeDef[] = [
     {
-        id: 'consistency', emoji: '🔥', target: 25,
-        count: (data, from, to) => new Set([
-            ...(data.activeDays ?? []),
-            ...data.sessions.map(s => dayOf(s.startedAt)),
-            ...(data.cardio ?? []).map(c => dayOf(c.startedAt)),
-        ].filter(d => inRange(d, from, to))).size,
+        // "25 days to Christmas": be active 20 of the days from Dec 1 to 25.
+        id: 'advent', emoji: '🎄', target: 20,
+        season: { open: [11, 25], start: [12, 1], end: [12, 25] },
+        count: activeDaysIn,
     },
+    { id: 'consistency', emoji: '🔥', target: 25, count: activeDaysIn },
     {
         id: 'workouts12', emoji: '🏋️', target: 12,
         count: (data, from, to) => data.sessions.filter(s => inRange(dayOf(s.startedAt), from, to)).length,
@@ -81,10 +89,23 @@ export interface ChallengeStatus {
     state: 'running' | 'done' | 'ended';
 }
 
+const at = (year: number, [m, d]: [number, number]) => new Date(year, m - 1, d);
+
+// Calendar challenges show from `open` to the end of `end` (this year).
+export const challengeAvailable = (def: ChallengeDef, now = new Date()) =>
+    !def.season || (now >= at(now.getFullYear(), def.season.open) && now < at(now.getFullYear(), [def.season.end[0], def.season.end[1] + 1]));
+
+// The days a joined challenge counts: its season, or 30 days from joining.
+const span = (def: ChallengeDef, joined: JoinedChallenge) => {
+    const joinedAt = new Date(joined.joinedAt);
+    if (!def.season) return { start: joinedAt, end: new Date(joinedAt.getTime() + CHALLENGE_DAYS * DAY_MS) };
+    const year = joinedAt.getFullYear();
+    return { start: at(year, def.season.start), end: at(year, [def.season.end[0], def.season.end[1] + 1]) };
+};
+
 export const challengeStatus = (joined: JoinedChallenge, data: Data, now = new Date()): ChallengeStatus => {
     const def = challengeDef(joined.id)!;
-    const start = new Date(joined.joinedAt);
-    const end = new Date(start.getTime() + CHALLENGE_DAYS * DAY_MS);
+    const { start, end } = span(def, joined);
     const from = localDay(start);
     const to = localDay(new Date(Math.min(end.getTime() - 1, now.getTime())));
     const progress = Math.min(def.target, def.count(data, from, to));
