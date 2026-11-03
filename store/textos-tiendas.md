@@ -78,6 +78,10 @@ ENTRENA GUIADO, ¡Y MANOS LIBRES!
 • Fotos y animaciones de cada ejercicio, con consejos de técnica.
 • La app te dice cuándo subir de peso.
 • ¿Máquina ocupada? Cámbiala al instante por otra del mismo músculo.
+• ¿Cómo te sientes hoy? Cansado o con energía, el entreno se adapta.
+• Calculadora del gym: discos para la barra y tu peso máximo.
+• Entrenos de viaje sin material, de 15 a 20 minutos.
+• Un aviso la noche antes con el entreno de mañana.
 • Modo descanso o lesión: pausa tu racha sin perderla.
 • Tu música en un toque, y funciona sin internet.
 
@@ -97,7 +101,8 @@ NUTRICIÓN SIN COMPLICARTE
 • Premium: foto de tu comida y la IA calcula los macros, plan de comidas de 7 días, coach de nutrición con IA, escáner de código de barras, lista de la compra automática y ayuno intermitente.
 
 MOTIVACIÓN EN COMUNIDAD
-• Retos de 30 días con clasificación y ranking semanal con tus amigos.
+• Retos de 30 días y de temporada, como «25 días hasta Navidad», con clasificación y premios en la tienda.
+• Ranking semanal con tus amigos.
 • Publica tu progreso con fotos, historias y videos; da like, comenta y sigue a otros.
 • Invita a un amigo y los dos ganan una semana de Premium.
 
@@ -187,6 +192,10 @@ GUIDED WORKOUTS, HANDS-FREE
 • Photos and animations of every exercise, with technique tips.
 • The app tells you when to add weight.
 • Machine taken? Swap it instantly for another one for the same muscle.
+• How do you feel today? Tired or full of energy, your workout adapts.
+• Gym calculator: plates for the bar and your one-rep max.
+• No-equipment travel workouts in 15 to 20 minutes.
+• A reminder the night before with tomorrow's workout.
 • Rest or injury mode: pause your streak without losing it.
 • Your music in one tap, and it works offline.
 
@@ -206,7 +215,8 @@ NUTRITION MADE SIMPLE
 • Premium: snap your meal and the AI counts the macros, a 7-day meal plan, an AI nutrition coach, barcode scanner, automatic shopping list and intermittent fasting.
 
 A COMMUNITY THAT KEEPS YOU GOING
-• 30-day challenges with leaderboards and a weekly ranking with your friends.
+• 30-day and seasonal challenges, like "25 Days to Christmas", with leaderboards and store rewards.
+• A weekly ranking with your friends.
 • Share your progress with photos, stories and videos; like, comment and follow others.
 • Invite a friend and you both get a week of Premium.
 
@@ -296,6 +306,10 @@ TREINO GUIADO, COM MÃOS LIVRES
 • Fotos e animações de cada exercício, com dicas de técnica.
 • O app diz quando subir o peso.
 • Aparelho ocupado? Troque na hora por outro do mesmo músculo.
+• Como você se sente hoje? Cansado ou com energia, o treino se adapta.
+• Calculadora da academia: anilhas para a barra e seu peso máximo.
+• Treinos de viagem sem equipamento, de 15 a 20 minutos.
+• Um aviso na noite anterior com o treino de amanhã.
 • Modo descanso ou lesão: pause sua sequência sem perdê-la.
 • Sua música em um toque, e funciona sem internet.
 
@@ -315,7 +329,8 @@ NUTRIÇÃO SEM COMPLICAÇÃO
 • Premium: foto da refeição e a IA calcula os macros, plano de refeições de 7 dias, coach de nutrição com IA, leitor de código de barras, lista de compras automática e jejum intermitente.
 
 MOTIVAÇÃO EM COMUNIDADE
-• Desafios de 30 dias com classificação e ranking semanal com seus amigos.
+• Desafios de 30 dias e de temporada, como «25 dias até o Natal», com classificação e prêmios na loja.
+• Ranking semanal com seus amigos.
 • Publique seu progresso com fotos, stories e vídeos; curta, comente e siga outras pessoas.
 • Convide um amigo e os dois ganham uma semana de Premium.
 
