@@ -236,7 +236,7 @@ jobs:
             echo "::error::Could not create the ai_usage table. Give the access token database permissions, or add the SUPABASE_DB_PASSWORD secret."
             exit 1
           fi
-          supabase db push || {
+          supabase db push --yes || {
             echo "::error::Database password rejected. Reset it in Supabase (Project Settings → Database → Reset database password) and update the SUPABASE_DB_PASSWORD secret."
             exit 1
           }
@@ -270,37 +270,37 @@ jobs:
 
       - name: Store the function secrets
         run: |
-          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+          supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
           # New random value each deploy: lets the check below ask Claude as a
           # Premium user. Nobody else knows it.
           smoke=$(openssl rand -hex 24)
           echo "::add-mask::$smoke"
           echo "SMOKE_TEST_TOKEN=$smoke" >> "$GITHUB_ENV"
-          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" SMOKE_TEST_TOKEN="$smoke"
+          supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" SMOKE_TEST_TOKEN="$smoke"
           if [ -n "$REVENUECAT_SECRET_KEY" ]; then
-            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
+            supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" REVENUECAT_SECRET_KEY="$REVENUECAT_SECRET_KEY"
           fi
           # Where Stripe sends people back (stripe-return.html).
-          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" SITE_URL="$SITE_URL"
+          supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" SITE_URL="$SITE_URL"
           if [ -n "$STRIPE_SECRET_KEY" ]; then
-            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+            supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
           fi
           if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT"
+            supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT"
           fi
           if [ -n "$APNS_KEY" ]; then
-            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" APNS_KEY="$APNS_KEY" APNS_KEY_ID="$APNS_KEY_ID" APPLE_TEAM_ID="$APPLE_TEAM_ID"
+            supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" APNS_KEY="$APNS_KEY" APNS_KEY_ID="$APNS_KEY_ID" APPLE_TEAM_ID="$APPLE_TEAM_ID"
           fi
 
       - name: Deploy the functions
         run: |
-          supabase functions deploy nutrition-coach --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy account --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy trainer-pay --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy stripe-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy chat-push --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy community-push --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy referral --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy nutrition-coach --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy account --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy trainer-pay --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy stripe-webhook --no-verify-jwt --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy chat-push --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy community-push --yes --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy referral --yes --project-ref "$SUPABASE_PROJECT_REF"
 
       # Stripe tells the app about hires (paid, renewed, canceled) through a
       # webhook. Created once; its signing secret is only shown at creation,
@@ -336,7 +336,7 @@ jobs:
             fi
             secret=$(jq -r .secret /tmp/stripe.json)
             echo "::add-mask::$secret"
-            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" STRIPE_WEBHOOK_SECRET="$secret"
+            supabase secrets set --yes --project-ref "$SUPABASE_PROJECT_REF" STRIPE_WEBHOOK_SECRET="$secret"
             echo "Stripe's webhook was created."
           fi
           # An unsigned call must be refused (400): the function has both secrets.
