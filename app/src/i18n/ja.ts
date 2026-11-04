@@ -773,7 +773,7 @@ export const ja: Dict = {
     'premium.restored': "Premiumを復元しました",
     'premium.nothingToRestore': "このアカウントに復元できる購入はありません",
     'premium.unavailable': "このバージョンのアプリでは、Premiumはまだご利用いただけません。",
-    'premium.soon': "サブスクリプションはまもなく開始します。ご関心をお寄せいただきありがとうございます！",
+    'premium.soon': "iPhone または Android の Fitness Life アプリから登録してください。同じアカウントなら、Premium はこのウェブ版でも使えます。",
     'home.premium': "AIパーソナルトレーナーと栄養コーチ · 月額{price}から",
     'premium.active': "Premium有効",
     'premium.renews': "{date}に更新",

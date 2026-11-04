@@ -773,7 +773,7 @@ export const ko: Dict = {
     'premium.restored': "Premium이 복원되었어요",
     'premium.nothingToRestore': "이 계정에 복원할 구매 내역이 없어요",
     'premium.unavailable': "이 버전의 앱에서는 아직 Premium을 이용할 수 없어요.",
-    'premium.soon': "구독 기능이 곧 출시돼요. 관심 가져 주셔서 감사해요!",
+    'premium.soon': "iPhone 또는 Android용 Fitness Life 앱에서 구독하세요. 같은 계정이면 Premium을 이 웹에서도 사용할 수 있어요.",
     'home.premium': "AI 퍼스널 트레이너와 영양 코치 · 월 {price}부터",
     'premium.active': "Premium 이용 중",
     'premium.renews': "{date}에 갱신",

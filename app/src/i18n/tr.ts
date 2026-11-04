@@ -773,7 +773,7 @@ export const tr: Dict = {
     'premium.restored': "Premium geri yüklendi",
     'premium.nothingToRestore': "Bu hesapta geri yüklenecek satın alım yok",
     'premium.unavailable': "Premium, uygulamanın bu sürümünde henüz kullanılamıyor.",
-    'premium.soon': "Abonelikler çok yakında geliyor. İlgin için teşekkürler!",
+    'premium.soon': "iPhone veya Android için Fitness Life uygulamasından abone ol. Aynı hesapla Premium burada, web'de de çalışır.",
     'home.premium': "AI kişisel antrenör ve beslenme koçu · ayda {price} itibarıyla",
     'premium.active': "Premium aktif",
     'premium.renews': "Yenilenme tarihi: {date}",

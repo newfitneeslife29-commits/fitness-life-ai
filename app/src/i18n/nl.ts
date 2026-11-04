@@ -773,7 +773,7 @@ export const nl: Dict = {
     'premium.restored': "Premium hersteld",
     'premium.nothingToRestore': "Geen aankopen om te herstellen op dit account",
     'premium.unavailable': "Premium is nog niet beschikbaar in deze versie van de app.",
-    'premium.soon': "Abonnementen komen er heel binnenkort aan. Bedankt voor je interesse!",
+    'premium.soon': "Abonneer je in de Fitness Life-app voor iPhone of Android. Met hetzelfde account werkt je Premium ook hier op het web.",
     'home.premium': "AI-personal trainer en voedingscoach · vanaf {price}/maand",
     'premium.active': "Premium actief",
     'premium.renews': "Wordt verlengd op {date}",
