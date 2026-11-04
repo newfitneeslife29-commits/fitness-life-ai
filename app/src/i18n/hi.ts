@@ -773,7 +773,7 @@ export const hi: Dict = {
     'premium.restored': "Premium रीस्टोर हो गया",
     'premium.nothingToRestore': "इस अकाउंट पर रीस्टोर करने के लिए कोई खरीदारी नहीं है",
     'premium.unavailable': "ऐप के इस वर्ज़न में Premium अभी उपलब्ध नहीं है।",
-    'premium.soon': "सब्सक्रिप्शन बहुत जल्द आ रहे हैं। आपकी दिलचस्पी के लिए धन्यवाद!",
+    'premium.soon': "iPhone या Android के लिए Fitness Life ऐप से सदस्यता लें। उसी खाते से आपका Premium यहाँ वेब पर भी चलेगा।",
     'home.premium': "AI पर्सनल ट्रेनर और न्यूट्रिशन कोच · {price}/महीना से",
     'premium.active': "Premium एक्टिव",
     'premium.renews': "{date} को रिन्यू होगा",

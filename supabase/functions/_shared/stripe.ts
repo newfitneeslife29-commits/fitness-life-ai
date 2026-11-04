@@ -19,8 +19,10 @@ export const returnUrl = (to: 'hired' | 'bought' | 'canceled' | 'connected' | 'r
 // Paid (or in its last paid month): the client and the trainer can talk.
 export const LIVE = ['active', 'trialing', 'past_due'];
 
-// A connected account that can receive its share.
-export const accountReady = (a: Stripe.Account) => a.capabilities?.transfers === 'active' && a.payouts_enabled === true;
+// A connected account that can receive its share (and, when it has asked
+// for card payments, take the charges that settle in its country).
+export const accountReady = (a: Stripe.Account) => a.capabilities?.transfers === 'active' && a.payouts_enabled === true
+  && (a.capabilities?.card_payments ?? 'active') === 'active';
 
 // Saves the hire from Stripe's subscription. Only subscriptions started by
 // the app carry trainer_id/client_id (others, like manual payment links, are

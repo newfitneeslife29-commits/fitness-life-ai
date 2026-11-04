@@ -95,12 +95,15 @@ export const openPayoutDashboard = async () => {
     await openStripe(url);
 };
 
-// Countries where trainers can receive their share (Stripe Connect, with
-// cross-border payouts for those outside the Fitness Life account's country).
+// Countries where trainers can receive their share: those where Stripe opens
+// a full Express account for a platform in the US (checked against Stripe).
+// Elsewhere (most of Latin America, for one) Stripe needs cross-border payouts,
+// which this account doesn't have.
 export const PAYOUT_COUNTRIES = [
-    'US', 'MX', 'ES', 'AR', 'BO', 'BR', 'CA', 'CL', 'CO', 'CR', 'DO', 'EC', 'GT', 'HN', 'JM', 'PA', 'PE', 'PY', 'SV', 'TT', 'UY',
-    'GB', 'IE', 'FR', 'DE', 'IT', 'PT', 'NL', 'BE', 'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'PL',
-    'AU', 'NZ', 'JP', 'KR', 'SG', 'HK', 'IN', 'ID', 'PH', 'TH', 'MY', 'IL', 'TR', 'AE', 'ZA',
+    'US', 'CA', 'MX', 'UY',
+    'GB', 'IE', 'FR', 'DE', 'IT', 'ES', 'PT', 'NL', 'BE', 'LU', 'AT', 'CH', 'LI', 'SE', 'NO', 'DK', 'FI',
+    'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'GR', 'CY', 'MT', 'EE', 'LV', 'LT', 'GI',
+    'AU', 'NZ', 'JP', 'SG', 'HK', 'MY', 'TH',
 ] as const;
 
 // The phone's country (es-MX → MX) when it's on the list.

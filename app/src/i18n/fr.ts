@@ -773,7 +773,7 @@ export const fr: Dict = {
     'premium.restored': "Premium restauré",
     'premium.nothingToRestore': "Aucun achat à restaurer sur ce compte",
     'premium.unavailable': "Premium n'est pas encore disponible dans cette version de l'appli.",
-    'premium.soon': "Les abonnements arrivent très bientôt. Merci de ton intérêt !",
+    'premium.soon': "Abonnez-vous depuis l'app Fitness Life sur iPhone ou Android. Avec le même compte, votre Premium fonctionne aussi ici sur le web.",
     'home.premium': "Coach perso et coach nutrition IA · à partir de {price}/mois",
     'premium.active': "Premium actif",
     'premium.renews': "Se renouvelle le {date}",

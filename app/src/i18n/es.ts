@@ -774,7 +774,7 @@ export const es = {
     'premium.restored': 'Premium restaurado',
     'premium.nothingToRestore': 'No hay compras que restaurar en esta cuenta',
     'premium.unavailable': 'Premium aún no está disponible en esta versión de la app.',
-    'premium.soon': 'Las suscripciones se activarán muy pronto. ¡Gracias por tu interés!',
+    'premium.soon': "Suscríbete desde la app de Fitness Life para iPhone o Android. Con la misma cuenta, tu Premium también funciona aquí en la web.",
     'home.premium': 'Entrenador personal y nutrición con IA · desde {price}/mes',
     'premium.active': 'Premium activo',
     'premium.renews': 'Se renueva el {date}',

@@ -773,7 +773,7 @@ export const ru: Dict = {
     'premium.restored': "Premium восстановлен",
     'premium.nothingToRestore': "В этом аккаунте нет покупок для восстановления",
     'premium.unavailable': "Premium пока недоступен в этой версии приложения.",
-    'premium.soon': "Подписки появятся совсем скоро. Спасибо за интерес!",
+    'premium.soon': "Оформите подписку в приложении Fitness Life для iPhone или Android. С тем же аккаунтом Premium работает и здесь, в браузере.",
     'home.premium': "Личный ИИ-тренер и тренер по питанию · от {price}/мес.",
     'premium.active': "Premium активен",
     'premium.renews': "Продление {date}",

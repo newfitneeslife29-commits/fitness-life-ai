@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '../components/feedback';
+import { deviceStores } from '../components/GetTheApp';
 import PremiumArt from '../components/PremiumArt';
 import { AiCoachIcon, AiMealPlanIcon, AiTrainerIcon, CrownIcon, MealPhotoIcon } from '../components/PremiumIcons';
 import { Section } from '../components/ui';
@@ -57,6 +58,8 @@ export default function Premium() {
     const [planId, setPlanId] = useState<PlanId>('annual');
     const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
     const available = premiumAvailable();
+    // The web can't sell Premium (the stores do): it points to the apps instead.
+    const appOnly = !available && !Capacitor.isNativePlatform();
     // Premium per the store, or per the AI server (bought on another device).
     const active = usePremiumActive();
     // Store prices once loaded; until then (or if a plan is missing there) the USD defaults.
@@ -168,10 +171,23 @@ export default function Premium() {
                                 })}
                             </div>
                             <p className="mb-3 mt-2 text-center text-sm text-white/50">{t('premium.cancelAnytime')}</p>
-                            <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
-                                <CrownIcon size={20} tone="current" /> {busy === 'buy' ? t('premium.buying') : plan.trialDays ? t('premium.startTrial', { n: plan.trialDays }) : t('premium.subscribe')}
-                            </button>
-                            {plan.trialDays && (
+                            {appOnly ? (
+                                <div className="card space-y-3 p-4 text-center">
+                                    <p className="text-sm text-white/75">{t('premium.soon')}</p>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {deviceStores().map(({ id, url, label, icon: Icon }) => (
+                                            <a key={id} href={url} target="_blank" rel="noopener noreferrer" className="btn-primary min-w-[9rem] flex-1">
+                                                <Icon size={18} fill={id === 'android' ? 'currentColor' : 'none'} /> {label}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <button className="btn-primary w-full py-4 text-base" disabled={busy !== null} onClick={buy}>
+                                    <CrownIcon size={20} tone="current" /> {busy === 'buy' ? t('premium.buying') : plan.trialDays ? t('premium.startTrial', { n: plan.trialDays }) : t('premium.subscribe')}
+                                </button>
+                            )}
+                            {plan.trialDays && !appOnly && (
                                 <p className="mt-2 text-center text-xs text-white/55">
                                     {t('premium.trialTerms', { n: plan.trialDays, price: plan.price, period: t(plan.id === 'annual' ? 'premium.year' : 'premium.month'), store: Capacitor.getPlatform() === 'ios' ? 'App Store' : 'Google Play' })}
                                 </p>

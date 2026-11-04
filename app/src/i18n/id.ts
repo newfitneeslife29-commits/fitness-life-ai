@@ -773,7 +773,7 @@ export const id: Dict = {
     'premium.restored': "Premium dipulihkan",
     'premium.nothingToRestore': "Tidak ada pembelian untuk dipulihkan di akun ini",
     'premium.unavailable': "Premium belum tersedia di versi aplikasi ini.",
-    'premium.soon': "Langganan segera hadir. Terima kasih atas minatmu!",
+    'premium.soon': "Berlangganan lewat aplikasi Fitness Life untuk iPhone atau Android. Dengan akun yang sama, Premium kamu juga berlaku di web ini.",
     'home.premium': "Personal trainer dan pelatih nutrisi AI · mulai {price}/bulan",
     'premium.active': "Premium aktif",
     'premium.renews': "Diperpanjang pada {date}",

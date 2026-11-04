@@ -18,7 +18,7 @@ const WEEK_MS = 7 * 86_400_000;
 
 type Store = { id: 'ios' | 'android'; url: string; label: string; icon: typeof Apple };
 
-const deviceStores = (): Store[] => {
+export const deviceStores = (): Store[] => {
     const ua = navigator.userAgent;
     const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     const android = /Android/.test(ua);

@@ -773,7 +773,7 @@ export const zh: Dict = {
     'premium.restored': "Premium 已恢复",
     'premium.nothingToRestore': "此账户没有可恢复的购买",
     'premium.unavailable': "此版本的 App 暂不支持 Premium。",
-    'premium.soon': "订阅功能即将上线。感谢你的关注！",
+    'premium.soon': "请在 iPhone 或 Android 版 Fitness Life 应用中订阅。使用同一账号，你的 Premium 在网页版也能使用。",
     'home.premium': "AI 私人教练和营养教练 · 低至 {price}/月",
     'premium.active': "Premium 已激活",
     'premium.renews': "将于 {date} 续订",
