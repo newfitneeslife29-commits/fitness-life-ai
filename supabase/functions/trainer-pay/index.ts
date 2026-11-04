@@ -42,7 +42,9 @@ const myApplication = async (userId: string) => {
 
 const stripeCode = (e: unknown) => {
   const message = String((e as { message?: string })?.message ?? '');
-  if (/signed up for Connect|connect.*(not enabled|platform profile)|review the responsibilities/i.test(message)) return 'connect_disabled';
+  // Connect not set up yet in Stripe (sign-up, platform profile questionnaire
+  // or loss responsibilities), in any of the wordings Stripe has used.
+  if (/signed up for Connect|connect.*not enabled|platform profile|review the responsibilities|questionnaire/i.test(message)) return 'connect_disabled';
   if (/country/i.test(message)) return 'country_unsupported';
   return null;
 };
