@@ -21,6 +21,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { accountReady, finishCheckout, LIVE, returnUrl, saveSubscription, stripe, stripeConfigured } from '../_shared/stripe.ts';
+import type Stripe from 'npm:stripe@22.6.2';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -44,10 +45,25 @@ const stripeCode = (e: unknown) => {
   const message = String((e as { message?: string })?.message ?? '');
   // Connect not set up yet in Stripe (sign-up, platform profile questionnaire
   // or loss responsibilities), in any of the wordings Stripe has used.
-  if (/signed up for Connect|connect.*not enabled|platform profile|review the responsibilities|questionnaire/i.test(message)) return 'connect_disabled';
-  if (/country/i.test(message)) return 'country_unsupported';
+  if (/signed up for Connect|connect.*not enabled|platform profile|review the responsibilities|questionnaire|losses collector|must control losses/i.test(message)) return 'connect_disabled';
+  // A country Stripe can't open an account in for this platform.
+  if (/country|cannot be created by platforms|not currently supported|card_payments` capability|recipient|service agreement/i.test(message)) return 'country_unsupported';
   return null;
 };
+
+// Fitness Life's own Stripe country, read once.
+let platformCountry: Promise<string> | null = null;
+const ownCountry = () => (platformCountry ??= stripe.accounts.retrieve(null).then(a => a.country ?? 'US').catch(e => {
+  platformCountry = null;
+  throw e;
+}));
+
+// Where the money goes: the trainer's account, and for a trainer in another
+// country the charge settles in theirs (Stripe needs that to pay them).
+const payTo = async (account: Stripe.Account) => ({
+  transfer_data: { destination: account.id },
+  ...(account.country && account.country !== await ownCountry() ? { on_behalf_of: account.id } : {}),
+});
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -68,17 +84,16 @@ Deno.serve(async req => {
         if (!account) {
           const country = String(body.country ?? '').toUpperCase();
           if (!/^[A-Z]{2}$/.test(country)) throw new HttpError(400, 'country_unsupported');
-          const platformAccount = await stripe.accounts.retrieve(null);
-          // Same country as Fitness Life: a full account. Elsewhere: a
-          // "recipient" account that only receives its share (cross-border payouts).
-          const same = country === platformAccount.country;
+          // A full Express account in the trainer's country (Stripe's
+          // supported countries, PAYOUT_COUNTRIES in the app). Charges to
+          // trainers outside Fitness Life's country settle in theirs
+          // (on_behalf_of, see payTo below).
           const created = await stripe.accounts.create({
             type: 'express',
             country,
             email: user.email,
             business_type: 'individual',
-            capabilities: same ? { card_payments: { requested: true }, transfers: { requested: true } } : { transfers: { requested: true } },
-            ...(same ? {} : { tos_acceptance: { service_agreement: 'recipient' } }),
+            capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
             business_profile: { product_description: 'Online personal training sold through the Fitness Life app' },
             metadata: { user_id: user.id, trainer_id: app.id },
           });
@@ -146,7 +161,7 @@ Deno.serve(async req => {
           }],
           subscription_data: {
             application_fee_percent: trainer.fee_percent,
-            transfer_data: { destination: trainer.stripe_account_id },
+            ...await payTo(account),
             metadata,
           },
           metadata,
@@ -205,7 +220,7 @@ Deno.serve(async req => {
           }],
           payment_intent_data: {
             application_fee_amount: Math.round((program.price_cents * trainer.fee_percent) / 100),
-            transfer_data: { destination: trainer.stripe_account_id },
+            ...await payTo(account),
             metadata,
           },
           metadata,
