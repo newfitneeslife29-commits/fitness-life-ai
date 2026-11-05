@@ -1,20 +1,19 @@
-import { ArrowLeftRight, BookOpen, Sparkles, Check, ChevronLeft, Clock3, Copy, Disc3, Dumbbell, Minus, Plus, RefreshCw, Repeat, Target, Timer, Trash2, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, Check, ChevronLeft, Clock3, Copy, Disc3, Dumbbell, Minus, MoreHorizontal, Plus, RefreshCw, Repeat, Target, Timer, Trash2, TrendingUp } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActiveClock } from '../components/ActiveClock';
 import { InjuryNote } from '../components/PauseCard';
 import { FeelPicker } from '../components/FeelPicker';
 import { ExerciseDemo } from '../components/ExerciseDemo';
-import { GuidedWorkout } from '../components/GuidedWorkout';
+import { CLOCK_MAX_SEC, GuidedWorkout, Options } from '../components/GuidedWorkout';
+import { HowToSteps } from '../components/HowTo';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { HoldTimer } from '../components/HoldTimer';
-import { MusicButton } from '../components/MusicSheet';
 import { OfflineNotice } from '../components/OfflineNotice';
 import { confirm, toast } from '../components/feedback';
 import { PlateSheet } from '../components/PlateSheet';
-import { UnitToggle } from '../components/UnitToggle';
 import { Sheet } from '../components/ui';
-import { busyAlternatives, equipmentLabel, exerciseName, exerciseTip, getExercise, muscleLabel } from '../data/exercises';
+import { busyAlternatives, equipmentLabel, exerciseName, getExercise, muscleLabel } from '../data/exercises';
 import { t, tp } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtVolume, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
 import { cancelRestAlert, haptic, keepAwake, primeSound, scheduleRestAlert } from '../lib/native';
@@ -101,6 +100,7 @@ const ExerciseCard = ({ ex, index, unit, current, onSwap, others }: { ex: Active
     const [howTo, setHowTo] = useState(beginner && index === 0);
     const [plates, setPlates] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [menu, setMenu] = useState(false);
     const canBeBusy = !!info && info.equipment !== 'peso corporal' && info.equipment !== 'mancuernas';
     const lastDone = [...ex.sets].reverse().find(s => s.done);
     const { suggestion, previous } = planExercise(sessions, ex, unit);
@@ -139,32 +139,24 @@ const ExerciseCard = ({ ex, index, unit, current, onSwap, others }: { ex: Active
                         {complete && <span className="rounded-full bg-good/15 px-2 py-0.5 font-semibold text-good">{t('workout.completed')}</span>}
                     </p>
                 </div>
-                <div className="-mr-1 -mt-1 flex shrink-0">
-                    {info?.equipment === 'barra' && (
-                        <button onClick={() => setPlates(true)} aria-label={t('workout.plates')} className="rounded-lg p-2 text-white/45 hover:bg-ink-3 hover:text-white"><Disc3 size={18} /></button>
-                    )}
-                    <button onClick={onSwap} aria-label={t('workout.swap')} className="rounded-lg p-2 text-white/45 hover:bg-ink-3 hover:text-white"><RefreshCw size={18} /></button>
-                    <button onClick={remove} aria-label={t('workout.removeExercise')} className="rounded-lg p-2 text-white/45 hover:bg-ink-3 hover:text-red-400"><Trash2 size={18} /></button>
-                </div>
+                <button onClick={() => setMenu(true)} aria-label={t('guided.more')} className="-mr-1 -mt-1 shrink-0 rounded-lg p-2 text-white/55 hover:bg-ink-3 hover:text-white"><MoreHorizontal size={22} /></button>
             </div>
 
             <div className="flex flex-wrap gap-1.5 px-4">
                 <Pill icon={<Repeat size={12} />}>{fmtRange(ex.repMin, ex.repMax)} {timed ? t('unit.seconds') : t('unit.reps')}</Pill>
                 <Pill icon={<Timer size={12} />}>{t('workout.rest')} {fmtRest(ex.restSec)}</Pill>
-                <button onClick={() => setHowTo(v => !v)} className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand">
-                    <BookOpen size={12} /> {howTo ? t('workout.hideHowTo') : t('workout.howTo')}
+            </div>
+            <div className="px-4 pt-2.5">
+                <button onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-soft py-2.5 text-sm font-bold text-brand hover:bg-brand/20">
+                    <BookOpen size={17} /> {howTo ? t('workout.hideHowTo') : t('workout.howTo')}
                 </button>
-                {canBeBusy && (
-                    <button onClick={() => setBusy(true)} className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-white/70 hover:bg-ink-3">
-                        <ArrowLeftRight size={12} /> {t('workout.busy')}
-                    </button>
-                )}
             </div>
 
             {howTo && info && (
-                <div className="mx-4 mt-3 space-y-2 animate-fade">
+                <div className="mx-4 mt-3 space-y-3 animate-fade">
                     <ExerciseDemo id={ex.exerciseId} name={name} />
-                    <p className="rounded-xl bg-ink-3 p-3 text-sm text-white/80">{exerciseTip(info)}</p>
+                    <HowToSteps id={ex.exerciseId} />
                 </div>
             )}
 
@@ -258,6 +250,26 @@ const ExerciseCard = ({ ex, index, unit, current, onSwap, others }: { ex: Active
                     toast(t('workout.busy.swapped', { name: exerciseName(id) }));
                 }} />
             )}
+            <Sheet open={menu} onClose={() => setMenu(false)} title={name}>
+                <div className="space-y-2">
+                    {canBeBusy && (
+                        <button onClick={() => { setMenu(false); setBusy(true); }} className="flex w-full items-center gap-3 rounded-2xl bg-ink-3 px-4 py-3.5 text-left font-semibold hover:bg-ink-4">
+                            <ArrowLeftRight size={20} className="text-brand" /> {t('workout.busy')}
+                        </button>
+                    )}
+                    <button onClick={() => { setMenu(false); onSwap(); }} className="flex w-full items-center gap-3 rounded-2xl bg-ink-3 px-4 py-3.5 text-left font-semibold hover:bg-ink-4">
+                        <RefreshCw size={20} className="text-brand" /> {t('workout.swap')}
+                    </button>
+                    {info?.equipment === 'barra' && (
+                        <button onClick={() => { setMenu(false); setPlates(true); }} className="flex w-full items-center gap-3 rounded-2xl bg-ink-3 px-4 py-3.5 text-left font-semibold hover:bg-ink-4">
+                            <Disc3 size={20} className="text-brand" /> {t('workout.plates')}
+                        </button>
+                    )}
+                    <button onClick={() => { setMenu(false); void remove(); }} className="flex w-full items-center gap-3 rounded-2xl bg-ink-3 px-4 py-3.5 text-left font-semibold text-red-400 hover:bg-red-500/10">
+                        <Trash2 size={20} /> {t('workout.removeExercise')}
+                    </button>
+                </div>
+            </Sheet>
             {plates && <PlateSheet open onClose={() => setPlates(false)} weightKg={nextSet?.weightKg ?? 0} unit={unit} exerciseName={name} />}
         </section>
     );
@@ -317,6 +329,9 @@ const Stat = ({ icon, label, value }: { icon: ReactNode; label: string; value: s
     </div>
 );
 
+// A workout untouched this long was left open: opening it asks what to do.
+const STALE_AFTER_MS = 6 * 3600_000;
+
 // Guided (full screen, one exercise at a time) or the list of every set.
 const VIEW_KEY = 'fitness-life:workout-view';
 const savedView = (): 'guided' | 'list' => {
@@ -335,6 +350,7 @@ export default function Workout() {
     const now = useNow(!!active);
     const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'swap'; index: number } | null>(null);
     const [view, setView] = useState(savedView);
+    const [menu, setMenu] = useState(false);
     const changeView = (next: 'guided' | 'list') => {
         setView(next);
         try { localStorage.setItem(VIEW_KEY, next); } catch { /* the choice just isn't remembered */ }
@@ -372,9 +388,33 @@ export default function Workout() {
         }
     }, [restEndsAt]);
     useEffect(() => () => void endRestLive(), []);
+
+    const staleChecked = useRef(false);
+    useEffect(() => {
+        if (!active || staleChecked.current) return;
+        staleChecked.current = true;
+        const last = Math.max(Date.parse(active.startedAt), ...active.exercises.flatMap(e => e.sets).map(s => (s.completedAt ? Date.parse(s.completedAt) : 0)));
+        if (!Number.isFinite(last) || Date.now() - last < STALE_AFTER_MS) return;
+        const anyDone = active.exercises.some(e => e.sets.some(s => s.done));
+        const date = new Date(active.startedAt).toLocaleDateString(document.documentElement.lang || undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+        void confirm({
+            title: t('workout.stale.title'), message: t('workout.stale.message', { date }),
+            confirmLabel: anyDone ? t('workout.stale.save') : t('common.discard'), cancelLabel: t('today.continue'),
+        }).then(ok => {
+            if (!ok) return;
+            if (!anyDone) {
+                actions.discardWorkout();
+                return;
+            }
+            finishing.current = true;
+            const id = actions.finishWorkout();
+            navigate(id ? `/sesion/${id}?nuevo=1` : '/', { replace: true });
+        });
+    }, [active?.id]);
     if (!active) return null;
 
     const sets = active.exercises.flatMap(e => e.sets);
+    const elapsed = (now - Date.parse(active.startedAt)) / 1000;
     const done = sets.filter(s => s.done).length;
     const total = sets.length;
     const volumeKg = sets.reduce((sum, s) => (s.done ? sum + s.weightKg * s.reps : sum), 0);
@@ -430,14 +470,12 @@ export default function Workout() {
                             <p className="truncate text-xs text-white/50">{t('workout.exerciseOf', { n: (currentIndex >= 0 ? currentIndex : active.exercises.length - 1) + 1, total: active.exercises.length })}</p>
                         )}
                     </div>
-                    <span className="max-[399px]:ml-auto"><MusicButton /></span>
-                    <button onClick={() => changeView('guided')} aria-label={t('guided.guidedView')} className="rounded-lg p-2 text-brand hover:bg-ink-3"><Sparkles size={20} /></button>
-                    <UnitToggle unit={unit} />
+                    <button onClick={() => setMenu(true)} aria-label={t('guided.more')} className="rounded-lg p-2 text-white/70 hover:bg-ink-3 hover:text-white max-[399px]:ml-auto"><MoreHorizontal size={22} /></button>
                     <button onClick={finish} className="btn-primary ml-1 px-4 py-2">{t('workout.finish')}</button>
                 </div>
 
                 <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                    <Stat icon={<Clock3 size={11} />} label={t('workout.time')} value={fmtClock((now - Date.parse(active.startedAt)) / 1000)} />
+                    <Stat icon={<Clock3 size={11} />} label={t('workout.time')} value={elapsed < CLOCK_MAX_SEC ? fmtClock(elapsed) : '—'} />
                     <Stat icon={<Dumbbell size={11} />} label={t('workout.volume')} value={fmtVolume(volumeKg, unit)} />
                     <Stat icon={<Check size={11} />} label={t('workout.sets')} value={t('workout.progress', { done, total })} />
                 </div>
@@ -483,6 +521,7 @@ export default function Workout() {
                 <button onClick={discard} className="btn w-full text-red-400 hover:bg-red-500/10">{t('workout.discard')}</button>
             </div>
 
+            <Options open={menu} onClose={() => setMenu(false)} onSwitch={() => changeView('guided')} switchTo="guided" unit={unit} />
             {active.restEndsAt && <RestPanel endsAt={active.restEndsAt} total={active.restTotalSec} next={next} />}
 
             <ExercisePicker

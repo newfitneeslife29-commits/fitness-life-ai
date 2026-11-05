@@ -1,8 +1,8 @@
-import { Check, ChevronDown, Clock3, Dumbbell, Flame, HelpCircle, List, Mic, MicOff, Minus, Play, Plus, SkipForward, Target, Trophy, TrendingUp, Volume2, VolumeX } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, Clock3, Dumbbell, Flame, List, Mic, MicOff, Minus, MoreHorizontal, Music, Play, Plus, SkipForward, Target, Trophy, TrendingUp, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { routineCover } from '../data/covers';
 import { exerciseMotion } from '../data/motion';
-import { exerciseName, exercisePhotos, exerciseTip, getExercise, muscleLabel, type Muscle } from '../data/exercises';
+import { exerciseName, exercisePhotos, getExercise, muscleLabel, type Muscle } from '../data/exercises';
 import { t, type Key } from '../i18n';
 import { fmtClock, fmtNumber, fmtRange, fmtRest, fmtVolume, fmtWeight, parseDecimal, typedNumber } from '../lib/format';
 import { haptic, primeSound, restOver, restTick } from '../lib/native';
@@ -19,7 +19,8 @@ import { isBurnWorkout, planExercise } from '../lib/workout';
 import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Unit } from '../store/types';
 import { ActiveClock } from './ActiveClock';
-import { MusicButton } from './MusicSheet';
+import { MusicButton, MusicSheet } from './MusicSheet';
+import { HowToSheet } from './HowTo';
 import { InjuryNote } from './PauseCard';
 import { HoldTimer } from './HoldTimer';
 import { Sheet } from './ui';
@@ -31,6 +32,8 @@ import { UnitToggle } from './UnitToggle';
 // view: switching between them never loses anything.
 
 const READY_SEC = 10;
+// Past this the clock isn't a workout's length any more (it was left open).
+export const CLOCK_MAX_SEC = 5 * 3600;
 const TIPS: Key[] = ['guided.tip1', 'guided.tip2', 'guided.tip3', 'guided.tip4', 'guided.tip5'];
 
 // The animated demo when there is one; otherwise the start and end photos
@@ -162,6 +165,53 @@ const HandsFreeButton = ({ state }: { state: HandsFreeState }) => {
             {on && state === 'listening' && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-brand/50" />}
             {on ? <Mic size={19} className="relative" /> : <MicOff size={19} />}
         </button>
+    );
+};
+
+// The workout's settings, in words: list view, sound, hands-free, units and music.
+export const Options = ({ open, onClose, onSwitch, switchTo, unit }: { open: boolean; onClose: () => void; onSwitch: () => void; switchTo: 'list' | 'guided'; unit: Unit }) => {
+    const sound = useStore(s => s.profile?.restSound !== false);
+    const handsFree = useStore(s => s.profile?.handsFree === true);
+    const premium = usePremiumActive();
+    const navigate = useNavigate();
+    const [music, setMusic] = useState(false);
+    const row = 'flex w-full items-center gap-3 rounded-2xl bg-ink-3 px-4 py-3.5 text-left font-semibold hover:bg-ink-4';
+    const toggleHandsFree = () => {
+        if (!premium) {
+            toast(t('handsFree.locked'), 3500);
+            navigate('/premium');
+            return;
+        }
+        actions.updateProfile({ handsFree: !handsFree });
+        toast(t(handsFree ? 'handsFree.off' : 'handsFree.on'), handsFree ? 2000 : 4500);
+    };
+    return (
+        <Sheet open={open} onClose={onClose} title={t('guided.more')}>
+            <div className="space-y-2">
+                <button className={row} onClick={() => { onClose(); onSwitch(); }}>
+                    {switchTo === 'list' ? <List size={20} className="text-brand" /> : <Play size={20} className="text-brand" />}
+                    {t(switchTo === 'list' ? 'guided.listView' : 'guided.guidedView')}
+                </button>
+                <button className={row} onClick={() => actions.updateProfile({ restSound: !sound })} aria-pressed={sound}>
+                    {sound ? <Volume2 size={20} className="text-brand" /> : <VolumeX size={20} className="text-white/50" />}
+                    <span className="flex-1">{t('settings.restSound')}</span>
+                    <span className={`text-sm ${sound ? 'text-good' : 'text-white/45'}`}>{sound ? '✓' : '—'}</span>
+                </button>
+                {handsFreeSupported() && (
+                    <button className={row} onClick={toggleHandsFree} aria-pressed={handsFree}>
+                        {handsFree ? <Mic size={20} className="text-brand" /> : <MicOff size={20} className="text-white/50" />}
+                        <span className="flex-1">{t('handsFree.title')}</span>
+                        <span className={`text-sm ${handsFree ? 'text-good' : 'text-white/45'}`}>{handsFree ? '✓' : '—'}</span>
+                    </button>
+                )}
+                <button className={row} onClick={() => setMusic(true)}><Music size={20} className="text-brand" /> {t('music.open')}</button>
+                <div className="flex items-center justify-between rounded-2xl bg-ink-3 px-4 py-2.5 font-semibold">
+                    <span>{t('guided.weight')}</span>
+                    <UnitToggle unit={unit} />
+                </div>
+            </div>
+            <MusicSheet open={music} onClose={() => setMusic(false)} />
+        </Sheet>
     );
 };
 
@@ -348,7 +398,6 @@ const Done = ({ active, onFinish, onList, unit }: { active: ActiveWorkout; onFin
 
 export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { active: ActiveWorkout; unit: Unit; onFinish: () => void; onList: () => void; onClose: () => void }) => {
     const sessions = useStore(s => s.sessions);
-    const sound = useStore(s => s.profile?.restSound !== false);
     const goal = useStore(s => s.profile?.goal);
     const burn = isBurnWorkout(active, goal);
     const now = useNow(true, 1000);
@@ -358,6 +407,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
     // Exercises already introduced with "get ready".
     const [introduced, setIntroduced] = useState<number[]>([]);
     const [howTo, setHowTo] = useState(false);
+    const [menu, setMenu] = useState(false);
 
     const current = active.exercises.findIndex((e, i) => !skipped.includes(i) && e.sets.some(s => !s.done));
     const ex = current >= 0 ? active.exercises[current] : null;
@@ -400,6 +450,7 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
     const plateKg = info?.equipment === 'peso corporal' ? 1 : info?.equipment === 'mancuernas' ? 2 : 2.5;
     const stepKg = stepForUnit(plateKg, unit);
     const n = setIndex + 1;
+    const elapsed = (now - Date.parse(active.startedAt)) / 1000;
     const complete = () => {
         haptic('success');
         primeSound();
@@ -419,38 +470,45 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
                                 <p className="truncate text-sm font-extrabold">{t('workout.exerciseOf', { n: current + 1, total: active.exercises.length })}</p>
                                 {burn
                                     ? <div className="mt-1.5"><ActiveClock active={active} tone="light" /></div>
-                                    : <p className="text-xs font-semibold tabular-nums text-snow/75">{fmtClock((now - Date.parse(active.startedAt)) / 1000)}</p>}
+                                    : elapsed < CLOCK_MAX_SEC && <p className="text-xs font-semibold tabular-nums text-snow/75">{fmtClock(elapsed)}</p>}
                             </div>
                             <div className="flex flex-col gap-2">
-                                <RoundButton label={t('guided.listView')} onClick={onList}><List size={20} /></RoundButton>
-                                <RoundButton label={t('settings.restSound')} onClick={() => actions.updateProfile({ restSound: !sound })}>
-                                    {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
-                                </RoundButton>
-                                <HandsFreeButton state={handsFree} />
+                                <RoundButton label={t('guided.more')} onClick={() => setMenu(true)}><MoreHorizontal size={22} /></RoundButton>
+                                {handsFreeOn && <HandsFreeButton state={handsFree} />}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ink to-transparent" />
+                {info && (
+                    <button onClick={() => setHowTo(true)}
+                        className="absolute bottom-10 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-5 py-2.5 text-[15px] font-bold text-snow shadow-lg backdrop-blur-md active:scale-95">
+                        <BookOpen size={18} /> {t('workout.howTo')}
+                    </button>
+                )}
             </div>
 
             <section aria-label={exerciseName(ex.exerciseId)} className="relative z-10 -mt-7 rounded-t-[2rem] bg-ink px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.35)]">
                 <div className="mx-auto max-w-lg">
-                    <div className="flex items-center justify-center gap-2">
-                        <h1 className="truncate text-2xl font-extrabold">{exerciseName(ex.exerciseId)}</h1>
-                        {info && <button onClick={() => setHowTo(true)} aria-label={t('workout.howTo')} className="shrink-0 text-white/50 hover:text-white"><HelpCircle size={22} /></button>}
-                    </div>
+                    <h1 className="truncate text-center text-2xl font-extrabold">{exerciseName(ex.exerciseId)}</h1>
                     <div className="mt-2 flex items-center justify-center gap-1.5">
                         {ex.sets.map((s, j) => (
                             <span key={s.id} className={`h-2 rounded-full transition-all ${s.done ? 'w-2 bg-good' : j === setIndex ? 'w-6 bg-brand' : 'w-2 bg-ink-4'}`} />
                         ))}
                         <span className="ml-1.5 text-sm font-semibold text-white/60">{t('guided.setOf', { n, total: ex.sets.length })}</span>
                     </div>
-                    <p className={`mt-2 text-balance text-center text-sm ${goUp ? 'font-semibold text-good' : 'text-white/60'}`}>
-                        {goUp ? <TrendingUp size={15} className="mr-1 inline align-[-2px]" /> : <Target size={15} className="mr-1 inline align-[-2px] text-brand" />}
-                        {suggestion
-                            ? goUp ? t('workout.goUp', { weight: fmtWeight(suggestion.weightKg, unit), reps: suggestion.reps, diff: fmtWeight(suggestion.weightKg - lastTop, unit) })
-                                : `${t('workout.target')}: ${suggestion.weightKg > 0 ? `${fmtWeight(suggestion.weightKg, unit)} × ` : ''}${suggestion.reps}${info?.timed ? ' s' : ` ${t('unit.reps')}`}`
+                    <p className="mt-3 flex items-center justify-center gap-2 text-balance text-center text-lg font-bold">
+                        <Target size={20} className="shrink-0 text-brand" />
+                        {info?.timed
+                            ? t('guided.doHold', { sec: set.reps || ex.repMin })
+                            : set.weightKg > 0
+                                ? t('guided.doWith', { reps: set.reps, weight: fmtWeight(set.weightKg, unit) })
+                                : t('guided.doReps', { reps: set.reps })}
+                    </p>
+                    <p className={`mt-1 text-balance text-center text-sm ${goUp ? 'font-semibold text-good' : 'text-white/55'}`}>
+                        {goUp && <TrendingUp size={15} className="mr-1 inline align-[-2px]" />}
+                        {goUp && suggestion
+                            ? t('workout.goUp', { weight: fmtWeight(suggestion.weightKg, unit), reps: suggestion.reps, diff: fmtWeight(suggestion.weightKg - lastTop, unit) })
                             : prev ? t('guided.lastTime', { value: `${prev.weightKg > 0 ? `${fmtNumber(kgToDisplay(prev.weightKg, unit))} × ` : ''}${prev.reps}` }) : t('guided.firstTime')}
                     </p>
 
@@ -487,17 +545,15 @@ export const GuidedWorkout = ({ active, unit, onFinish, onList, onClose }: { act
                             </button>
                         )}
                         <button onClick={() => { haptic('tap'); setSkipped(s => [...s, current]); }} aria-label={t('guided.skipExercise')}
-                            className={`flex h-16 items-center justify-center gap-2 rounded-full bg-ink-3 font-semibold text-white/80 active:scale-95 ${info?.timed ? 'flex-1' : 'w-16'}`}>
-                            <SkipForward size={22} />{info?.timed && <span>{t('guided.skipExercise')}</span>}
+                            className={`flex h-16 items-center justify-center gap-1.5 rounded-full bg-ink-3 px-5 font-semibold text-white/80 active:scale-95 ${info?.timed ? 'flex-1' : ''}`}>
+                            <SkipForward size={20} /><span>{info?.timed ? t('guided.skipExercise') : t('guided.skip')}</span>
                         </button>
                     </div>
                 </div>
             </section>
 
-            <Sheet open={howTo} onClose={() => setHowTo(false)} title={exerciseName(ex.exerciseId)}>
-                <div className="relative aspect-[3/2] overflow-hidden rounded-2xl"><Motion id={ex.exerciseId} className="absolute inset-0" /></div>
-                {info && <p className="mt-3 text-sm leading-relaxed text-white/80">{exerciseTip(info)}</p>}
-            </Sheet>
+            <HowToSheet id={ex.exerciseId} open={howTo} onClose={() => setHowTo(false)} />
+            <Options open={menu} onClose={() => setMenu(false)} onSwitch={onList} switchTo="list" unit={unit} />
         </div>
     );
 };
