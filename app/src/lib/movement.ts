@@ -1,9 +1,8 @@
-import { Capacitor } from '@capacitor/core';
 import { useEffect } from 'react';
 import { getWalkPlan, type WalkWeek } from '../data/walking';
 import { localDay } from './activity';
 import { healthRemembered, readSleep, readStepDays } from './health';
-import { isNative } from './native';
+import { isIPhone, isNative } from './native';
 import { actions, useStore } from '../store/store';
 import type { AppState, CardioSession, SleepEntry, WalkPlanState } from '../store/types';
 
@@ -19,8 +18,9 @@ const flag = {
     set: () => { try { localStorage.setItem(PEDOMETER_KEY, '1'); } catch { /* asked again next time */ } },
 };
 
-// The phone's own step counter can give past days only on iPhone.
-export const pedometerSupported = () => isNative() && Capacitor.getPlatform() === 'ios';
+// The phone's own step counter can give past days only on iPhone (an iPad
+// has no step counter).
+export const pedometerSupported = () => isNative() && isIPhone();
 export const pedometerOn = () => pedometerSupported() && flag.get();
 
 // The module, not the plugin: a Capacitor plugin can't be the value of a
@@ -29,7 +29,7 @@ const pedometer = () => import('@capgo/capacitor-pedometer');
 
 export const enablePedometer = async () => {
     const { CapacitorPedometer: P } = await pedometer();
-    const status = await P.requestPermissions();
+    const status = await P.requestPermissions().catch(() => ({}));
     const ok = Object.values(status).some(v => v === 'granted');
     if (ok) flag.set();
     return ok;

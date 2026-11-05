@@ -13,6 +13,9 @@ import { t } from '../i18n';
 
 export const isNative = () => Capacitor.isNativePlatform();
 
+// The iPhone app (not the same app running on an iPad or a Mac).
+export const isIPhone = () => Capacitor.getPlatform() === 'ios' && /iPhone|iPod/.test(navigator.userAgent);
+
 // How the in-app browser opens: a sheet on iPhone; full screen on iPad (and on
 // a Mac running the iPad app), where a popover shows up small and blank.
 export const browserStyle = (): 'popover' | 'fullscreen' =>
