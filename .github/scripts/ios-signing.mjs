@@ -53,6 +53,24 @@ async function api(method, path, body) {
 
 const xml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
+// The app's own Sign in with Apple sheet needs the capability on its App ID
+// (the profile carries what the App ID has). Turned on here if it's missing.
+async function ensureSignInWithApple(bundle) {
+    const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities?limit=200`);
+    if (caps.data.some(c => c.attributes.capabilityType === 'APPLE_ID_AUTH')) return;
+    await api('POST', '/bundleIdCapabilities', {
+        data: {
+            type: 'bundleIdCapabilities',
+            attributes: {
+                capabilityType: 'APPLE_ID_AUTH',
+                settings: [{ key: 'APPLE_ID_AUTH_APP_CONSENT', options: [{ key: 'PRIMARY_APP_CONSENT' }] }],
+            },
+            relationships: { bundleId: { data: { type: 'bundleIds', id: bundle.id } } },
+        },
+    });
+    console.log(`Turned on Sign in with Apple for ${bundle.attributes.identifier}`);
+}
+
 // Removes the profiles and certificates of earlier runs, except the newest `keep` runs.
 async function prune(keep) {
     const list = await api('GET', '/profiles?limit=200&include=certificates');
@@ -111,6 +129,7 @@ async function setup() {
         const found = await api('GET', `/bundleIds?filter[identifier]=${encodeURIComponent(identifier)}&limit=200`);
         const bundle = found.data.find(b => b.attributes.identifier === identifier);
         if (!bundle) throw new Error(`The App ID ${identifier} isn't registered in the Apple Developer account`);
+        if (identifier === BUNDLES[0]) await ensureSignInWithApple(bundle);
         const profile = await api('POST', '/profiles', {
             data: {
                 type: 'profiles',

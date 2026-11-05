@@ -13,6 +13,11 @@ import { t } from '../i18n';
 
 export const isNative = () => Capacitor.isNativePlatform();
 
+// How the in-app browser opens: a sheet on iPhone; full screen on iPad (and on
+// a Mac running the iPad app), where a popover shows up small and blank.
+export const browserStyle = (): 'popover' | 'fullscreen' =>
+    Capacitor.getPlatform() === 'ios' && !/iPhone|iPod/.test(navigator.userAgent) ? 'fullscreen' : 'popover';
+
 // Safety net: never leave the splash screen up if the app fails to start.
 if (isNative()) window.setTimeout(() => { void SplashScreen.hide().catch(() => {}); }, 5000);
 

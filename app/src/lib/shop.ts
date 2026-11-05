@@ -1,4 +1,4 @@
-import { isNative } from './native';
+import { browserStyle, isNative } from './native';
 
 // The Fitness Life Edition clothing store (Shopify, at its own domain).
 export const SHOP_URL = 'https://fitnesslifeedition.com';
@@ -19,5 +19,5 @@ export const openShop = async (code = SHOP_CODE) => {
         return;
     }
     const { Browser } = await import('@capacitor/browser');
-    await Browser.open({ url, presentationStyle: 'popover' });
+    await Browser.open({ url, presentationStyle: browserStyle() });
 };
