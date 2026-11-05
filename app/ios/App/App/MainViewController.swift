@@ -6,5 +6,6 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(LauncherIconPlugin())
         bridge?.registerPluginInstance(WidgetBridgePlugin())
         bridge?.registerPluginInstance(RestLivePlugin())
+        bridge?.registerPluginInstance(AppleSignInPlugin())
     }
 }

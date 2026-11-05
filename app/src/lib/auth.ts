@@ -1,8 +1,9 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { AuthError, User } from '@supabase/supabase-js';
 import { confirm } from '../components/feedback';
 import { t } from '../i18n';
 import { actions, getState } from '../store/store';
+import { browserStyle } from './native';
 import { forgetPushToken } from './push';
 import type { Account } from '../store/types';
 import { flushCloud, forgetCloudState, startCloudSync, syncAccount } from './cloud';
@@ -16,7 +17,8 @@ import { AUTH_STORAGE_KEY, backendAvailable, getSupabase, SITE_URL } from './sup
 // OAuth on the web redirects back to the page (?code=...). Inside the
 // iOS/Android apps it opens the system browser and comes back through the
 // com.fitnesslife.app://auth-callback link (declared in AndroidManifest.xml
-// and Info.plist).
+// and Info.plist). Apple on iPhone/iPad uses the system's own Sign in with
+// Apple sheet (AppleSignInPlugin.swift) and gives its token to Supabase.
 
 export const authAvailable = backendAvailable;
 
@@ -163,8 +165,33 @@ export const signInWithEmail = async (email: string, password: string) => {
     if (error) throw failure(error);
 };
 
+interface AppleSignInPlugin {
+    signIn(options: { nonce: string }): Promise<{ identityToken: string; givenName?: string; familyName?: string }>;
+}
+const AppleSignIn = registerPlugin<AppleSignInPlugin>('AppleSignIn');
+
+const randomNonce = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
+
+// Closing Apple's sheet isn't an error: nothing happens.
+const signInWithAppleNative = async (supabase: Awaited<ReturnType<typeof ready>>) => {
+    const nonce = randomNonce();
+    let apple;
+    try {
+        apple = await AppleSignIn.signIn({ nonce });
+    } catch (e) {
+        if ((e as { code?: string }).code === 'canceled') return;
+        throw failure(e as Error);
+    }
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: apple.identityToken, nonce });
+    if (error) throw failure(error);
+    // Apple shares the name only on the first sign-in: keep it on the account.
+    const name = [apple.givenName, apple.familyName].filter(Boolean).join(' ');
+    if (name) void supabase.auth.updateUser({ data: { full_name: name } }).catch(() => {});
+};
+
 export const signInWithProvider = async (provider: OAuthProvider) => {
     const supabase = await ready();
+    if (provider === 'apple' && Capacitor.getPlatform() === 'ios') return signInWithAppleNative(supabase);
     if (!native) {
         const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: webRedirect() } });
         if (error) throw failure(error);
@@ -173,7 +200,7 @@ export const signInWithProvider = async (provider: OAuthProvider) => {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: NATIVE_CALLBACK, skipBrowserRedirect: true } });
     if (error || !data.url) throw failure(error ?? new Error('no url'));
     const { Browser } = await import('@capacitor/browser');
-    await Browser.open({ url: data.url, presentationStyle: 'popover' });
+    await Browser.open({ url: data.url, presentationStyle: browserStyle() });
 };
 
 export const sendPasswordReset = async (email: string) => {

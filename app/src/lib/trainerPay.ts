@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { getLang } from '../i18n';
 import { publicUrl } from './community';
-import { isNative } from './native';
+import { browserStyle, isNative } from './native';
 import { notifyChat } from './push';
 import { getSupabase } from './supabase';
 
@@ -72,7 +72,7 @@ const openStripe = async (url: string) => {
     }
     await listenNative();
     const { Browser } = await import('@capacitor/browser');
-    await Browser.open({ url, presentationStyle: 'popover' });
+    await Browser.open({ url, presentationStyle: browserStyle() });
 };
 
 // ---------- Trainers: payouts ----------
