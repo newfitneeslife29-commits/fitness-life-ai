@@ -104,13 +104,14 @@ export default function Trainers() {
     const [rating, setRating] = useState<Trainer | null>(null);
     const [programs, setPrograms] = useState<Program[]>([]);
     const [programsOf, setProgramsOf] = useState<Trainer | null>(null);
-    // Programs on sale; the ones bought go into Routines. The iPhone app
-    // doesn't sell them: they are digital content, which App Review only
-    // allows through in-app purchase (3.1.1). It only lists the ones already
-    // bought. Hiring a trainer is a 1:1 service and stays (3.1.3(d)).
+    // Programs on sale; the ones bought go into Routines. The iPhone and
+    // Android apps don't sell them: they are digital content, which the App
+    // Store (3.1.1) and Google Play only allow through their own in-app
+    // purchases. They only list the ones already bought (on the web).
+    // Hiring a trainer is a 1:1 service and stays (App Store 3.1.3(d)).
     const loadPrograms = async () => {
         const list = await fetchPrograms().catch(() => [] as Program[]);
-        setPrograms(Capacitor.getPlatform() === 'ios' ? list.filter(p => p.owned) : list);
+        setPrograms(Capacitor.isNativePlatform() ? list.filter(p => p.owned) : list);
         if (account) for (const name of await receivePrograms(list).catch(() => [])) toast(t('tprog.received', { name }), 4500);
     };
     const load = () => {
