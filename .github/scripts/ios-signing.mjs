@@ -56,7 +56,7 @@ const xml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 // The app's own Sign in with Apple sheet needs the capability on its App ID
 // (the profile carries what the App ID has). Turned on here if it's missing.
 async function ensureSignInWithApple(bundle) {
-    const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities?limit=200`);
+    const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities`);
     if (caps.data.some(c => c.attributes.capabilityType === 'APPLE_ID_AUTH')) return;
     await api('POST', '/bundleIdCapabilities', {
         data: {
