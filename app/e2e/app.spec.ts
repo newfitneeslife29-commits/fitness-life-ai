@@ -251,7 +251,8 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
 
     const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
     await squat.getByLabel('Peso serie 1').fill('100');
-    await squat.getByRole('button', { name: 'Discos y calentamiento' }).click();
+    await squat.getByRole('button', { name: 'Más opciones' }).click();
+    await page.getByRole('dialog', { name: 'Sentadilla con barra' }).getByRole('button', { name: 'Discos y calentamiento' }).click();
     const sheet = page.getByRole('dialog', { name: /Discos/ });
     await expect(sheet.getByText('25 + 15', { exact: true })).toBeVisible();
     await expect(sheet.getByText('85 kg × 1')).toBeVisible();
@@ -1440,7 +1441,8 @@ test('workout extras: repeat the last set, machine taken, then recovery, activit
 
     // The bench is taken: same muscle with dumbbells instead.
     const bench = page.getByRole('region', { name: 'Press de banca', exact: true });
-    await bench.getByRole('button', { name: 'Máquina ocupada' }).click();
+    await bench.getByRole('button', { name: 'Más opciones' }).click();
+    await page.getByRole('dialog', { name: 'Press de banca' }).getByRole('button', { name: 'Máquina ocupada' }).click();
     const sheet = page.getByRole('dialog', { name: 'Máquina ocupada' });
     await expect(sheet.getByText('Press de banca con mancuernas')).toBeVisible();
     await sheet.getByRole('button', { name: /Press de banca con mancuernas/ }).click();
@@ -1583,7 +1585,10 @@ test('workout: switch to pounds, adjust with the − / + buttons, and the next s
     await page.getByRole('button', { name: 'Saltar' }).click();
 
     // Pounds right from the workout: the same weights, now in lbs, and the whole app follows.
-    await page.getByRole('radio', { name: 'lb', exact: true }).click();
+    await page.getByRole('button', { name: 'Más opciones' }).first().click();
+    const options = page.getByRole('dialog', { name: 'Más opciones' });
+    await options.getByRole('radio', { name: 'lb', exact: true }).click();
+    await options.getByRole('button', { name: 'Cerrar' }).click();
     await expect(squat.getByLabel('Peso serie 1')).toHaveValue('182');
     await expect(squat.getByRole('button', { name: 'Subir el peso de la serie 2' })).toHaveText('+5');
     await page.getByRole('button', { name: 'Ir a Press de banca' }).click();
@@ -2141,7 +2146,8 @@ test('guided: fat burning keeps an active clock that only stops in the rests', a
     // After the rest it carries on from where it stopped.
     await page.getByRole('button', { name: 'Saltar' }).click();
     await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
-    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await page.getByRole('button', { name: 'Más opciones' }).first().click();
+    await page.getByRole('dialog', { name: 'Más opciones' }).getByRole('button', { name: 'Ver como lista' }).click();
     await expect(page.getByRole('timer', { name: /^Tiempo activo/ })).toBeVisible();
     await expect(page.getByRole('timer', { name: /^Descanso: 0:0[1-9]/ })).toBeVisible();
 
@@ -2156,7 +2162,8 @@ test('workout music: the music apps and my own playlist', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
     await page.getByRole('button', { name: 'Empezar entreno' }).click();
-    await page.getByRole('button', { name: 'Poner música' }).click();
+    await page.getByRole('button', { name: 'Más opciones' }).first().click();
+    await page.getByRole('dialog', { name: 'Más opciones' }).getByRole('button', { name: 'Poner música' }).click();
     const sheet = page.getByRole('dialog', { name: 'Música para entrenar' });
     await expect(sheet.getByRole('button', { name: 'Spotify' })).toBeVisible();
     await expect(sheet.getByRole('button', { name: 'Apple Music' })).toBeVisible();
@@ -2206,9 +2213,11 @@ test('guided: cover, get ready, the exercise full screen, a full-screen rest, th
     await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByText('Serie 2 de 3')).toBeVisible();
 
     // The list shows the same workout; back to guided and finish.
-    await page.getByRole('button', { name: 'Ver como lista' }).click();
+    await page.getByRole('button', { name: 'Más opciones' }).first().click();
+    await page.getByRole('dialog', { name: 'Más opciones' }).getByRole('button', { name: 'Ver como lista' }).click();
     await expect(page.getByRole('region', { name: 'Sentadilla con barra' }).getByLabel('Peso serie 1')).toHaveValue('62,5');
-    await page.getByRole('button', { name: 'Modo guiado' }).click();
+    await page.getByRole('button', { name: 'Más opciones' }).first().click();
+    await page.getByRole('dialog', { name: 'Más opciones' }).getByRole('button', { name: 'Modo guiado' }).click();
     for (let i = 0; i < 6; i++) {
         const go = page.getByRole('button', { name: '¡Empezar ya!' });
         const skip = page.getByRole('button', { name: 'Saltar ejercicio' });
@@ -2464,4 +2473,37 @@ test('december: the advent mini workout, how you feel today and the gym calculat
     // The challenge is on the Challenges page in its season.
     await page.goto('/#/retos');
     await expect(page.getByRole('article', { name: '25 días hasta Navidad' })).toBeVisible();
+});
+
+test('guided: how an exercise is done, step by step; a workout left open asks what to do', async ({ page }) => {
+    await onboard(page);
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('button', { name: 'Empezar entreno' }).click();
+    await page.getByRole('button', { name: '¡Empezar!' }).click();
+    await page.getByRole('button', { name: '¡Empezar ya!' }).click();
+    const squat = page.getByRole('region', { name: 'Sentadilla con barra' });
+    // What to do, in plain words.
+    await expect(squat.getByText(/^Haz \d+ repeticiones/)).toBeVisible();
+    await page.getByRole('button', { name: 'Cómo se hace', exact: true }).click();
+    const how = page.getByRole('dialog', { name: 'Sentadilla con barra' });
+    await expect(how.getByText('Paso a paso')).toBeVisible();
+    await expect(how.getByText(/^Con la barra sobre la parte alta de la espalda/)).toBeVisible();
+    await expect(how.getByText('Lo más importante')).toBeVisible();
+    await how.getByRole('button', { name: 'Cerrar' }).click();
+    await squat.getByRole('button', { name: 'Serie hecha' }).click();
+
+    // Left open since yesterday: opening it offers to save it.
+    await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem('fitness-life:v1')!);
+        const old = new Date(Date.now() - 26 * 3600_000).toISOString();
+        s.active.startedAt = old;
+        s.active.restEndsAt = null;
+        for (const e of s.active.exercises) for (const set of e.sets) if (set.done) set.completedAt = old;
+        localStorage.setItem('fitness-life:v1', JSON.stringify(s));
+    });
+    await page.reload();
+    const ask = page.getByRole('alertdialog');
+    await expect(ask).toContainText('Tienes un entreno sin terminar');
+    await ask.getByRole('button', { name: 'Guardar y terminar' }).click();
+    await expect(page).toHaveURL(/sesion\//);
 });
