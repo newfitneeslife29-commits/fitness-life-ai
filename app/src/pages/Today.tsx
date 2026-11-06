@@ -34,6 +34,7 @@ import { useNow } from '../lib/useNow';
 import { estimateMinutes } from '../lib/reminders';
 import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
 import { adventWorkout, isAdventKey, travelRoutine } from '../data/travel';
+import { SourcesLink } from '../components/SourcesLink';
 
 // Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
 
@@ -571,12 +572,12 @@ export default function Today() {
             <Section><HealthCard /></Section>
 
             {sessions.length > 0 && (
-                <Section title={t('recovery.title')}>
+                <Section title={t('recovery.title')} action={<SourcesLink topics={['strength']} />}>
                     <RecoveryCard sessions={sessions} />
                 </Section>
             )}
 
-            <Section title={t('weightGoal.title')}>
+            <Section title={t('weightGoal.title')} action={<SourcesLink topics={['weight', 'calories']} />}>
                 <WeightGoalCard />
             </Section>
 
@@ -607,7 +608,7 @@ export default function Today() {
 
             {sessions.length > 0 && <Section title={t('share.section')}><ShareLinks /></Section>}
 
-            <Section title={t('home.nutrition')}>
+            <Section title={t('home.nutrition')} action={<SourcesLink topics={['calories', 'protein']} />}>
                 <NutritionToday />
             </Section>
 

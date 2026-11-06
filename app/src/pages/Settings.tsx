@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { BookOpen, ShoppingBag, ExternalLink, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
+import { BookOpen, BookOpenCheck, ShoppingBag, ExternalLink, Flame, Gift, Info, UserPlus, Camera, ChevronRight, MessageSquareHeart, RefreshCw, ShieldCheck, Cloud, CloudOff, Crown, BatteryCharging, BellRing, CalendarRange, Download, ImageIcon, Layers, LogOut, Mic, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
@@ -529,6 +529,7 @@ function HelpSection() {
                 </button>
                 <NavRow to="/sobre-nosotros" icon={<Info size={20} />} title={t('aboutUs.title')} hint={t('aboutUs.hint')} />
                 <NavRow to="/privacidad" icon={<ShieldCheck size={20} />} title={t('privacy.title')} hint={t('privacy.hint')} />
+                <NavRow to="/fuentes" icon={<BookOpenCheck size={20} />} title={t('sources.title')} hint={t('sources.hint')} />
                 <div className="flex items-center gap-3 p-4">
                     <RefreshCw size={20} className="shrink-0 text-brand" />
                     <div className="min-w-0 flex-1">

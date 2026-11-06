@@ -23,6 +23,7 @@ import { localDay } from '../lib/activity';
 import { useNow } from '../lib/useNow';
 import { actions, getState, useStore } from '../store/store';
 import type { Macros, Meal, Unit } from '../store/types';
+import { SourcesLink } from '../components/SourcesLink';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -152,7 +153,8 @@ const TargetsSheet = ({ open, onClose, current, auto }: { open: boolean; onClose
     };
     return (
         <Sheet open={open} onClose={onClose} title={t('nutrition.targets')}>
-            <p className="mb-4 text-sm text-white/55">{t('nutrition.targetsHint')}</p>
+            <p className="mb-1 text-sm text-white/55">{t('nutrition.targetsHint')}</p>
+            <SourcesLink topics={['calories', 'protein']} className="mb-4" />
             <MacroInputs value={fields} onChange={setFields} />
             <div className="mt-5 flex gap-2">
                 {auto && (
@@ -429,7 +431,7 @@ const Coach = ({ context }: { context: CoachContext }) => {
                 <p className="border-t border-line p-4 text-sm text-white/55">{t('ai.error.unavailable')}</p>
             )}
             {ai && <div className="px-4 pb-1"><AiUsageLine /></div>}
-            <p className="px-4 pb-3 text-[11px] text-white/35">{t('coach.disclaimer')}</p>
+            <p className="px-4 pb-3 text-[11px] text-white/35">{t('coach.disclaimer')} <SourcesLink topics={['calories', 'protein', 'weight']} className="ml-1" /></p>
         </div>
     );
 };
@@ -591,17 +593,18 @@ export default function Nutrition() {
                     <button onClick={() => setDay(d => addDays(d, 1))} disabled={isToday} aria-label={t('nutrition.nextDay')} className="rounded-full p-2 text-white/60 hover:bg-ink-3 hover:text-white disabled:opacity-30"><ChevronRight size={20} /></button>
                 </div>
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
+                <div className="mt-2 flex justify-end"><SourcesLink topics={['calories', 'protein']} /></div>
             </Section>
 
-            <Section title={t('water.title')}>
+            <Section title={t('water.title')} action={<SourcesLink topics={['water']} />}>
                 <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
             </Section>
 
-            <Section title={t('fasting.title')}>
+            <Section title={t('fasting.title')} action={<SourcesLink topics={['fasting']} />}>
                 <FastingCard />
             </Section>
 
-            <Section title={t('freePlans.title')}>
+            <Section title={t('freePlans.title')} action={<SourcesLink topics={['calories', 'food']} />}>
                 <Link to="/nutricion/planes" className="card relative flex min-h-[7.5rem] items-end overflow-hidden p-4 text-snow active:scale-[0.99]">
                     <Photo photo={{ src: './food/plato-7.webp', position: '50% 50%' }} />
                     <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-800/90 via-emerald-700/60 to-transparent" />
@@ -614,12 +617,12 @@ export default function Nutrition() {
                 </Link>
             </Section>
 
-            <Section title={t('mealPlan.section')}>
+            <Section title={t('mealPlan.section')} action={<SourcesLink topics={['calories', 'protein']} />}>
                 <MealPlanSection context={context} />
             </Section>
 
             {weightKg && (
-                <Section title={t('bmi.title')}>
+                <Section title={t('bmi.title')} action={<SourcesLink topics={['bmi']} />}>
                     <BmiCard weightKg={weightKg} heightCm={profile.heightCm} unit={profile.unit} />
                 </Section>
             )}
@@ -651,7 +654,7 @@ export default function Nutrition() {
                 <Recipes day={day} />
             </Section>
 
-            <Section title={t('foods.title')}>
+            <Section title={t('foods.title')} action={<SourcesLink topics={['food']} />}>
                 <FoodTablePreview />
                 <Link to="/nutricion/alimentos?escanear=1" className="btn-ghost mt-2 w-full"><ScanBarcode size={18} /> {t('barcode.scan')}</Link>
             </Section>

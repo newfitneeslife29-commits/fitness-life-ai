@@ -362,3 +362,14 @@ export const initNative = (onBack: () => void) => {
         else void App.exitApp();
     }));
 };
+
+// A web page outside the app (a source, a study): the in-app browser on
+// phones, a new tab on the web.
+export const openLink = async (url: string) => {
+    if (!isNative()) {
+        window.open(url, '_blank', 'noopener');
+        return;
+    }
+    const { Browser } = await import('@capacitor/browser');
+    await Browser.open({ url, presentationStyle: browserStyle() });
+};

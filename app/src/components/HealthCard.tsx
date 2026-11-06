@@ -46,7 +46,7 @@ export const HealthCard = () => {
                 {state.kind === 'install' ? (
                     <a href={HEALTH_CONNECT_STORE} target="_blank" rel="noopener noreferrer" className="btn-primary mt-3 w-full">{t('health.install')}</a>
                 ) : (
-                    <button onClick={connect} disabled={busy} className="btn-primary mt-3 w-full">{t('health.connectButton', { source })}</button>
+                    <button onClick={connect} disabled={busy} className="btn-primary mt-3 w-full">{Capacitor.getPlatform() === 'ios' ? t('common.next') : t('health.connectButton', { source })}</button>
                 )}
                 <p className="mt-2 text-[11px] text-white/40">{t('health.privacy')}</p>
             </div>

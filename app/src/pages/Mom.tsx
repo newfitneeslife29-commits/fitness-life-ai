@@ -10,6 +10,7 @@ import { l10n, t, tp, type Key } from '../i18n';
 import { fmtRange, fmtRest } from '../lib/format';
 import { usePremiumActive } from '../lib/premium';
 import { actions, useStore } from '../store/store';
+import { SourcesLink } from '../components/SourcesLink';
 
 type Stage = 'embarazo' | 'posparto' | 'diastasis';
 
@@ -116,13 +117,13 @@ export default function Mom() {
                 <p className="mt-3 text-sm text-white/65">{t(`mom.intro.${stage}`)}</p>
             </Section>
 
-            <Section title={t('mom.programs')}>
+            <Section title={t('mom.programs')} action={<SourcesLink topics={['pregnancy']} />}>
                 <div className="space-y-2">
                     {programs.map(p => <ProgramCard key={p.id} program={p} premium={premium} />)}
                 </div>
             </Section>
 
-            <Section title={t(stage === 'diastasis' ? 'mom.habits' : 'mom.nutrition')}>
+            <Section title={t(stage === 'diastasis' ? 'mom.habits' : 'mom.nutrition')} action={<SourcesLink topics={['pregnancy']} />}>
                 <ul className="card divide-y divide-line">
                     {tips.slice(0, FREE_TIPS).map((tip, i) => (
                         <li key={i} className="flex gap-3 p-3 text-sm text-white/80"><Salad size={18} className="mt-0.5 shrink-0 text-good" />{tip}</li>
@@ -146,6 +147,7 @@ export default function Mom() {
                     <p className="text-white/75">{t('mom.safety.text')}</p>
                     <p className="flex gap-2 text-white/75"><AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-400" /> {t('mom.safety.stop')}</p>
                     <p className="flex gap-2 text-white/75"><HeartHandshake size={16} className="mt-0.5 shrink-0 text-brand" /> {t('mom.safety.physio')}</p>
+                    <SourcesLink topics={['pregnancy']} />
                 </div>
             </Section>
         </div>

@@ -13,6 +13,7 @@ import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premi
 import { routineCatalog, trainerContext } from '../lib/trainer';
 import { actions, getState, useStore } from '../store/store';
 import type { AppState, Setup } from '../store/types';
+import { SourcesLink } from '../components/SourcesLink';
 
 // Premium: a personal trainer that knows the user's plan and recent workouts,
 // answers questions and designs routines from the app's exercises.
@@ -247,7 +248,7 @@ export default function Trainer() {
                         <p className="border-t border-line p-4 text-sm text-white/55">{t('ai.error.unavailable')}</p>
                     )}
                     {ai && <div className="px-4 pb-1"><AiUsageLine /></div>}
-                    <p className="px-4 pb-3 text-[11px] text-white/35">{t('trainer.disclaimer')}</p>
+                    <p className="px-4 pb-3 text-[11px] text-white/35">{t('trainer.disclaimer')} <SourcesLink topics={['strength', 'activity']} className="ml-1" /></p>
                 </div>
             </Section>
 
