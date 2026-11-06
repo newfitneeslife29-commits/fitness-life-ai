@@ -52,8 +52,24 @@ const failure = (e: AuthError | Error): AuthFailure => {
     return new AuthFailure('failed');
 };
 
+const metaName = (user: User) => {
+    const m = user.user_metadata ?? {};
+    const name = m.full_name ?? m.name ?? [m.given_name, m.family_name].filter(Boolean).join(' ');
+    return typeof name === 'string' && name.trim() ? name.trim().slice(0, 60) : null;
+};
 const toAccount = (user: User | null | undefined): Account | null =>
-    !user || user.is_anonymous ? null : { id: user.id, email: user.email ?? null, provider: String(user.app_metadata?.provider ?? 'email') };
+    !user || user.is_anonymous ? null : { id: user.id, email: user.email ?? null, provider: String(user.app_metadata?.provider ?? 'email'), name: metaName(user) ?? (user.app_metadata?.provider === 'apple' ? appleName() : null) };
+
+// Apple shares the name once, before the account exists in the app: kept here
+// so the first screens can use it right away.
+const APPLE_NAME_KEY = 'fitness-life:apple-name';
+export const appleName = (): string | null => {
+    try {
+        return localStorage.getItem(APPLE_NAME_KEY);
+    } catch {
+        return null;
+    }
+};
 
 // Fired when an e-mail "reset password" link is opened: the app asks for a new one.
 export const PASSWORD_RECOVERY_EVENT = 'fitness-life:password-recovery';
@@ -182,10 +198,13 @@ const signInWithAppleNative = async (supabase: Awaited<ReturnType<typeof ready>>
         if ((e as { code?: string }).code === 'canceled') return;
         throw failure(e as Error);
     }
+    // Apple shares the name only on the first sign-in: keep it (here and on the account).
+    const name = [apple.givenName, apple.familyName].filter(Boolean).join(' ').trim();
+    if (name) {
+        try { localStorage.setItem(APPLE_NAME_KEY, name); } catch { /* the account keeps it */ }
+    }
     const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: apple.identityToken, nonce });
     if (error) throw failure(error);
-    // Apple shares the name only on the first sign-in: keep it on the account.
-    const name = [apple.givenName, apple.familyName].filter(Boolean).join(' ');
     if (name) void supabase.auth.updateUser({ data: { full_name: name } }).catch(() => {});
 };
 

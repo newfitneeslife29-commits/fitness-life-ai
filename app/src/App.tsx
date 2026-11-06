@@ -54,6 +54,7 @@ import TrainerChat from './pages/TrainerChat';
 import TrainerPanel from './pages/TrainerPanel';
 import Trainers from './pages/Trainers';
 import Privacy from './pages/Privacy';
+import Sources from './pages/Sources';
 import AuthScreen, { PasswordRecovery } from './pages/Auth';
 import { AUTH_LINK_FAILED_EVENT, authAvailable, initAuth } from './lib/auth';
 import Premium from './pages/Premium';
@@ -233,6 +234,7 @@ export default function App() {
                 <Route path="/entrenadores/chat/:id" element={<ErrorBoundary><TrainerChat /></ErrorBoundary>} />
                 <Route path="/sobre-nosotros" element={<Shell><AboutUs /></Shell>} />
                 <Route path="/privacidad" element={<Shell><Privacy /></Shell>} />
+                <Route path="/fuentes" element={<Shell><Sources /></Shell>} />
                 <Route path="/comentarios" element={<Shell><Feedback /></Shell>} />
                 <Route path="/logros" element={<Shell><Achievements /></Shell>} />
                 <Route path="/actividad" element={<Shell><Activity /></Shell>} />

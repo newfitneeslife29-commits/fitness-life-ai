@@ -467,6 +467,12 @@ test('tour: new users see the app guide once, and Ajustes has it, feedback, priv
     await expect(page.getByRole('heading', { name: 'Tus comentarios' })).toBeVisible();
     await page.getByRole('button', { name: 'Volver' }).click();
 
+    // Where the health numbers come from: every source, with its link.
+    await page.getByRole('link', { name: /Fuentes y referencias/ }).click();
+    await expect(page.getByRole('heading', { name: 'Fuentes y referencias' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Adult BMI Categories/ })).toHaveAttribute('href', 'https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html');
+    await page.getByRole('button', { name: 'Volver' }).click();
+
     // Feedback straight from the app.
     await page.getByRole('link', { name: /Enviar comentarios/ }).click();
     await page.getByRole('radio', { name: 'Un problema' }).click();
@@ -2506,4 +2512,24 @@ test('guided: how an exercise is done, step by step; a workout left open asks wh
     await expect(ask).toContainText('Tienes un entreno sin terminar');
     await ask.getByRole('button', { name: 'Guardar y terminar' }).click();
     await expect(page).toHaveURL(/sesion\//);
+});
+
+test('every health number links to its sources (App Store 1.4.1)', async ({ page }) => {
+    await onboard(page);
+    // Already on the plan's daily calories, before the app opens.
+    await page.getByRole('button', { name: 'Fuentes' }).click();
+    await expect(page.getByRole('dialog', { name: 'Fuentes y referencias' }).getByRole('link', { name: /Mifflin/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ver todas las fuentes' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Cerrar' }).click();
+    await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Nutrición', exact: true }).click();
+    // Calories and protein: the formula and the guidelines behind them.
+    await page.getByRole('button', { name: 'Fuentes' }).first().click();
+    const sheet = page.getByRole('dialog', { name: 'Fuentes y referencias' });
+    await expect(sheet.getByRole('link', { name: /Mifflin/ })).toHaveAttribute('href', 'https://pubmed.ncbi.nlm.nih.gov/2305711/');
+    await expect(sheet.getByRole('link', { name: /protein and exercise/ })).toBeVisible();
+    // And the page with all of them.
+    await sheet.getByRole('link', { name: 'Ver todas las fuentes' }).click();
+    await expect(page.getByRole('heading', { name: 'Fuentes y referencias' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Recommended Amount of Sleep/ })).toBeVisible();
 });

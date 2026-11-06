@@ -76,12 +76,13 @@ export default function Feedback() {
                         <p className="mt-1 text-right text-xs text-white/40">{message.length}/2000</p>
                     </Section>
 
-                    <Section title={t('feedback.email')}>
+                    {/* Signed in: the account's email is used (Apple or Google already gave it), nothing to type. */}
+                    {!accountEmail && <Section title={t('feedback.email')}>
                         <input type="email" value={email} onChange={e => setEmail(e.target.value)} maxLength={200} autoComplete="email" aria-label={t('feedback.email')}
                             placeholder={t('feedback.emailPlaceholder')}
                             className="w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand" />
                         <p className="mt-1.5 text-xs text-white/50">{t('feedback.emailHint')}</p>
-                    </Section>
+                    </Section>}
 
                     <Section>
                         {error && <p role="alert" className="mb-3 text-sm text-red-400">{error}</p>}

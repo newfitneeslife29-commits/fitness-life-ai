@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { AboutFields, ActivityChoice, emptyAbout, GoalFields, HomeGearChips, LimitationChips, parseAbout, parseGoal, type GoalDraft } from '../components/ProfileForm';
 import { Choice } from '../components/ui';
 import { Welcome } from '../components/Welcome';
-import { authAvailable } from '../lib/auth';
+import { appleName, authAvailable } from '../lib/auth';
 import { autoTargets } from '../lib/nutrition';
 import AuthScreen from './Auth';
 import { exerciseName } from '../data/exercises';
@@ -14,6 +14,7 @@ import { actions, useStore } from '../store/store';
 import type { Activity, Goal, HomeGear, Level, Limitation, Setup, Unit } from '../store/types';
 import { offerTrialSoon, takeTrialOffer } from '../lib/premium';
 import { guideSeen } from '../components/AppGuide';
+import { SourcesLink } from '../components/SourcesLink';
 
 // One photo per question (public/covers, public/move, public/food).
 const BACKDROPS = [
@@ -35,6 +36,10 @@ export default function Onboarding() {
     useStore(s => s.lang); // re-render when the language changes
     // Welcome → (create account or sign in) → plan questions.
     const signedIn = useStore(s => s.account !== null && s.account !== undefined);
+    // Signed in with Apple (or Google): the name comes from there, it isn't asked.
+    const account = useStore(s => s.account);
+    const givenName = account?.name ?? (account?.provider === 'apple' ? appleName() : null) ?? '';
+    const askName = !account || (account.provider !== 'apple' && !givenName);
     const [stage, setStage] = useState<'welcome' | 'signUp' | 'signIn' | 'plan'>(() => (signedIn ? 'plan' : 'welcome'));
     // Back from Google/Apple on the web with an account but no plan yet: straight to the questions.
     useEffect(() => {
@@ -68,7 +73,7 @@ export default function Onboarding() {
     const blocked = (step === 1 && !parsed) || (step === 6 && goalValue === undefined);
 
     const profileDraft = {
-        name: name.trim(), goal, level, daysPerWeek: days, setup, homeGear: setup === 'gimnasio' ? [] : homeGear, unit, activity, limitations,
+        name: (askName ? name : givenName).trim(), goal, level, daysPerWeek: days, setup, homeGear: setup === 'gimnasio' ? [] : homeGear, unit, activity, limitations,
         sex: parsed?.sex, birthYear: parsed?.birthYear, heightCm: parsed?.heightCm, weightGoal: goalValue ?? null,
     };
     const targets = parsed ? autoTargets(profileDraft, parsed.weightKg) : null;
@@ -113,9 +118,13 @@ export default function Onboarding() {
                         <p className="label mb-2">Fitness Life</p>
                         <h1 className="mb-1 text-3xl font-bold tracking-tight">{t('onboarding.title')}</h1>
                         <p className="mb-8 text-white/60">{t('onboarding.subtitle')}</p>
-                        <label className="label mb-2 block" htmlFor="name">{t('onboarding.nameLabel')}</label>
-                        <input id="name" value={name} onChange={e => setName(e.target.value)} placeholder={t('onboarding.namePlaceholder')}
-                            className="mb-8 w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand" />
+                        {askName && (
+                            <>
+                                <label className="label mb-2 block" htmlFor="name">{t('onboarding.nameLabel')}</label>
+                                <input id="name" value={name} onChange={e => setName(e.target.value)} placeholder={t('onboarding.namePlaceholder')}
+                                    className="mb-8 w-full rounded-xl border border-line bg-ink-2 px-4 py-3 outline-none focus:border-brand" />
+                            </>
+                        )}
                         <p className="label mb-2">{t('onboarding.goalQuestion')}</p>
                         <Choice label={t('settings.goal')} value={goal} onChange={setGoal} options={(['musculo', 'grasa', 'fuerza', 'salud'] as const).map(g => ({
                             value: g, label: t(`goal.${g}`), hint: t(`goal.${g}.hint`),
@@ -204,6 +213,7 @@ export default function Onboarding() {
                         {targets && (
                             <p className="card mt-4 border-brand/30 bg-brand-soft p-4 text-sm font-medium">
                                 {t('onboarding.targets', { kcal: fmtNumber(targets.kcal), protein: targets.protein })}
+                                <SourcesLink topics={['calories', 'protein']} all={false} className="mt-2 flex" />
                             </p>
                         )}
                     </>

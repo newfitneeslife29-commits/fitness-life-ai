@@ -10,6 +10,7 @@ import { l10n, t, tp } from '../i18n';
 import { usePremiumActive } from '../lib/premium';
 import { actions, useStore } from '../store/store';
 import type { Setup } from '../store/types';
+import { SourcesLink } from '../components/SourcesLink';
 
 type Filter = Setup | 'todos';
 
@@ -125,6 +126,7 @@ export default function Programs() {
             ))}
             <Section>
                 <p className="flex items-start gap-2 text-xs text-white/45"><Sparkles size={14} className="mt-0.5 shrink-0" /> {t('programs.note')}</p>
+                <SourcesLink topics={['strength', 'activity']} className="mt-2" />
             </Section>
             {open && <ProgramSheet program={open} onClose={() => setOpen(null)} />}
         </div>

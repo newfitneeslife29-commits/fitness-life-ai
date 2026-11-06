@@ -4,6 +4,7 @@ import { GuideIcon } from '../components/GuideIcon';
 import { Section } from '../components/ui';
 import { getGuide, GUIDES, guideSummary, guideTitle } from '../data/guides';
 import { l10n, t } from '../i18n';
+import { SourcesLink } from '../components/SourcesLink';
 
 export default function GuideDetail() {
     const { id = '' } = useParams();
@@ -32,6 +33,7 @@ export default function GuideDetail() {
                         </li>
                     ))}
                 </ol>
+                <div className="mt-2 flex justify-end"><SourcesLink topics={['strength', 'activity', 'calories']} /></div>
             </Section>
 
             <Section title={t('learn.next')}>

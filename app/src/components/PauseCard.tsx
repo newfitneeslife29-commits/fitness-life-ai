@@ -7,6 +7,7 @@ import { actions, useStore } from '../store/store';
 import type { ActiveWorkout, Limitation, Pause } from '../store/types';
 import { toast } from './feedback';
 import { Sheet } from './ui';
+import { SourcesLink } from './SourcesLink';
 
 const ZONES: Limitation[] = ['rodillas', 'espalda', 'hombros', 'munecas'];
 
@@ -95,7 +96,7 @@ export const PauseSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
                                 })}
                             </div>
                             <p className="mt-3 text-sm text-white/55">{t('pause.injuryHint')}</p>
-                            <p className="mt-2 text-xs text-white/45">{t('limits.doctor')}</p>
+                            <p className="mt-2 text-xs text-white/45">{t('limits.doctor')} <SourcesLink topics={['strength']} className="ml-1" /></p>
                         </div>
                     )}
                     <button onClick={start} disabled={kind === 'injury' && !zones.length} className="btn-primary w-full disabled:opacity-50">

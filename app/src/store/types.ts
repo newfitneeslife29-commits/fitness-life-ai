@@ -315,6 +315,7 @@ export interface Account {
     id: string;
     email: string | null;
     provider: string; // email, google, apple
+    name?: string | null; // given by Apple or Google when signing in with them
 }
 
 export interface AppState {

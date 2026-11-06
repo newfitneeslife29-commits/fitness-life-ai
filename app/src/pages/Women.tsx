@@ -10,6 +10,7 @@ import { l10n, t, tp } from '../i18n';
 import { fmtRange, fmtRest } from '../lib/format';
 import { actions, useStore } from '../store/store';
 import type { Setup } from '../store/types';
+import { SourcesLink } from '../components/SourcesLink';
 
 type Aim = 'bajar' | 'mantener';
 const GOAL_FOR: Record<Aim, 'grasa' | 'salud'> = { bajar: 'grasa', mantener: 'salud' };
@@ -126,7 +127,7 @@ export default function Women() {
                 </Link>
             </Section>
 
-            <Section title={t('women.tips')}>
+            <Section title={t('women.tips')} action={<SourcesLink topics={['strength', 'activity']} />}>
                 <ul className="card divide-y divide-line">
                     {tips.map((tip, i) => (
                         <li key={i} className="flex gap-3 p-3 text-sm text-white/80"><span className="mt-0.5 shrink-0 text-brand">{tip.icon}</span>{tip.text}</li>

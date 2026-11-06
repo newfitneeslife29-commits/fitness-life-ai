@@ -16,6 +16,7 @@ import { isNative } from '../lib/native';
 import { weekStart } from '../lib/stats';
 import { actions, getState, useStore } from '../store/store';
 import type { CardioKind, CardioSession, Unit } from '../store/types';
+import { SourcesLink } from '../components/SourcesLink';
 
 // Movement: steps of the day and their history, sleep, walks and rides
 // (recorded with GPS or typed in) and walking plans.
@@ -230,7 +231,10 @@ const StepsCard = ({ onLog }: { onLog: () => void }) => {
                 <div className="border-t border-line p-4 text-sm">
                     <p className="text-white/65">{isNative() ? t('steps.howToCount') : t('steps.webHint')}</p>
                     {pedometerSupported() && (
-                        <button onClick={turnOnPedometer} className="btn-ghost mt-3 w-full"><Smartphone size={16} /> {t('steps.usePhone')}</button>
+                        <>
+                            <p className="mt-3 text-white/65">{t('steps.usePhone')}</p>
+                            <button onClick={turnOnPedometer} className="btn-ghost mt-2 w-full"><Smartphone size={16} /> {t('common.next')}</button>
+                        </>
                     )}
                 </div>
             )}
@@ -494,7 +498,7 @@ export default function Move() {
                 </Section>
             )}
 
-            <Section title={t('steps.title')}>
+            <Section title={t('steps.title')} action={<SourcesLink topics={['activity']} />}>
                 <StepsCard onLog={() => setLogDay(localDay(new Date()))} />
             </Section>
 
@@ -521,11 +525,11 @@ export default function Move() {
                 <p className="mt-2 text-xs text-white/45">{t('cardio.gpsNoteOpen')}</p>
             </Section>
 
-            <Section title={t('walkPlan.title')}>
+            <Section title={t('walkPlan.title')} action={<SourcesLink topics={['activity']} />}>
                 <WalkPlanCard />
             </Section>
 
-            <Section title={t('sleep.title')}>
+            <Section title={t('sleep.title')} action={<SourcesLink topics={['sleep']} />}>
                 <SleepCard />
             </Section>
 
