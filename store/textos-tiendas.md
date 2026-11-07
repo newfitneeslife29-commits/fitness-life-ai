@@ -6,8 +6,9 @@ Listos para copiar en **App Store Connect** y en **Google Play Console**. En cad
 
 ## Capturas
 
-Cada idioma tiene sus 8 capturas, en este orden:
-`01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-pasos`, `08-premium`.
+En el App Store cada idioma tiene 10 capturas, en este orden:
+`01-inicio`, `02-guiado`, `03-progreso`, `04-nutricion`, `05-retos`, `06-insignias`, `07-pasos`, `08-premium`, `09-como-se-hace`, `10-fuentes`.
+En Google Play son las 8 primeras.
 
 | Tienda | Tamaño | Carpeta |
 |---|---|---|

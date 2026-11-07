@@ -59,7 +59,7 @@ Apple exige "Iniciar sesión con Apple" si la app ofrece Google. Lo configura el
 ## 7. Ficha del App Store (textos para copiar)
 
 Los textos (nombre, subtítulo, texto promocional, palabras clave, descripción y novedades) en español, inglés y portugués están en [`textos-tiendas.md`](textos-tiendas.md).
-Las capturas para iPhone de 6,9" (1290×2796) están en [`app-store/es`](app-store/es), [`app-store/en`](app-store/en) y [`app-store/pt`](app-store/pt), de `01-inicio.png` a `08-premium.png`, en ese orden.
+Las capturas para iPhone de 6,9" (1290×2796) están en [`app-store/es`](app-store/es), [`app-store/en`](app-store/en) y [`app-store/pt`](app-store/pt), de `01-inicio.png` a `10-fuentes.png`, en ese orden.
 
 **URL de soporte:** `https://newfitneeslife29-commits.github.io/fitness-life-ai/`
 **URL de la política de privacidad:** `https://newfitneeslife29-commits.github.io/fitness-life-ai/legal.html#privacidad`
