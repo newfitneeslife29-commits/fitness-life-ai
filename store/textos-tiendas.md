@@ -28,7 +28,7 @@ El ícono (`google-play/icon-512.png`) y el gráfico de funciones (`google-play/
 
 **Texto promocional** (máx. 170):
 ```
-Nuevo: entreno guiado manos libres, retos de 30 días, resumen cada domingo, modo lesión y widget en tu pantalla de inicio. Prueba Premium 7 días gratis.
+Nuevo: pasos claros para hacer cada ejercicio, un entreno más sencillo y fuentes científicas para cada cálculo de salud. Prueba Premium 7 días gratis.
 ```
 
 **Palabras clave** (máx. 100):
@@ -75,7 +75,7 @@ TU PLAN, A TU MEDIDA
 ENTRENA GUIADO, ¡Y MANOS LIBRES!
 • Entreno a pantalla completa: prepárate, haz tu serie y descansa con cuenta atrás.
 • Manos libres (Premium): di «listo» o «siguiente» y la app avanza sin tocar el teléfono.
-• Fotos y animaciones de cada ejercicio, con consejos de técnica.
+• Fotos, animaciones y pasos claros de cómo hacer cada ejercicio.
 • La app te dice cuándo subir de peso.
 • ¿Máquina ocupada? Cámbiala al instante por otra del mismo músculo.
 • ¿Cómo te sientes hoy? Cansado o con energía, el entreno se adapta.
@@ -108,7 +108,6 @@ MOTIVACIÓN EN COMUNIDAD
 
 ENTRENADORES REALES
 • Contrata a un entrenador desde la app, chatea con él y recibe sus rutinas.
-• Compra programas de entrenadores con un solo pago.
 
 TU ENTRENADOR PERSONAL CON IA (PREMIUM)
 • Pregúntale qué entrenar hoy, con cuánto peso y cómo mejorar.
@@ -116,6 +115,7 @@ TU ENTRENADOR PERSONAL CON IA (PREMIUM)
 
 TU CUENTA, TUS DATOS
 • Úsala sin cuenta o entra con tu correo, Google, Apple o Facebook para guardar una copia en la nube.
+• Cálculos de salud basados en guías oficiales (OMS, CDC) y estudios científicos, con sus fuentes dentro de la app.
 • Sin anuncios. No vendemos tus datos.
 • En 15 idiomas, con modo claro y oscuro.
 
@@ -124,10 +124,11 @@ Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a u
 
 ### Novedades de esta versión (las dos tiendas)
 ```
-• Pasos: historial de 7 y 30 días con promedio, mejor día y días con meta. Anota a mano los pasos de días anteriores.
-• Guía para nuevos usuarios con todas las funciones de la app.
-• Plan de comidas con IA más estable, y ves en qué paso va mientras se crea (Premium).
-• Tienda Fitness Life Edition renovada: 10% de descuento en la ropa por usar la app.
+• Nueva página de Fuentes: mira de dónde salen tus calorías, proteína, IMC, agua y consejos de salud.
+• Entrenos más fáciles: cada ejercicio con pasos claros de cómo hacerlo.
+• Menos botones en el entreno: todo en «Más opciones».
+• Si dejas un entreno abierto, la app te pregunta si guardarlo.
+• Correcciones y mejoras generales.
 ```
 
 ---
@@ -142,7 +143,7 @@ Fitness Life no sustituye el consejo de un médico o nutricionista. Consulta a u
 
 **Promotional text** (max 170):
 ```
-New: hands-free guided workouts, 30-day challenges, a summary every Sunday, injury mode and a home screen widget. Try Premium free for 7 days.
+New: clear steps for every exercise, simpler workouts and scientific sources for every health number. Try Premium free for 7 days.
 ```
 
 **Keywords** (max 100):
@@ -189,7 +190,7 @@ YOUR PLAN, MADE FOR YOU
 GUIDED WORKOUTS, HANDS-FREE
 • Full-screen workouts: get ready, do your set and rest with a countdown.
 • Hands-free (Premium): say "done" or "next" and the app moves on without touching your phone.
-• Photos and animations of every exercise, with technique tips.
+• Photos, animations and clear steps showing how to do every exercise.
 • The app tells you when to add weight.
 • Machine taken? Swap it instantly for another one for the same muscle.
 • How do you feel today? Tired or full of energy, your workout adapts.
@@ -222,7 +223,6 @@ A COMMUNITY THAT KEEPS YOU GOING
 
 REAL TRAINERS
 • Hire a trainer in the app, chat with them and get their routines.
-• Buy trainers' programs with a single payment.
 
 YOUR AI PERSONAL TRAINER (PREMIUM)
 • Ask what to train today, how much weight to use and how to improve.
@@ -230,6 +230,7 @@ YOUR AI PERSONAL TRAINER (PREMIUM)
 
 YOUR ACCOUNT, YOUR DATA
 • Use it without an account, or sign in with email, Google, Apple or Facebook to keep a copy in the cloud.
+• Health numbers based on official guidelines (WHO, CDC) and scientific studies, with their sources inside the app.
 • No ads. We don't sell your data.
 • In 15 languages, with light and dark mode.
 
@@ -238,10 +239,11 @@ Fitness Life does not replace the advice of a doctor or nutritionist. Talk to a 
 
 ### What's new (both stores)
 ```
-• Steps: 7 and 30-day history with your average, best day and goal days. Log past days by hand.
-• A guide for new users that explains every feature of the app.
-• A more reliable AI meal plan that shows its progress while it is made (Premium).
-• A new look for the Fitness Life Edition store card: app users get 10% off the gear.
+• New Sources page: see where your calories, protein, BMI, water and health tips come from.
+• Easier workouts: clear steps showing how to do each exercise.
+• Fewer buttons during workouts: everything is under "More options".
+• If you leave a workout open, the app asks whether to save it.
+• Bug fixes and general improvements.
 ```
 
 ---
@@ -256,7 +258,7 @@ Fitness Life does not replace the advice of a doctor or nutritionist. Talk to a 
 
 **Texto promocional** (máx. 170):
 ```
-Novo: treino guiado com mãos livres, desafios de 30 dias, resumo todo domingo, modo lesão e widget na tela inicial. Teste o Premium grátis por 7 dias.
+Novo: passos claros para cada exercício, treino mais simples e fontes científicas para cada cálculo de saúde. Teste o Premium grátis por 7 dias.
 ```
 
 **Palavras-chave** (máx. 100):
@@ -303,7 +305,7 @@ SEU PLANO, DO SEU JEITO
 TREINO GUIADO, COM MÃOS LIVRES
 • Treino em tela cheia: prepare-se, faça sua série e descanse com contagem regressiva.
 • Mãos livres (Premium): diga «pronto» ou «próximo» e o app avança sem tocar no celular.
-• Fotos e animações de cada exercício, com dicas de técnica.
+• Fotos, animações e passos claros de como fazer cada exercício.
 • O app diz quando subir o peso.
 • Aparelho ocupado? Troque na hora por outro do mesmo músculo.
 • Como você se sente hoje? Cansado ou com energia, o treino se adapta.
@@ -336,7 +338,6 @@ MOTIVAÇÃO EM COMUNIDADE
 
 PERSONAIS DE VERDADE
 • Contrate um personal pelo app, converse no chat e receba as rotinas dele.
-• Compre programas de personais com um único pagamento.
 
 SEU PERSONAL TRAINER COM IA (PREMIUM)
 • Pergunte o que treinar hoje, com quanto peso e como melhorar.
@@ -344,6 +345,7 @@ SEU PERSONAL TRAINER COM IA (PREMIUM)
 
 SUA CONTA, SEUS DADOS
 • Use sem conta ou entre com e-mail, Google, Apple ou Facebook para guardar uma cópia na nuvem.
+• Cálculos de saúde baseados em diretrizes oficiais (OMS, CDC) e estudos científicos, com as fontes dentro do app.
 • Sem anúncios. Não vendemos seus dados.
 • Em 15 idiomas, com modo claro e escuro.
 
@@ -352,8 +354,9 @@ O Fitness Life não substitui o conselho de um médico ou nutricionista. Consult
 
 ### Novidades desta versão (as duas lojas)
 ```
-• Passos: histórico de 7 e 30 dias com média, melhor dia e dias com meta. Registre à mão os passos de dias anteriores.
-• Guia para novos usuários com todas as funções do app.
-• Plano de refeições com IA mais estável, mostrando em que etapa está enquanto é criado (Premium).
-• Loja Fitness Life Edition renovada: 10% de desconto nas roupas por usar o app.
+• Nova página de Fontes: veja de onde vêm suas calorias, proteína, IMC, água e dicas de saúde.
+• Treinos mais fáceis: cada exercício com passos claros de como fazer.
+• Menos botões no treino: tudo em «Mais opções».
+• Se você deixar um treino aberto, o app pergunta se quer salvá-lo.
+• Correções e melhorias gerais.
 ```
