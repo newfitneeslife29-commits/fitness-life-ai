@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { t } from '../i18n';
 
@@ -14,7 +14,7 @@ interface ConfirmRequest {
     resolve: (ok: boolean) => void;
 }
 
-interface Toast { id: number; text: string }
+interface Toast { id: number; text: string; error?: boolean }
 
 let dialog: ConfirmRequest | null = null;
 let toasts: Toast[] = [];
@@ -33,9 +33,10 @@ export const confirm = (opts: Omit<ConfirmRequest, 'resolve'>): Promise<boolean>
     });
 
 let nextToast = 1;
-export const toast = (text: string, ms = 2600) => {
+// `error`: something went wrong (a warning icon instead of the green check).
+export const toast = (text: string, ms = 2600, error = false) => {
     const id = nextToast++;
-    toasts = [...toasts, { id, text }];
+    toasts = [...toasts, { id, text, error }];
     emit();
     window.setTimeout(() => {
         toasts = toasts.filter(t => t.id !== id);
@@ -86,7 +87,7 @@ export const FeedbackHost = () => {
             <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[90] flex flex-col items-center gap-2 px-4">
                 {state.toasts.map(t => (
                     <div key={t.id} role="status" className="flex animate-rise items-center gap-2 rounded-full border border-line bg-ink-3 px-4 py-2 text-sm shadow-lg shadow-black/40">
-                        <CheckCircle2 size={16} className="text-good" /> {t.text}
+                        {t.error ? <AlertCircle size={16} className="shrink-0 text-amber-400" /> : <CheckCircle2 size={16} className="shrink-0 text-good" />} {t.text}
                     </div>
                 ))}
             </div>

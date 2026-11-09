@@ -212,6 +212,8 @@ async function routine(lang: Lang, context: TrainerContext, request: string, cat
 // at the same time. A day that fails is filled in from the others.
 // A step that runs out of room or fails gets one more try, with more room
 // (the SDK already retries rate limits and server errors on its own).
+// Plenty of room: with less (3000 for a day) the answer ran out of room and
+// days came back without amounts.
 async function structured<T>(system: string, note: string, content: string, schema: Record<string, unknown>): Promise<T> {
   let lastError: unknown;
   for (const maxTokens of [8000, 16000]) {
@@ -235,7 +237,16 @@ async function structured<T>(system: string, note: string, content: string, sche
 
 type OutlineMeal = { slot: string; time: string; name: string };
 
+// The detail of the days must be back before this, counted from the start:
+// the server stops a request at 150 s, and a cut answer is an error in the app.
+const MEAL_PLAN_BUDGET_MS = 110_000;
+const within = <T>(work: Promise<T>, until: number) => new Promise<T>((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error('out of time')), Math.max(until - Date.now(), 0));
+  work.then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });
+});
+
 async function mealPlan(lang: Lang, context: CoachContext, request: string, mealsPerDay: number) {
+  const until = Date.now() + MEAL_PLAN_BUDGET_MS;
   const note = contextNote(context);
   const outline = await structured<{ name?: string; note?: string; days?: { meals?: OutlineMeal[] }[] }>(
     mealOutlineSystem(lang, mealsPerDay), note, request || 'Plan my meals for the week.', MEAL_OUTLINE_SCHEMA,
@@ -243,16 +254,23 @@ async function mealPlan(lang: Lang, context: CoachContext, request: string, meal
   // Days stay in place (Monday first): an empty one is filled later, never shifts the rest.
   const days = (outline.days ?? []).slice(0, 7);
   if (!days.some(d => d.meals?.length)) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
-  const detailed = await Promise.allSettled(days.map((d, i) => d.meals?.length
-    ? structured<{ meals?: unknown[] }>(
-      mealDaySystem(lang), note,
-      `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
-      MEAL_DAY_SCHEMA,
-    )
-    : Promise.resolve({ meals: [] })));
+  const detailDay = (i: number) => within(structured<{ meals?: unknown[] }>(
+    mealDaySystem(lang), note,
+    `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(days[i].meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
+    MEAL_DAY_SCHEMA,
+  ), until);
+  // All days at once (fastest), then one more try for any that failed while
+  // there is time left.
+  const detailed = await Promise.allSettled(days.map((d, i) => (d.meals?.length ? detailDay(i) : Promise.resolve({ meals: [] as unknown[] }))));
+  const todo = days.flatMap((d, i) => (d.meals?.length ? [i] : []));
+  for (const i of todo) {
+    if (detailed[i].status === 'fulfilled' || until - Date.now() < 20_000) continue;
+    [detailed[i]] = await Promise.allSettled([detailDay(i)]);
+  }
   const failed = detailed.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
-  if (failed.length === days.filter(d => d.meals?.length).length) throw failed[0].reason;
-  // A day whose detail failed keeps its outline: the right meals, without the amounts.
+  if (failed.length) console.error(`nutrition-coach: ${failed.length} of ${days.length} meal plan days kept their outline`, failed[0].reason);
+  // A day whose detail failed or ran late keeps its outline: the right meals,
+  // without the amounts. The week is never thrown away once it is outlined.
   return cleanMealPlan({
     name: outline.name, note: outline.note,
     days: detailed.map((r, i) => (r.status === 'fulfilled' && r.value.meals?.length ? r.value : { meals: days[i].meals ?? [] })),
@@ -361,6 +379,12 @@ const failure = (error: unknown, usage?: Usage): { status: number; body: Record<
     return { status: 503, body: { error: 'busy' } };
   }
   console.error('nutrition-coach error', error);
+  // Why the model refused, without secrets (e.g. "401 authentication_error"):
+  // the deploy's smoke test prints it, so a key or billing problem is clear.
+  if (error instanceof Anthropic.APIError) {
+    const type = (error.error as { error?: { type?: string } } | undefined)?.error?.type ?? '';
+    return { status: 500, body: { error: 'failed', cause: `${error.status ?? ''} ${type}`.trim() } };
+  }
   return { status: 500, body: { error: 'failed' } };
 };
 
