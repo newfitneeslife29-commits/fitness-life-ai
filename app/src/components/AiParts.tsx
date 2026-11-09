@@ -15,7 +15,7 @@ const aiErrorText = (e: unknown) => t(`ai.error.${e instanceof AiError ? e.code 
 export const useAiErrorHandler = () => {
     const navigate = useNavigate();
     return (e: unknown) => {
-        toast(aiErrorText(e), 4000);
+        toast(aiErrorText(e), 4000, true);
         if (e instanceof AiError && e.code === 'upgrade') navigate('/premium');
     };
 };

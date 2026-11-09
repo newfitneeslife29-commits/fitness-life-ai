@@ -194,7 +194,9 @@ export type MealSlot = (typeof MEAL_SLOTS)[number];
 // The week is planned in two steps so that every answer stays short and
 // fast: first the outline (dish names and times for 7 days, so they vary),
 // then each day in detail, all days at the same time.
-const mealPlanRules = (lang: Lang) => `Use simple, affordable foods that are easy to find and cook where people speak ${LANGUAGE[lang]}, with home-style dishes. Respect what the user asks: foods they avoid, allergies, budget, a vegetarian diet, their schedule. This is general guidance, not medical advice.`;
+const mealPlanRules = (lang: Lang) => `Use simple, affordable foods that are easy to find and cook where people speak ${LANGUAGE[lang]}, with home-style dishes. Respect what the user asks: foods they avoid, allergies, budget, a vegetarian diet, their schedule. This is general guidance, not medical advice.
+
+Write all text in ${LANGUAGE[lang]}, the language the app is set to, even when the user's request or the dish names you are given are in another language (translate those).`;
 
 export const mealOutlineSystem = (lang: Lang, mealsPerDay: number) => `You outline a week of meals for a user of a strength-training app, many of whom are beginners who do not know what to eat. The app shows the plan day by day and reminds them at the time of each meal.
 
@@ -206,9 +208,9 @@ Write "name" as a short plan name (2 to 5 words), "note" as one or two short sen
 
 export const mealDaySystem = (lang: Lang) => `You detail one day of a meal plan for a user of a strength-training app. The dishes and times of the day are given; keep them, in the same order.
 
-For each meal give the foods with an amount a beginner can follow (grams, cups, units or spoons), for example "2 huevos revueltos" or "80 g de avena" (1 to 6 foods), and its kcal, protein, carbs and fat, with kcal consistent with the macros. The meals of the day should add up to the user's daily targets below, within about 5%; if there are no targets, estimate them from the profile and goal. Spread protein across the meals.
+For each meal give the foods with an amount a beginner can follow (grams, cups, units or spoons), like "2 scrambled eggs" or "80 g oats" written in ${LANGUAGE[lang]} (1 to 6 foods), and its kcal, protein, carbs and fat, with kcal consistent with the macros. The meals of the day should add up to the user's daily targets below, within about 5%; if there are no targets, estimate them from the profile and goal. Spread protein across the meals.
 
-${mealPlanRules(lang)} Write every dish and food in ${LANGUAGE[lang]}.`;
+${mealPlanRules(lang)}`;
 
 const OUTLINE_MEAL = {
   type: 'object',

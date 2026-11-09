@@ -402,7 +402,8 @@ jobs:
           fi
           echo "The coach answered: $(jq -r .text /tmp/answer.json)"
           # The meal plan is the longest answer: it must come back whole and in time.
-          plan='{"action":"mealplan","lang":"es","mealsPerDay":4,"text":"","context":{"goal":"musculo","weightKg":80,"targets":{"kcal":2900,"protein":160,"carbs":350,"fat":80},"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false}}'
+          # The hardest case people hit: 5 meals, a note typed in Spanish, the app in English.
+          plan='{"action":"mealplan","lang":"en","mealsPerDay":5,"text":"Me levanto a las 6","context":{"goal":"musculo","weightKg":80,"targets":{"kcal":2900,"protein":160,"carbs":350,"fat":80},"today":{"kcal":0,"protein":0,"carbs":0,"fat":0},"trainedToday":false}}'
           start=$(date +%s)
           status=$(call "$plan" -H "x-smoke-test: $SMOKE_TEST_TOKEN" --max-time 150)
           echo "Meal plan: HTTP $status in $(( $(date +%s) - start )) s"
@@ -411,4 +412,7 @@ jobs:
             head -c 2000 /tmp/answer.json; echo
             exit 1
           fi
-          jq -c '{name, days: (.days | length), day1: [.days[0].meals[] | {slot, time, name, kcal}]}' /tmp/answer.json
+          jq -c '{name, days: (.days | length), day1: [.days[0].meals[] | {slot, time, name, kcal, foods}]}' /tmp/answer.json
+          detailed=$(jq '[.days[] | select(all(.meals[]; (.foods | length) > 0))] | length' /tmp/answer.json)
+          echo "Days with amounts: $detailed of 7"
+          if [ "$detailed" -lt 7 ]; then echo "::warning::Only $detailed of 7 days came with amounts (the others kept their outline)."; fi
