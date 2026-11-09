@@ -374,6 +374,12 @@ const failure = (error: unknown, usage?: Usage): { status: number; body: Record<
     return { status: 503, body: { error: 'busy' } };
   }
   console.error('nutrition-coach error', error);
+  // Why the model refused, without secrets (e.g. "401 authentication_error"):
+  // the deploy's smoke test prints it, so a key or billing problem is clear.
+  if (error instanceof Anthropic.APIError) {
+    const type = (error.error as { error?: { type?: string } } | undefined)?.error?.type ?? '';
+    return { status: 500, body: { error: 'failed', cause: `${error.status ?? ''} ${type}`.trim() } };
+  }
   return { status: 500, body: { error: 'failed' } };
 };
 

@@ -396,7 +396,7 @@ jobs:
           echo "Free users are offered Premium."
           status=$(call "$question" -H "x-smoke-test: $SMOKE_TEST_TOKEN")
           if [ "$status" != 200 ] || [ -z "$(jq -r '.text // empty' /tmp/answer.json)" ]; then
-            echo "::error::Claude did not answer (HTTP $status). Check ANTHROPIC_API_KEY and the Anthropic balance."
+            echo "::error::Claude did not answer (HTTP $status, $(jq -r '.cause // "no cause"' /tmp/answer.json 2>/dev/null)). 401 = wrong or revoked ANTHROPIC_API_KEY; 400 invalid_request_error = no credits or a spend limit in the Anthropic Console."
             cat /tmp/answer.json
             exit 1
           fi
