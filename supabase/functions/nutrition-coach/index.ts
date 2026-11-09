@@ -241,6 +241,7 @@ type OutlineMeal = { slot: string; time: string; name: string };
 // The detail of the days must be back before this, counted from the start:
 // the server stops a request at 150 s, and a cut answer is an error in the app.
 const MEAL_PLAN_BUDGET_MS = 110_000;
+const MEAL_DAYS_AT_ONCE = 3;
 const within = <T>(work: Promise<T>, until: number) => new Promise<T>((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error('out of time')), Math.max(until - Date.now(), 0));
   work.then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });
@@ -255,13 +256,25 @@ async function mealPlan(lang: Lang, context: CoachContext, request: string, meal
   // Days stay in place (Monday first): an empty one is filled later, never shifts the rest.
   const days = (outline.days ?? []).slice(0, 7);
   if (!days.some(d => d.meals?.length)) return cleanMealPlan({ name: outline.name, note: outline.note, days: [] });
-  const detailed = await Promise.allSettled(days.map((d, i) => d.meals?.length
-    ? within(structured<{ meals?: unknown[] }>(
-      mealDaySystem(lang), note,
-      `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(d.meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
-      MEAL_DAY_SCHEMA, [3000, 6000],
-    ), until)
-    : Promise.resolve({ meals: [] })));
+  const detailDay = (i: number) => within(structured<{ meals?: unknown[] }>(
+    mealDaySystem(lang), note,
+    `Day ${i + 1} of the week${request ? ` (the user asked: ${request})` : ''}. Detail these meals:\n${(days[i].meals ?? []).map(m => `- ${m.time} ${m.slot}: ${m.name}`).join('\n')}`,
+    MEAL_DAY_SCHEMA, [3000, 6000],
+  ), until);
+  // A few days at a time (all 7 at once went over the per-minute limit and
+  // 3 of 7 came back without amounts), then one more try for any that failed
+  // while there is time left.
+  const detailed: PromiseSettledResult<{ meals?: unknown[] }>[] = days.map(() => ({ status: 'fulfilled', value: { meals: [] } }));
+  const todo = days.flatMap((d, i) => (d.meals?.length ? [i] : []));
+  for (let k = 0; k < todo.length; k += MEAL_DAYS_AT_ONCE) {
+    const batch = todo.slice(k, k + MEAL_DAYS_AT_ONCE);
+    const results = await Promise.allSettled(batch.map(detailDay));
+    batch.forEach((i, j) => { detailed[i] = results[j]; });
+  }
+  for (const i of todo) {
+    if (detailed[i].status === 'fulfilled' || until - Date.now() < 20_000) continue;
+    [detailed[i]] = await Promise.allSettled([detailDay(i)]);
+  }
   const failed = detailed.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
   if (failed.length) console.error(`nutrition-coach: ${failed.length} of ${days.length} meal plan days kept their outline`, failed[0].reason);
   // A day whose detail failed or ran late keeps its outline: the right meals,
