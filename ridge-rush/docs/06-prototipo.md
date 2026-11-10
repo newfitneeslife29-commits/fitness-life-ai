@@ -4,7 +4,7 @@ Estado: **código entregado.** La física está probada fuera de Unity. Falta ab
 
 ## 1. Cómo abrirlo y jugar
 
-1. Instala **Unity 6 LTS (6000.0.x)** con los módulos **iOS Build Support** y **Android Build Support** desde Unity Hub.
+1. Instala **Unity 6 LTS (6000.0.85f2 o cualquier 6000.0.x)** con los módulos **iOS Build Support** y **Android Build Support** desde Unity Hub.
 2. En Unity Hub: **Add → Add project from disk** → carpeta `ridge-rush/RidgeRush`. Si te ofrece otra versión 6000.0.x, acéptala; si el gestor de paquetes propone otras versiones de URP o Input System, acéptalas también.
 3. Si Unity pregunta por el nuevo sistema de entrada (*Input System*), responde **Yes** (se reinicia el editor).
 4. Menú **Ridge Rush → Configurar proyecto (iOS + Android)**. Crea el URP, los materiales base, los ajustes de iOS/Android y la escena `Race_Prototype`.
@@ -83,3 +83,34 @@ El piloto automático va casi a fondo. Un jugador tardará más (estimado 45–6
 1. Configurar el proyecto y jugar en el editor: revisar que la moto, el piloto y el escenario se ven y que no hay errores en la consola.
 2. Probar en un iPhone y en un Android de gama media: FPS, temperatura y tacto de los botones.
 3. Afinar la sensación en `BikeParams` (suspensión, par, inclinación) y los tiempos de estrellas.
+
+## 6. Probar en iPhone con TestFlight (sin Mac)
+
+GitHub Actions compila el juego y lo sube a TestFlight con el workflow **"Ridge Rush for TestFlight"** (`.github/workflows/ridge-rush-ios.yml`). Usa las mismas claves de App Store Connect que Fitness Life.
+
+**Una sola vez:**
+
+1. **Crear la app en App Store Connect:** Apps → "+" → Nueva app.
+   - Plataforma: iOS
+   - Nombre: *Ridge Rush: Pro Moto*
+   - Idioma principal: español
+   - ID de paquete: `com.ridgerush.promoto`
+   - SKU: `ridgerush`
+
+   Si el ID de paquete no aparece en la lista, lanza el workflow una vez: lo registra solo y se detiene con un aviso. Luego crea la app.
+2. **Licencia de Unity** (Personal, gratis):
+   1. Instala Unity Hub e inicia sesión.
+   2. En Preferencias → Licencias → Añadir, elige "Obtener una licencia Personal gratuita".
+   3. Copia el contenido del archivo de licencia:
+      - macOS: `/Library/Application Support/Unity/Unity_lic.ulf`
+      - Windows: `C:\ProgramData\Unity\Unity_lic.ulf`
+3. **Secretos del repositorio:** GitHub → Settings → Secrets and variables → Actions → New repository secret.
+   - `UNITY_EMAIL`: el correo de la cuenta de Unity
+   - `UNITY_PASSWORD`: la contraseña de la cuenta de Unity
+   - `UNITY_LICENSE`: el contenido completo del `.ulf`
+
+**Cada vez que quieras una versión nueva:** Actions → "Ridge Rush for TestFlight" → Run workflow. La primera vez tarda unos 60–90 minutos (Unity importa todo); las siguientes, menos gracias a la caché.
+
+**Instalarla:** la build aparece en App Store Connect → TestFlight unos 15 minutos después de subirla.
+- **Probador interno** (tu cuenta del equipo): disponible enseguida en la app TestFlight del iPhone.
+- **Enlace público:** TestFlight → Pruebas externas → nuevo grupo → activar "Enlace público". La primera build pasa una revisión de Apple (de unas horas a 1 día).
