@@ -1,6 +1,8 @@
 # Fase 2 · Elección de motor, arquitectura y estructura del proyecto
 
-## 1. Recomendación: **Unity 6 LTS + URP** (renderizado con Metal)
+## 1. Recomendación: **Unity 6 LTS + URP** (Metal en iOS, Vulkan en Android)
+
+> **Actualización (aprobada):** el juego sale también en **Android**. Unity compila ambos desde el mismo proyecto; los cambios están en [05-android.md](05-android.md).
 
 Para este juego concreto (2.5D, vertical, iPhone, físicas de vehículo, 60/120 FPS y sesiones cortas) **Unity 6 con Universal Render Pipeline** es la mejor opción. Unreal Engine 5 da mejores gráficos en consola y PC, pero sus mayores ventajas no llegan al renderizador móvil de iOS.
 
@@ -9,7 +11,7 @@ Para este juego concreto (2.5D, vertical, iPhone, físicas de vehículo, 60/120 
 | Lumen / Nanite (lo que hace a UE5 "realista") | — | **No disponibles en el renderizador móvil de iOS**; se usa iluminación precalculada igual que en Unity | Empate en la práctica |
 | Rendimiento y temperatura en iPhone | Forward+ ligero, GPU Resident Drawer, SRP Batcher; muy bueno para 120 FPS | Más coste base por fotograma y más calor; 120 FPS sostenidos es difícil | **Unity** |
 | Tamaño de la app | Base ~40–60 MB | Base ~150 MB+ | **Unity** (límite de descarga por datos móviles y conversión) |
-| Integración iOS (Game Center, Core Haptics, accesibilidad) | **Plugins oficiales de Apple para Unity** (GameKit, Core Haptics, Accessibility, Game Controller, PHASE) | Soporte parcial; Core Haptics requiere módulo nativo propio | **Unity** |
+| Integración con el sistema (Game Center, Core Haptics, accesibilidad; en Android, Play Games y Play Billing) | **Plugins oficiales de Apple para Unity** (GameKit, Core Haptics, Accessibility, Game Controller, PHASE) | Soporte parcial; Core Haptics requiere módulo nativo propio | **Unity** |
 | Físicas de vehículo | PhysX con control total del paso fijo; sim propia fácil en C# | Chaos Vehicles pensado para coches 3D | **Unity** (vamos a escribir nuestra propia sim de moto de todos modos) |
 | Iteración (cambiar y probar) | Compilación C# en segundos, ScriptableObjects para afinar | C++ lento / Blueprints menos mantenibles | **Unity** |
 | Talento disponible para móvil | Muy amplio | Más escaso en móvil | **Unity** |
@@ -23,23 +25,24 @@ Para este juego concreto (2.5D, vertical, iPhone, físicas de vehículo, 60/120 
 
 | Área | Paquete / tecnología |
 | --- | --- |
-| Motor | Unity 6 LTS (6000.x), IL2CPP, ARM64, API gráfica **solo Metal** |
+| Motor | Unity 6 LTS (6000.x), IL2CPP, ARM64. API gráfica: **Metal** (iOS) y **Vulkan** con OpenGL ES 3 de respaldo (Android) |
 | Render | URP (Forward+), Adaptive Probe Volumes, Reflection Probes con mezcla, SRP Batcher, GPU Resident Drawer |
 | Entrada | Input System (táctil, giroscopio vía `AttitudeSensor`, mandos MFi) |
 | Cámara | Cinemachine 3 |
-| Contenido | Addressables (+ On-Demand Resources / descarga en segundo plano para mundos 2–7) |
+| Contenido | Addressables (+ On-Demand Resources en iOS y Play Asset Delivery en Android para mundos 2–7) |
 | Pistas | Splines (extrusión de la superficie de la pista) |
 | Rendimiento | Burst, Collections, Mathematics, Jobs |
 | Animación | Animation Rigging (IK de manos, pies, tronco), Timeline (cinemáticas y finales de mundo) |
 | Audio | **FMOD for Unity** (síntesis granular de motor, parámetros RPM/carga); sin coste por debajo del umbral de ingresos de su licencia indie — revisar al lanzar |
 | iOS nativo | Apple Unity Plugins: **GameKit**, **Core Haptics**, **Accessibility**, **Game Controller** |
-| Compras | Unity IAP 5 (StoreKit 2) o puente propio a StoreKit 2 |
-| Nube | Puente Swift propio a **CloudKit** (no hay plugin oficial) |
+| Compras | Unity IAP 5: StoreKit 2 (iOS) y Google Play Billing (Android) |
+| Android nativo | Google Play Games Services v2 (inicio de sesión, logros, clasificaciones), Play Integrity (antitrampas), Adaptive Performance (temperatura) |
+| Nube | Guardado en el backend propio (multiplataforma); CloudKit descartado porque solo funciona en Apple |
 | Localización | Unity Localization (es, en) |
 | Pruebas | Unity Test Framework (EditMode + PlayMode) |
 | Backend | Ver §6 |
 
-Requisito: compilar para iOS necesita **Mac con Xcode 16+**. Integración continua en GitHub Actions con runners macOS (como ya se hace con la app iOS de este repositorio) + Unity Build Automation o GameCI.
+Requisito: compilar para iOS necesita **Mac con Xcode 16+**; Android se compila en Mac, Windows o Linux con el módulo Android de Unity. Integración continua en GitHub Actions con runners macOS (como ya se hace con la app iOS de este repositorio) + Unity Build Automation o GameCI.
 
 ---
 
@@ -183,11 +186,11 @@ RidgeRush/
 │   │   │   ├── Rendering/            RidgeRush.Rendering.asmdef — Renderer Features (SSR, volumétricos), huellas
 │   │   │   ├── Input/                Esquemas táctil / giroscopio / mando
 │   │   │   ├── Audio/                Puente FMOD, motor, superficies, música adaptativa
-│   │   │   ├── Platform/             RidgeRush.Platform.asmdef — puentes iOS
-│   │   │   │   ├── GameCenter/       Login, clasificaciones, logros, partidas (Apple GameKit plugin)
+│   │   │   ├── Platform/             RidgeRush.Platform.asmdef — puentes iOS y Android
+│   │   │   │   ├── GameServices/     Game Center (iOS) y Google Play Games (Android): login y logros
 │   │   │   │   ├── Haptics/          Patrones Core Haptics (AHAP)
-│   │   │   │   ├── CloudSave/        CloudKit (Swift + bridge)
-│   │   │   │   ├── Store/            StoreKit 2
+│   │   │   │   ├── CloudSave/        Guardado en el backend propio
+│   │   │   │   ├── Store/            StoreKit 2 / Google Play Billing
 │   │   │   │   └── Privacy/          ATT, consentimiento
 │   │   │   ├── Online/               Backend REST, validación, torneos, clubs, multijugador
 │   │   │   ├── Meta/                 Economía, progreso, pase de temporada, recompensas diarias
@@ -201,7 +204,8 @@ RidgeRush/
 │   │   ├── Scenes/                   Bootstrap, Meta, Race, Garage, + escenas de entorno por mundo
 │   │   ├── Settings/                 URP assets por calidad, Volume profiles por mundo
 │   │   └── Localization/             Tablas es / en
-│   ├── Plugins/iOS/                  Swift/Obj-C nativo (CloudKit, StoreKit 2, utilidades)
+│   ├── Plugins/iOS/                  Swift nativo (Core Haptics, utilidades)
+│   ├── Plugins/Android/              Bibliotecas Android (.androidlib: permisos, utilidades)
 │   └── Tests/
 │       ├── EditMode/                 BikeSim determinista, economía, validación de niveles
 │       └── PlayMode/                 Carrera completa automática con "bot" de entradas
@@ -235,12 +239,12 @@ RidgeRush/
 
 | Necesidad | Solución propuesta |
 | --- | --- |
-| Identidad | Game Center (identidad del jugador) + Sign in with Apple; token verificado en servidor |
-| Guardado | **CloudKit** (base de datos privada del usuario), con resolución de conflictos por campo (máximo de estrellas, suma de monedas por transacción) |
-| Clasificaciones públicas | Game Center (amigos/global) + clasificación propia por país en servidor |
+| Identidad | Cuenta propia vinculada a Game Center / Google Play Games y a Sign in with Apple / Google; tokens verificados en servidor. Permite usar el mismo progreso en iPhone y Android |
+| Guardado | **Backend propio** (sustituye a CloudKit para que funcione entre iOS y Android), con resolución de conflictos por campo (máximo de estrellas, suma de monedas por transacción) |
+| Clasificaciones públicas | Clasificación propia en servidor (global, país, amigos; común a iOS y Android), reflejada en Game Center y Google Play Games |
 | Validación de tiempos | Servicio propio: recibe entradas + muestras de estado; comprueba plausibilidad (velocidad máx., trayectoria sobre la pista, tiempo ≥ límite físico) y **re-simula** con la misma `BikeSim` (compilada para .NET) con tolerancias |
 | Fantasmas | Archivos de muestras comprimidos (~40 KB/min) en almacenamiento de objetos + CDN |
-| Multijugador 1–4 | Fase inicial: **GameKit real-time matches** (hasta 4 jugadores, sin servidor propio). Las motos no colisionan entre sí: cada cliente simula su moto y envía estados a 20 Hz; los rivales se muestran interpolados con ~100 ms de retraso. Escalado posterior: relé dedicado (UDP) si se necesita emparejamiento global por habilidad |
+| Multijugador 1–4 | **Relé dedicado (UDP) con emparejamiento propio** desde el principio, para que jueguen juntos iPhone y Android (GameKit solo sirve entre dispositivos Apple). Las motos no colisionan entre sí: cada cliente simula su moto y envía estados a 20 Hz; los rivales se muestran interpolados con ~100 ms de retraso |
 | Torneos, clubs, temporadas, tienda remota | API REST (contenedores sin servidor) + base de datos gestionada |
 | Analítica | Eventos agregados propios, sin IDFA salvo consentimiento ATT |
 
@@ -250,8 +254,9 @@ RidgeRush/
 
 | Fase | Contenido | Duración orientativa |
 | --- | --- | --- |
-| 1–2 | GDD, estilo, arquitectura, lista de assets (**este documento**) | ✅ |
-| 3 | Prototipo: BikeSim, controles, piloto IK/ragdoll, 1 nivel de Costa Coral con luz y post | 8–10 semanas |
+| 1–2 | GDD, estilo, arquitectura, lista de assets | ✅ |
+| + | Versión Android en paralelo (mismo proyecto) | +15–20 % de esfuerzo en pruebas y optimización |
+| 3 | Prototipo: BikeSim, controles, piloto IK/ragdoll, 1 nivel de Costa Coral con luz y post | 8–10 semanas (base del código entregada, ver [06-prototipo.md](06-prototipo.md)) |
 | 4 | Mundos, clima, día/noche, herramientas de nivel | 12–16 semanas (en paralelo con producción de arte) |
 | 5 | Tienda, garaje 3D, economía, guardado | 6–8 semanas |
 | 6 | Online | 10–12 semanas |

@@ -1,6 +1,6 @@
 # Fase 1 · Documento de diseño del juego (GDD resumido)
 
-> Versión 0.1 · Estado: **pendiente de aprobación** · Plataforma: iPhone (iOS 17+) · Orientación: vertical 9:16
+> Versión 0.2 · Estado: **aprobado** · Plataformas: iPhone (iOS 17+) y Android (10+, ver [05-android.md](05-android.md)) · Orientación: vertical 9:16
 
 ---
 
@@ -119,7 +119,7 @@ Rampas de madera y metal · troncos · rocas · contenedores · autos abandonado
 - **Fallos**: choque = reinicio desde checkpoint en < 300 ms con fundido mínimo.
 
 ### 4.7 Repeticiones
-Se graba un muestreo de estado (posición, rotación, suspensión, estado del piloto) a 30 Hz e interpolado; ocupa ~40 KB por minuto. Al terminar: repetición automática con **cámaras tipo transmisión** (grúa, cámara fija junto a la pista, teleobjetivo, cámara lenta en trucos). Exportar clip con **ReplayKit** / renderizado del clip y compartir con la hoja de compartir de iOS.
+Se graba un muestreo de estado (posición, rotación, suspensión, estado del piloto) a 30 Hz e interpolado; ocupa ~40 KB por minuto. Al terminar: repetición automática con **cámaras tipo transmisión** (grúa, cámara fija junto a la pista, teleobjetivo, cámara lenta en trucos). Exportar el clip renderizando la repetición a vídeo (AVAssetWriter en iOS, MediaCodec en Android) y compartir con la hoja de compartir del sistema.
 
 ---
 
@@ -198,7 +198,7 @@ Estadísticas (1–10): **velocidad, aceleración, agarre, suspensión, peso**. 
 ---
 
 ## 8. Online (resumen; diseño detallado en Fase 6)
-Game Center + Sign in with Apple · clasificaciones global/país/amigos · fantasmas reales · 1v1 y hasta 4 jugadores **sin colisiones entre motos** (cada uno en su "carril fantasma": hace viable la sincronización con latencia móvil) · torneos · clubs · perfil · logros · guardado en CloudKit · validación de tiempos en servidor.
+Game Center / Google Play Games + Sign in with Apple / Google · cuenta propia para jugar en iPhone y Android con el mismo progreso · clasificaciones global/país/amigos · fantasmas reales · 1v1 y hasta 4 jugadores **sin colisiones entre motos** (cada uno en su "carril fantasma": hace viable la sincronización con latencia móvil) · torneos · clubs · perfil · logros · guardado en la nube propio (multiplataforma) · validación de tiempos en servidor · **juego cruzado iOS ↔ Android**.
 
 ---
 
@@ -208,7 +208,7 @@ Motor por síntesis granular a partir de grabaciones propias por tipo de moto (R
 ---
 
 ## 10. Extras
-Tutorial interactivo (3 niveles guiados, 4 min) · recompensa diaria (7 días, sin penalizar si se rompe la racha más allá de reiniciar) · logros de Game Center (60) · ReplayKit · español e inglés (todo el texto externalizado) · accesibilidad (daltónico: 3 filtros + iconos además de colores, Dynamic Type en menús, desactivar vibración/sacudida de cámara/motion blur/destellos, reducir movimiento respeta la opción de iOS) · analítica agregada sin IDFA salvo consentimiento ATT · modo ahorro de batería (30 FPS, Bajo) y control térmico automático.
+Tutorial interactivo (3 niveles guiados, 4 min) · recompensa diaria (7 días, sin penalizar si se rompe la racha más allá de reiniciar) · logros (60) en Game Center y Google Play Games · grabar y compartir clips · español e inglés (todo el texto externalizado) · accesibilidad (daltónico: 3 filtros + iconos además de colores, Dynamic Type en menús, desactivar vibración/sacudida de cámara/motion blur/destellos, reducir movimiento respeta la opción del sistema) · analítica agregada sin identificador publicitario salvo consentimiento (ATT en iOS, UMP/GDPR en ambos) · modo ahorro de batería (30 FPS, Bajo) y control térmico automático.
 
 ---
 

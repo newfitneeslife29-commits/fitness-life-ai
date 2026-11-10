@@ -6,7 +6,7 @@ App de entrenamiento de fuerza para iOS, Android y web: te da un plan, registras
 | --- | --- |
 | [`app/`](app/) | La app (React + TypeScript + Capacitor). Empieza por su [README](app/README.md). |
 | `.github/workflows/` | Tests en cada push, publicación web en GitHub Pages y compilación de las apps de Android e iOS. |
-| [`ridge-rush/`](ridge-rush/) | Proyecto aparte: diseño del juego de motocross *Ridge Rush: Pro Moto* para iPhone (Fases 1–2: GDD, estilo, motor y assets). |
+| [`ridge-rush/`](ridge-rush/) | Proyecto aparte: juego de motocross *Ridge Rush: Pro Moto* para iPhone y Android (diseño aprobado y prototipo jugable en Unity). |
 | `supabase/` | Backend opcional: la función `nutrition-coach` (coach de nutrición con Claude, límites gratis/Premium) y la migración. Sin él, la app funciona entera salvo la IA. Ver el [README de la app](app/README.md#coach-de-nutrición-con-ia-opcional). |
 
 ```bash

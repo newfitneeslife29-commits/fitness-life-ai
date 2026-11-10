@@ -1,0 +1,10 @@
+// Biblioteca Android mínima: solo aporta el permiso VIBRATE al manifiesto final.
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.ridgerush.haptics"
+    compileSdk 34
+    defaultConfig {
+        minSdk 29
+    }
+}

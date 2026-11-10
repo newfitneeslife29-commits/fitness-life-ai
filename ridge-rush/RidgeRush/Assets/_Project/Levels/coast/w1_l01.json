@@ -1,0 +1,804 @@
+{
+  "version": 1,
+  "id": "w1_l01",
+  "world": "coast",
+  "nameEs": "Muelle del Amanecer",
+  "nameEn": "Sunrise Pier",
+  "timeOfDay": 18.4,
+  "weather": "clear",
+  "startX": 2,
+  "sections": [
+    {
+      "type": "flat",
+      "length": 25,
+      "surface": "Dirt"
+    },
+    {
+      "type": "slope",
+      "length": 30,
+      "height": 3,
+      "surface": "Sand"
+    },
+    {
+      "type": "slope",
+      "length": 25,
+      "height": -3,
+      "surface": "Sand"
+    },
+    {
+      "type": "bumps",
+      "length": 30,
+      "height": 0.5,
+      "count": 4,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 10,
+      "surface": "Wood"
+    },
+    {
+      "type": "ramp",
+      "length": 10,
+      "height": 2,
+      "surface": "Wood"
+    },
+    {
+      "type": "gap",
+      "length": 10,
+      "depth": 3,
+      "pit": "water",
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 40,
+      "surface": "Wood"
+    },
+    {
+      "type": "table",
+      "length": 24,
+      "height": 1.5,
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 15,
+      "surface": "Wood"
+    },
+    {
+      "type": "drop",
+      "height": 2,
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 25,
+      "surface": "Sand"
+    },
+    {
+      "type": "bumps",
+      "length": 18,
+      "height": 0.3,
+      "count": 6,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 12,
+      "surface": "Dirt"
+    },
+    {
+      "type": "ramp",
+      "length": 12,
+      "height": 2.5,
+      "surface": "Dirt"
+    },
+    {
+      "type": "landing",
+      "length": 18,
+      "height": 2.5,
+      "surface": "Dirt"
+    },
+    {
+      "type": "flat",
+      "length": 20,
+      "surface": "Sand"
+    },
+    {
+      "type": "bumps",
+      "length": 24,
+      "height": 0.6,
+      "count": 3,
+      "surface": "Mud"
+    },
+    {
+      "type": "flat",
+      "length": 15,
+      "surface": "Wood"
+    },
+    {
+      "type": "gap",
+      "length": 12,
+      "depth": 3,
+      "pit": "water",
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 30,
+      "surface": "Wood"
+    },
+    {
+      "type": "ramp",
+      "length": 8,
+      "height": 1.2,
+      "surface": "Wood"
+    },
+    {
+      "type": "gap",
+      "length": 8,
+      "depth": 3,
+      "pit": "water",
+      "surface": "Wood"
+    },
+    {
+      "type": "landing",
+      "length": 14,
+      "height": 1.2,
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 20,
+      "surface": "Sand"
+    },
+    {
+      "type": "slope",
+      "length": 35,
+      "height": 5,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 10,
+      "surface": "Sand"
+    },
+    {
+      "type": "landing",
+      "length": 30,
+      "height": 5,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 15,
+      "surface": "Dirt"
+    },
+    {
+      "type": "table",
+      "length": 30,
+      "height": 2,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 20,
+      "surface": "Wood"
+    },
+    {
+      "type": "ramp",
+      "length": 10,
+      "height": 1.8,
+      "surface": "Wood"
+    },
+    {
+      "type": "gap",
+      "length": 9,
+      "depth": 3,
+      "pit": "water",
+      "surface": "Wood"
+    },
+    {
+      "type": "flat",
+      "length": 25,
+      "surface": "Wood"
+    },
+    {
+      "type": "drop",
+      "height": 1.8,
+      "surface": "Wood"
+    },
+    {
+      "type": "bumps",
+      "length": 20,
+      "height": 0.35,
+      "count": 5,
+      "surface": "Sand"
+    },
+    {
+      "type": "flat",
+      "length": 20,
+      "surface": "Sand"
+    },
+    {
+      "type": "slope",
+      "length": 25,
+      "height": 2,
+      "surface": "Sand"
+    },
+    {
+      "type": "slope",
+      "length": 25,
+      "height": -2,
+      "surface": "Sand"
+    },
+    {
+      "type": "finish",
+      "length": 20,
+      "surface": "Sand"
+    }
+  ],
+  "platforms": [
+    {
+      "x": 363.1,
+      "y": 0,
+      "width": 12.05,
+      "thickness": 0.35,
+      "surface": "Wood",
+      "motion": "Collapse",
+      "dx": 0,
+      "dy": 0,
+      "period": 4,
+      "delay": 0.7
+    }
+  ],
+  "hazards": [],
+  "winds": [],
+  "checkpoints": [
+    222,
+    450
+  ],
+  "stars": {
+    "gold": 37,
+    "silver": 46
+  },
+  "props": [
+    {
+      "type": "palm",
+      "x": -9.4093378813347,
+      "z": 6.1,
+      "yOffset": 0,
+      "scale": 1.13,
+      "rotation": 26
+    },
+    {
+      "type": "palm",
+      "x": 6.287056034453514,
+      "z": 7.6,
+      "yOffset": 0,
+      "scale": 0.83,
+      "rotation": 183
+    },
+    {
+      "type": "palm",
+      "x": 16.299965267535878,
+      "z": 8.0,
+      "yOffset": 0,
+      "scale": 0.83,
+      "rotation": 33
+    },
+    {
+      "type": "palm",
+      "x": 33.39615351314011,
+      "z": 10.8,
+      "yOffset": 0,
+      "scale": 0.86,
+      "rotation": 80
+    },
+    {
+      "type": "palm",
+      "x": 49.01946577924471,
+      "z": 11.6,
+      "yOffset": 0,
+      "scale": 1.09,
+      "rotation": 143
+    },
+    {
+      "type": "palm",
+      "x": 65.81004084474336,
+      "z": 5.3,
+      "yOffset": 0,
+      "scale": 1.23,
+      "rotation": 104
+    },
+    {
+      "type": "palm",
+      "x": 73.1540406668595,
+      "z": 5.8,
+      "yOffset": 0,
+      "scale": 0.95,
+      "rotation": 294
+    },
+    {
+      "type": "palm",
+      "x": 87.4458110393915,
+      "z": 9.1,
+      "yOffset": 0,
+      "scale": 1.12,
+      "rotation": 134
+    },
+    {
+      "type": "palm",
+      "x": 104.38195572567646,
+      "z": 5.4,
+      "yOffset": 0,
+      "scale": 0.83,
+      "rotation": 74
+    },
+    {
+      "type": "palm",
+      "x": 119.44319978545428,
+      "z": 8.0,
+      "yOffset": 0,
+      "scale": 0.96,
+      "rotation": 211
+    },
+    {
+      "type": "palm",
+      "x": 131.6254750109662,
+      "z": 7.1,
+      "yOffset": 0,
+      "scale": 1.2,
+      "rotation": 252
+    },
+    {
+      "type": "palm",
+      "x": 143.9527720857772,
+      "z": 9.0,
+      "yOffset": 0,
+      "scale": 1.06,
+      "rotation": 315
+    },
+    {
+      "type": "palm",
+      "x": 161.83556231551376,
+      "z": 7.0,
+      "yOffset": 0,
+      "scale": 1.29,
+      "rotation": 43
+    },
+    {
+      "type": "palm",
+      "x": 173.34498257428183,
+      "z": 10.3,
+      "yOffset": 0,
+      "scale": 0.88,
+      "rotation": 176
+    },
+    {
+      "type": "palm",
+      "x": 184.3136580563795,
+      "z": 9.7,
+      "yOffset": 0,
+      "scale": 1.18,
+      "rotation": 206
+    },
+    {
+      "type": "palm",
+      "x": 205.0038224946471,
+      "z": 7.2,
+      "yOffset": 0,
+      "scale": 1.15,
+      "rotation": 214
+    },
+    {
+      "type": "palm",
+      "x": 216.63916163425995,
+      "z": 8.2,
+      "yOffset": 0,
+      "scale": 1.22,
+      "rotation": 340
+    },
+    {
+      "type": "palm",
+      "x": 229.79278669935715,
+      "z": 9.6,
+      "yOffset": 0,
+      "scale": 0.83,
+      "rotation": 253
+    },
+    {
+      "type": "palm",
+      "x": 245.17703083622135,
+      "z": 12.0,
+      "yOffset": 0,
+      "scale": 1.21,
+      "rotation": 102
+    },
+    {
+      "type": "palm",
+      "x": 257.0863315395737,
+      "z": 9.7,
+      "yOffset": 0,
+      "scale": 0.81,
+      "rotation": 166
+    },
+    {
+      "type": "palm",
+      "x": 269.3443870312524,
+      "z": 5.8,
+      "yOffset": 0,
+      "scale": 0.83,
+      "rotation": 277
+    },
+    {
+      "type": "palm",
+      "x": 283.03472177614947,
+      "z": 6.7,
+      "yOffset": 0,
+      "scale": 1.0,
+      "rotation": 314
+    },
+    {
+      "type": "palm",
+      "x": 296.6446504096011,
+      "z": 8.1,
+      "yOffset": 0,
+      "scale": 1.07,
+      "rotation": 318
+    },
+    {
+      "type": "palm",
+      "x": 316.55423870268595,
+      "z": 11.0,
+      "yOffset": 0,
+      "scale": 0.94,
+      "rotation": 150
+    },
+    {
+      "type": "palm",
+      "x": 326.870169322653,
+      "z": 11.2,
+      "yOffset": 0,
+      "scale": 1.28,
+      "rotation": 54
+    },
+    {
+      "type": "palm",
+      "x": 339.40974182792297,
+      "z": 6.6,
+      "yOffset": 0,
+      "scale": 0.92,
+      "rotation": 175
+    },
+    {
+      "type": "palm",
+      "x": 356.712988029858,
+      "z": 6.8,
+      "yOffset": 0,
+      "scale": 0.8,
+      "rotation": 151
+    },
+    {
+      "type": "palm",
+      "x": 368.9540285831578,
+      "z": 9.0,
+      "yOffset": 0,
+      "scale": 1.28,
+      "rotation": 249
+    },
+    {
+      "type": "palm",
+      "x": 384.1239314645662,
+      "z": 9.3,
+      "yOffset": 0,
+      "scale": 1.14,
+      "rotation": 19
+    },
+    {
+      "type": "palm",
+      "x": 401.1962640804636,
+      "z": 10.5,
+      "yOffset": 0,
+      "scale": 1.24,
+      "rotation": 287
+    },
+    {
+      "type": "palm",
+      "x": 411.13903125513013,
+      "z": 7.8,
+      "yOffset": 0,
+      "scale": 0.85,
+      "rotation": 228
+    },
+    {
+      "type": "palm",
+      "x": 422.4979825729495,
+      "z": 5.5,
+      "yOffset": 0,
+      "scale": 0.9,
+      "rotation": 58
+    },
+    {
+      "type": "palm",
+      "x": 438.72042921785874,
+      "z": 5.4,
+      "yOffset": 0,
+      "scale": 0.8,
+      "rotation": 54
+    },
+    {
+      "type": "palm",
+      "x": 450.8117149441808,
+      "z": 7.5,
+      "yOffset": 0,
+      "scale": 0.81,
+      "rotation": 315
+    },
+    {
+      "type": "palm",
+      "x": 468.9125519023078,
+      "z": 6.0,
+      "yOffset": 0,
+      "scale": 0.93,
+      "rotation": 125
+    },
+    {
+      "type": "palm",
+      "x": 480.91330751622627,
+      "z": 5.9,
+      "yOffset": 0,
+      "scale": 1.22,
+      "rotation": 358
+    },
+    {
+      "type": "palm",
+      "x": 495.7279156732795,
+      "z": 8.4,
+      "yOffset": 0,
+      "scale": 0.84,
+      "rotation": 37
+    },
+    {
+      "type": "palm",
+      "x": 508.74108670594404,
+      "z": 6.9,
+      "yOffset": 0,
+      "scale": 1.21,
+      "rotation": 58
+    },
+    {
+      "type": "palm",
+      "x": 520.184765768362,
+      "z": 11.7,
+      "yOffset": 0,
+      "scale": 1.06,
+      "rotation": 53
+    },
+    {
+      "type": "palm",
+      "x": 538.345379407057,
+      "z": 5.2,
+      "yOffset": 0,
+      "scale": 1.06,
+      "rotation": 352
+    },
+    {
+      "type": "palm",
+      "x": 554.9066002423174,
+      "z": 9.9,
+      "yOffset": 0,
+      "scale": 0.93,
+      "rotation": 132
+    },
+    {
+      "type": "palm",
+      "x": 563.3363362762747,
+      "z": 10.4,
+      "yOffset": 0,
+      "scale": 1.07,
+      "rotation": 280
+    },
+    {
+      "type": "palm",
+      "x": 578.6373199603821,
+      "z": 6.6,
+      "yOffset": 0,
+      "scale": 1.21,
+      "rotation": 355
+    },
+    {
+      "type": "palm",
+      "x": 596.8210303899733,
+      "z": 10.6,
+      "yOffset": 0,
+      "scale": 1.21,
+      "rotation": 266
+    },
+    {
+      "type": "palm",
+      "x": 605.8139159202527,
+      "z": 8.6,
+      "yOffset": 0,
+      "scale": 0.98,
+      "rotation": 10
+    },
+    {
+      "type": "palm",
+      "x": 618.2234966033765,
+      "z": 7.0,
+      "yOffset": 0,
+      "scale": 0.93,
+      "rotation": 249
+    },
+    {
+      "type": "palm",
+      "x": 639.6521206107307,
+      "z": 8.1,
+      "yOffset": 0,
+      "scale": 1.27,
+      "rotation": 356
+    },
+    {
+      "type": "palm",
+      "x": 653.6400050505707,
+      "z": 7.6,
+      "yOffset": 0,
+      "scale": 0.91,
+      "rotation": 82
+    },
+    {
+      "type": "palm",
+      "x": 661.5736493073546,
+      "z": 6.4,
+      "yOffset": 0,
+      "scale": 1.11,
+      "rotation": 324
+    },
+    {
+      "type": "palm",
+      "x": 680.7234842182343,
+      "z": 8.4,
+      "yOffset": 0,
+      "scale": 1.13,
+      "rotation": 288
+    },
+    {
+      "type": "palm",
+      "x": 688.678227891603,
+      "z": 9.6,
+      "yOffset": 0,
+      "scale": 1.25,
+      "rotation": 282
+    },
+    {
+      "type": "palm",
+      "x": 708.0011236786437,
+      "z": 8.3,
+      "yOffset": 0,
+      "scale": 0.89,
+      "rotation": 284
+    },
+    {
+      "type": "palm",
+      "x": 718.6601375989169,
+      "z": 10.6,
+      "yOffset": 0,
+      "scale": 1.29,
+      "rotation": 143
+    },
+    {
+      "type": "palm",
+      "x": 733.2110945429416,
+      "z": 11.6,
+      "yOffset": 0,
+      "scale": 1.16,
+      "rotation": 61
+    },
+    {
+      "type": "palm",
+      "x": 745.016306938383,
+      "z": 6.1,
+      "yOffset": 0,
+      "scale": 1.25,
+      "rotation": 290
+    },
+    {
+      "type": "hut",
+      "x": 40,
+      "z": 9,
+      "yOffset": 0,
+      "scale": 1,
+      "rotation": 10
+    },
+    {
+      "type": "surfboard",
+      "x": 44,
+      "z": 6,
+      "yOffset": 0,
+      "scale": 1,
+      "rotation": -20
+    },
+    {
+      "type": "boat",
+      "x": 135,
+      "z": 7,
+      "yOffset": -2.5,
+      "scale": 1.2,
+      "rotation": 30
+    },
+    {
+      "type": "buoy",
+      "x": 370,
+      "z": 4,
+      "yOffset": -2.4,
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "type": "buoy",
+      "x": 417,
+      "z": 5,
+      "yOffset": -2.4,
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "type": "crate",
+      "x": 160,
+      "z": -1.8,
+      "yOffset": 2,
+      "scale": 1,
+      "rotation": 15
+    },
+    {
+      "type": "crate",
+      "x": 161.2,
+      "z": -1.8,
+      "yOffset": 2,
+      "scale": 0.8,
+      "rotation": -10
+    },
+    {
+      "type": "hut",
+      "x": 300,
+      "z": 10,
+      "yOffset": 0,
+      "scale": 1.2,
+      "rotation": -15
+    },
+    {
+      "type": "lighthouse",
+      "x": 520,
+      "z": 40,
+      "yOffset": 0,
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "type": "boat",
+      "x": 610,
+      "z": 8,
+      "yOffset": -2.5,
+      "scale": 1,
+      "rotation": -25
+    },
+    {
+      "type": "flag",
+      "x": 729,
+      "z": -2.5,
+      "yOffset": 0,
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "type": "flag",
+      "x": 729,
+      "z": 2.5,
+      "yOffset": 0,
+      "scale": 1,
+      "rotation": 0
+    }
+  ]
+}
