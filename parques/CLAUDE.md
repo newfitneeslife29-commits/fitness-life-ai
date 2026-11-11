@@ -1,8 +1,8 @@
-# Parqués Bacano — contexto del proyecto
+# Parqués — contexto del proyecto
 
 Parqués colombiano moderno (web + PWA instalable), con identidad 100 % colombiana y diseño original
 (no copiar logos, nombres ni gráficos de otras apps). Público: familias y jóvenes adultos.
-Nombres alternativos considerados: Parqués Chévere, Parqués Berraco, Parqués de la Cuadra.
+Nombre de la app: **Parqués** (decidido por el usuario).
 
 Vive en `parques/` dentro del monorepo `fitness-life-ai` (no tocar `app/`, `ridge-rush/`, `store/`, `supabase/`).
 Rama de trabajo: `claude/parques-colombiano-plan-y4l8bo`.
@@ -14,6 +14,7 @@ Rama de trabajo: `claude/parques-colombiano-plan-y4l8bo`.
 - **Pruebas**: Vitest. Cada regla tiene su archivo en `packages/engine/test/`.
 - **Persistencia online** (fases 5–6): Supabase (auth + datos). Monedas/gemas solo virtuales, sin pagos reales.
 - Gráficos en SVG/CSS (sin imágenes externas). Fuentes: Baloo 2 (títulos) y Nunito (texto).
+- Ícono: `apps/web/public/icon.svg` (mini tablero clásico con corona); `npm run icons -w @parques/web` genera los PNG.
 
 ## Comandos (desde `parques/`)
 ```bash
@@ -47,19 +48,22 @@ npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
 - Turnos en orden de lado ascendente. En parejas, compañeros en lados opuestos (`team = side % (sides/2)`).
 
 ## Arquitectura de la web (`apps/web`)
-- `src/game/boardLayout.ts`: geometría SVG genérica (4 y 6 lados). Brazos de 3 columnas x 8 filas que salen de un polígono
-  central: columna L = offsets 1..8 del lado del brazo (hacia adentro), M = entrada (fila 7) + pasillo, R = offsets 9..16 del lado
-  anterior. Cárcel del lado s en la cuña entre brazo s y s+1. Probado en `boardLayout.test.ts`.
+- `src/game/boardLayout.ts`: geometría del **tablero clásico** (igual a la imagen de referencia del usuario), para 4 y 6 lados.
+  Cada brazo tiene 3 columnas de casillas anchas y planas: columna L = offsets 1..5 del dueño (fila 4 = SALIDA junto a su cárcel),
+  columna M = SEGURO de la punta (offset 0) + pasillo de 7 + LLEGADA (ficha coronada), columna R = offsets 16..12 del lado anterior
+  (fila 4 = SEGURO). Entre dos brazos hay una curva de 6 casillas (offsets 6..11) alrededor de la cárcel (esquina redondeada).
+  Cielo con nubes en el centro. Orden de colores: amarillo → rojo → verde → azul (sentido contrario a las agujas del reloj);
+  vista por defecto: azul arriba, amarillo izquierda, rojo abajo, verde derecha. Probado en `boardLayout.test.ts`.
 - `src/stores/gameStore.ts` (Zustand): `game` = verdad del motor; `view` = posiciones dibujadas que se actualizan paso a paso
   reproduciendo los eventos (saltos casilla por casilla, explosión de estrellas, corona, cartel de tres pares, soplo).
   También maneja bots (`autoAction`), temporizador de turno (si vence, la IA juega por el humano), ventana de soplo (4,5 s)
   y límite de tiempo del Modo Rápido (`TIME_UP`). `?speed=N` en la URL acelera todo (útil para pruebas).
 - Pantallas en `src/screens` (Home, Setup, Game, Victory) con navegación simple en `stores/appStore.ts`.
-- El tablero rota para que la cárcel del primer humano quede abajo a la izquierda; los asientos se ubican según su cárcel.
-- Gráficos 100 % SVG/CSS (logo, sombrero vueltiao, flores de salida, estrellas de seguro). Fuentes Baloo 2 + Nunito.
+- El tablero rota (`viewRotation`) para que la cárcel del primer humano quede abajo a la izquierda; los asientos se ubican según su cárcel.
+- Gráficos 100 % SVG/CSS (tablero, ícono y logo). Fuentes Baloo 2 + Nunito.
 
 ## Reglas implementadas
-1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores: amarillo, azul, rojo, verde (+ morado, naranja en 6).
+1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores en orden de juego: amarillo, rojo, verde, azul (+ naranja y morado en 6).
 2. Dos dados; cada dado mueve una ficha distinta o la misma; también se puede mover la **suma** con una ficha (solo captura en la casilla final).
 3. Salir de la cárcel: con **par**. Sin fichas en juego hay `jailAttempts` tiros (3 por defecto).
    - **Doble 1 o doble 6** (`allOutDoubles`): pueden salir **todas**.

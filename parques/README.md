@@ -1,4 +1,4 @@
-# Parqués Bacano 🎲🇨🇴
+# Parqués 🎲🇨🇴
 
 Parqués colombiano moderno para el navegador y el celular (PWA).
 

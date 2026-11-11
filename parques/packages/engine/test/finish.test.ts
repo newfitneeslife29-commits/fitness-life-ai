@@ -108,7 +108,7 @@ describe('parejas 2 vs 2', () => {
 describe('6 jugadores', () => {
   it('crea 6 colores y el cielo está en 105', () => {
     const g = newGame({}, 6);
-    expect(g.players.map((p) => p.color)).toEqual(['amarillo', 'azul', 'rojo', 'verde', 'morado', 'naranja']);
+    expect(g.players.map((p) => p.color)).toEqual(['amarillo', 'naranja', 'rojo', 'verde', 'azul', 'morado']);
     const s = setup(g, [[100, 10, JAIL, JAIL]]);
     const m = move(roll(s, [5, 1]).state, step(0, 0, 0));
     expect(m.state.players[0]!.pieces[0]).toBe(105);

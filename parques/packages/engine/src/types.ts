@@ -5,8 +5,12 @@
 
 export type Color = 'amarillo' | 'azul' | 'rojo' | 'verde' | 'morado' | 'naranja';
 
-export const COLORS_4: readonly Color[] = ['amarillo', 'azul', 'rojo', 'verde'];
-export const COLORS_6: readonly Color[] = ['amarillo', 'azul', 'rojo', 'verde', 'morado', 'naranja'];
+/**
+ * Orden de los lados = orden de juego (sentido contrario a las agujas del reloj,
+ * como el tablero clásico: amarillo → rojo → verde → azul).
+ */
+export const COLORS_4: readonly Color[] = ['amarillo', 'rojo', 'verde', 'azul'];
+export const COLORS_6: readonly Color[] = ['amarillo', 'naranja', 'rojo', 'verde', 'azul', 'morado'];
 
 /** Valores especiales de posición de una ficha. */
 export const JAIL = -1;

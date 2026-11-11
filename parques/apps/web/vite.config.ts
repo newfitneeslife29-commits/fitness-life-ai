@@ -8,9 +8,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon.svg', 'icon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Parqués Bacano',
+        name: 'Parqués',
         short_name: 'Parqués',
         description: 'Parqués colombiano: juega contra la máquina o con amigos en el mismo celular.',
         lang: 'es-CO',

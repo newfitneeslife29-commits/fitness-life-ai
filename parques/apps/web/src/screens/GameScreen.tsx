@@ -7,7 +7,7 @@ import { Dice } from '../game/Dice';
 import { PlayerSeat } from '../game/PlayerSeat';
 import { PairCounter } from '../game/PairCounter';
 import { Banner } from '../game/Banner';
-import { jailGeom, piecePoint } from '../game/boardLayout';
+import { boardBox, jailGeom, piecePoint, viewRotation } from '../game/boardLayout';
 import { CHAT_PHRASES, REACTIONS } from '../game/phrases';
 import { humanSeat, legalMovesCache, SOPLO_WINDOW_MS, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
@@ -69,7 +69,7 @@ export function GameScreen() {
   const seatCfg = (side: number) => config.seats.find((x) => x.side === side)!;
 
   // Ubicación de cada jugador alrededor del tablero según dónde queda su cárcel en pantalla.
-  const rotDeg = (-s.viewSide * 360) / game.sides;
+  const rotDeg = viewRotation(game.sides, s.viewSide);
   const placed = game.players.map((p, i) => {
     const j = jailGeom(game.sides, p.side).center;
     const t = (rotDeg * Math.PI) / 180;
@@ -161,7 +161,7 @@ export function GameScreen() {
       <div className="seat-row">{topRow.map((p, k) => renderSeat(p.i, alignFor(k, topRow.length, p.x)))}</div>
 
       <div className="board-wrap">
-        <div className="board-tilt">
+        <div className="board-tilt" style={{ ['--ar' as string]: `${boardBox(game.sides).w / boardBox(game.sides).h}` }}>
           <Board
             game={game}
             view={view}

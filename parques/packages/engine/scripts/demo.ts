@@ -13,9 +13,9 @@ let state = createGame({
   seed,
   players: [
     { name: 'Amarillo (Experto)', side: 0, isBot: true },
-    { name: 'Azul (Normal)', side: 1, isBot: true },
-    { name: 'Rojo (Fácil)', side: 2, isBot: true },
-    { name: 'Verde (Normal)', side: 3, isBot: true },
+    { name: 'Rojo (Normal)', side: 1, isBot: true },
+    { name: 'Verde (Fácil)', side: 2, isBot: true },
+    { name: 'Azul (Normal)', side: 3, isBot: true },
   ],
 });
 
@@ -34,7 +34,7 @@ function narrate(s: GameState, e: GameEvent): string | null {
   }
 }
 
-console.log(`Parqués Bacano — demo de motor (semilla ${seed})\n`);
+console.log(`Parqués — demo de motor (semilla ${seed})\n`);
 let actions = 0;
 while (state.phase !== 'over' && actions < 20000) {
   actions++;

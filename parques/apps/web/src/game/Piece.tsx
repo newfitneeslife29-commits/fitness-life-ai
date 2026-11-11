@@ -14,7 +14,7 @@ interface Props {
   onClick: () => void;
 }
 
-const R = 19;
+const R = 17;
 
 /** Ficha: salta en cada casilla (la clave `pos` re-monta el salto) y rebota si se puede mover. */
 export const Piece = memo(function Piece({ id, at, pos, color, movable, selected, crowned, onClick }: Props) {

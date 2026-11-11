@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f74ff"/><stop offset="1" stop-color="#0b2a86"/></linearGradient>
+    <radialGradient id="sky" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#c9ecff"/><stop offset="1" stop-color="#3a95ea"/></radialGradient>
+    <radialGradient id="cielo" cx="45%" cy="35%" r="70%"><stop offset="0" stop-color="#9adaff"/><stop offset="1" stop-color="#1e7fe0"/></radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe680"/><stop offset="1" stop-color="#f2a900"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="40" y="40" width="432" height="432" rx="56" fill="#0a2166"/>
+  <rect x="54" y="54" width="404" height="404" rx="44" fill="url(#sky)"/>
+  <!-- brazos -->
+  <g stroke="#13254f" stroke-width="4">
+    <rect x="196" y="54" width="120" height="150" fill="#eaf3ff"/>
+    <rect x="196" y="308" width="120" height="150" fill="#fff4f4"/>
+    <rect x="54" y="196" width="150" height="120" fill="#fffbe6"/>
+    <rect x="308" y="196" width="150" height="120" fill="#ecfbef"/>
+    <rect x="234" y="54" width="44" height="150" fill="#2f7bff"/>
+    <rect x="234" y="308" width="44" height="150" fill="#ff3b4e"/>
+    <rect x="54" y="234" width="150" height="44" fill="#ffc928"/>
+    <rect x="308" y="234" width="150" height="44" fill="#22c55e"/>
+  </g>
+  <g stroke="#13254f" stroke-width="3" opacity=".55">
+    <path d="M196 92h120M196 130h120M196 168h120M196 346h120M196 384h120M196 422h120"/>
+    <path d="M92 196v120M130 196v120M168 196v120M346 196v120M384 196v120M422 196v120"/>
+  </g>
+  <!-- cárceles -->
+  <g stroke="#13254f" stroke-width="5">
+    <path d="M54 98a44 44 0 0 1 44-44h98v96a46 46 0 0 1-46 46H54z" fill="#2f7bff"/>
+    <path d="M458 98a44 44 0 0 0-44-44h-98v96a46 46 0 0 0 46 46h96z" fill="#22c55e"/>
+    <path d="M458 414a44 44 0 0 1-44 44h-98v-96a46 46 0 0 1 46-46h96z" fill="#ff3b4e"/>
+    <path d="M54 414a44 44 0 0 0 44 44h98v-96a46 46 0 0 0-46-46H54z" fill="#ffc928"/>
+  </g>
+  <g fill="url(#gloss)">
+    <path d="M54 98a44 44 0 0 1 44-44h98v96a46 46 0 0 1-46 46H54z"/>
+    <path d="M458 98a44 44 0 0 0-44-44h-98v96a46 46 0 0 0 46 46h96z"/>
+    <path d="M458 414a44 44 0 0 1-44 44h-98v-96a46 46 0 0 1 46-46h96z"/>
+    <path d="M54 414a44 44 0 0 0 44 44h98v-96a46 46 0 0 0-46-46H54z"/>
+  </g>
+  <!-- fichas en las cárceles -->
+  <g stroke="#13254f" stroke-width="4">
+    <circle cx="112" cy="112" r="24" fill="#8fbcff"/><circle cx="400" cy="112" r="24" fill="#8ff0ad"/>
+    <circle cx="400" cy="400" r="24" fill="#ff98a3"/><circle cx="112" cy="400" r="24" fill="#ffe28a"/>
+  </g>
+  <!-- cielo con corona -->
+  <circle cx="256" cy="256" r="74" fill="#0a2166"/>
+  <circle cx="256" cy="256" r="66" fill="url(#cielo)" stroke="#fff" stroke-width="6"/>
+  <g transform="translate(256 258)">
+    <path d="M-44 22 L-50 -26 L-24 -4 L0 -40 L24 -4 L50 -26 L44 22 Z" fill="url(#gold)" stroke="#7a4b00" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="-46" y="20" width="92" height="16" rx="6" fill="url(#gold)" stroke="#7a4b00" stroke-width="6"/>
+    <circle cx="0" cy="4" r="7" fill="#ff3b4e"/><circle cx="-26" cy="10" r="5" fill="#2f7bff"/><circle cx="26" cy="10" r="5" fill="#22c55e"/>
+  </g>
+  <rect x="40" y="40" width="432" height="200" rx="56" fill="url(#gloss)" opacity=".35"/>
+</svg>
