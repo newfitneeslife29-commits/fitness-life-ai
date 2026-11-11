@@ -63,6 +63,17 @@ namespace RidgeRush.Game
         private ItemsView _items;
         private GameObject _shield;
 
+        // Tutorial guiado (GDD §11).
+        private bool _tutorial;
+        private int _tutorialStep;
+        private float _tutorialTimer;
+
+        // Repetición con cámaras de transmisión.
+        private bool _replay;
+        private float _replayTime, _replayShotTime;
+        private int _replayShot;
+        private float[] _replayData;
+
         // Fantasma: grabación de esta carrera y reproducción del mejor tiempo.
         private readonly List<float> _recording = new List<float>(4096);
         private float[] _ghostData;
@@ -89,6 +100,8 @@ namespace RidgeRush.Game
             _hud.MenuRequested += GoToMenu;
             _hud.NextRequested += PlayNext;
             _hud.PowerRequested += OnPowerPressed;
+            _hud.ReplayRequested += StartReplay;
+            _hud.ReplayExitRequested += StopReplay;
             _hud.KnockoutRequested += OnKnockoutPressed;
             _input.Bind(_hud.GasButton, _hud.BrakeButton, _hud.NitroButton);
 
@@ -96,6 +109,7 @@ namespace RidgeRush.Game
             _menu.PlayLevel += id => StartLevel(id, id.StartsWith("stadium_") ? GameMode.Supercross : _menu.TimeTrial ? GameMode.TimeTrial : GameMode.Career);
             _menu.PlayEndless += () => StartLevel("endless", GameMode.Endless);
             _menu.PlayFreestyle += () => StartLevel("freestyle", GameMode.Freestyle);
+            _menu.PlayTutorial += StartTutorial;
             _menu.GarageChanged += () => { if (_mode == GameMode.Demo) Load(_level.Data, GameMode.Demo); };
 
             GoToMenu();
@@ -112,8 +126,46 @@ namespace RidgeRush.Game
             _menu.ShowTitle();
         }
 
+        private void StartTutorial()
+        {
+            StartLevel("coast_01", GameMode.Career);
+            _tutorial = true; _tutorialStep = 0; _tutorialTimer = 0f;
+            _hud.SetTutorial(Loc.Get("tut1"));
+        }
+
+        /// <summary>Indicaciones del tutorial; cada paso avanza al cumplirse (o a los 12 s).</summary>
+        private void TickTutorial(float dt)
+        {
+            if (!_tutorial) return;
+            _tutorialTimer += dt;
+            var sim = _rules.Sim;
+            bool done = _tutorialStep switch
+            {
+                0 => sim.Chassis.Velocity.x > 6f,
+                1 => Mathf.Abs(sim.LastInput.Lean) > 0.5f,
+                2 => _rules.Combo > 1.01f || _rules.Score > 0,
+                3 => sim.NitroActive,
+                4 => _rules.Power > 0.3f,
+                5 => _rules.Knockout >= 1f || _tutorialTimer > 8f,
+                _ => _tutorialTimer > 4f,
+            };
+            if (!done && _tutorialTimer < 12f) return;
+            _tutorialStep++; _tutorialTimer = 0f;
+            if (_tutorialStep <= 5) _hud.SetTutorial(Loc.Get("tut" + (_tutorialStep + 1)));
+            else if (_tutorialStep == 6) _hud.SetTutorial(Loc.Get("tut_done"));
+            else
+            {
+                _tutorial = false;
+                _hud.SetTutorial(null);
+                SaveSystem.Data.tutorialDone = true;
+                SaveSystem.Save();
+            }
+        }
+
         private void StartLevel(string id, GameMode mode)
         {
+            _tutorial = false;
+            _hud.SetTutorial(null);
             LevelData data;
             if (id == "freestyle") data = LevelGenerator.FreestylePark(Random.Range(0, 100000));
             else if (id == "endless")
@@ -260,6 +312,7 @@ namespace RidgeRush.Game
             _rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
             _curr = _prev = _rules.Sim.CaptureState();
             _accumulator = 0f;
+            if (_replay) { _replay = false; _hud.SetReplay(false); }
             _slowMoTimer = 0f;
             _finishShown = false;
             _hud.HideFinish();
@@ -289,7 +342,11 @@ namespace RidgeRush.Game
         private void Update()
         {
             if (_rules == null) return;
+            if (_replay) { TickReplay(Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta)); return; }
             bool demo = _mode == GameMode.Demo;
+            // Garaje: la moto se ve parada y de cerca, girando la cámara a su alrededor.
+            if (demo && _menu != null && _menu.InGarage) { TickGarage(Time.unscaledDeltaTime); return; }
+            if (!demo) TickTutorial(Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta));
             if (!demo && _input.RestartPressed()) Restart();
             if (!demo && _input.BackPressed()) _hud.SetPaused(!_paused);
             float frameDt = Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta);
@@ -363,6 +420,76 @@ namespace RidgeRush.Game
             }
         }
 
+        // ------------------------------------------------------------------ garaje y repetición
+
+        private float _garageAngle;
+
+        /// <summary>Vista del garaje: moto parada en el inicio y cámara que gira lentamente a su alrededor.</summary>
+        private void TickGarage(float dt)
+        {
+            if (_rules.Sim.Chassis.Position.x > _level.Data.startX + 0.5f || _rules.State != RaceState.Ready) { Restart(); }
+            _garageAngle += dt * 18f;
+            var c = _bike.Chassis.position + new Vector3(-1.2f, 0.4f, 0f);
+            var offset = Quaternion.Euler(12f, _garageAngle - 90f, 0f) * new Vector3(0f, 0f, -4.6f);
+            mainCamera.transform.position = c + offset;
+            mainCamera.transform.LookAt(c);
+            mainCamera.fieldOfView = 40f;
+            _bike.Apply(_curr);
+            _rider.Pose(_bike.Chassis, _curr, dt);
+        }
+
+        private void StartReplay()
+        {
+            if (_replayData == null || _replayData.Length < 18) return;
+            _replay = true; _replayTime = 0f; _replayShot = 0; _replayShotTime = 0f;
+            _hud.SetReplay(true);
+            _rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
+        }
+
+        private void StopReplay()
+        {
+            _replay = false;
+            _hud.SetReplay(false);
+            _hud.ShowFinish(_rules, _bestBefore, LevelCatalog.Next(_level.Data.id) != null && _mode != GameMode.Endless);
+            _cam.Snap(_bike.Position);
+        }
+
+        /// <summary>Repite la carrera con cámaras de retransmisión que cambian cada pocos segundos.</summary>
+        private void TickReplay(float dt)
+        {
+            int frames = _replayData.Length / 9;
+            _replayTime += dt;
+            float f = _replayTime * GhostRate;
+            if (f >= frames - 1) { _replayTime = 0f; f = 0f; }
+            int a = (int)f, b = Mathf.Min(a + 1, frames - 1);
+            float t = f - a;
+            float L(int k) => Mathf.Lerp(_replayData[a * 9 + k], _replayData[b * 9 + k], t);
+            var st = new BikeState
+            {
+                ChassisPos = new Vec2(L(0), L(1)), ChassisAngle = L(2),
+                FrontWheelPos = new Vec2(L(3), L(4)), FrontWheelAngle = L(5),
+                RearWheelPos = new Vec2(L(6), L(7)), RearWheelAngle = L(8),
+            };
+            _bike.Apply(st);
+            _rider.Pose(_bike.Chassis, st, dt);
+
+            _replayShotTime += dt;
+            if (_replayShotTime > 3.5f) { _replayShotTime = 0f; _replayShot = (_replayShot + 1) % 4; }
+            var target = _bike.Chassis.position;
+            Vector3 camPos;
+            float fov;
+            switch (_replayShot)
+            {
+                case 0: camPos = target + new Vector3(-2f, 1.5f, -9f); fov = 45f; break;                 // lateral cercana
+                case 1: camPos = target + new Vector3(-6f, 0.4f, -4f); fov = 38f; break;                 // baja, a ras de suelo
+                case 2: camPos = new Vector3(target.x + 18f - _replayShotTime * 10f, target.y + 3f, -14f); fov = 30f; break; // teleobjetivo desde delante
+                default: camPos = target + new Vector3(0f, 9f, -18f); fov = 50f; break;                 // grúa alta
+            }
+            mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, camPos, _replayShotTime < 0.05f ? 1f : 1f - Mathf.Exp(-6f * dt));
+            mainCamera.transform.LookAt(target + Vector3.up * 0.5f);
+            mainCamera.fieldOfView = fov;
+        }
+
         /// <summary>Avanza los rivales al mismo ritmo que el jugador (salen cuando él arranca).</summary>
         private void StepRivals()
         {
@@ -434,6 +561,9 @@ namespace RidgeRush.Game
 
         private void OnFinished()
         {
+            SeasonPass.AddXp(SeasonPass.XpFor(_rules.Stars, _rules.Coins, true));
+            if (_tutorial) { _tutorial = false; _hud.SetTutorial(null); SaveSystem.Data.tutorialDone = true; SaveSystem.Save(); }
+            _replayData = _recording.ToArray();
             var id = _level.Data.id;
             bool best = false;
             if (_mode == GameMode.Freestyle)
@@ -477,6 +607,7 @@ namespace RidgeRush.Game
                     case SimEventType.Crashed when !_rider.Ragdoll:
                         if (!demo) { _cam.AddShake(0.9f); Haptics.Impact(1f, 0.8f); _audio.PlayCrash(); }
                         _rider.SetRagdoll(true, sim.Chassis.Velocity.ToV3(), sim.Chassis.AngularVelocity, sim.Chassis.Position.ToV3());
+                        _bike.AddDamage(0.35f);
                         break;
                     case SimEventType.GearUp:
                         if (!demo) { _audio.PlayShift(); Haptics.Impact(0.25f, 0.9f); }
@@ -506,7 +637,7 @@ namespace RidgeRush.Game
                     case RaceEventType.PickupNitro: _items.Burst(at, 15, volt); if (!demo) { _hud.Popup(Loc.Get("nitro_pick"), volt, 0.7f); Haptics.Impact(0.3f, 1f); } break;
                     case RaceEventType.PickupCoin: if (!demo) Haptics.Impact(0.15f, 1f); break;
                     case RaceEventType.Boost: if (!demo) { _hud.Popup(Loc.Get("boost"), volt, 0.6f); _cam.AddShake(0.2f); } break;
-                    case RaceEventType.Hit: _items.Burst(at, 20, new Color(1f, 0.8f, 0.4f)); if (!demo) { _hud.Popup(Loc.Get("hit"), ember, 0.7f); _cam.AddShake(0.6f); Haptics.Impact(0.8f, 0.4f); } break;
+                    case RaceEventType.Hit: _bike.AddDamage(0.15f); _items.Burst(at, 20, new Color(1f, 0.8f, 0.4f)); if (!demo) { _hud.Popup(Loc.Get("hit"), ember, 0.7f); _cam.AddShake(0.6f); Haptics.Impact(0.8f, 0.4f); } break;
                     case RaceEventType.Blocked: _items.Burst(at, 25, volt); if (!demo) _hud.Popup(Loc.Get("blocked"), volt, 0.7f); break;
                     case RaceEventType.PowerReady: if (!demo) { _hud.Popup(Loc.Get("power_ready"), volt, 1f); Haptics.Impact(0.5f, 1f); } break;
                     case RaceEventType.PowerActivated: if (!demo) _hud.Popup(Loc.Get("shield"), volt, 1f); break;

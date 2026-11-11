@@ -29,6 +29,10 @@ namespace RidgeRush.Game
         public event Action MenuRequested;
         public event Action NextRequested;
         public event Action PowerRequested;
+        public event Action ReplayRequested;
+        public event Action ReplayExitRequested;
+        private Text _tutorial;
+        private RectTransform _tutorialPanel, _replayBar;
         public event Action KnockoutRequested;
 
         private Image _powerFill, _koFill, _powerBtn, _koBtn;
@@ -120,6 +124,18 @@ namespace RidgeRush.Game
             _powerBtn = ActionButton(safe, Loc.Get("power"), new Vector2(0f, 0f), new Vector2(110f, 540f), Volt, () => PowerRequested?.Invoke(), out _powerText);
             _koBtn = ActionButton(safe, "K.O.", new Vector2(0f, 0f), new Vector2(270f, 540f), Ember, () => KnockoutRequested?.Invoke(), out _koText);
 
+            // Tutorial: indicación grande arriba.
+            _tutorialPanel = Panel("Tutorial", safe, new Vector2(0.5f, 1f), new Vector2(0f, -280f), new Vector2(1300f, 110f), new Color(0.07f, 0.08f, 0.09f, 0.8f));
+            _tutorial = Label("Text", _tutorialPanel, "", 40, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1260f, 110f));
+            _tutorial.color = Volt;
+            _tutorialPanel.gameObject.SetActive(false);
+
+            // Repetición: barra con el título y el botón de salir.
+            _replayBar = Rect("Replay", transform as RectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            Label("Title", _replayBar, Loc.Get("replay"), 56, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(300f, -70f), new Vector2(500f, 80f)).fontStyle = FontStyle.BoldAndItalic;
+            TextButton(_replayBar, Loc.Get("exit_replay"), new Vector2(1f, 0f), new Vector2(-300f, 100f), Steel, () => ReplayExitRequested?.Invoke());
+            _replayBar.gameObject.SetActive(false);
+
             BuildPause(safe);
             BuildFinish(safe);
         }
@@ -177,6 +193,20 @@ namespace RidgeRush.Game
         }
 
         public void SetVisible(bool visible) => _safe.gameObject.SetActive(visible);
+
+        public void SetTutorial(string text)
+        {
+            _tutorialPanel.gameObject.SetActive(!string.IsNullOrEmpty(text));
+            _tutorial.text = text ?? "";
+        }
+
+        /// <summary>Modo repetición: oculta el HUD y la pantalla de meta y muestra la barra de repetición.</summary>
+        public void SetReplay(bool on)
+        {
+            _replayBar.gameObject.SetActive(on);
+            _safe.gameObject.SetActive(!on);
+            _finishPanel.gameObject.SetActive(!on);
+        }
 
         public void SetLevelName(string name) => _levelName.text = name;
 
@@ -268,6 +298,7 @@ namespace RidgeRush.Game
             _finishCoins = Label("Coins", _finishPanel, "", 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.34f), Vector2.zero, new Vector2(900f, 60f));
             _finishCoins.color = Gold;
             TextButton(_finishPanel, Loc.Get("menu"), new Vector2(0.5f, 0.15f), new Vector2(-560f, 0f), Steel, () => MenuRequested?.Invoke());
+            TextButton(_finishPanel, Loc.Get("replay"), new Vector2(0.5f, 0.3f), new Vector2(0f, 0f), new Color(0.15f, 0.35f, 0.4f, 0.95f), () => ReplayRequested?.Invoke());
             TextButton(_finishPanel, Loc.Get("retry"), new Vector2(0.5f, 0.15f), new Vector2(0f, 0f), Steel, () => RestartRequested?.Invoke());
             _nextButton = TextButton(_finishPanel, Loc.Get("next"), new Vector2(0.5f, 0.15f), new Vector2(560f, 0f), Ember, () => NextRequested?.Invoke());
             _finishPanel.gameObject.SetActive(false);

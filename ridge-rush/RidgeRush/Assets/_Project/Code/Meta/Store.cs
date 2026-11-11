@@ -33,6 +33,7 @@ namespace RidgeRush.Game
             new StoreProduct { Id = Prefix + "gems1200", TitleEs = "Bóveda de gemas", TitleEn = "Gem vault", Gems = 1200, FallbackPrice = "9,99 €" },
             new StoreProduct { Id = Prefix + "starter", TitleEs = "Pack de inicio", TitleEn = "Starter pack", Gems = 300, Coins = 5000, FallbackPrice = "2,99 €" },
             new StoreProduct { Id = Prefix + "noads", TitleEs = "Sin anuncios", TitleEn = "No ads", NonConsumable = true, FallbackPrice = "3,99 €" },
+            new StoreProduct { Id = Prefix + "season1", TitleEs = "Pase premium T1", TitleEn = "Premium pass S1", NonConsumable = true, FallbackPrice = "4,99 €" },
             new StoreProduct { Id = "coins5000", TitleEs = "5.000 monedas", TitleEn = "5,000 coins", Coins = 5000, GemCost = 50 },
             new StoreProduct { Id = "coins15000", TitleEs = "15.000 monedas", TitleEn = "15,000 coins", Coins = 15000, GemCost = 120 },
         };
@@ -60,9 +61,12 @@ namespace RidgeRush.Game
             var p = Find(id);
             if (p == null) return "";
             if (p.GemCost > 0) return $"◆ {p.GemCost}";
-            if (p.NonConsumable && NoAds) return "✓";
+            if (IsOwned(p)) return "✓";
             return Prices.TryGetValue(id, out var price) ? price : p.FallbackPrice;
         }
+
+        private static bool IsOwned(StoreProduct p) =>
+            (p.Id == Prefix + "noads" && NoAds) || (p.Id == Prefix + "season1" && SaveSystem.Data.seasonPremium);
 
         public static StoreProduct Find(string id)
         {
@@ -81,7 +85,7 @@ namespace RidgeRush.Game
                 d.gems -= p.GemCost; Grant(p); done?.Invoke(true);
                 return;
             }
-            if (p.NonConsumable && NoAds) { done?.Invoke(true); return; }
+            if (IsOwned(p)) { done?.Invoke(true); return; }
             _pending = done;
 #if UNITY_IOS && !UNITY_EDITOR
             RRStore_Buy(id);
@@ -107,7 +111,8 @@ namespace RidgeRush.Game
         {
             var d = SaveSystem.Data;
             d.gems += p.Gems; d.coins += p.Coins;
-            if (p.NonConsumable) PlayerPrefs.SetInt("rr_noads", 1);
+            if (p.Id == Prefix + "noads") PlayerPrefs.SetInt("rr_noads", 1);
+            if (p.Id == Prefix + "season1") d.seasonPremium = true;
             SaveSystem.Save();
         }
 

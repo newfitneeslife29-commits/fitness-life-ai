@@ -63,6 +63,7 @@ Requisito previo: acuerdo de **apps de pago** firmado (Negocio → Acuerdos) y d
 | `com.ridgerush.promoto.gems1200` | Consumible | Bóveda de gemas | 1.200 gemas | 9,99 € |
 | `com.ridgerush.promoto.starter` | Consumible | Pack de inicio | 300 gemas + 5.000 monedas | 2,99 € |
 | `com.ridgerush.promoto.noads` | No consumible | Sin anuncios | Quita los anuncios | 3,99 € |
+| `com.ridgerush.promoto.season1` | No consumible | Pase premium T1 | Línea premium del pase de la temporada 1 | 4,99 € |
 
 Cada producto necesita una captura de revisión (la tienda del juego) y una nota para el revisor: "Se compra desde Menú → Tienda".
 

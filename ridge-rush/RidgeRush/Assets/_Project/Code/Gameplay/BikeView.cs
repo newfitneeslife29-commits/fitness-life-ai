@@ -82,7 +82,42 @@ namespace RidgeRush.Game
             }
         }
 
-        public void ResetDirt() { _dirt = 0f; UpdateDirt(default, 0f, 0f); }
+        public void ResetDirt() { _dirt = 0f; UpdateDirt(default, 0f, 0f); ResetDamage(); }
+
+        // ---- Daño visual (GDD §3): piezas torcidas, rayones (más oscuro) y piezas que se sueltan ----
+        private float _damage;
+        private Quaternion[] _plasticRest;
+        private Vector3[] _plasticPos;
+
+        /// <summary>Aplica daño (0..1 acumulado) tras un choque o un golpe fuerte. No afecta al rendimiento (GDD §4.1).</summary>
+        public void AddDamage(float amount)
+        {
+            if (Plastics == null || Plastics.Length == 0) return;
+            if (_plasticRest == null)
+            {
+                _plasticRest = new Quaternion[Plastics.Length];
+                _plasticPos = new Vector3[Plastics.Length];
+                for (int i = 0; i < Plastics.Length; i++) { _plasticRest[i] = Plastics[i].transform.localRotation; _plasticPos[i] = Plastics[i].transform.localPosition; }
+            }
+            _damage = Mathf.Clamp01(_damage + amount);
+            for (int i = 0; i < Plastics.Length; i++)
+            {
+                var t = Plastics[i].transform;
+                // Cada pieza se tuerce un poco en una dirección propia; con mucho daño, algunas cuelgan sueltas.
+                float sign = (i % 2 == 0) ? 1f : -1f;
+                t.localRotation = _plasticRest[i] * Quaternion.Euler(sign * 6f * _damage, 0f, sign * 9f * _damage * (i % 3));
+                if (_damage > 0.75f && i % 4 == 1) t.localPosition = _plasticPos[i] + new Vector3(0f, -0.05f, 0f) * _damage;
+            }
+            _dirt = Mathf.Max(_dirt, _damage * 0.6f); // rayones: la pintura se ve más sucia y apagada
+            UpdateDirt(default, 0f, 0f);
+        }
+
+        private void ResetDamage()
+        {
+            _damage = 0f;
+            if (_plasticRest == null) return;
+            for (int i = 0; i < Plastics.Length; i++) { Plastics[i].transform.localRotation = _plasticRest[i]; Plastics[i].transform.localPosition = _plasticPos[i]; }
+        }
     }
 
     /// <summary>
