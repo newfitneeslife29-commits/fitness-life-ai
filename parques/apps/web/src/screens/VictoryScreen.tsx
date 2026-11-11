@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
 import { Avatar } from '../components/Avatar';
 import { Background } from '../components/Background';
-import { CoinIcon, CurrencyPill } from '../components/Counter';
+import { CoinIcon, CurrencyPill, GemIcon } from '../components/Counter';
 import { humanSeat, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
@@ -51,8 +51,11 @@ export function VictoryScreen() {
         }, 2600),
       );
     }
-    res.achievements.forEach((a, i) => timers.push(setTimeout(() => fx.toast({ icon: a.badge, title: `¡Logro: ${a.name}!`, sub: `${a.desc} · +${a.gems} 💎` }), 2000 + i * 900)));
-    res.missions.forEach((m, i) => timers.push(setTimeout(() => fx.toast({ icon: '🎯', title: 'Misión completada', sub: `${m.text} · reclámala en Eventos` }), 3000 + i * 900)));
+    if (res.gems) timers.push(setTimeout(() => { fx.fly('gem', centerOf(rewardsRef.current), 5); fx.toast({ icon: '💎', title: t('+{n} gemas por ganar', { n: res.gems }) }); }, 1700));
+    res.achievements.slice(0, 4).forEach((a, i) => timers.push(setTimeout(() => fx.toast({ icon: a.badge, title: t('¡Logro desbloqueado!'), sub: `${t(a.name.replace(/ [IVXL]+$/, ''))} ${a.name.match(/[IVXL]+$/)?.[0] ?? ''} · +${a.coins} 🪙` }), 2200 + i * 900)));
+    if (res.achievements.length > 4) timers.push(setTimeout(() => fx.toast({ icon: '🏅', title: t('+{n} logros más', { n: res.achievements.length - 4 }) }), 6000));
+    res.missions.forEach((m, i) => timers.push(setTimeout(() => fx.toast({ icon: '🎯', title: t('Misión completada'), sub: `${t(m.text)} · ${t('reclámala en Eventos')}` }), 3200 + i * 900)));
+    if (res.passTiersGained > 0) timers.push(setTimeout(() => fx.toast({ icon: '🎟️', title: t('¡Subiste {n} nivel(es) en el pase!', { n: res.passTiersGained }) }), 4200));
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -77,9 +80,9 @@ export function VictoryScreen() {
         <CurrencyPill kind="gem" value={profile.gems} />
       </div>
       <motion.h1 className="victory-title" initial={{ scale: 0.3, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 12 }}>
-        {me < 0 ? '¡Partida terminada!' : won ? '¡Ganaste, parce! 🎉' : myPlace >= 0 ? `Quedaste ${myPlace + 1}º` : '¡Buena partida!'}
+        {me < 0 ? t('¡Partida terminada!') : won ? t('¡Ganaste, parce! 🎉') : myPlace >= 0 ? t('Quedaste {n}º', { n: myPlace + 1 }) : t('¡Buena partida!')}
       </motion.h1>
-      {me >= 0 && !won ? <p className="victory-sub">¡La próxima es tuya! Pilas con los soplos 😉</p> : null}
+      {me >= 0 && !won ? <p className="victory-sub">{t('¡La próxima es tuya! Pilas con los soplos 😉')}</p> : null}
 
       <div className="podium">
         {podium.map((i) => {
@@ -106,24 +109,24 @@ export function VictoryScreen() {
         <motion.div ref={rewardsRef} className="rewards card glossy" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
           <div className="reward">
             <span className="reward-icon"><CoinIcon size={30} /></span>
-            <span className="reward-val">+{outcome.coins + outcome.levelCoins}</span>
-            <span className="reward-lbl">monedas</span>
+            <span className="reward-val">{outcome.coins - outcome.entry >= 0 ? '+' : ''}{(outcome.coins - outcome.entry + outcome.levelCoins).toLocaleString()}</span>
+            <span className="reward-lbl">{outcome.entry ? t('ganancia (entrada {n})', { n: outcome.entry.toLocaleString() }) : t('monedas')}</span>
           </div>
           <div className="reward grow">
-            <span className="reward-lbl">Nivel {xpLvl.level}</span>
+            <span className="reward-lbl">{t('Nivel')} {xpLvl.level}</span>
             <div className="xpbar big">
               <motion.div className="xpbar-fill" initial={false} animate={{ width: `${(xpLvl.into / xpLvl.need) * 100}%` }} transition={{ duration: 1 }} />
             </div>
             <span className="reward-val small">+{outcome.xp} XP</span>
           </div>
           <div className="reward">
-            <span className="reward-icon">💥</span>
-            <span className="reward-val">{me >= 0 ? game.players[me]!.stats.captures : 0}</span>
-            <span className="reward-lbl">capturas</span>
+            <span className="reward-icon"><GemIcon size={28} /></span>
+            <span className="reward-val">+{outcome.gems}</span>
+            <span className="reward-lbl">{t('gemas')}</span>
           </div>
         </motion.div>
       ) : (
-        <div ref={rewardsRef} className="rule-note">{me < 0 ? 'Partida entre máquinas: sin premios.' : config.mode === 'local' ? 'Partida local de varios jugadores: sin premios individuales.' : ''}</div>
+        <div ref={rewardsRef} className="rule-note">{me < 0 ? t('Partida entre máquinas: sin premios.') : config.mode === 'local' ? t('Partida local de varios jugadores: sin premios individuales.') : ''}</div>
       )}
 
       <div className="results card glossy">
@@ -157,7 +160,7 @@ export function VictoryScreen() {
           </motion.button>
         ) : (
           <motion.button className="btn3d green shine" whileTap={{ scale: 0.93 }} onClick={() => { quit(); go('online'); }}>
-            🌐 Otra online
+            🌐 {t('Otra online')}
           </motion.button>
         )}
         <motion.button className="btn3d ghost" whileTap={{ scale: 0.93 }} onClick={() => { quit(); go('lobby'); }}>
@@ -171,12 +174,12 @@ export function VictoryScreen() {
             <motion.div className="levelup-card" initial={{ scale: 0.2, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 12 }}>
               <div className="lu-rays" />
               <span className="lu-star">⭐</span>
-              <h2>¡Subiste de nivel!</h2>
+              <h2>{t('¡Subiste de nivel!')}</h2>
               <div className="lu-level">{levelUp}</div>
               <p>
-                +{outcome?.levelCoins} <CoinIcon size={16} /> · +{outcome?.levelGems} 💎
+                +{outcome?.levelCoins.toLocaleString()} <CoinIcon size={16} />
               </p>
-              <small>Toca para seguir</small>
+              <small>{t('Toca para seguir')}</small>
             </motion.div>
           </motion.div>
         ) : null}

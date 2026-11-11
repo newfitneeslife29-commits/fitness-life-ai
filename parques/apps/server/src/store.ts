@@ -24,6 +24,8 @@ interface Data {
   tournaments: Record<string, Record<string, { points: number; games: number }>>;
   /** weekKey → ids que ya reclamaron */
   claims: Record<string, string[]>;
+  /** Compras con dinero real verificadas (id de sesión → registro). */
+  purchases: Record<string, { playerId: string; productId: string; at: number }>;
 }
 
 export const PRIZES = [
@@ -33,7 +35,7 @@ export const PRIZES = [
 ];
 
 export class Store {
-  private data: Data = { players: {}, tournaments: {}, claims: {} };
+  private data: Data = { players: {}, tournaments: {}, claims: {}, purchases: {} };
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private file: string | null) {
@@ -53,6 +55,12 @@ export class Store {
       mkdirSync(dirname(this.file!), { recursive: true });
       writeFileSync(this.file!, JSON.stringify(this.data));
     }, 500);
+  }
+
+  recordPurchase(grantId: string, playerId: string, productId: string) {
+    if (this.data.purchases[grantId]) return;
+    this.data.purchases[grantId] = { playerId, productId, at: Date.now() };
+    this.save();
   }
 
   upsertPlayer(p: Omit<PlayerRecord, 'rating' | 'wins' | 'games'>) {
@@ -76,6 +84,12 @@ export class Store {
       t.games++;
     });
     this.save();
+  }
+
+  /** Puesto en el ranking global (1 = primero, Infinity si no tiene partidas). */
+  rankOf(playerId: string): number {
+    const i = this.ranking('global').findIndex((r) => r.playerId === playerId);
+    return i < 0 ? Infinity : i + 1;
   }
 
   ranking(scope: 'global' | 'country' | 'friends', country?: string, friends?: string[]): RankRow[] {

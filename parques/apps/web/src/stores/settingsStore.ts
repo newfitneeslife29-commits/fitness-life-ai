@@ -3,8 +3,13 @@ import { persist } from 'zustand/middleware';
 import type { HouseRules } from '@parques/engine';
 import { safeStorage } from '../lib/storage';
 
+function detectLang(): Lang {
+  const l = (typeof navigator !== 'undefined' ? navigator.language : 'es').slice(0, 2);
+  return (['es', 'en', 'pt', 'fr'] as string[]).includes(l) ? (l as Lang) : 'en';
+}
+
 export type Theme = 'dark' | 'light';
-export type Lang = 'es' | 'en';
+export type Lang = 'es' | 'en' | 'pt' | 'fr';
 
 export interface Settings {
   sound: boolean;
@@ -27,7 +32,7 @@ export const useSettings = create<Settings>()(
       sound: true,
       music: true,
       vibration: true,
-      language: 'es',
+      language: detectLang(),
       theme: 'dark',
       houseRules: { soplar: true, triplePairPenalty: true, jailAttempts: 3 },
       turnSeconds: 20,

@@ -1,8 +1,10 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
 import { Avatar } from '../components/Avatar';
+import { isEmote } from './phrases';
 
 interface Props {
   player: PlayerState;
@@ -44,14 +46,14 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
         <div className="seat-sub">
           <span>👑 {crowned}/{player.pieces.length}</span>
           {level ? <span>{level}</span> : null}
-          {team !== null && team !== undefined ? <span>Pareja {team + 1}</span> : null}
+          {team !== null && team !== undefined ? <span>{tr('Pareja {n}', { n: team + 1 })}</span> : null}
         </div>
       </div>
       <AnimatePresence>
         {bubble ? (
           <motion.div
             key={bubble.id}
-            className="bubble"
+            className={`bubble ${isEmote(bubble.text) ? 'emote' : ''}`}
             initial={{ opacity: 0, scale: 0.6, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8 }}

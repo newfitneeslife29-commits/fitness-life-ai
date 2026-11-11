@@ -3,6 +3,7 @@
  * El servidor es la autoridad: guarda la semilla de los dados y valida cada jugada.
  */
 import type { Action, GameEvent, GameState, HouseRules } from './types';
+import type { TableId } from './economy';
 
 export interface NetSeat {
   side: number;
@@ -24,6 +25,9 @@ export interface RoomInfo {
   rules: Partial<HouseRules>;
   status: 'waiting' | 'playing' | 'over';
   kind: 'quick' | 'private';
+  /** Mesa (define la entrada que paga cada jugador). */
+  table: TableId;
+  entry: number;
 }
 
 export interface Deadlines {
@@ -44,13 +48,15 @@ export interface Hello {
   name: string;
   avatar: string;
   country: string;
+  /** Nivel del jugador (para las salas con nivel mínimo). */
+  level?: number;
 }
 
 export interface ClientToServer {
   hello: (h: Hello, ack: (r: { ok: true }) => void) => void;
-  quick_match: (ack: (r: { ok: boolean; error?: string }) => void) => void;
+  quick_match: (table: TableId, ack: (r: { ok: boolean; error?: string }) => void) => void;
   cancel_match: () => void;
-  create_private: (opts: { seats: number; rules: Partial<HouseRules> }, ack: (r: { ok: boolean; code?: string; error?: string }) => void) => void;
+  create_private: (opts: { seats: number; rules: Partial<HouseRules>; table?: TableId }, ack: (r: { ok: boolean; code?: string; error?: string }) => void) => void;
   join_private: (code: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
   start_private: (ack: (r: { ok: boolean; error?: string }) => void) => void;
   action: (a: Action, ack?: (r: { ok: boolean; error?: string }) => void) => void;

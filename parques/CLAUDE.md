@@ -83,6 +83,35 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
   Se puede cambiar por Supabase implementando la misma clase.
 - Protocolo compartido en `packages/engine/src/net.ts`. Pruebas: `room.test.ts`, `store.test.ts`, `server.test.ts` (Socket.IO real).
 
+## Economía, monetización y progreso (v0.6)
+- **Economía compartida** en `packages/engine/src/economy.ts` (cliente y servidor):
+  - Mesas (entrada que paga CADA jugador): Barrio 200 (nv 1), Ciudad 1.000 (nv 5), Capital 5.000 (nv 20),
+    Leyenda 25.000 (nv 50), Sala Élite 100.000 (nv 100), Top Leyendas 250.000 (solo online, top 100 del ranking).
+  - Reparto `payouts(entry, players, teams)`: 4 jugadores → 1º = su entrada + 75 % de las entradas del 3º y 4º,
+    2º recupera su entrada, 3º/4º nada. 6 jugadores → ganan 1º, 2º y 3º (1º +50 % y 2º +25 % de lo perdido,
+    3º recupera). 1 vs 1 → 1º = entrada + 75 % de la rival. Parejas → cada ganador = entrada + 75 %. La casa se queda el 25 %.
+  - El 1º de una mesa con apuesta gana **5 gemas** (`WINNER_GEMS`). Monedas iniciales: 1.000.
+  - Niveles hasta **2.000**: XP acumulada `100·(L−1) + 50·(L−1)²`, nivel 2000 = exactamente **200.000.000 XP**.
+    XP por partida `matchXp`: 50 al ganador en mesa de 200, crece con √entrada; 2º 80 %, resto 60 %; sin apuesta 10.
+  - **Toda partida contra la máquina con un humano paga entrada** (Setup y Mesas). Partidas locales de varios humanos son gratis y sin premios.
+- **Gemas**: solo para **emotes** en partida (`EMOTES` en `meta/catalog.ts`, 1–3 gemas). Se ganan quedando 1º, en el pase o comprándolas.
+- **Pagos con dinero real** (`apps/server/src/payments.ts` + `apps/web/src/lib/payments.ts`): Stripe Checkout por API REST.
+  El precio lo fija el servidor (`PRODUCTS` / `ITEM_PRICES_USD` del motor). Al volver (`?purchase=success&session_id=`) el
+  servidor verifica `payment_status = paid` y el cliente entrega (ids de compra deduplicados en `profile.grants`).
+  Variables: `STRIPE_SECRET_KEY` (sk_…), `STRIPE_CURRENCY` (usd por defecto). **Sin llave → modo prueba** (diálogo claro, no cobra).
+  ⚠️ El monedero vive en localStorage: antes de cobrar en producción hay que mover monedas/compras a cuentas del servidor (Supabase).
+- **Tienda**: tableros mayormente con dinero real (Caribe, Madera fina, Noche de rumba, Mármol real, Oro 24K, temporada) y pocos con monedas
+  (Eje Cafetero); igual dados/fichas/marcos/efectos. Paquetes de monedas y gemas en dólares. Objetos `currency: 'pass'` solo en el pase.
+- **Pase de batalla** mensual (`meta/battlepass.ts`, `screens/PassScreen.tsx`): 50 niveles, 150 XP de pase por nivel (la XP de las partidas),
+  camino gratis (monedas, gemas) y Premium (US$4,99; Élite +10 niveles US$9,99) con tableros Esmeralda y Galaxia, fichas Corona, dados Rubí, marco Diamante.
+- **Logros**: 1.205 generados por categorías × niveles I…L (`meta/achievements.ts`), recompensa en monedas, pantalla `AchievementsScreen`.
+- **Foto de perfil**: se recorta a 160×160 JPEG (`photoToDataUrl`), se guarda en el perfil y se envía al servidor (≤40 KB).
+- **Idiomas**: es (base), en, pt, fr. `t('texto en español', vars)`; traducciones en `lib/locales.ts`. `i18n.test.ts` falla si falta
+  una traducción o no coinciden las variables. Al agregar un texto nuevo: usar `t()`/`tr()` y añadirlo a `locales.ts`.
+- **Gráficos 3D** (SVG/CSS): tablero con canto/grosor y perspectiva (`BoardScene`, `BoardMini` para tienda/lobby/pase con prefijo de ids),
+  fichas tipo peón con sombreado (`PieceGlyph`, gradientes en `components/GlobalDefs.tsx`), dados cubo 3D CSS (`Cube`).
+- **Salas online por mesa**: `quick_match(table)`; el servidor valida nivel (enviado en `hello`) y el puesto en el ranking para Top Leyendas.
+
 ## Reglas implementadas
 1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores en orden de juego: amarillo, rojo, verde, azul (+ naranja y morado en 6).
 2. Dos dados; cada dado mueve una ficha distinta o la misma; también se puede mover la **suma** con una ficha (solo captura en la casilla final).
@@ -119,8 +148,10 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 4. ✅ Monedas y gemas, mesas con apuesta, tienda de skins, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
 5. ✅ Online: Node + Socket.IO, partida rápida, mesas privadas, reconexión, la IA reemplaza a quien abandona.
 6. ✅ Torneo semanal con tabla, ranking (global, país, amigos) y temporadas con skins.
+7. ✅ v0.6: economía con entradas y reparto, nivel 2000, pagos reales (Stripe), gemas para emotes, pase de batalla,
+   1.205 logros, foto de perfil, 4 idiomas, Sala Élite y Top Leyendas, gráficos 3D.
 
 ## Pendiente / ideas
-- Cuentas en la nube (Supabase) para no depender del dispositivo; hoy el perfil vive en localStorage y el servidor usa JSON.
-- Traducción al inglés completa (hoy: menús principales). Las frases del chat quedan en colombiano a propósito.
+- **Cuentas en la nube (Supabase) — necesario antes de cobrar dinero real**: hoy monedas/compras viven en localStorage y el servidor usa JSON.
+- Para publicar en Google Play / App Store se requieren sus sistemas de pago (Play Billing / StoreKit) en lugar de Stripe.
 - Online solo en tablero de 4 (6 jugadores es local/IA).

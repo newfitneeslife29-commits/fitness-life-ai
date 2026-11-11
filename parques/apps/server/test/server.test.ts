@@ -18,11 +18,11 @@ afterAll(async () => {
   srv.http.close();
 });
 
-async function client(id: string): Promise<Socket> {
+async function client(id: string, level = 1): Promise<Socket> {
   const s = connect(url, { transports: ['websocket'], forceNew: true });
   sockets.push(s);
   await new Promise<void>((r) => s.on('connect', () => r()));
-  await new Promise<void>((r) => s.emit('hello', { playerId: id, name: id, avatar: '🙂', country: 'CO' }, () => r()));
+  await new Promise<void>((r) => s.emit('hello', { playerId: id, name: id, avatar: '🙂', country: 'CO', level }, () => r()));
   return s;
 }
 const once = <T>(s: Socket, ev: string) => new Promise<T>((r) => s.once(ev, (x: T) => r(x)));
@@ -33,8 +33,8 @@ describe('servidor Socket.IO', () => {
     const b = await client('QUICK2');
     const syncA = once<any>(a, 'sync');
     const syncB = once<any>(b, 'sync');
-    a.emit('quick_match', () => {});
-    b.emit('quick_match', () => {});
+    a.emit('quick_match', 'barrio', () => {});
+    b.emit('quick_match', 'barrio', () => {});
     const [sa, sb] = await Promise.all([syncA, syncB]);
     expect(sa.room.roomId).toBe(sb.room.roomId);
     expect(new Set([sa.mySeat, sb.mySeat]).size).toBe(2);
@@ -86,5 +86,24 @@ describe('servidor Socket.IO', () => {
     expect(ack.ok).toBe(true);
     expect((await resync).mySeat).toBe(0);
     expect(created.ok).toBe(true);
+  }, 15000);
+
+  it('salas con requisitos: Élite pide nivel 100 y Top Leyendas el top del ranking', async () => {
+    const low = await client('LOWLVL', 3);
+    const r1 = await new Promise<any>((r) => low.emit('quick_match', 'elite', r));
+    expect(r1.ok).toBe(false);
+    expect(r1.error).toContain('100');
+    const high = await client('HIGHLV', 150);
+    const r2 = await new Promise<any>((r) => high.emit('quick_match', 'elite', r));
+    expect(r2.ok).toBe(true);
+    high.emit('cancel_match');
+    // Sin partidas no está en el ranking: no entra a Top Leyendas.
+    const r3 = await new Promise<any>((r) => high.emit('quick_match', 'top', r));
+    expect(r3.ok).toBe(false);
+    // QUICK1 jugó en la primera prueba: está en el top y tiene nivel suficiente.
+    const ranked = await client('QUICK1', 120);
+    const r4 = await new Promise<any>((r) => ranked.emit('quick_match', 'top', r));
+    expect(r4.ok).toBe(true);
+    ranked.emit('cancel_match');
   }, 15000);
 });

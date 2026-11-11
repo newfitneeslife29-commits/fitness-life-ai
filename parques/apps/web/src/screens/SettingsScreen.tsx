@@ -3,7 +3,7 @@ import { TopBar } from '../components/TopBar';
 import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
-import { useT } from '../lib/i18n';
+import { LANGUAGES, useT } from '../lib/i18n';
 import { play } from '../audio/audio';
 
 export function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
@@ -38,13 +38,19 @@ export function SettingsScreen() {
     <div className="screen settings-screen">
       <TopBar back title={t('Ajustes')} />
       <section className="card glossy setup-card">
-        <h3>🔊 Audio y juego</h3>
+        <h3>🔊 {t('Audio y juego')}</h3>
         <Toggle label={`🔈 ${t('Sonido')}`} value={s.sound} onChange={(v) => s.set({ sound: v })} />
         <Toggle label={`🎵 ${t('Música')}`} value={s.music} onChange={(v) => s.set({ music: v })} />
         <Toggle label={`📳 ${t('Vibración')}`} value={s.vibration} onChange={(v) => s.set({ vibration: v })} />
         <div className="row">
           <span>🌐 {t('Idioma')}</span>
-          <Segmented value={s.language} options={[{ v: 'es', label: 'Español' }, { v: 'en', label: 'English' }]} onChange={(v) => s.set({ language: v })} />
+          <select className="text-input slim" value={s.language} onChange={(e) => s.set({ language: e.target.value as typeof s.language })}>
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.flag} {l.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="row">
           <span>🎨 {t('Tema')}</span>
@@ -64,35 +70,35 @@ export function SettingsScreen() {
           <span>⏱ {t('Tiempo por turno')}</span>
           <Segmented value={s.turnSeconds} options={[10, 20, 30, 0].map((n) => ({ v: n, label: n ? `${n}s` : '∞' }))} onChange={(v) => s.set({ turnSeconds: v })} />
         </div>
-        <p className="rule-note">Doble 1 o doble 6 sacan todas las fichas; cualquier otro par saca 1 o 2. Las partidas en parejas se eligen en el modo Parejas.</p>
+        <p className="rule-note">{t('Doble 1 o doble 6 sacan todas las fichas; cualquier otro par saca 1 o 2.')}</p>
       </section>
 
       <section className="card glossy setup-card">
         <h3>👤 {t('Cuenta')}</h3>
         <div className="row">
-          <span>Código de amigo</span>
+          <span>{t('Código de amigo')}</span>
           <b className="code">{p.id}</b>
         </div>
         <div className="row">
-          <span>Servidor online</span>
-          <input className="text-input slim" placeholder="(mismo servidor)" value={s.serverUrl} onChange={(e) => s.set({ serverUrl: e.target.value })} />
+          <span>{t('Servidor online')}</span>
+          <input className="text-input slim" placeholder={t('(mismo servidor)')} value={s.serverUrl} onChange={(e) => s.set({ serverUrl: e.target.value })} />
         </div>
         <button className="btn3d small ghost" onClick={() => go('profile')}>
-          ✏️ Editar nombre, avatar y país
+          ✏️ {t('Editar nombre, foto y país')}
         </button>
         <button
           className="btn3d small red"
           onClick={() => {
-            if (confirm('¿Borrar todo tu progreso guardado en este dispositivo?')) {
+            if (confirm(t('¿Borrar todo tu progreso guardado en este dispositivo?'))) {
               p.reset();
               go('lobby');
             }
           }}
         >
-          🗑️ Borrar progreso
+          🗑️ {t('Borrar progreso')}
         </button>
       </section>
-      <p className="rule-note">Parqués · progreso guardado en este dispositivo</p>
+      <p className="rule-note">{t('Parqués · progreso guardado en este dispositivo')}</p>
     </div>
   );
 }

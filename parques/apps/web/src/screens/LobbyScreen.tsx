@@ -10,6 +10,9 @@ import { dailyStatus, dayKey } from '../meta/economy';
 import { missionDef } from '../meta/missions';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
+import { BoardMini } from '../game/Board';
+import { item } from '../meta/catalog';
+import { passSeasonId, tierFromXp } from '../meta/battlepass';
 
 function countdown(ms: number): string {
   const d = Math.floor(ms / 86400000);
@@ -34,6 +37,8 @@ export function LobbyScreen() {
   const upcoming = season ? null : nextSeason();
   const daily = dailyStatus(p.daily.lastClaim, p.daily.streak, dayKey());
   const giftReady = daily.canClaim || p.daily.lastSpin !== dayKey();
+  const passTier = tierFromXp(p.pass.season === passSeasonId() ? p.pass.xp : 0);
+  const passReady = Array.from({ length: passTier }, (_, i) => i + 1).filter((tier) => !p.pass.claimedFree.includes(tier) || (p.pass.premium && !p.pass.claimedPremium.includes(tier))).length;
   const missionsReady = [...p.missions.daily, ...p.missions.weekly].filter((m) => !m.claimed && m.progress >= missionDef(m.id).goal).length;
 
   const tile = (icon: string, title: string, sub: string, cls: string, onClick: () => void, badge?: string) => (
@@ -53,17 +58,17 @@ export function LobbyScreen() {
         <motion.button className="season-banner" style={{ ['--sa' as string]: season.colors[0], ['--sb' as string]: season.colors[1] }} whileTap={{ scale: 0.97 }} onClick={() => go('shop')}>
           <span className="sb-emoji">{season.emoji}</span>
           <span className="sb-text">
-            <b>{t('Temporada')}: {season.name}</b>
-            <small>Skins exclusivas · termina en {countdown(seasonEnd(season) - Date.now())}</small>
+            <b>{t('Temporada')}: {t(season.name)}</b>
+            <small>{t('Skins exclusivas · termina en {time}', { time: countdown(seasonEnd(season) - Date.now()) })}</small>
           </span>
-          <span className="sb-go">Ver ›</span>
+          <span className="sb-go">{t('Ver')} ›</span>
         </motion.button>
       ) : upcoming ? (
         <div className="season-banner muted">
           <span className="sb-emoji">{upcoming.season.emoji}</span>
           <span className="sb-text">
-            <b>Próxima temporada: {upcoming.season.name}</b>
-            <small>Empieza en {countdown(upcoming.startsAt - Date.now())}</small>
+            <b>{t('Próxima temporada')}: {t(upcoming.season.name)}</b>
+            <small>{t('Empieza en {time}', { time: countdown(upcoming.startsAt - Date.now()) })}</small>
           </span>
         </div>
       ) : null}
@@ -78,21 +83,24 @@ export function LobbyScreen() {
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('events')}>
             🎯
             {missionsReady ? <span className="side-dot">{missionsReady}</span> : null}
-            <small>Misiones</small>
+            <small>{t('Misiones')}</small>
           </motion.button>
         </div>
-        <motion.div className="hero-board" animate={{ y: [0, -8, 0], rotate: [-2, 2, -2] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+        <div className="hero-3d">
           <div className="hero-halo" />
-          <img src="icon.svg" alt="" />
-        </motion.div>
+          <div className="hero-3d-inner">
+            <BoardMini theme={item(p.equipped.board).board!} id="lobby" className="spin" />
+          </div>
+        </div>
         <div className="hero-side">
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('tournament')}>
             🏆
             <small>{t('Torneo')}</small>
           </motion.button>
-          <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('profile')}>
-            🏅
-            <small>{t('Perfil')}</small>
+          <motion.button className="side-btn pass" whileTap={{ scale: 0.88 }} onClick={() => go('pass')}>
+            🎟️
+            {passReady ? <span className="side-dot">{passReady}</span> : null}
+            <small>{t('Pase')}</small>
           </motion.button>
         </div>
       </div>

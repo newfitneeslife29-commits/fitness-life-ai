@@ -18,11 +18,11 @@ export function TopBar({ back, title }: { back?: boolean; title?: string }) {
         </motion.button>
       ) : (
         <motion.button className="topbar-me" whileTap={{ scale: 0.95 }} onClick={() => { play('tap'); go('profile'); }}>
-          <Avatar emoji={p.avatar} frameId={p.equipped.frame} size={46} level={lvl.level} ring={lvl.into / lvl.need} />
+          <Avatar emoji={p.avatar} photo={p.photo} frameId={p.equipped.frame} size={46} level={lvl.level} ring={lvl.max ? 1 : lvl.into / lvl.need} />
           <div className="topbar-name">
             <span>{p.name}</span>
             <div className="xpbar">
-              <motion.div className="xpbar-fill" initial={false} animate={{ width: `${(lvl.into / lvl.need) * 100}%` }} />
+              <motion.div className="xpbar-fill" initial={false} animate={{ width: `${lvl.max ? 100 : (lvl.into / lvl.need) * 100}%` }} />
             </div>
           </div>
         </motion.button>

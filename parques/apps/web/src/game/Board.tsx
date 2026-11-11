@@ -1,9 +1,8 @@
-import { memo, useMemo } from 'react';
+import { createContext, memo, useContext, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { COLORS_4, COLORS_6, homeFor, SQUARES_PER_SIDE, trackLength } from '@parques/engine';
 import type { Color, GameState, Move, PieceRef } from '@parques/engine';
 import {
-  armCell,
   boardBox,
   corridorCell,
   jailGeom,
@@ -23,6 +22,7 @@ import { Piece } from './Piece';
 import { FxLayer } from './Effects';
 import type { Fx } from '../stores/gameStore';
 import type { BoardTheme, EffectStyle, PieceStyle } from '../meta/catalog';
+import { tr } from '../lib/i18n';
 
 interface Props {
   game: GameState;
@@ -41,8 +41,14 @@ interface Props {
 
 const c = (color: Color) => `var(--${color})`;
 const cd = (color: Color) => `var(--${color}-dark)`;
-const tint = (color: Color, pct: number) => `color-mix(in srgb, ${c(color)} ${pct}%, white)`;
 const LINE = 'var(--board-line)';
+
+/** Prefijo de ids SVG: permite varios tableros con temas distintos en la misma pantalla. */
+const Idp = createContext('b-');
+const useUrl = () => {
+  const p = useContext(Idp);
+  return (id: string) => `url(#${p}${id})`;
+};
 
 function Label({ cell, text, font }: { cell: Cell; text: string; font: number }) {
   return (
@@ -57,8 +63,8 @@ function Label({ cell, text, font }: { cell: Cell; text: string; font: number })
       fontSize={font}
       letterSpacing={0.5}
       fill="#fff"
-      stroke="rgba(0,0,0,.45)"
-      strokeWidth={3}
+      stroke="rgba(0,0,0,.5)"
+      strokeWidth={3.5}
       paintOrder="stroke"
       pointerEvents="none"
     >
@@ -67,86 +73,113 @@ function Label({ cell, text, font }: { cell: Cell; text: string; font: number })
   );
 }
 
-/** Casilla de color con efecto 3D (franja clara arriba). */
+/** Casilla de color con relieve: brillo arriba, sombra abajo. */
 function SolidCell({ cell, color }: { cell: Cell; color: Color }) {
+  const url = useUrl();
   return (
     <g>
       <polygon points={cell.points} fill={c(color)} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
-      <polygon points={cell.points} fill="url(#cellGloss)" pointerEvents="none" />
+      <polygon points={cell.points} fill={url('cellGloss')} pointerEvents="none" />
     </g>
   );
 }
 
-/** Capa estática del tablero (memoizada: no cambia durante la partida). */
-const BoardBase = memo(function BoardBase({ sides, active, theme }: { sides: 4 | 6; active: boolean[]; theme: BoardTheme }) {
+/** Tablero estático (sin fichas): canto 3D, cárceles, casillas, pasillos y cielo. */
+export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, labels = true }: { sides: 4 | 6; active: boolean[]; theme: BoardTheme; rot: number; labels?: boolean }) {
+  const url = useUrl();
   const colors = sides === 4 ? COLORS_4 : COLORS_6;
   const len = trackLength(sides);
   const { font } = params(sides);
   const sky = skyRadius(sides);
+  const idp = useContext(Idp);
+  const cell = theme.cell ?? null;
+  const SALIDA = labels ? tr('SALIDA') : '';
+  const SEGURO = labels ? tr('SEGURO') : '';
+  const LLEGADA = labels ? tr('LLEGADA') : '';
 
   return (
     <g>
-      {/* Marco */}
-      <polygon points={outlinePoints(sides, 16)} fill={theme.frame} stroke={theme.frameDark} strokeWidth={10} strokeLinejoin="round" />
-      <polygon points={outlinePoints(sides, 2)} fill="url(#skyBg)" stroke={theme.frameDark} strokeWidth={4} strokeLinejoin="round" />
+      {/* Canto del tablero (grosor 3D) dibujado en pantalla, debajo del tablero */}
+      {[34, 26, 18, 10].map((dy, i) => (
+        <g key={dy} transform={`rotate(${-rot}) translate(0 ${dy}) rotate(${rot})`}>
+          <polygon points={outlinePoints(sides, 16)} fill={i === 0 ? 'rgba(0,0,0,.45)' : theme.slab} stroke={theme.frameDark} strokeWidth={i === 0 ? 0 : 6} strokeLinejoin="round" style={i === 0 ? { filter: 'blur(6px)' } : undefined} />
+        </g>
+      ))}
 
-      {/* Cielo */}
-      <circle r={sky + 10} fill={theme.frameDark} opacity={0.25} />
-      <circle r={sky} fill="url(#skyCircle)" stroke="#fff" strokeWidth={6} />
+      {/* Marco con biselado */}
+      <polygon points={outlinePoints(sides, 16)} fill={theme.frame} stroke={theme.frameDark} strokeWidth={8} strokeLinejoin="round" />
+      <polygon points={outlinePoints(sides, 16)} fill={url('frameGloss')} />
+      <polygon points={outlinePoints(sides, 2)} fill={url('skyBg')} stroke={theme.frameDark} strokeWidth={5} strokeLinejoin="round" />
+      <polygon points={outlinePoints(sides, 2)} fill="none" stroke="rgba(0,0,0,.25)" strokeWidth={14} strokeLinejoin="round" style={{ filter: 'blur(3px)' }} />
+
+      {/* Cielo con volumen */}
+      <circle r={sky + 14} fill={theme.frameDark} opacity={0.35} />
+      <circle r={sky + 6} fill="#fff" />
+      <circle r={sky} fill={url('skyCircle')} />
+      <circle r={sky} fill="none" stroke="rgba(0,0,0,.22)" strokeWidth={10} style={{ filter: 'blur(2px)' }} />
       <Deco kind={theme.deco} sky={sky} />
+      <ellipse cx={-sky * 0.25} cy={-sky * 0.45} rx={sky * 0.55} ry={sky * 0.28} fill="rgba(255,255,255,.28)" transform={`rotate(${-rot})`} />
 
-      {/* Cárceles */}
+      {/* Cárceles hundidas con rejas */}
       {colors.map((color, side) => {
         const j = jailGeom(sides, side);
         const u = j.axis;
         const v = { x: -u.y, y: u.x };
         const span = sides === 4 ? 190 : 130;
+        const clip = `${idp}jail-${sides}-${side}`;
         return (
-          <g key={`jail-${side}`} opacity={active[side] ? 1 : 0.4}>
-            <clipPath id={`jail-clip-${sides}-${side}`}>
+          <g key={`jail-${side}`} opacity={active[side] ? 1 : 0.45}>
+            <clipPath id={clip}>
               <polygon points={j.points} />
             </clipPath>
             <polygon points={j.points} fill={c(color)} />
-            <polygon points={j.points} fill="url(#jailGloss)" pointerEvents="none" />
-            <g clipPath={`url(#jail-clip-${sides}-${side})`}>
-            {/* Candado */}
-            <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={0.35}>
-              <rect x={-34} y={-14} width={68} height={52} rx={10} fill={cd(color)} />
-              <path d="M-20 -14 V-30 A20 20 0 0 1 20 -30 V-14" fill="none" stroke={cd(color)} strokeWidth={10} />
+            <g clipPath={`url(#${clip})`}>
+              <polygon points={j.points} fill="none" stroke="rgba(0,0,0,.35)" strokeWidth={28} style={{ filter: 'blur(8px)' }} />
+              <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={0.3}>
+                <rect x={-34} y={-14} width={68} height={52} rx={10} fill={cd(color)} />
+                <path d="M-20 -14 V-30 A20 20 0 0 1 20 -30 V-14" fill="none" stroke={cd(color)} strokeWidth={10} />
+              </g>
+              {[-2, -1, 0, 1, 2].map((k) => {
+                const o = k * (sides === 4 ? 44 : 32);
+                const f = 1 - Math.abs(k) * 0.18;
+                const a = { x: j.center.x + v.x * o - u.x * span * f, y: j.center.y + v.y * o - u.y * span * f };
+                const b = { x: j.center.x + v.x * o + u.x * span * f, y: j.center.y + v.y * o + u.y * span * f };
+                return (
+                  <g key={k}>
+                    <line x1={a.x + 6} y1={a.y + 8} x2={b.x + 6} y2={b.y + 8} stroke="rgba(0,0,0,.3)" strokeWidth={13} strokeLinecap="round" />
+                    <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={cd(color)} strokeWidth={14} strokeLinecap="round" />
+                    <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={c(color)} strokeWidth={8} strokeLinecap="round" />
+                    <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="rgba(255,255,255,.55)" strokeWidth={3} strokeLinecap="round" />
+                  </g>
+                );
+              })}
             </g>
-            {/* Rejas diagonales */}
-            {[-2, -1, 0, 1, 2].map((k) => {
-              const o = k * (sides === 4 ? 44 : 32);
-              const a = { x: j.center.x + v.x * o - u.x * span * (1 - Math.abs(k) * 0.18), y: j.center.y + v.y * o - u.y * span * (1 - Math.abs(k) * 0.18) };
-              const b = { x: j.center.x + v.x * o + u.x * span * (1 - Math.abs(k) * 0.18), y: j.center.y + v.y * o + u.y * span * (1 - Math.abs(k) * 0.18) };
-              return (
-                <g key={k}>
-                  <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={cd(color)} strokeWidth={13} strokeLinecap="round" />
-                  <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="rgba(255,255,255,.35)" strokeWidth={4} strokeLinecap="round" />
-                </g>
-              );
-            })}
-            </g>
+            <polygon points={j.points} fill={url('jailGloss')} pointerEvents="none" />
             <polygon points={j.points} fill="none" stroke={LINE} strokeWidth={6} strokeLinejoin="round" />
           </g>
         );
       })}
 
-      {/* Recorrido: casillas claras teñidas del color de cada tramo, SALIDA y SEGURO de color */}
+      {/* Recorrido */}
       {Array.from({ length: len }, (_, sq) => {
-        const cell = trackCell(sides, sq);
+        const cl = trackCell(sides, sq);
         const side = Math.floor(sq / SQUARES_PER_SIDE);
         const o = sq % SQUARES_PER_SIDE;
         const color = colors[side]!;
         if (o === 0 || o === 5 || o === 12) {
           return (
             <g key={`sq-${sq}`}>
-              <SolidCell cell={cell} color={color} />
-              <Label cell={cell} text={o === 5 ? 'SALIDA' : 'SEGURO'} font={font} />
+              <SolidCell cell={cl} color={color} />
+              {labels ? <Label cell={cl} text={o === 5 ? SALIDA : SEGURO} font={font} /> : null}
             </g>
           );
         }
-        return <polygon key={`sq-${sq}`} points={cell.points} fill={tint(color, theme.tint)} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />;
+        return (
+          <g key={`sq-${sq}`}>
+            <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
+            <polygon points={cl.points} fill={url('tileGloss')} pointerEvents="none" />
+          </g>
+        );
       })}
 
       {/* Pasillos y llegada */}
@@ -156,10 +189,9 @@ const BoardBase = memo(function BoardBase({ sides, active, theme }: { sides: 4 |
             <SolidCell key={i} cell={corridorCell(sides, side, i + 1)} color={color} />
           ))}
           <SolidCell cell={llegadaCell(sides, side)} color={color} />
-          <Label cell={llegadaCell(sides, side)} text="LLEGADA" font={font} />
+          {labels ? <Label cell={llegadaCell(sides, side)} text={LLEGADA} font={font} /> : null}
         </g>
       ))}
-
     </g>
   );
 });
@@ -176,7 +208,7 @@ function Deco({ kind, sky }: { kind: BoardTheme['deco']; sky: number }) {
       </g>
     );
   }
-  const glyph = { flowers: '🌸', snow: '❄️', coffee: '☕', confetti: '🎉', stars: '⭐' }[kind];
+  const glyph = { flowers: '🌸', snow: '❄️', coffee: '☕', confetti: '🎉', stars: '⭐', gold: '✨', marble: '🏛️', wood: '🍂' }[kind];
   return (
     <g pointerEvents="none">
       {spots.map(([x, y, k], i) => (
@@ -191,43 +223,66 @@ function Deco({ kind, sky }: { kind: BoardTheme['deco']; sky: number }) {
 function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} opacity={0.95}>
+      <ellipse cx={0} cy={9} rx={34} ry={10} fill="#b9dcf5" />
       <ellipse cx={0} cy={6} rx={34} ry={13} fill="#fff" />
       <circle cx={-14} cy={0} r={13} fill="#fff" />
       <circle cx={6} cy={-6} r={17} fill="#fff" />
       <circle cx={22} cy={2} r={11} fill="#fff" />
-      <ellipse cx={0} cy={14} rx={30} ry={5} fill="#cfe8fb" />
     </g>
   );
 }
 
+/** Definiciones de gradientes (con prefijo para que convivan varios tableros). */
 export function BoardDefs({ theme }: { theme: BoardTheme }) {
+  const p = useContext(Idp);
   return (
     <defs>
-      <radialGradient id="skyBg" cx="50%" cy="50%" r="60%">
+      <radialGradient id={`${p}skyBg`} cx="50%" cy="45%" r="62%">
         <stop offset="0%" stopColor={theme.sky[0]} />
         <stop offset="60%" stopColor={theme.sky[1]} />
         <stop offset="100%" stopColor={theme.sky[2]} />
       </radialGradient>
-      <radialGradient id="skyCircle" cx="45%" cy="35%" r="70%">
+      <radialGradient id={`${p}skyCircle`} cx="40%" cy="30%" r="75%">
         <stop offset="0%" stopColor={theme.circle[0]} />
         <stop offset="100%" stopColor={theme.circle[1]} />
       </radialGradient>
-      <linearGradient id="cellGloss" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="rgba(255,255,255,.35)" />
-        <stop offset="45%" stopColor="rgba(255,255,255,.05)" />
-        <stop offset="100%" stopColor="rgba(0,0,0,.12)" />
-      </linearGradient>
-      <radialGradient id="jailGloss" cx="35%" cy="30%" r="80%">
+      <linearGradient id={`${p}frameGloss`} x1="0" y1="0" x2="0.3" y2="1">
         <stop offset="0%" stopColor="rgba(255,255,255,.45)" />
-        <stop offset="50%" stopColor="rgba(255,255,255,.05)" />
-        <stop offset="100%" stopColor="rgba(0,0,0,.25)" />
-      </radialGradient>
-      <radialGradient id="pieceShine" cx="35%" cy="30%" r="65%">
-        <stop offset="0%" stopColor="rgba(255,255,255,.95)" />
-        <stop offset="35%" stopColor="rgba(255,255,255,.25)" />
-        <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        <stop offset="35%" stopColor="rgba(255,255,255,.05)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,.3)" />
+      </linearGradient>
+      <linearGradient id={`${p}cellGloss`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="rgba(255,255,255,.5)" />
+        <stop offset="40%" stopColor="rgba(255,255,255,.06)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,.18)" />
+      </linearGradient>
+      <linearGradient id={`${p}tileGloss`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="rgba(255,255,255,.7)" />
+        <stop offset="55%" stopColor="rgba(255,255,255,0)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,.08)" />
+      </linearGradient>
+      <radialGradient id={`${p}jailGloss`} cx="35%" cy="25%" r="85%">
+        <stop offset="0%" stopColor="rgba(255,255,255,.45)" />
+        <stop offset="45%" stopColor="rgba(255,255,255,.04)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,.28)" />
       </radialGradient>
     </defs>
+  );
+}
+
+/** Miniatura 3D de un tablero (tienda, lobby). */
+export function BoardMini({ theme, id, labels = false, className = '' }: { theme: BoardTheme; id: string; labels?: boolean; className?: string }) {
+  const box = boardBox(4);
+  const rot = viewRotation(4, 0);
+  return (
+    <Idp.Provider value={`${id}-`}>
+      <svg viewBox={`${-box.w - 10} ${-box.h - 10} ${box.w * 2 + 20} ${box.h * 2 + 60}`} className={`board-mini ${className}`} style={{ ['--board-line' as string]: theme.line }} aria-hidden>
+        <BoardDefs theme={theme} />
+        <g transform={`rotate(${rot})`}>
+          <BoardScene sides={4} active={[true, true, true, true]} theme={theme} rot={rot} labels={labels} />
+        </g>
+      </svg>
+    </Idp.Provider>
   );
 }
 
@@ -269,39 +324,47 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
     return items;
   }, [view, game.players, sides]);
 
+  // Orden de dibujo: las fichas más abajo en pantalla tapan a las de atrás (efecto 3D); las movibles encima.
+  const t = (rot * Math.PI) / 180;
+  const screenY = (p: Pt) => p.x * Math.sin(t) + p.y * Math.cos(t);
+  const ordered = [...pieces].sort((a, b) => {
+    const ma = Number(movable.has(`${a.ref.owner}-${a.ref.index}`));
+    const mb = Number(movable.has(`${b.ref.owner}-${b.ref.index}`));
+    return ma - mb || screenY(a.at) - screenY(b.at);
+  });
+
   return (
-    <svg viewBox={`${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2}`} className="board-svg" role="img" aria-label="Tablero de parqués" style={{ ['--board-line' as string]: theme.line }}>
-      <BoardDefs theme={theme} />
-      <g transform={`rotate(${rot})`}>
-        <BoardBase sides={sides} active={activeSides} theme={theme} />
+    <Idp.Provider value="g-">
+      <svg viewBox={`${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2 + 40}`} className="board-svg" role="img" aria-label={tr('Tablero de parqués')} style={{ ['--board-line' as string]: theme.line }}>
+        <BoardDefs theme={theme} />
+        <g transform={`rotate(${rot})`}>
+          <BoardScene sides={sides} active={activeSides} theme={theme} rot={rot} />
 
-        {targets.map((t, i) => (
-          <g key={`t-${i}`} onClick={() => onTarget(t.move)} style={{ cursor: 'pointer' }} data-target={t.label}>
-            <motion.circle
-              cx={t.at.x}
-              cy={t.at.y}
-              r={24}
-              fill="rgba(255,255,255,.55)"
-              stroke="#fff"
-              strokeWidth={4}
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: [1, 1.18, 1], opacity: 1 }}
-              transition={{ duration: 0.9, repeat: Infinity }}
-              style={{ transformOrigin: `${t.at.x}px ${t.at.y}px`, transformBox: 'view-box' }}
-            />
-            <g transform={`rotate(${-rot} ${t.at.x} ${t.at.y})`}>
-              <rect x={t.at.x + 8} y={t.at.y - 52} width={t.label.length > 2 ? 58 : 36} height={34} rx={12} fill="#2a1660" stroke="#fff" strokeWidth={3} />
-              <text x={t.at.x + 8 + (t.label.length > 2 ? 29 : 18)} y={t.at.y - 27} textAnchor="middle" fontSize={24} fontWeight={900} fill="#fff" fontFamily="Nunito">
-                {t.label}
-              </text>
+          {targets.map((tg, i) => (
+            <g key={`t-${i}`} onClick={() => onTarget(tg.move)} style={{ cursor: 'pointer' }} data-target={tg.label}>
+              <motion.circle
+                cx={tg.at.x}
+                cy={tg.at.y}
+                r={24}
+                fill="rgba(255,255,255,.55)"
+                stroke="#fff"
+                strokeWidth={4}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: [1, 1.18, 1], opacity: 1 }}
+                transition={{ duration: 0.9, repeat: Infinity }}
+                style={{ transformOrigin: `${tg.at.x}px ${tg.at.y}px`, transformBox: 'view-box' }}
+              />
+              <g transform={`rotate(${-rot} ${tg.at.x} ${tg.at.y})`}>
+                <rect x={tg.at.x + 8} y={tg.at.y - 58} width={tg.label.length > 2 ? 58 : 36} height={34} rx={12} fill="#2a1660" stroke="#fff" strokeWidth={3} />
+                <text x={tg.at.x + 8 + (tg.label.length > 2 ? 29 : 18)} y={tg.at.y - 33} textAnchor="middle" fontSize={24} fontWeight={900} fill="#fff" fontFamily="Nunito">
+                  {tg.label}
+                </text>
+              </g>
+              <circle cx={tg.at.x} cy={tg.at.y} r={34} fill="transparent" />
             </g>
-            <circle cx={t.at.x} cy={t.at.y} r={34} fill="transparent" />
-          </g>
-        ))}
+          ))}
 
-        {[...pieces]
-          .sort((a, b) => Number(movable.has(`${a.ref.owner}-${a.ref.index}`)) - Number(movable.has(`${b.ref.owner}-${b.ref.index}`)))
-          .map((p) => {
+          {ordered.map((p) => {
             const key = `${p.ref.owner}-${p.ref.index}`;
             return (
               <Piece
@@ -310,6 +373,7 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
                 at={p.at}
                 pos={p.pos}
                 color={p.color}
+                rot={rot}
                 movable={movable.has(key)}
                 selected={!!selected && selected.owner === p.ref.owner && selected.index === p.ref.index}
                 crowned={p.pos === homeFor(sides)}
@@ -319,10 +383,9 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
             );
           })}
 
-        <FxLayer fx={fx} rot={rot} effect={effect} />
-      </g>
-    </svg>
+          <FxLayer fx={fx} rot={rot} effect={effect} />
+        </g>
+      </svg>
+    </Idp.Provider>
   );
 }
-
-export { armCell };

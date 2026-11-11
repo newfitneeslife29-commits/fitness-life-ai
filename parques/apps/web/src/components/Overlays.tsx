@@ -4,9 +4,26 @@ import { CoinIcon, GemIcon } from './Counter';
 
 /** Capa global: monedas/gemas que vuelan al contador y avisos. */
 export function Overlays() {
-  const { flyers, toasts } = useFx();
+  const { flyers, toasts, ask } = useFx();
   return (
     <>
+      <AnimatePresence>
+        {ask ? (
+          <motion.div className="modal-backdrop ask-layer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="modal card glossy" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.85 }}>
+              <div className="ask-icon">{ask.icon}</div>
+              <h2 className="modal-title">{ask.title}</h2>
+              <p className="modal-text">{ask.text}</p>
+              <button className="btn3d green wide" onClick={() => ask.resolve(true)}>
+                {ask.ok}
+              </button>
+              <button className="btn3d ghost wide" onClick={() => ask.resolve(false)}>
+                {ask.cancel}
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <div className="fly-layer" aria-hidden>
         {flyers.map((f) => {
           const mid = { x: (f.from.x + f.to.x) / 2 + (Math.random() - 0.5) * 120, y: Math.min(f.from.y, f.to.y) - 80 };

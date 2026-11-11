@@ -42,7 +42,7 @@ export function RankingScreen() {
       <TopBar back title={t('Ranking')} />
       <div className="tabs wide">
         <button className={scope === 'global' ? 'on' : ''} onClick={() => setScope('global')}>🌎 Global</button>
-        <button className={scope === 'country' ? 'on' : ''} onClick={() => setScope('country')}>{country?.flag} {country?.name}</button>
+        <button className={scope === 'country' ? 'on' : ''} onClick={() => setScope('country')}>{country?.flag} {t(country?.name ?? '')}</button>
         <button className={scope === 'friends' ? 'on' : ''} onClick={() => setScope('friends')}>👥 {t('Amigos')}</button>
       </div>
       {loading ? (
@@ -50,14 +50,14 @@ export function RankingScreen() {
       ) : rows === null ? (
         <section className="card glossy setup-card center">
           <span className="quick-hero">📡</span>
-          <h3>Ranking sin conexión</h3>
-          <p className="rule-note">El ranking vive en el servidor online. Inícialo con <code>npm run dev:server</code> y juega partidas online para sumar trofeos.</p>
+          <h3>{t('Ranking sin conexión')}</h3>
+          <p className="rule-note">{t('El ranking vive en el servidor online. Inícialo con npm run dev:server y juega partidas online para sumar trofeos.')}</p>
         </section>
       ) : rows.length === 0 ? (
         <section className="card glossy setup-card center">
           <span className="quick-hero">🏁</span>
-          <h3>Todavía no hay nadie aquí</h3>
-          <p className="rule-note">¡Juega una partida online y sé el primero!</p>
+          <h3>{t('Todavía no hay nadie aquí')}</h3>
+          <p className="rule-note">{t('¡Juega una partida online y sé el primero!')}</p>
         </section>
       ) : (
         <AnimatePresence mode="wait">
@@ -84,7 +84,7 @@ export function RankingScreen() {
                   <Avatar emoji={r.avatar} size={36} />
                   <span className="rr-name">
                     {flag(r.country)} {r.name}
-                    <small>{r.wins} victorias · {r.games} partidas</small>
+                    <small>{t('{w} victorias · {g} partidas', { w: r.wins, g: r.games })}</small>
                   </span>
                   <span className="rr-rating">🏆 {r.rating}</span>
                 </div>

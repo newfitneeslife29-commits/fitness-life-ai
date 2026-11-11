@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { motion } from 'framer-motion';
 
 /** Logo de Parqués: el ícono (mini tablero clásico) + letras en los colores del juego. */
@@ -27,7 +28,7 @@ export function Logo({ size = 1 }: { size?: number }) {
           </motion.span>
         ))}
       </span>
-      <span className="logo-small">Colombiano</span>
+      <span className="logo-small">{tr('Colombiano')}</span>
     </div>
   );
 }

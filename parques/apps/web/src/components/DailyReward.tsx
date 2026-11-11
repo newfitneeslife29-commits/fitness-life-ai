@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { motion, useAnimationControls } from 'framer-motion';
 import { Modal } from './Modal';
-import { CoinIcon, GemIcon } from './Counter';
+import { CoinIcon } from './Counter';
+import { useT } from '../lib/i18n';
 import { DAILY_REWARDS, ROULETTE, dailyStatus, dayKey } from '../meta/economy';
 import { useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
@@ -13,6 +14,7 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
   const fx = useFx();
   const today = dayKey();
   const st = dailyStatus(p.daily.lastClaim, p.daily.streak, today);
+  const t = useT();
   const canSpin = p.daily.lastSpin !== today;
   const [tab, setTab] = useState<'streak' | 'wheel'>('streak');
   const btn = useRef<HTMLButtonElement>(null);
@@ -23,23 +25,22 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
     play('coin');
     const from = centerOf(btn.current);
     fx.fly('coin', from, 10);
-    if (r.gems) fx.fly('gem', from, 4);
-    fx.toast({ icon: '🎁', title: `¡Día ${r.day} reclamado!`, sub: `+${r.coins} monedas${r.gems ? ` · +${r.gems} gemas` : ''}` });
+    fx.toast({ icon: '🎁', title: t('¡Día {n} reclamado!', { n: r.day }), sub: t('+{n} monedas', { n: r.coins }) });
   };
 
   return (
     <Modal open={open} onClose={onClose} className="daily-modal">
       <div className="tabs">
         <button className={tab === 'streak' ? 'on' : ''} onClick={() => setTab('streak')}>
-          🎁 Racha diaria
+          🎁 {t('Racha diaria')}
         </button>
         <button className={tab === 'wheel' ? 'on' : ''} onClick={() => setTab('wheel')}>
-          🎡 Ruleta {canSpin ? <span className="dot" /> : null}
+          🎡 {t('Ruleta')} {canSpin ? <span className="dot" /> : null}
         </button>
       </div>
       {tab === 'streak' ? (
         <>
-          <h2 className="modal-title">¡Entra todos los días!</h2>
+          <h2 className="modal-title">{t('¡Entra todos los días!')}</h2>
           <div className="daily-grid">
             {DAILY_REWARDS.map((r, i) => {
               const day = i + 1;
@@ -52,16 +53,16 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
                   animate={current ? { y: [0, -5, 0] } : undefined}
                   transition={current ? { duration: 1.2, repeat: Infinity } : undefined}
                 >
-                  <span className="dd-label">Día {day}</span>
-                  <span className="dd-icon">{day === 7 ? '🎁' : r.gems ? <GemIcon size={30} /> : <CoinIcon size={30} />}</span>
-                  <span className="dd-val">{r.coins}{r.gems ? ` +${r.gems}💎` : ''}</span>
+                  <span className="dd-label">{t('Día {n}', { n: day })}</span>
+                  <span className="dd-icon">{day === 7 ? '🎁' : <CoinIcon size={30} />}</span>
+                  <span className="dd-val">{r.coins}</span>
                   {done ? <span className="dd-check">✓</span> : null}
                 </motion.div>
               );
             })}
           </div>
           <motion.button ref={btn} className="btn3d green wide shine" whileTap={{ scale: 0.92 }} onClick={claim} disabled={!st.canClaim}>
-            {st.canClaim ? `Reclamar día ${st.day}` : 'Vuelve mañana 😉'}
+            {st.canClaim ? t('Reclamar día {n}', { n: st.day }) : t('Vuelve mañana 😉')}
           </motion.button>
         </>
       ) : (
@@ -79,6 +80,7 @@ function Roulette({ canSpin }: { canSpin: boolean }) {
   const [result, setResult] = useState<string | null>(null);
   const angle = useRef(0);
   const n = ROULETTE.length;
+  const t = useT();
   const seg = 360 / n;
   const wheelRef = useRef<HTMLDivElement>(null);
 
@@ -98,17 +100,15 @@ function Roulette({ canSpin }: { canSpin: boolean }) {
     setSpinning(false);
     const prize = ROULETTE[r.index]!;
     setResult(prize.label);
-    p.addCurrency(r.coins, r.gems);
+    p.addCurrency(r.coins, 0);
     play('coin');
-    const from = centerOf(wheelRef.current);
-    if (r.coins) fx.fly('coin', from, 10);
-    if (r.gems) fx.fly('gem', from, 6);
-    fx.toast({ icon: '🎡', title: '¡Premio de la ruleta!', sub: r.coins ? `+${r.coins} monedas` : `+${r.gems} gemas` });
+    fx.fly('coin', centerOf(wheelRef.current), 10);
+    fx.toast({ icon: '🎡', title: t('¡Premio de la ruleta!'), sub: t('+{n} monedas', { n: r.coins }) });
   };
 
   return (
     <div className="roulette">
-      <h2 className="modal-title">Ruleta de la suerte</h2>
+      <h2 className="modal-title">{t('Ruleta de la suerte')}</h2>
       <div className="wheel-wrap" ref={wheelRef}>
         <div className="wheel-arrow">▼</div>
         <motion.div className="wheel" animate={controls} initial={{ rotate: 0 }}>
@@ -144,9 +144,9 @@ function Roulette({ canSpin }: { canSpin: boolean }) {
           </svg>
         </motion.div>
       </div>
-      {result ? <div className="roulette-result">¡Ganaste {result}!</div> : null}
+      {result ? <div className="roulette-result">{t('¡Ganaste {n} monedas!', { n: result })}</div> : null}
       <motion.button className="btn3d purple wide shine" whileTap={{ scale: 0.92 }} onClick={spin} disabled={!canSpin || spinning}>
-        {spinning ? 'Girando…' : canSpin ? '¡Girar gratis!' : 'Mañana tienes otro giro'}
+        {spinning ? t('Girando…') : canSpin ? t('¡Girar gratis!') : t('Mañana tienes otro giro')}
       </motion.button>
     </div>
   );

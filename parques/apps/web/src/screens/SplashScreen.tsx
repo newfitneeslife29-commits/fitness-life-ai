@@ -1,3 +1,4 @@
+import { useT } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo } from '../components/Logo';
@@ -9,6 +10,7 @@ import { dailyStatus, dayKey } from '../meta/economy';
 
 /** Pantalla de carga: logo animado, barra de progreso y tips. */
 export function SplashScreen() {
+  const t = useT();
   const go = useApp((a) => a.go);
   const setDailyOpen = useApp((a) => a.setDailyOpen);
   const [progress, setProgress] = useState(0.05);
@@ -45,7 +47,7 @@ export function SplashScreen() {
         <div className="splash-tip">
           <AnimatePresence mode="wait">
             <motion.p key={tip} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-              💡 {TIPS[tip]}
+              💡 {t(TIPS[tip]!)}
             </motion.p>
           </AnimatePresence>
         </div>

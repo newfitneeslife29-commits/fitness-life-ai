@@ -16,7 +16,8 @@ import {
   sanitizeState,
   shouldSoplar,
 } from '@parques/engine';
-import type { Action, AiLevel, GameEvent, GameState, Hello, HouseRules, NetSeat, RoomInfo, ServerToClient } from '@parques/engine';
+import { table as tableOf } from '@parques/engine';
+import type { Action, AiLevel, GameEvent, GameState, Hello, HouseRules, NetSeat, RoomInfo, ServerToClient, TableId } from '@parques/engine';
 
 export interface Conn {
   emit: <K extends keyof ServerToClient>(event: K, ...args: Parameters<ServerToClient[K]>) => void;
@@ -49,6 +50,7 @@ export interface RoomOptions {
   seats: number;
   rules?: Partial<HouseRules>;
   timing?: Partial<Timing>;
+  table?: TableId;
   onEnd?: (room: Room, humanRanking: string[]) => void;
 }
 
@@ -59,6 +61,8 @@ export class Room {
   readonly hostId: string | null;
   readonly rules: Partial<HouseRules>;
   readonly seats: Seat[];
+  readonly table: TableId;
+  readonly entry: number;
   status: 'waiting' | 'playing' | 'over' = 'waiting';
   state: GameState | null = null;
   lastActivity = Date.now();
@@ -80,6 +84,8 @@ export class Room {
     this.rules = { ...opts.rules, teams, piecesPerPlayer: 4 };
     this.timing = { ...DEFAULT_TIMING, ...opts.timing };
     this.onEnd = opts.onEnd;
+    this.table = opts.table ?? 'barrio';
+    this.entry = tableOf(this.table)?.entry ?? 0;
     this.seats = sidesFor(teams ? 4 : opts.seats).map((side) => ({
       side,
       name: '',
@@ -101,6 +107,8 @@ export class Room {
       rules: this.rules,
       status: this.status,
       kind: this.kind,
+      table: this.table,
+      entry: this.entry,
     };
   }
 

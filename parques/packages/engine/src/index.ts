@@ -11,3 +11,4 @@ export { stillPlaying } from './rules/finish';
 export * from './ai';
 export { HIT_PROB, dangerAt, pieceValue } from './ai/evaluate';
 export * from './net';
+export * from './economy';

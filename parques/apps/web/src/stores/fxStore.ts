@@ -16,9 +16,21 @@ export interface Toast {
   sub?: string;
 }
 
+export interface Ask {
+  icon: string;
+  title: string;
+  text: string;
+  ok: string;
+  cancel: string;
+  resolve: (v: boolean) => void;
+}
+
 interface FxState {
   flyers: Flyer[];
   toasts: Toast[];
+  ask: Ask | null;
+  /** Diálogo de confirmación (promesa). */
+  confirm: (a: Omit<Ask, 'resolve'>) => Promise<boolean>;
   /** Hace volar `count` monedas/gemas desde un punto hasta su contador. */
   fly: (kind: Flyer['kind'], from: { x: number; y: number }, count?: number) => void;
   toast: (t: Omit<Toast, 'id'>) => void;
@@ -42,6 +54,19 @@ export function centerOf(el: Element | null): { x: number; y: number } {
 export const useFx = create<FxState>((set) => ({
   flyers: [],
   toasts: [],
+  ask: null,
+  confirm: (a) =>
+    new Promise<boolean>((resolve) =>
+      set({
+        ask: {
+          ...a,
+          resolve: (v) => {
+            set({ ask: null });
+            resolve(v);
+          },
+        },
+      }),
+    ),
   fly: (kind, from, count = 8) => {
     const to = targetOf(kind);
     const items: Flyer[] = Array.from({ length: count }, (_, i) => ({

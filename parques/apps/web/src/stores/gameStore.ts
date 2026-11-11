@@ -19,6 +19,7 @@ import {
 import type { Action, AiLevel, GameEvent, GameState, HouseRules, Move, PieceRef, UpdateMsg } from '@parques/engine';
 import { piecePoint, trackCell, type Pt } from '../game/boardLayout';
 import { BOT_LINES, pick } from '../game/phrases';
+import { tr } from '../lib/i18n';
 import { play, vibrate } from '../audio/audio';
 import type { TableTier, MatchSummary } from '../meta/economy';
 import { useProfile, type MatchOutcome } from './profileStore';
@@ -41,6 +42,8 @@ export interface MatchConfig {
   timeLimitSec: number;
   mode: 'ai' | 'local' | 'teams' | 'quick' | 'online';
   table: TableTier['id'] | null;
+  /** Entrada que paga cada jugador (0 = gratis). */
+  entry: number;
 }
 
 /** Conexión con el servidor durante una partida online. */
@@ -126,6 +129,8 @@ interface GameStore {
   select: (ref: PieceRef | null) => void;
   say: (player: number, text: string) => void;
   chat: (text: string) => void;
+  /** Emote pagado con gemas. Devuelve false si no alcanzan las gemas. */
+  emote: (glyph: string, gems: number) => boolean;
   setPaused: (p: boolean) => void;
   /** Aplica los premios de la partida al perfil (una sola vez). */
   finishMatch: () => MatchOutcome | null;
@@ -202,8 +207,8 @@ export const useGame = create<GameStore>((set, get) => {
           play('land');
           if (e.pair) play('pair');
           if (e.pair && e.pairStreak === 2 && final.rules.triplePairPenalty) {
-            showBanner('pair', '¡Dos pares!', 'Pilas pues: un par más y a la cárcel', 1300);
-            botSay((e.player + 1) % final.players.length, ['¡Pilas pues!', '¡Uy, se viene!'], 0.4);
+            showBanner('pair', tr('¡Dos pares!'), tr('Pilas pues: un par más y a la cárcel'), 1300);
+            botSay((e.player + 1) % final.players.length, BOT_LINES.pilas, 0.4);
           }
           break;
         }
@@ -235,7 +240,7 @@ export const useGame = create<GameStore>((set, get) => {
           const at = sq === null ? pointOf(final, e.by, pos) : trackCell(g.sides, sq).center;
           pushFx('burst', at, colorVar(final, e.by.owner), 1000);
           play('capture');
-          showBanner('capture', '¡Captura!', `${g.players[e.by.owner]!.name} manda a la cárcel a ${g.players[e.victims[0]!.owner]!.name}`, 1100);
+          showBanner('capture', tr('¡Captura!'), tr('{a} manda a la cárcel a {b}', { a: g.players[e.by.owner]!.name, b: g.players[e.victims[0]!.owner]!.name }), 1100);
           vibrate(60);
           await sleep(BASE.capture * 0.45);
           let view = get().view;
@@ -254,7 +259,7 @@ export const useGame = create<GameStore>((set, get) => {
           break;
         }
         case 'TRIPLE_PAIR': {
-          showBanner('triple', '¡TRES PARES!', e.piece ? '¡Esa ficha se va pa\' la cárcel!' : 'Se acabó el turno', BASE.triple);
+          showBanner('triple', tr('¡TRES PARES!'), e.piece ? tr('¡Esa ficha se va pa\' la cárcel!') : tr('Se acabó el turno'), BASE.triple);
           play('triple');
           vibrate([80, 60, 160]);
           await sleep(BASE.triple * 0.5);
@@ -271,7 +276,7 @@ export const useGame = create<GameStore>((set, get) => {
           const pos = get().view[e.piece.owner]![e.piece.index]!;
           pushFx('jail', pointOf(final, e.piece, pos), 'var(--azul)', 900);
           play('soplo');
-          showBanner('soplo', '¡Lo soplé!', `${g.players[e.by]!.name} sopló a ${g.players[e.offender]!.name}`, BASE.soplo);
+          showBanner('soplo', tr('¡Lo soplé!'), tr('{a} sopló a {b}', { a: g.players[e.by]!.name, b: g.players[e.offender]!.name }), BASE.soplo);
           set({ view: setPiece(get().view, e.piece, -1) });
           botSay(e.by, BOT_LINES.soplo, 0.7);
           await sleep(BASE.soplo * 0.6);
@@ -284,7 +289,7 @@ export const useGame = create<GameStore>((set, get) => {
           await sleep(BASE.forfeit);
           break;
         case 'PLAYER_FINISHED':
-          showBanner('finish', `¡${g.players[e.player]!.name} coronó!`, `Puesto ${e.place}`, 1400);
+          showBanner('finish', tr('¡{name} coronó!', { name: g.players[e.player]!.name }), tr('Puesto {n}', { n: e.place }), 1400);
           await sleep(500);
           break;
         case 'TURN_CHANGED':
@@ -565,6 +570,13 @@ export const useGame = create<GameStore>((set, get) => {
       if (speaker >= 0) get().say(speaker, text);
     },
 
+    emote(glyph, gems) {
+      if (!useProfile.getState().spendGems(gems)) return false;
+      play('pair');
+      get().chat(glyph);
+      return true;
+    },
+
     setPaused(p) {
       if (get().online) return;
       set({ paused: p });
@@ -594,6 +606,8 @@ export const useGame = create<GameStore>((set, get) => {
         triplePenalties: p.stats.tripleParCastigos,
         mode: config.mode,
         table: config.table,
+        entry: config.entry,
+        teams: !!game.rules.teams,
       };
       const result = useProfile.getState().applyMatch(summary);
       set({ outcome: result });

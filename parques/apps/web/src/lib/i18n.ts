@@ -1,66 +1,49 @@
-/** Textos de la interfaz en español (base) e inglés. Las frases del chat quedan en "colombiano". */
+/**
+ * Idiomas: español (base), inglés, portugués y francés.
+ * Las claves son el texto en español; `locales.ts` tiene las traducciones.
+ * Variables con llaves: t('Necesitas nivel {n}', { n: 5 }).
+ */
 import { useSettings, type Lang } from '../stores/settingsStore';
+import { LOCALES } from './locales';
 
-const EN: Record<string, string> = {
-  'JUGAR': 'PLAY',
-  'contra la máquina': 'vs the computer',
-  'Local': 'Local',
-  'en el mismo celular': 'same phone',
-  'Parejas': 'Teams',
-  'Rápido': 'Quick',
-  '2 fichas · 5 min': '2 pieces · 5 min',
-  'Online': 'Online',
-  'Partida rápida': 'Quick match',
-  'Mesa privada': 'Private table',
-  'Torneo': 'Tournament',
-  'Tienda': 'Shop',
-  'Eventos': 'Events',
-  'Ranking': 'Ranking',
-  'Perfil': 'Profile',
-  'Amigos': 'Friends',
-  'Ajustes': 'Settings',
-  'Inicio': 'Home',
-  'Recompensa diaria': 'Daily reward',
-  'Sonido': 'Sound',
-  'Música': 'Music',
-  'Vibración': 'Vibration',
-  'Idioma': 'Language',
-  'Tema': 'Theme',
-  'Oscuro': 'Dark',
-  'Claro': 'Light',
-  'Reglas de la casa': 'House rules',
-  'Cuenta': 'Account',
-  'Soplar': 'Blow (soplar)',
-  'Tres pares a la cárcel': 'Three doubles = jail',
-  'Intentos para salir': 'Tries to leave jail',
-  'Tiempo por turno': 'Time per turn',
-  'Misiones diarias': 'Daily missions',
-  'Misiones semanales': 'Weekly missions',
-  'Reclamar': 'Claim',
-  'Elige tu mesa': 'Choose your table',
-  'Entrada': 'Entry',
-  'Premio': 'Prize',
-  'Práctica libre': 'Free practice',
-  'Estadísticas': 'Stats',
-  'Logros': 'Achievements',
-  'Partidas': 'Games',
-  'Victorias': 'Wins',
-  'Capturas': 'Captures',
-  '% de victoria': 'Win %',
-  'Temporada': 'Season',
-  'Nivel': 'Level',
-  'Comprar': 'Buy',
-  'Usar': 'Equip',
-  'En uso': 'Equipped',
-  'Revancha': 'Rematch',
-  'Menú': 'Menu',
-};
+export const LANGUAGES: { code: Lang; name: string; flag: string }[] = [
+  { code: 'es', name: 'Español', flag: '🇨🇴' },
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'pt', name: 'Português', flag: '🇧🇷' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+];
 
-export function translate(lang: Lang, text: string): string {
-  return lang === 'en' ? (EN[text] ?? text) : text;
+const INDEX: Record<Exclude<Lang, 'es'>, number> = { en: 0, pt: 1, fr: 2 };
+
+export function translate(lang: Lang, text: string, vars?: Record<string, string | number>): string {
+  let out = text;
+  if (lang !== 'es') {
+    const hit = LOCALES[text]?.[INDEX[lang]];
+    if (hit) out = hit;
+    else {
+      // Mensajes con números (p. ej. del servidor): "Necesitas nivel 100" → "Necesitas nivel {n}".
+      const m = text.match(/\d[\d.,]*/);
+      const tpl = m ? LOCALES[text.replace(m[0], '{n}')]?.[INDEX[lang]] : undefined;
+      if (tpl && m) out = tpl.split('{n}').join(m[0]);
+    }
+  }
+  if (vars) for (const [k, v] of Object.entries(vars)) out = out.split(`{${k}}`).join(String(v));
+  return out;
 }
 
-export function useT() {
+export type TFn = (text: string, vars?: Record<string, string | number>) => string;
+
+export function useT(): TFn {
   const lang = useSettings((s) => s.language);
-  return (text: string) => translate(lang, text);
+  return (text, vars) => translate(lang, text, vars);
+}
+
+/** Traducción fuera de React (stores, eventos). */
+export function tr(text: string, vars?: Record<string, string | number>): string {
+  return translate(useSettings.getState().language, text, vars);
+}
+
+
+export function locale(lang: Lang): string {
+  return { es: 'es-CO', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR' }[lang];
 }

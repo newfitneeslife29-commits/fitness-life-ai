@@ -8,7 +8,11 @@ import { PlayerSeat } from '../game/PlayerSeat';
 import { PairCounter } from '../game/PairCounter';
 import { Banner } from '../game/Banner';
 import { boardBox, jailGeom, piecePoint, viewRotation } from '../game/boardLayout';
-import { CHAT_PHRASES, REACTIONS } from '../game/phrases';
+import { phrases } from '../game/phrases';
+import { EMOTES } from '../meta/catalog';
+import { GemIcon } from '../components/Counter';
+import { useFx } from '../stores/fxStore';
+import { useT } from '../lib/i18n';
 import { humanSeat, legalMovesCache, SOPLO_WINDOW_MS, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
@@ -34,6 +38,11 @@ export function GameScreen() {
   const effect = item(equipped.effect).effect!;
   const myFrame = equipped.frame;
   const settings = useSettings();
+  const lang = settings.language;
+  const t = useT();
+  const toast = useFx((f) => f.toast);
+  const gems = useProfile((p) => p.gems);
+  const passPremium = useProfile((p) => p.pass.premium);
   const myLevel = useLevel().level;
 
   // Reloj para contadores (Modo Rápido y soplo).
@@ -86,9 +95,9 @@ export function GameScreen() {
   const rotDeg = viewRotation(game.sides, s.viewSide);
   const placed = game.players.map((p, i) => {
     const j = jailGeom(game.sides, p.side).center;
-    const t = (rotDeg * Math.PI) / 180;
-    const x = j.x * Math.cos(t) - j.y * Math.sin(t);
-    const y = j.x * Math.sin(t) + j.y * Math.cos(t);
+    const ang = (rotDeg * Math.PI) / 180;
+    const x = j.x * Math.cos(ang) - j.y * Math.sin(ang);
+    const y = j.x * Math.sin(ang) + j.y * Math.cos(ang);
     const top = y < -1 || (Math.abs(y) <= 1 && x < 0);
     return { i, x, top };
   });
@@ -106,9 +115,9 @@ export function GameScreen() {
         avatar={cfg.avatar}
         active={game.current === i && game.phase !== 'over'}
         isBot={cfg.kind === 'bot'}
-        tag={cfg.kind === 'bot' ? '🤖' : cfg.kind === 'remote' ? '🌐' : `Nv ${myLevel}`}
+        tag={cfg.kind === 'bot' ? '🤖' : cfg.kind === 'remote' ? '🌐' : `${t('Nv')} ${myLevel}`}
         frameId={cfg.kind === 'human' ? myFrame : undefined}
-        level={cfg.kind === 'bot' ? LEVEL_LABEL[cfg.level] : undefined}
+        level={cfg.kind === 'bot' ? t(LEVEL_LABEL[cfg.level]) : undefined}
         place={place >= 0 && (p.finished || game.phase === 'over') ? place + 1 : null}
         crowned={view[i]!.filter((x) => x === home).length}
         deadline={game.current === i ? s.turnDeadline : null}
@@ -139,15 +148,15 @@ export function GameScreen() {
 
   const rollerIsHuman = humanSeat(config, game, game.current);
   const status = (() => {
-    if (game.phase === 'over') return '¡Partida terminada!';
-    const who = rollerIsHuman ? (config.seats.filter((x) => x.kind === 'human').length > 1 ? current.name : 'Tú') : current.name;
+    if (game.phase === 'over') return t('¡Partida terminada!');
+    const who = rollerIsHuman ? (config.seats.filter((x) => x.kind === 'human').length > 1 ? current.name : t('Tú')) : current.name;
     if (game.phase === 'roll') {
       const inPlay = current.pieces.some((p) => isActive(game.sides, p));
-      const tries = !inPlay ? ` · intento ${game.jailRollsUsed + 1}/${game.rules.jailAttempts}` : '';
-      return `${who}: tira los dados${tries}`;
+      const tries = !inPlay ? ` · ${t('intento {a}/{b}', { a: game.jailRollsUsed + 1, b: game.rules.jailAttempts })}` : '';
+      return `${who}: ${t('tira los dados')}${tries}`;
     }
-    if (exitMoves.length > 0 && movable.size === 0) return `${who}: ¿cuántas sacas de la cárcel?`;
-    return `${who}: mueve una ficha`;
+    if (exitMoves.length > 0 && movable.size === 0) return `${who}: ${t('¿cuántas sacas de la cárcel?')}`;
+    return `${who}: ${t('mueve una ficha')}`;
   })();
 
   return (
@@ -195,7 +204,7 @@ export function GameScreen() {
             <motion.div className="exit-choices" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
               {exitMoves.map((m) => (
                 <motion.button key={m.count} className="btn3d green small" whileTap={{ scale: 0.9 }} onClick={() => s.humanMove(m)}>
-                  🔓 Sacar {m.count > 2 ? `todas (${m.count})` : m.count}
+                  🔓 {m.count > 2 ? t('Sacar todas ({n})', { n: m.count }) : t('Sacar {n}', { n: m.count })}
                 </motion.button>
               ))}
             </motion.div>
@@ -236,7 +245,7 @@ export function GameScreen() {
             transition={{ scale: { duration: 0.6, repeat: Infinity } }}
             onClick={s.humanSoplar}
           >
-            <span>🌬️ ¡Soplar!</span>
+            <span>🌬️ {t('¡Soplar!')}</span>
             <svg viewBox="0 0 100 8" className="soplar-bar">
               <rect width={100} height={8} rx={4} fill="rgba(0,0,0,.25)" />
               <rect width={(soploLeft / (SOPLO_WINDOW_MS / s.speed)) * 100} height={8} rx={4} fill="#fff" />
@@ -248,15 +257,30 @@ export function GameScreen() {
       <AnimatePresence>
         {chatOpen ? (
           <motion.div className="chat-panel card" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}>
+            <div className="chat-head">
+              <b>💎 {t('Emotes')}</b>
+              <span className="chat-gems"><GemIcon size={16} /> {gems}</span>
+            </div>
             <div className="chat-reactions">
-              {REACTIONS.map((r) => (
-                <button key={r} onClick={() => { s.chat(r); setChatOpen(false); }}>
-                  {r}
+              {EMOTES.filter((e) => !e.pass || passPremium).map((e) => (
+                <button
+                  key={e.id}
+                  className={gems < e.gems ? 'poor' : ''}
+                  onClick={() => {
+                    if (!s.emote(e.glyph, e.gems)) toast({ icon: '💎', title: t('Te faltan gemas'), sub: t('Gana partidas (+5) o cómpralas en la tienda') });
+                    setChatOpen(false);
+                  }}
+                >
+                  {e.glyph}
+                  <small>{e.gems}</small>
                 </button>
               ))}
             </div>
+            <div className="chat-head">
+              <b>💬 {t('Frases (gratis)')}</b>
+            </div>
             <div className="chat-phrases">
-              {CHAT_PHRASES.map((p) => (
+              {phrases(lang).map((p) => (
                 <button key={p} onClick={() => { s.chat(p); setChatOpen(false); }}>
                   {p}
                 </button>
@@ -270,16 +294,16 @@ export function GameScreen() {
         {menuOpen ? (
           <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="modal card" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
-              <h2>{s.online ? 'Menú' : 'Pausa'}</h2>
-              <p className="modal-text">Reglas de esta mesa: {describeRules(game.rules)}</p>
-              <Toggle label="🔈 Sonido" value={settings.sound} onChange={(v) => settings.set({ sound: v })} />
-              <Toggle label="🎵 Música" value={settings.music} onChange={(v) => settings.set({ music: v })} />
-              <Toggle label="📳 Vibración" value={settings.vibration} onChange={(v) => settings.set({ vibration: v })} />
+              <h2>{s.online ? t('Menú') : t('Pausa')}</h2>
+              <p className="modal-text">{t('Reglas de esta mesa')}: {describeRules(game.rules, t)}</p>
+              <Toggle label={`🔈 ${t('Sonido')}`} value={settings.sound} onChange={(v) => settings.set({ sound: v })} />
+              <Toggle label={`🎵 ${t('Música')}`} value={settings.music} onChange={(v) => settings.set({ music: v })} />
+              <Toggle label={`📳 ${t('Vibración')}`} value={settings.vibration} onChange={(v) => settings.set({ vibration: v })} />
               <button className="btn3d green" onClick={() => { setMenuOpen(false); s.setPaused(false); }}>
-                Seguir jugando
+                {t('Seguir jugando')}
               </button>
               <button className="btn3d red" onClick={() => { setMenuOpen(false); s.quit(); go('lobby'); }}>
-                Salir de la partida
+                {t('Salir de la partida')}
               </button>
             </motion.div>
           </motion.div>
@@ -294,13 +318,13 @@ function fmt(ms: number): string {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
-function describeRules(r: { soplar: boolean; triplePairPenalty: boolean; jailAttempts: number; teams: boolean; piecesPerPlayer: number }): string {
+function describeRules(r: { soplar: boolean; triplePairPenalty: boolean; jailAttempts: number; teams: boolean; piecesPerPlayer: number }, t: (s: string, v?: Record<string, string | number>) => string): string {
   return [
-    r.soplar ? 'soplar sí' : 'sin soplar',
-    r.triplePairPenalty ? 'tres pares a la cárcel' : 'sin castigo de tres pares',
-    `${r.jailAttempts} intento(s) para salir`,
-    r.teams ? 'parejas' : null,
-    `${r.piecesPerPlayer} fichas`,
+    r.soplar ? t('soplar sí') : t('sin soplar'),
+    r.triplePairPenalty ? t('tres pares a la cárcel') : t('sin castigo de tres pares'),
+    t('{n} intento(s) para salir', { n: r.jailAttempts }),
+    r.teams ? t('parejas') : null,
+    t('{n} fichas', { n: r.piecesPerPlayer }),
   ]
     .filter(Boolean)
     .join(' · ');

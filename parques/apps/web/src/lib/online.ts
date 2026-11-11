@@ -4,7 +4,9 @@
  */
 import { create } from 'zustand';
 import { io, type Socket } from 'socket.io-client';
-import type { ClientToServer, HouseRules, RankRow, RoomInfo, ServerToClient, TournamentInfo, UpdateMsg } from '@parques/engine';
+import { levelFromXp } from '@parques/engine';
+import type { ClientToServer, HouseRules, RankRow, RoomInfo, ServerToClient, TableId, TournamentInfo, UpdateMsg } from '@parques/engine';
+import { tr } from './i18n';
 import { useGame, type MatchConfig } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useProfile } from '../stores/profileStore';
@@ -20,9 +22,9 @@ interface OnlineState {
   mySeat: number | null;
   searching: { waiting: number; startsAt: number } | null;
   connect: () => Promise<boolean>;
-  quickMatch: () => Promise<void>;
+  quickMatch: (table: TableId) => Promise<void>;
   cancelMatch: () => void;
-  createPrivate: (seats: number, rules: Partial<HouseRules>) => Promise<string | null>;
+  createPrivate: (seats: number, rules: Partial<HouseRules>, table: TableId) => Promise<string | null>;
   joinPrivate: (code: string) => Promise<string | null>;
   startPrivate: () => Promise<string | null>;
   leaveRoom: () => void;
@@ -60,7 +62,8 @@ function configFrom(room: RoomInfo, mySeat: number): MatchConfig {
   return {
     sides: 4,
     mode: 'online',
-    table: null,
+    table: room.table,
+    entry: room.entry,
     turnSeconds: 20,
     timeLimitSec: 0,
     rules: room.rules,
@@ -87,8 +90,15 @@ const link = {
   },
 };
 
+/** Salas ya cobradas (para no cobrar dos veces al reconectar). */
+const paidRooms = new Set<string>();
+
 function enterGame(room: RoomInfo, mySeat: number, msg: UpdateMsg) {
   remember(room.roomId);
+  if (!paidRooms.has(room.roomId)) {
+    paidRooms.add(room.roomId);
+    useProfile.getState().pay(room.entry);
+  }
   useOnline.setState({ room, mySeat, searching: null });
   useGame.getState().startOnline(configFrom(room, mySeat), msg, link, mySeat);
   useApp.getState().go('game');
@@ -113,7 +123,7 @@ export const useOnline = create<OnlineState>((set, get) => ({
       let first = true;
       const hello = () => {
         const p = useProfile.getState();
-        s.emit('hello', { playerId: p.id, name: p.name, avatar: p.avatar, country: p.country }, () => {
+        s.emit('hello', { playerId: p.id, name: p.name, avatar: p.photo ?? p.avatar, country: p.country, level: levelFromXp(p.xp).level }, () => {
           set({ status: 'online' });
           const roomId = remembered();
           if (roomId) s.emit('resume', roomId, (r) => r.ok || remember(null));
@@ -161,10 +171,10 @@ export const useOnline = create<OnlineState>((set, get) => ({
     return connecting;
   },
 
-  quickMatch: async () => {
+  quickMatch: async (table) => {
     if (!(await get().connect())) return;
     set({ searching: { waiting: 1, startsAt: Date.now() + 10000 } });
-    socket!.emit('quick_match', (r) => {
+    socket!.emit('quick_match', table, (r) => {
       if (!r.ok) set({ searching: null, error: r.error ?? 'No se pudo buscar partida' });
     });
   },
@@ -174,10 +184,10 @@ export const useOnline = create<OnlineState>((set, get) => ({
     set({ searching: null });
   },
 
-  createPrivate: async (seats, rules) => {
+  createPrivate: async (seats, rules, table) => {
     if (!(await get().connect())) return get().error;
     return new Promise((resolve) =>
-      socket!.emit('create_private', { seats, rules }, (r) => resolve(r.ok ? null : (r.error ?? 'Error'))),
+      socket!.emit('create_private', { seats, rules, table }, (r) => resolve(r.ok ? null : (r.error ?? tr('Error')))),
     );
   },
 

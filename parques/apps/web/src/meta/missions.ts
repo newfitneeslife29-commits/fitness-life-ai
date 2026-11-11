@@ -20,22 +20,22 @@ export interface MissionState {
 
 export const DAILY_POOL: MissionDef[] = [
   { id: 'd-games3', text: 'Juega 3 partidas', metric: 'games', goal: 3, coins: 150, gems: 0 },
-  { id: 'd-win1', text: 'Gana 1 partida', metric: 'wins', goal: 1, coins: 200, gems: 1 },
+  { id: 'd-win1', text: 'Gana 1 partida', metric: 'wins', goal: 1, coins: 200, gems: 0 },
   { id: 'd-cap5', text: 'Captura 5 fichas', metric: 'captures', goal: 5, coins: 200, gems: 0 },
   { id: 'd-crown6', text: 'Corona 6 fichas', metric: 'crowned', goal: 6, coins: 180, gems: 0 },
-  { id: 'd-soplo1', text: 'Sopla a un rival', metric: 'soplos', goal: 1, coins: 150, gems: 1 },
+  { id: 'd-soplo1', text: 'Sopla a un rival', metric: 'soplos', goal: 1, coins: 150, gems: 0 },
   { id: 'd-pairs8', text: 'Saca 8 pares', metric: 'pairs', goal: 8, coins: 150, gems: 0 },
   { id: 'd-quick1', text: 'Juega 1 partida rápida', metric: 'quick', goal: 1, coins: 120, gems: 0 },
   { id: 'd-podium2', text: 'Queda en el podio 2 veces', metric: 'podiums', goal: 2, coins: 200, gems: 0 },
 ];
 
 export const WEEKLY_POOL: MissionDef[] = [
-  { id: 'w-win2', text: 'Gana 2 partidas', metric: 'wins', goal: 2, coins: 500, gems: 3 },
-  { id: 'w-win5', text: 'Gana 5 partidas', metric: 'wins', goal: 5, coins: 1200, gems: 8 },
-  { id: 'w-cap30', text: 'Captura 30 fichas', metric: 'captures', goal: 30, coins: 1000, gems: 5 },
-  { id: 'w-games15', text: 'Juega 15 partidas', metric: 'games', goal: 15, coins: 900, gems: 5 },
-  { id: 'w-soplo5', text: 'Sopla 5 veces', metric: 'soplos', goal: 5, coins: 700, gems: 5 },
-  { id: 'w-online3', text: 'Juega 3 partidas online', metric: 'online', goal: 3, coins: 800, gems: 5 },
+  { id: 'w-win2', text: 'Gana 2 partidas', metric: 'wins', goal: 2, coins: 500, gems: 0 },
+  { id: 'w-win5', text: 'Gana 5 partidas', metric: 'wins', goal: 5, coins: 1200, gems: 0 },
+  { id: 'w-cap30', text: 'Captura 30 fichas', metric: 'captures', goal: 30, coins: 1000, gems: 0 },
+  { id: 'w-games15', text: 'Juega 15 partidas', metric: 'games', goal: 15, coins: 900, gems: 0 },
+  { id: 'w-soplo5', text: 'Sopla 5 veces', metric: 'soplos', goal: 5, coins: 700, gems: 0 },
+  { id: 'w-online3', text: 'Juega 3 partidas online', metric: 'online', goal: 3, coins: 800, gems: 0 },
 ];
 
 /** Elección determinista de misiones a partir de una clave (día o semana). */
