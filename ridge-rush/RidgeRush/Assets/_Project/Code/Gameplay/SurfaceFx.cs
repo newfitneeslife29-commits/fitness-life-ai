@@ -121,7 +121,7 @@ namespace RidgeRush.Game
         }
 
         /// <summary>Golpe de polvo al aterrizar.</summary>
-        public void LandingBurst(Vector2 point, SurfaceType surf, float impact, float scale)
+        public void LandingBurst(Vec2 point, SurfaceType surf, float impact, float scale)
         {
             if (surf == SurfaceType.Metal || surf == SurfaceType.Asphalt || surf == SurfaceType.Ice) return;
             int count = Mathf.RoundToInt(Mathf.Clamp(impact * 4f, 4f, 40f) * scale);
