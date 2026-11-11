@@ -19,7 +19,16 @@ namespace RidgeRush.Simulation
         public float Lean = 1f;
         public float Nitro = 1f;
         public float WheelScale = 1f;
-        public float BodyR = 0.95f, BodyG = 0.36f, BodyB = 0.1f; // pintura de fábrica
+        public float BodyR = 0.95f, BodyG = 0.36f, BodyB = 0.1f; // color principal de la decoración
+        // ---- Aspecto (cada moto es una "skin" propia: forma y decoración fijas) ----
+        /// <summary>mx, enduro, trial, supermoto, sport, chopper, electric, quad, snow, rally.</summary>
+        public string Style = "mx";
+        /// <summary>stripes, split, flames, camo, carbon, chrome, neon, gold, checker, digital.</summary>
+        public string Livery = "stripes";
+        public float Size = 1f;               // escala visual del modelo
+        public uint Secondary = 0xF2EFE9;     // color secundario (RGB)
+        public uint Accent = 0x2FE3FF;        // detalles y brillo (RGB)
+        public int Number = 1;                // dorsal
     }
 
     /// <summary>
@@ -32,35 +41,35 @@ namespace RidgeRush.Simulation
 
         public static readonly BikeDef[] Bikes =
         {
-            new BikeDef { Id = "haldane_sprout_125", Name = "Sprout 125", Brand = "Haldane Moto", Class = "MX 125", Rarity = Rarity.Common },
+            new BikeDef { Id = "haldane_sprout_125", Name = "Sprout 125", Brand = "Haldane Moto", Class = "MX 125", Rarity = Rarity.Common, Style = "mx", Livery = "stripes", Size = 0.93f, Secondary = 0xF2EFE9, Accent = 0x1E1E22, Number = 12 },
             new BikeDef { Id = "haldane_raptor_250", Name = "Raptor 250F", Brand = "Haldane Moto", Class = "MX 250", Rarity = Rarity.Common, PriceCoins = 2500,
-                Torque = 1.15f, TopSpeed = 1.05f, Mass = 1.04f, BodyR = 0.95f, BodyG = 0.55f, BodyB = 0.1f },
+                Torque = 1.15f, TopSpeed = 1.05f, Mass = 1.04f, BodyR = 0.95f, BodyG = 0.55f, BodyB = 0.1f, Style = "mx", Livery = "split", Secondary = 0x1A1C20, Accent = 0xFFD23A, Number = 25 },
             new BikeDef { Id = "vextor_brute_450", Name = "Brute 450R", Brand = "Vextor", Class = "MX 450", Rarity = Rarity.Rare, PriceCoins = 7500,
-                Torque = 1.35f, TopSpeed = 1.12f, Mass = 1.08f, Lean = 0.95f, BodyR = 0.1f, BodyG = 0.3f, BodyB = 0.85f },
+                Torque = 1.35f, TopSpeed = 1.12f, Mass = 1.08f, Lean = 0.95f, BodyR = 0.1f, BodyG = 0.3f, BodyB = 0.85f, Style = "mx", Livery = "digital", Secondary = 0xF2F4F8, Accent = 0x2FE3FF, Number = 45 },
             new BikeDef { Id = "ferrum_trailhound_300", Name = "Trailhound 300", Brand = "Ferrum Works", Class = "Enduro", Rarity = Rarity.Rare, PriceCoins = 6000,
-                Torque = 1.2f, Grip = 1.12f, Suspension = 1.15f, Mass = 1.1f, BodyR = 0.2f, BodyG = 0.55f, BodyB = 0.2f },
+                Torque = 1.2f, Grip = 1.12f, Suspension = 1.15f, Mass = 1.1f, BodyR = 0.2f, BodyG = 0.55f, BodyB = 0.2f, Style = "enduro", Livery = "camo", Secondary = 0x2B3A1E, Accent = 0xFF8A1F, Number = 30 },
             new BikeDef { Id = "kestrel_goat_280", Name = "Goat T-280", Brand = "Kestrel Bikes", Class = "Trial", Rarity = Rarity.Rare, PriceCoins = 6500,
-                Torque = 1.1f, TopSpeed = 0.9f, Grip = 1.2f, Mass = 0.85f, Lean = 1.3f, BodyR = 0.9f, BodyG = 0.1f, BodyB = 0.15f },
+                Torque = 1.1f, TopSpeed = 0.9f, Grip = 1.2f, Mass = 0.85f, Lean = 1.3f, BodyR = 0.9f, BodyG = 0.1f, BodyB = 0.15f, Style = "trial", Livery = "checker", Size = 0.95f, Secondary = 0xF5F5F5, Accent = 0x111111, Number = 7 },
             new BikeDef { Id = "vextor_asfalto_450", Name = "Asfalto SM 450", Brand = "Vextor", Class = "Supermoto", Rarity = Rarity.Rare, PriceCoins = 8000,
-                Torque = 1.3f, TopSpeed = 1.2f, Grip = 1.05f, Suspension = 0.85f, WheelScale = 0.9f, BodyR = 0.95f, BodyG = 0.95f, BodyB = 0.95f },
+                Torque = 1.3f, TopSpeed = 1.2f, Grip = 1.05f, Suspension = 0.85f, WheelScale = 0.9f, BodyR = 0.95f, BodyG = 0.95f, BodyB = 0.95f, Style = "supermoto", Livery = "split", Secondary = 0xD7261E, Accent = 0x111111, Number = 21 },
             new BikeDef { Id = "aurelion_stratos_1000", Name = "Stratos 1000", Brand = "Aurelion", Class = "Deportiva", Rarity = Rarity.Epic, PriceGems = 450,
-                Torque = 1.9f, TopSpeed = 1.45f, Mass = 1.35f, Suspension = 0.75f, Lean = 0.8f, WheelScale = 0.9f, BodyR = 0.75f, BodyG = 0.05f, BodyB = 0.05f },
+                Torque = 1.9f, TopSpeed = 1.45f, Mass = 1.35f, Suspension = 0.75f, Lean = 0.8f, WheelScale = 0.9f, BodyR = 0.75f, BodyG = 0.05f, BodyB = 0.05f, Style = "sport", Livery = "stripes", Size = 1.05f, Secondary = 0xF2EFE9, Accent = 0xFFD23A, Number = 1 },
             new BikeDef { Id = "ferrum_ironhide_1200", Name = "Ironhide 1200", Brand = "Ferrum Works", Class = "Chopper", Rarity = Rarity.Epic, PriceGems = 400,
-                Torque = 2.0f, TopSpeed = 1.25f, Mass = 1.6f, Suspension = 0.7f, Lean = 0.65f, BodyR = 0.08f, BodyG = 0.08f, BodyB = 0.1f },
+                Torque = 2.0f, TopSpeed = 1.25f, Mass = 1.6f, Suspension = 0.7f, Lean = 0.65f, BodyR = 0.08f, BodyG = 0.08f, BodyB = 0.1f, Style = "chopper", Livery = "flames", Size = 1.05f, Secondary = 0xFF5A1F, Accent = 0xFFD23A, Number = 66 },
             new BikeDef { Id = "solace_voltx", Name = "Volt-X", Brand = "Solace EV", Class = "Eléctrica", Rarity = Rarity.Epic, PriceGems = 500,
-                Torque = 1.7f, TopSpeed = 1.2f, Mass = 1.05f, Lean = 1.1f, BodyR = 0.18f, BodyG = 0.89f, BodyB = 1f },
+                Torque = 1.7f, TopSpeed = 1.2f, Mass = 1.05f, Lean = 1.1f, BodyR = 0.18f, BodyG = 0.89f, BodyB = 1f, Style = "electric", Livery = "neon", Secondary = 0x101418, Accent = 0x2FE3FF, Number = 99 },
             new BikeDef { Id = "kestrel_mule_4x4", Name = "Mule 4x4", Brand = "Kestrel Bikes", Class = "Quad", Rarity = Rarity.Rare, PriceCoins = 9000,
-                Torque = 1.35f, TopSpeed = 0.92f, Grip = 1.25f, Mass = 1.3f, Lean = 0.9f, Suspension = 1.1f, WheelScale = 1.05f, BodyR = 0.35f, BodyG = 0.4f, BodyB = 0.2f },
+                Torque = 1.35f, TopSpeed = 0.92f, Grip = 1.25f, Mass = 1.3f, Lean = 0.9f, Suspension = 1.1f, WheelScale = 1.05f, BodyR = 0.35f, BodyG = 0.4f, BodyB = 0.2f, Style = "quad", Livery = "camo", Secondary = 0x6B5A3A, Accent = 0xFF5A1F, Number = 44 },
             new BikeDef { Id = "nordvik_frostbite_600", Name = "Frostbite 600", Brand = "Nordvik", Class = "Moto de nieve", Rarity = Rarity.Epic, PriceGems = 350,
-                Torque = 1.5f, Grip = 1.5f, Mass = 1.3f, TopSpeed = 1.05f, BodyR = 0.95f, BodyG = 0.85f, BodyB = 0.1f },
+                Torque = 1.5f, Grip = 1.5f, Mass = 1.3f, TopSpeed = 1.05f, BodyR = 0.95f, BodyG = 0.85f, BodyB = 0.1f, Style = "snow", Livery = "stripes", Secondary = 0x101418, Accent = 0x2FE3FF, Number = 60 },
             new BikeDef { Id = "haldane_duneviper_250", Name = "Dune Viper 250", Brand = "Haldane Moto", Class = "Rally", Rarity = Rarity.Rare, PriceCoins = 7000,
-                Torque = 1.2f, TopSpeed = 1.15f, Suspension = 1.2f, Mass = 1.06f, BodyR = 0.9f, BodyG = 0.75f, BodyB = 0.45f },
+                Torque = 1.2f, TopSpeed = 1.15f, Suspension = 1.2f, Mass = 1.06f, BodyR = 0.9f, BodyG = 0.75f, BodyB = 0.45f, Style = "rally", Livery = "split", Secondary = 0x2257B5, Accent = 0xD7261E, Number = 250 },
             new BikeDef { Id = "vextor_shadow_450", Name = "Shadow 450", Brand = "Vextor", Class = "MX nocturna", Rarity = Rarity.Epic, PriceGems = 300,
-                Torque = 1.4f, TopSpeed = 1.15f, Mass = 1.05f, BodyR = 0.12f, BodyG = 0.12f, BodyB = 0.14f },
+                Torque = 1.4f, TopSpeed = 1.15f, Mass = 1.05f, BodyR = 0.12f, BodyG = 0.12f, BodyB = 0.14f, Style = "mx", Livery = "neon", Secondary = 0x08090B, Accent = 0xB45CFF, Number = 13 },
             new BikeDef { Id = "aurelion_carbon_ghost", Name = "Carbon Ghost 450", Brand = "Aurelion", Class = "Edición carbono", Rarity = Rarity.Legendary, PriceGems = 1200,
-                Torque = 1.55f, TopSpeed = 1.22f, Grip = 1.1f, Mass = 0.9f, Lean = 1.15f, Suspension = 1.1f, BodyR = 0.15f, BodyG = 0.15f, BodyB = 0.17f },
+                Torque = 1.55f, TopSpeed = 1.22f, Grip = 1.1f, Mass = 0.9f, Lean = 1.15f, Suspension = 1.1f, BodyR = 0.15f, BodyG = 0.15f, BodyB = 0.17f, Style = "mx", Livery = "carbon", Secondary = 0x2A2C30, Accent = 0x2FE3FF, Number = 0 },
             new BikeDef { Id = "haldane_aurum_450", Name = "Aurum 450", Brand = "Haldane Moto", Class = "Edición dorada", Rarity = Rarity.Legendary, PriceGems = 1500,
-                Torque = 1.6f, TopSpeed = 1.25f, Grip = 1.12f, Mass = 0.95f, Lean = 1.15f, Suspension = 1.15f, Nitro = 1.4f, BodyR = 0.96f, BodyG = 0.72f, BodyB = 0.18f },
+                Torque = 1.6f, TopSpeed = 1.25f, Grip = 1.12f, Mass = 0.95f, Lean = 1.15f, Suspension = 1.15f, Nitro = 1.4f, BodyR = 0.96f, BodyG = 0.72f, BodyB = 0.18f, Style = "mx", Livery = "gold", Secondary = 0x111111, Accent = 0xFFF2B0, Number = 77 },
         };
 
         public static BikeDef Get(string id)

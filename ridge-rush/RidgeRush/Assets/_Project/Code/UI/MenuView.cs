@@ -199,50 +199,79 @@ namespace RidgeRush.Game
             var bike = bikes[_garageIndex];
             InGarage = true;
             bool owned = d.ownedBikes.Contains(bike.Id);
+            bool selected = d.selectedBike == bike.Id;
             var up = SaveSystem.Upgrades(bike.Id);
+            var rarity = RarityColors[(int)bike.Rarity];
+            var accent = LiveryTextures.Rgb(bike.Accent);
 
-            var panel = UiKit.Panel(_rounded, s, new Vector2(1f, 0.5f), new Vector2(-470f, 0f), new Vector2(880f, 4000f), Asphalt);
-            panel.anchorMin = new Vector2(1f, 0f); panel.anchorMax = new Vector2(1f, 1f);
             UiKit.Button(_font, _rounded, s, "‹ " + Loc.Get("back"), new Vector2(0f, 1f), new Vector2(150f, -70f), new Vector2(230f, 90f), Steel, 34, () => { _garageIndex = -1; ShowTitle(); });
             WalletBar(s);
 
-            float x = -470f;
-            UiKit.Label(_font, s, bike.Brand.ToUpperInvariant(), 30, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(x, -150f), new Vector2(780f, 40f), RarityColors[(int)bike.Rarity]);
-            UiKit.Label(_font, s, bike.Name, 64, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(x, -205f), new Vector2(780f, 80f), Bone).fontStyle = FontStyle.Bold;
-            UiKit.Label(_font, s, $"{bike.Class} · {Loc.Get("rarity" + (int)bike.Rarity)}", 30, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(x, -260f), new Vector2(780f, 40f), Bone);
+            // ---- Nombre de la moto (arriba a la izquierda, sobre la escena 3D) ----
+            UiKit.Panel(_rounded, s, new Vector2(0f, 1f), new Vector2(46f, -205f), new Vector2(10f, 150f), rarity);
+            UiKit.Label(_font, s, bike.Brand.ToUpperInvariant() + "  ·  " + Loc.Get("rarity" + (int)bike.Rarity).ToUpperInvariant(), 30, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(460f, -150f), new Vector2(800f, 40f), rarity);
+            var title = UiKit.Label(_font, s, bike.Name.ToUpperInvariant(), 78, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(460f, -212f), new Vector2(800f, 90f), Bone);
+            title.fontStyle = FontStyle.BoldAndItalic;
+            UiKit.Label(_font, s, bike.Class, 32, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(460f, -268f), new Vector2(800f, 44f), new Color(1f, 1f, 1f, 0.7f));
+
+            // ---- Carrusel de motos (abajo a la izquierda) ----
+            int visible = 7;
+            int first = Mathf.Clamp(_garageIndex - visible / 2, 0, bikes.Length - visible);
+            for (int i = 0; i < visible; i++)
+            {
+                int idx = first + i;
+                var b = bikes[idx];
+                bool own = d.ownedBikes.Contains(b.Id);
+                bool cur = idx == _garageIndex;
+                Vector2 pos = new Vector2(150f + i * 150f, 110f);
+                var card = UiKit.Button(_font, _rounded, s, "", new Vector2(0f, 0f), pos, new Vector2(cur ? 140f : 128f, cur ? 130f : 116f),
+                    cur ? new Color(0.16f, 0.18f, 0.21f, 0.98f) : new Color(0.08f, 0.09f, 0.11f, 0.85f), 20,
+                    () => { _garageIndex = idx; GarageChanged?.Invoke(); ShowGarage(); });
+                var crt = (RectTransform)card.transform;
+                UiKit.Panel(_rounded, crt, new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(cur ? 120f : 100f, 8f), RarityColors[(int)b.Rarity]);
+                var swatch = UiKit.Panel(_rounded, crt, new Vector2(0.5f, 0.5f), new Vector2(0f, 14f), new Vector2(64f, 38f), new Color(b.BodyR, b.BodyG, b.BodyB));
+                UiKit.Panel(_rounded, swatch, new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(64f, 12f), LiveryTextures.Rgb(b.Secondary));
+                UiKit.Label(_font, crt, b.Name.Split(' ')[0], 20, TextAnchor.MiddleCenter, new Vector2(0.5f, 0f), new Vector2(0f, 32f), new Vector2(130f, 30f), own ? Bone : new Color(1f, 1f, 1f, 0.45f));
+                if (!own) UiKit.Label(_font, crt, Loc.Get("locked"), 14, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(130f, 24f), new Color(1f, 1f, 1f, 0.55f));
+                if (d.selectedBike == b.Id) UiKit.Label(_font, crt, "√", 30, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(40f, 40f), Volt);
+            }
+            UiKit.Button(_font, _rounded, s, "‹", new Vector2(0f, 0f), new Vector2(150f - 110f, 250f), new Vector2(80f, 80f), Steel, 60, () => { _garageIndex = (_garageIndex + bikes.Length - 1) % bikes.Length; GarageChanged?.Invoke(); ShowGarage(); });
+            UiKit.Button(_font, _rounded, s, "›", new Vector2(0f, 0f), new Vector2(150f + (visible - 1) * 150f + 110f - 220f, 250f), new Vector2(80f, 80f), Steel, 60, () => { _garageIndex = (_garageIndex + 1) % bikes.Length; GarageChanged?.Invoke(); ShowGarage(); });
+            UiKit.Label(_font, s, $"{_garageIndex + 1} / {bikes.Length}", 28, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(150f + 3 * 150f, 250f), new Vector2(300f, 40f), new Color(1f, 1f, 1f, 0.7f));
+
+            // ---- Panel derecho: rendimiento y mejoras ----
+            var panel = UiKit.Panel(_rounded, s, new Vector2(1f, 0.5f), new Vector2(-400f, -20f), new Vector2(740f, 860f), new Color(0.06f, 0.07f, 0.09f, 0.88f));
+            UiKit.Panel(_rounded, panel, new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(700f, 6f), accent);
+            UiKit.Label(_font, panel, Loc.Get("performance"), 30, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(370f, -46f), new Vector2(660f, 40f), new Color(1f, 1f, 1f, 0.6f));
 
             var st = BikeCatalog.Stats(bike, up.engine, up.tires, up.suspension);
-            StatBar(s, Loc.Get("speed"), st.speed, -330f);
-            StatBar(s, Loc.Get("accel"), st.accel, -385f);
-            StatBar(s, Loc.Get("grip"), st.grip, -440f);
-            StatBar(s, Loc.Get("susp"), st.suspension, -495f);
-            StatBar(s, Loc.Get("weight"), st.weight, -550f);
+            var next = BikeCatalog.Stats(bike, Math.Min(BikeCatalog.MaxUpgrade, up.engine + 1), Math.Min(BikeCatalog.MaxUpgrade, up.tires + 1), Math.Min(BikeCatalog.MaxUpgrade, up.suspension + 1));
+            var maxed = BikeCatalog.Stats(bike, BikeCatalog.MaxUpgrade, BikeCatalog.MaxUpgrade, BikeCatalog.MaxUpgrade);
+            SegBar(panel, Loc.Get("speed"), st.speed, maxed.speed, -100f, accent);
+            SegBar(panel, Loc.Get("accel"), st.accel, maxed.accel, -150f, accent);
+            SegBar(panel, Loc.Get("grip"), st.grip, maxed.grip, -200f, accent);
+            SegBar(panel, Loc.Get("susp"), st.suspension, maxed.suspension, -250f, accent);
+            SegBar(panel, Loc.Get("weight"), st.weight, st.weight, -300f, accent);
 
+            UiKit.Label(_font, panel, Loc.Get("upgrades"), 30, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(370f, -360f), new Vector2(660f, 40f), new Color(1f, 1f, 1f, 0.6f));
+            UpgradeCard(panel, bike, owned, "engine", "▲", up.engine, -420f, v => up.engine = v);
+            UpgradeCard(panel, bike, owned, "tires", "●", up.tires, -500f, v => up.tires = v);
+            UpgradeCard(panel, bike, owned, "suspension", "≈", up.suspension, -580f, v => up.suspension = v);
+            UpgradeCard(panel, bike, owned, "brakes", "■", up.brakes, -660f, v => up.brakes = v);
+            UpgradeCard(panel, bike, owned, "nitro_up", "»", up.nitro, -740f, v => up.nitro = v);
+
+            // ---- Botón principal ----
             if (owned)
             {
-                UpgradeRow(s, bike, "engine", up.engine, -630f, v => up.engine = v);
-                UpgradeRow(s, bike, "tires", up.tires, -700f, v => up.tires = v);
-                UpgradeRow(s, bike, "suspension", up.suspension, -770f, v => up.suspension = v);
-                UpgradeRow(s, bike, "brakes", up.brakes, -840f, v => up.brakes = v);
-                UpgradeRow(s, bike, "nitro_up", up.nitro, -910f, v => up.nitro = v);
-                // Pintura.
-                var paint = SaveSystem.Paint(bike.Id);
-                Color[] palette = { new Color(0.95f, 0.36f, 0.1f), new Color(0.1f, 0.3f, 0.85f), new Color(0.2f, 0.55f, 0.2f), new Color(0.9f, 0.1f, 0.15f), new Color(0.95f, 0.95f, 0.95f), new Color(0.1f, 0.1f, 0.12f), new Color(0.96f, 0.72f, 0.18f), new Color(0.18f, 0.89f, 1f) };
-                for (int i = 0; i < palette.Length; i++)
-                {
-                    var c = palette[i];
-                    UiKit.Button(_font, _rounded, s, "", new Vector2(1f, 1f), new Vector2(x - 330f + i * 90f, -990f), new Vector2(76f, 60f), c, 20,
-                        () => { paint.body = c; SaveSystem.Save(); GarageChanged?.Invoke(); });
-                }
-                bool selected = d.selectedBike == bike.Id;
-                UiKit.Button(_font, _rounded, s, selected ? Loc.Get("selected") : Loc.Get("select"), new Vector2(0.5f, 0f), new Vector2(-300f, 90f), new Vector2(460f, 110f), selected ? Steel : Ember, 42,
+                UiKit.Button(_font, _rounded, s, selected ? "√  " + Loc.Get("selected") : Loc.Get("select"), new Vector2(1f, 0f), new Vector2(-400f, 80f), new Vector2(740f, 110f),
+                    selected ? new Color(0.15f, 0.3f, 0.2f, 0.95f) : Ember, 44,
                     () => { d.selectedBike = bike.Id; SaveSystem.Save(); GarageChanged?.Invoke(); ShowGarage(); });
             }
             else
             {
-                string price = bike.PriceCoins > 0 ? $"{bike.PriceCoins} ●" : $"{bike.PriceGems} ◆";
+                string price = bike.PriceCoins > 0 ? $"{bike.PriceCoins:N0} ●" : $"{bike.PriceGems:N0} ◆";
                 bool canBuy = bike.PriceCoins > 0 ? d.coins >= bike.PriceCoins : d.gems >= bike.PriceGems;
-                UiKit.Button(_font, _rounded, s, $"{Loc.Get("buy")}  {price}", new Vector2(0.5f, 0f), new Vector2(-300f, 90f), new Vector2(460f, 110f), canBuy ? Ember : Steel, 42, () =>
+                UiKit.Button(_font, _rounded, s, $"{Loc.Get("buy")}   {price}", new Vector2(1f, 0f), new Vector2(-400f, 80f), new Vector2(740f, 110f), canBuy ? Ember : Steel, 44, () =>
                 {
                     if (bike.PriceCoins > 0 && d.coins >= bike.PriceCoins) d.coins -= bike.PriceCoins;
                     else if (bike.PriceGems > 0 && d.gems >= bike.PriceGems) d.gems -= bike.PriceGems;
@@ -250,36 +279,43 @@ namespace RidgeRush.Game
                     d.ownedBikes.Add(bike.Id); d.selectedBike = bike.Id; SaveSystem.Save(); GarageChanged?.Invoke(); ShowGarage();
                 });
             }
-
-            UiKit.Button(_font, _rounded, s, "‹", new Vector2(0f, 0.5f), new Vector2(110f, 0f), new Vector2(120f, 160f), Steel, 80, () => { _garageIndex = (_garageIndex + bikes.Length - 1) % bikes.Length; GarageChanged?.Invoke(); ShowGarage(); });
-            UiKit.Button(_font, _rounded, s, "›", new Vector2(0.5f, 0.5f), new Vector2(-30f, 0f), new Vector2(120f, 160f), Steel, 80, () => { _garageIndex = (_garageIndex + 1) % bikes.Length; GarageChanged?.Invoke(); ShowGarage(); });
-            UiKit.Label(_font, s, $"{_garageIndex + 1}/{bikes.Length}", 30, TextAnchor.MiddleCenter, new Vector2(0.25f, 0f), new Vector2(0f, 230f), new Vector2(300f, 40f), Bone);
         }
 
-        /// <summary>Moto que se está viendo en el garaje (la escena la muestra detrás del menú).</summary>
-        public string GarageBike => _garageIndex >= 0 ? BikeCatalog.Bikes[_garageIndex].Id : null;
-
-        private void StatBar(RectTransform s, string name, float value, float y)
+        /// <summary>Barra de 10 segmentos: llenos = ahora; tenues = lo que se gana con todas las mejoras.</summary>
+        private void SegBar(RectTransform parent, string name, float value, float max, float y, Color accent)
         {
-            UiKit.Label(_font, s, name, 30, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(-670f, y), new Vector2(380f, 40f), Bone);
-            var bg = UiKit.Panel(_rounded, s, new Vector2(1f, 1f), new Vector2(-300f, y), new Vector2(420f, 18f), Steel);
-            var fill = UiKit.Panel(_rounded, bg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(42f * value, 18f), Ember);
-            fill.pivot = new Vector2(0f, 0.5f);
+            UiKit.Label(_font, parent, name, 28, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(150f, y), new Vector2(240f, 40f), Bone);
+            for (int i = 0; i < 10; i++)
+            {
+                bool on = value >= i + 0.5f;
+                bool potential = !on && max >= i + 0.5f;
+                var c = on ? accent : potential ? new Color(accent.r, accent.g, accent.b, 0.28f) : new Color(1f, 1f, 1f, 0.08f);
+                UiKit.Panel(_rounded, parent, new Vector2(0f, 1f), new Vector2(300f + i * 40f, y), new Vector2(34f, 22f), c);
+            }
+            UiKit.Label(_font, parent, value.ToString("0.0"), 26, TextAnchor.MiddleRight, new Vector2(0f, 1f), new Vector2(700f - 40f, y), new Vector2(80f, 40f), new Color(1f, 1f, 1f, 0.75f));
         }
 
-        private void UpgradeRow(RectTransform s, BikeDef bike, string key, int level, float y, Action<int> set)
+        /// <summary>Tarjeta de mejora: icono, nombre, nivel (5 marcas) y botón con el precio.</summary>
+        private void UpgradeCard(RectTransform parent, BikeDef bike, bool owned, string key, string icon, int level, float y, Action<int> set)
         {
-            UiKit.Label(_font, s, Loc.Get(key), 30, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(-670f, y), new Vector2(380f, 50f), Bone);
-            UiKit.Label(_font, s, new string('■', level) + new string('□', BikeCatalog.MaxUpgrade - level), 30, TextAnchor.MiddleLeft, new Vector2(1f, 1f), new Vector2(-380f, y), new Vector2(220f, 50f), Volt);
-            if (level >= BikeCatalog.MaxUpgrade) return;
+            var card = UiKit.Panel(_rounded, parent, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(690f, 70f), new Color(1f, 1f, 1f, 0.05f));
+            UiKit.Label(_font, card, icon, 38, TextAnchor.MiddleCenter, new Vector2(0f, 0.5f), new Vector2(40f, 0f), new Vector2(60f, 60f), Volt);
+            UiKit.Label(_font, card, Loc.Get(key), 28, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(170f, 0f), new Vector2(200f, 50f), Bone);
+            for (int i = 0; i < BikeCatalog.MaxUpgrade; i++)
+                UiKit.Panel(_rounded, card, new Vector2(0f, 0.5f), new Vector2(290f + i * 34f, 0f), new Vector2(26f, 26f), i < level ? Volt : new Color(1f, 1f, 1f, 0.12f));
+            if (!owned) { UiKit.Label(_font, card, Loc.Get("locked"), 22, TextAnchor.MiddleCenter, new Vector2(1f, 0.5f), new Vector2(-100f, 0f), new Vector2(180f, 50f), new Color(1f, 1f, 1f, 0.4f)); return; }
+            if (level >= BikeCatalog.MaxUpgrade) { UiKit.Label(_font, card, "MAX", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0.5f), new Vector2(-100f, 0f), new Vector2(180f, 50f), Gold).fontStyle = FontStyle.Bold; return; }
             int cost = BikeCatalog.UpgradeCost(bike, level);
             var d = SaveSystem.Data;
-            UiKit.Button(_font, _rounded, s, $"+  {cost} ●", new Vector2(1f, 1f), new Vector2(-150f, y), new Vector2(230f, 56f), d.coins >= cost ? Ember : Steel, 28, () =>
+            UiKit.Button(_font, _rounded, card, $"+ {cost:N0} ●", new Vector2(1f, 0.5f), new Vector2(-110f, 0f), new Vector2(200f, 54f), d.coins >= cost ? Ember : Steel, 26, () =>
             {
                 if (d.coins < cost) return;
                 d.coins -= cost; set(level + 1); SaveSystem.Save(); GarageChanged?.Invoke(); ShowGarage();
             });
         }
+
+        /// <summary>Moto que se está viendo en el garaje (la escena la muestra detrás del menú).</summary>
+        public string GarageBike => _garageIndex >= 0 ? BikeCatalog.Bikes[_garageIndex].Id : null;
 
         // ------------------------------------------------------------------ pase de temporada
 
@@ -313,7 +349,7 @@ namespace RidgeRush.Game
                     bool claimed = premium ? d.seasonClaimedPremium.Contains(tier) : d.seasonClaimedFree.Contains(tier);
                     bool can = SeasonPass.CanClaim(tier, premium);
                     int t = tier;
-                    UiKit.Button(_font, _rounded, s, claimed ? "✓" : reward.Label, new Vector2(0.5f, 0.5f), new Vector2(x + 80f, premium ? -140f : 130f), new Vector2(140f, 200f),
+                    UiKit.Button(_font, _rounded, s, claimed ? "√" : reward.Label, new Vector2(0.5f, 0.5f), new Vector2(x + 80f, premium ? -140f : 130f), new Vector2(140f, 200f),
                         claimed ? new Color(0.15f, 0.3f, 0.2f, 0.95f) : can ? Ember : (premium && !d.seasonPremium ? new Color(0.25f, 0.2f, 0.1f, 0.95f) : Steel), 28,
                         () => { if (SeasonPass.Claim(t, premium)) ShowSeason(); });
                 }
@@ -339,7 +375,7 @@ namespace RidgeRush.Game
                     () => Store.Buy(p.Id, ok => { if (ok) ShowShop(); }));
                 var rt = (RectTransform)card.transform;
                 UiKit.Label(_font, rt, Loc.Spanish ? p.TitleEs : p.TitleEn, 36, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.75f), Vector2.zero, new Vector2(380f, 80f), Bone).fontStyle = FontStyle.Bold;
-                UiKit.Label(_font, rt, p.Gems > 0 ? $"◆ {p.Gems}" : p.Coins > 0 ? $"● {p.Coins}" : "✓", 54, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.47f), Vector2.zero, new Vector2(380f, 80f), Gold);
+                UiKit.Label(_font, rt, p.Gems > 0 ? $"◆ {p.Gems}" : p.Coins > 0 ? $"● {p.Coins}" : "√", 54, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.47f), Vector2.zero, new Vector2(380f, 80f), Gold);
                 UiKit.Label(_font, rt, Store.PriceLabel(p.Id), 34, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(380f, 60f), Volt);
             }
             UiKit.Label(_font, s, Loc.Get("restore_hint"), 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1600f, 40f), Bone);

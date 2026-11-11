@@ -78,7 +78,7 @@ namespace RidgeRush.Game
             var p = Find(id);
             if (p == null) return "";
             if (p.GemCost > 0) return $"◆ {p.GemCost}";
-            if (IsOwned(p)) return "✓";
+            if (IsOwned(p)) return "√";
             return Prices.TryGetValue(id, out var price) ? price : p.FallbackPrice;
         }
 

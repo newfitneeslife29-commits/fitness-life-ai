@@ -82,6 +82,8 @@ namespace RidgeRush.Game
             ["suspension"] = ("Suspensión", "Suspension"),
             ["brakes"] = ("Frenos", "Brakes"),
             ["nitro_up"] = ("Nitro", "Nitro"),
+            ["performance"] = ("RENDIMIENTO", "PERFORMANCE"),
+            ["upgrades"] = ("MEJORAS", "UPGRADES"),
             ["select"] = ("ELEGIR", "SELECT"),
             ["selected"] = ("ELEGIDA", "SELECTED"),
             ["buy"] = ("COMPRAR", "BUY"),

@@ -286,10 +286,9 @@ namespace RidgeRush.Game
             TrackMeshBuilder.BuildGround(_level, _root);
             _platforms = TrackMeshBuilder.BuildPlatforms(_level, _root);
 
-            var paint = SaveSystem.Paint(def.Id);
-            Color body = save.paints.Exists(p => p.bike == def.Id) ? paint.body : new Color(def.BodyR, def.BodyG, def.BodyB);
-            _bike = BikeModelFactory.Create(bikeParams, _root, body);
-            _rider = RiderRig.Create(bikeParams, _root, paint.rider, new Color(0.98f, 0.98f, 0.98f));
+            // Cada moto es una skin con su decoración; el equipo del piloto va a juego.
+            _bike = BikeModelFactory.Create(bikeParams, _root, def);
+            _rider = RiderRig.Create(bikeParams, _root, new Color(def.BodyR, def.BodyG, def.BodyB), LiveryTextures.Rgb(def.Secondary));
             _fx = SurfaceFx.Create(_root, _bike.ExhaustTip);
             _marks = new GameObject("TireMarks").AddComponent<TireMarks>();
             _marks.transform.SetParent(_root, false);
@@ -315,7 +314,7 @@ namespace RidgeRush.Game
             _ghostData = mode == GameMode.TimeTrial ? LoadGhost(data.id) : null;
             if (_ghostData != null)
             {
-                _ghost = BikeModelFactory.Create(bikeParams, _root, new Color(0.2f, 0.9f, 1f));
+                _ghost = BikeModelFactory.Create(bikeParams, _root, def, ghost: true);
                 _ghost.name = "Ghost";
             }
 
@@ -338,7 +337,7 @@ namespace RidgeRush.Game
                 {
                     var rp = BikeCatalog.Build(BikeCatalog.Get(rivalBikes[i]));
                     var rr = new RaceRules(TrackBuilder.Build(data), rp, ModeRules.TimeTrial);
-                    var view = BikeModelFactory.Create(rp, _root, rivalColors[i]);
+                    var view = BikeModelFactory.Create(rp, _root, BikeCatalog.Get(rivalBikes[i]));
                     view.name = "Rival_" + i;
                     var rider = RiderRig.Create(rp, _root, jerseys[i], rivalColors[i]);
                     var st = rr.Sim.CaptureState();
@@ -410,6 +409,7 @@ namespace RidgeRush.Game
             bool demo = _mode == GameMode.Demo;
             // Garaje: la moto se ve parada y de cerca, girando la cámara a su alrededor.
             if (demo && _menu != null && _menu.InGarage) { TickGarage(Time.unscaledDeltaTime); return; }
+            if (_garageStage != null && _garageStage.activeSelf) _garageStage.SetActive(false);
             if (!demo) TickTutorial(Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta));
             if (!demo && _input.RestartPressed()) Restart();
             if (!demo && _input.BackPressed()) _hud.SetPaused(!_paused);
@@ -493,14 +493,46 @@ namespace RidgeRush.Game
         private void TickGarage(float dt)
         {
             if (_rules.Sim.Chassis.Position.x > _level.Data.startX + 0.5f || _rules.State != RaceState.Ready) { Restart(); }
-            _garageAngle += dt * 18f;
-            var c = _bike.Chassis.position + new Vector3(-1.2f, 0.4f, 0f);
-            var offset = Quaternion.Euler(12f, _garageAngle - 90f, 0f) * new Vector3(0f, 0f, -4.6f);
+            _garageAngle += dt * 14f;
+            var c = _bike.Chassis.position + new Vector3(-0.2f, 0.2f, 0f);
+            var offset = Quaternion.Euler(10f, _garageAngle - 90f + Mathf.Sin(_garageAngle * 0.02f) * 25f, 0f) * new Vector3(0f, 0f, -4.4f);
             mainCamera.transform.position = c + offset;
             mainCamera.transform.LookAt(c);
+            // La moto queda a la izquierda: el panel de mejoras ocupa la derecha.
+            mainCamera.transform.position += mainCamera.transform.right * 1.25f;
             mainCamera.fieldOfView = 40f;
             _bike.Apply(_curr);
             _rider.Pose(_bike.Chassis, _curr, dt);
+            EnsureGarageStage();
+            _garageStage.SetActive(true);
+            _garageStage.transform.position = new Vector3(_bike.Chassis.position.x - 0.1f, _rules.Sim.RearInfo.Grounded ? _rules.Sim.RearInfo.ContactPoint.y + 0.02f : _bike.Chassis.position.y - 0.6f, 0f);
+            _garageStage.transform.rotation = Quaternion.Euler(0f, _garageAngle * 0.5f, 0f);
+        }
+
+        private GameObject _garageStage;
+
+        /// <summary>Plataforma giratoria de exposición con aro de luz y foco (solo en el garaje).</summary>
+        private void EnsureGarageStage()
+        {
+            if (_garageStage != null) return;
+            _garageStage = new GameObject("GarageStage");
+            _garageStage.transform.SetParent(_root, false);
+            var t = _garageStage.transform;
+            var disc = MaterialFactory.Lit("garage_disc", new Color(0.08f, 0.09f, 0.1f), 0.8f, 0.85f);
+            var ring = MaterialFactory.Lit("garage_ring", new Color(0.2f, 0.9f, 1f), 0f, 0.7f, emission: new Color(0.6f, 2.8f, 3.4f));
+            SimConvert.Primitive(PrimitiveType.Cylinder, "Disc", t, new Vector3(0f, -0.06f, 0f), new Vector3(3.6f, 0.05f, 3.6f), disc);
+            SimConvert.Primitive(PrimitiveType.Cylinder, "Ring", t, new Vector3(0f, -0.07f, 0f), new Vector3(3.75f, 0.03f, 3.75f), ring);
+            for (int i = 0; i < 12; i++)
+            {
+                float a = i * 30f * Mathf.Deg2Rad;
+                SimConvert.Primitive(PrimitiveType.Cube, "Dot", t, new Vector3(Mathf.Cos(a) * 1.6f, -0.02f, Mathf.Sin(a) * 1.6f), new Vector3(0.12f, 0.02f, 0.12f), ring);
+            }
+            var lg = new GameObject("Spot");
+            lg.transform.SetParent(t, false);
+            lg.transform.localPosition = new Vector3(0f, 5f, -2f);
+            lg.transform.LookAt(t.position + Vector3.up * 0.5f);
+            var l = lg.AddComponent<Light>();
+            l.type = LightType.Spot; l.range = 12f; l.spotAngle = 50f; l.intensity = 14f; l.color = new Color(1f, 0.96f, 0.9f);
         }
 
         private void StartReplay()
