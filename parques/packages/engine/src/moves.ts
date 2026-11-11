@@ -22,8 +22,15 @@ export function getLegalMoves(state: GameState): Move[] {
   const home = homeFor(state.sides);
   const moves: Move[] = [];
 
-  if (!u0 && !u1 && d0 === d1 && jailPieces(state, owner).length > 0) {
-    moves.push({ type: 'exit' });
+  const jailCount = jailPieces(state, owner).length;
+  if (d0 === d1 && jailCount > 0) {
+    const counts = new Set<number>();
+    if (!u0 || !u1) counts.add(1);
+    if (!u0 && !u1) {
+      counts.add(Math.min(state.rules.pairExitMax, jailCount));
+      if (state.rules.allOutDoubles.includes(d0)) counts.add(jailCount);
+    }
+    for (const count of [...counts].sort((a, b) => a - b)) moves.push({ type: 'exit', count });
   }
   const pieces = state.players[owner]!.pieces;
   pieces.forEach((pos, index) => {
@@ -40,7 +47,7 @@ export function getLegalMoves(state: GameState): Move[] {
 
 export function sameMove(a: Move, b: Move): boolean {
   if (a.type !== b.type) return false;
-  if (a.type === 'exit') return true;
+  if (a.type === 'exit') return a.count === (b as Extract<Move, { type: 'exit' }>).count;
   const bp = (b as Exclude<Move, { type: 'exit' }>).piece;
   if (a.piece.owner !== bp.owner || a.piece.index !== bp.index) return false;
   return a.type === 'sum' || a.die === (b as Extract<Move, { type: 'step' }>).die;

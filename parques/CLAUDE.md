@@ -46,8 +46,11 @@ npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
 ## Reglas implementadas
 1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores: amarillo, azul, rojo, verde (+ morado, naranja en 6).
 2. Dos dados; cada dado mueve una ficha distinta o la misma; también se puede mover la **suma** con una ficha (solo captura en la casilla final).
-3. Salir de la cárcel: con **par**. Sin fichas en juego hay `jailAttempts` tiros (3 por defecto). Con un par salen todas
-   (o `exitCount` si `exitAll=false`). Salir consume el par y da turno extra. Con fichas en juego, un par permite la jugada `exit`.
+3. Salir de la cárcel: con **par**. Sin fichas en juego hay `jailAttempts` tiros (3 por defecto).
+   - **Doble 1 o doble 6** (`allOutDoubles`): pueden salir **todas**.
+   - **Cualquier otro par**: salen **1 o 2** (`pairExitMax`).
+   - Si sale **solo 1**, se gasta un dado y el otro se juega normal (p. ej. doble 2: sale una y se mueven 2).
+   - Jugada `{ type: 'exit', count }`: el jugador elige cuántas sacar. El par da turno extra como siempre.
 4. Par ⇒ turno extra.
 5. Tres pares seguidos ⇒ la ficha más adelantada (no coronada, incluye pasillo) va a la cárcel y termina el turno (`triplePairPenalty`).
 6. Seguros y salidas: no se captura. Fichas de distintos colores pueden compartir seguro.
@@ -59,7 +62,7 @@ npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
 11. Se juega hasta definir todos los puestos. Parejas: gana la pareja que corone sus 8 fichas; quien termina mueve las de su compañero.
 12. `TIME_UP` (Modo Rápido): ordena por fichas coronadas y luego por avance.
 
-Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` (1–3), `exitAll`/`exitCount`, `teams`, `piecesPerPlayer`.
+Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` (1–3), `allOutDoubles`/`pairExitMax`, `teams`, `piecesPerPlayer`.
 
 ## Convenciones
 - Código e identificadores en inglés; textos de UI, comentarios de reglas y commits en español.

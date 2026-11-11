@@ -94,21 +94,15 @@ function doRoll(state: GameState, player: number, forced: [number, number] | und
 
   const owner = controlledPlayer(state, player);
   if (!hasPieceInPlay(state, owner)) {
-    // Sin fichas en juego: intentos para sacar par.
-    if (pair) {
-      exitJail(state, owner, events);
-      state.diceUsed = [true, true];
-      state.jailRollsUsed = 0;
-      state.phase = 'roll';
-      events.push({ type: 'EXTRA_TURN', player });
-    } else {
+    // Sin fichas en juego: intentos para sacar par. Con par se elige cuántas salen (fase move).
+    if (!pair) {
       state.jailRollsUsed++;
       const left = state.rules.jailAttempts - state.jailRollsUsed;
       state.diceUsed = [true, true];
       events.push({ type: 'JAIL_ATTEMPT_FAILED', player, attemptsLeft: Math.max(0, left) });
       if (left <= 0) nextPlayer(state, events);
+      return null;
     }
-    return null;
   }
 
   state.phase = 'move';
@@ -125,8 +119,9 @@ function doMove(state: GameState, player: number, move: Move, events: GameEvent[
   const owner = controlledPlayer(state, player);
 
   if (move.type === 'exit') {
-    exitJail(state, owner, events);
-    state.diceUsed = [true, true];
+    exitJail(state, owner, move.count, events);
+    if (move.count === 1) state.diceUsed[state.diceUsed[0] ? 1 : 0] = true;
+    else state.diceUsed = [true, true];
   } else {
     const from = posOf(state, move.piece);
     const to = from + dieValueOf(state, move);

@@ -33,7 +33,7 @@ describe('turnos y validaciones', () => {
     expect(tryAction(r.state, { type: 'MOVE', player: 0, move: step(0, 1, 0) }).ok).toBe(false); // ficha en la cárcel
     expect(tryAction(r.state, { type: 'MOVE', player: 0, move: step(1, 0, 0) }).ok).toBe(false); // ficha rival
     expect(tryAction(r.state, { type: 'MOVE', player: 1, move: step(0, 0, 0) }).ok).toBe(false); // fuera de turno
-    expect(tryAction(r.state, { type: 'MOVE', player: 0, move: { type: 'exit' } }).ok).toBe(false); // sin par
+    expect(tryAction(r.state, { type: 'MOVE', player: 0, move: { type: 'exit', count: 1 } }).ok).toBe(false); // sin par
   });
 
   it('no se puede usar el mismo dado dos veces', () => {

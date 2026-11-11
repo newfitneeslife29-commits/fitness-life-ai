@@ -10,7 +10,8 @@ export function resolveRules(rules?: Partial<HouseRules>): HouseRules {
   const r = { ...DEFAULT_RULES, ...rules };
   r.jailAttempts = Math.max(1, Math.min(3, Math.round(r.jailAttempts)));
   r.piecesPerPlayer = Math.max(1, Math.min(4, Math.round(r.piecesPerPlayer)));
-  r.exitCount = Math.max(1, Math.min(4, Math.round(r.exitCount)));
+  r.pairExitMax = Math.max(1, Math.min(4, Math.round(r.pairExitMax)));
+  r.allOutDoubles = [...new Set(r.allOutDoubles.filter((d) => Number.isInteger(d) && d >= 1 && d <= 6))].sort();
   return r;
 }
 

@@ -71,7 +71,7 @@ describe('tres pares seguidos', () => {
 
   it('los pares para salir de la cárcel también cuentan', () => {
     let s = newGame();
-    s = roll(s, [1, 1]).state; // salen todas (par 1)
+    s = move(roll(s, [1, 1]).state, { type: 'exit', count: 4 }).state; // doble 1: salen todas (par 1)
     expect(s.pairStreak).toBe(1);
     s = playPair(s, 2).state; // par 2
     const r = roll(s, [5, 5]); // par 3

@@ -26,10 +26,10 @@ export interface HouseRules {
   triplePairPenalty: boolean;
   /** Intentos para sacar par cuando no hay fichas en juego (1–3). */
   jailAttempts: number;
-  /** Con un par salen todas las fichas de la cárcel (true) o solo `exitCount`. */
-  exitAll: boolean;
-  /** Fichas que salen con un par cuando `exitAll` es false. */
-  exitCount: number;
+  /** Pares con los que salen TODAS las fichas de la cárcel (por defecto doble 1 y doble 6). */
+  allOutDoubles: number[];
+  /** Máximo de fichas que salen con los demás pares (por defecto 2). */
+  pairExitMax: number;
   /** Partida por parejas (compañeros en lados opuestos). */
   teams: boolean;
   /** Fichas por jugador (4 normal, 2 en Modo Rápido). */
@@ -40,8 +40,8 @@ export const DEFAULT_RULES: HouseRules = {
   soplar: true,
   triplePairPenalty: true,
   jailAttempts: 3,
-  exitAll: true,
-  exitCount: 2,
+  allOutDoubles: [1, 6],
+  pairExitMax: 2,
   teams: false,
   piecesPerPlayer: 4,
 };
@@ -127,7 +127,11 @@ export interface GameState {
 }
 
 export type Move =
-  | { type: 'exit' }
+  /**
+   * Sacar `count` fichas de la cárcel (requiere par). Sacar 1 usa un solo dado
+   * (el otro se juega normal); sacar 2 o más usa los dos.
+   */
+  | { type: 'exit'; count: number }
   | { type: 'step'; piece: PieceRef; die: 0 | 1 }
   | { type: 'sum'; piece: PieceRef };
 

@@ -33,7 +33,7 @@ export function move(state: GameState, mv: Move, player = state.current) {
 
 export const step = (owner: number, index: number, die: 0 | 1): Move => ({ type: 'step', piece: { owner, index }, die });
 export const sum = (owner: number, index: number): Move => ({ type: 'sum', piece: { owner, index } });
-export const exit: Move = { type: 'exit' };
+export const exit = (count: number): Move => ({ type: 'exit', count });
 export const ref = (owner: number, index: number): PieceRef => ({ owner, index });
 
 export function tryAction(state: GameState, action: Parameters<typeof applyAction>[1]) {
