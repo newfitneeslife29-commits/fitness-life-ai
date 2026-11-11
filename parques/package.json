@@ -1,0 +1,15 @@
+{
+  "name": "parques-bacano",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Parqués Bacano — parqués colombiano para web/PWA",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "demo": "npm run demo -w @parques/engine"
+  }
+}
