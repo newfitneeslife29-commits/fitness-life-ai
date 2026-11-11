@@ -40,7 +40,14 @@ internal static class Program
             Run($"Nivel {name}: el piloto automático llega a la meta", () =>
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                var r = RunBot(LoadLevel(file), verbose: false, respawn: true);
+                // Un nivel vale si el piloto automático lo termina con alguno de los tres estilos con los que se generó.
+                var lvlData = LoadLevel(file);
+                RaceRules r = null;
+                foreach (float agg in new[] { 1f, 0.9f, 0.8f })
+                {
+                    r = RunBot(lvlData, verbose: false, aggressiveness: agg, respawn: true);
+                    if (r.State == RaceState.Finished && r.Crashes <= 2) break;
+                }
                 sw.Stop();
                 if (name == "coast_01") Console.WriteLine($"      coste: {sw.Elapsed.TotalMilliseconds * 1000.0 / (r.Sim.Time / BikeSim.FixedDt):0.0} µs por paso de simulación (en esta máquina)");
                 // La física es determinista en una misma máquina, pero el redondeo cambia entre procesadores y el piloto
