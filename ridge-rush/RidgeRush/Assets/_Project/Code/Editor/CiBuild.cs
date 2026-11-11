@@ -56,6 +56,51 @@ namespace RidgeRush.EditorTools
                 throw new Exception($"La compilación de iOS falló: {summary.result} ({summary.totalErrors} errores). Revisa el registro de Unity más arriba.");
         }
 
+        /// <summary>
+        /// Android App Bundle (.aab) firmado para Google Play. La firma la pasa GameCI con -androidKeystoreName,
+        /// -androidKeystorePass, -androidKeyaliasName y -androidKeyaliasPass (workflow ridge-rush-android.yml).
+        /// </summary>
+        public static void BuildAndroid()
+        {
+#if !ENABLE_INPUT_SYSTEM
+            throw new Exception("El editor arrancó sin el nuevo Input System. Ejecuta antes CiBuild.PrepareProject en otra sesión de Unity.");
+#endif
+            string output = Arg("-customBuildPath") ?? "build/Android/RidgeRush.aab";
+            if (!output.EndsWith(".aab")) output += ".aab";
+            string buildNumber = Arg("-rrBuildNumber") ?? "1";
+            string version = Arg("-rrVersion") ?? "0.1." + buildNumber;
+
+            ProjectSetup.SetupAll();
+            PlayerSettings.bundleVersion = version;
+            PlayerSettings.Android.bundleVersionCode = int.Parse(buildNumber);
+            EditorUserBuildSettings.buildAppBundle = true;
+
+            string keystore = Arg("-androidKeystoreName");
+            if (!string.IsNullOrEmpty(keystore))
+            {
+                PlayerSettings.Android.useCustomKeystore = true;
+                PlayerSettings.Android.keystoreName = keystore;
+                PlayerSettings.Android.keystorePass = Arg("-androidKeystorePass");
+                PlayerSettings.Android.keyaliasName = Arg("-androidKeyaliasName");
+                PlayerSettings.Android.keyaliasPass = Arg("-androidKeyaliasPass");
+            }
+            else Debug.LogWarning("Ridge Rush: sin clave de subida; el .aab irá firmado con la clave de depuración (no vale para Google Play).");
+
+            var options = new BuildPlayerOptions
+            {
+                scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
+                locationPathName = output,
+                target = BuildTarget.Android,
+                targetGroup = BuildTargetGroup.Android,
+                options = BuildOptions.None,
+            };
+            Debug.Log($"Ridge Rush: compilando Android {version} ({buildNumber}) en {output}");
+            var summary = BuildPipeline.BuildPlayer(options).summary;
+            Debug.Log($"Ridge Rush: resultado {summary.result}, {summary.totalErrors} errores, {summary.totalSize / (1024 * 1024)} MB");
+            if (summary.result != BuildResult.Succeeded)
+                throw new Exception($"La compilación de Android falló: {summary.result} ({summary.totalErrors} errores).");
+        }
+
         private static string Arg(string name)
         {
             var args = Environment.GetCommandLineArgs();
