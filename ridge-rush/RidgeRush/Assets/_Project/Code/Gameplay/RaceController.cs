@@ -736,6 +736,9 @@ namespace RidgeRush.Game
                     case RaceEventType.Boost: if (!demo) { _hud.Popup(Loc.Get("boost"), volt, 0.6f); _cam.AddShake(0.2f); } break;
                     case RaceEventType.Hit: _bike.AddDamage(0.15f); _items.Burst(at, 20, new Color(1f, 0.8f, 0.4f)); if (!demo) { _hud.Popup(Loc.Get("hit"), ember, 0.7f); _cam.AddShake(0.6f); Haptics.Impact(0.8f, 0.4f); } break;
                     case RaceEventType.SawHit: _bike.AddDamage(0.3f); _items.Burst(at, 60, new Color(1f, 0.85f, 0.5f)); if (!demo) { _cam.AddShake(1f); Haptics.Impact(1f, 0.3f); _audio.PlayCrash(); } break;
+                    case RaceEventType.Finished: _items.Fireworks(new Vector3(_level.FinishX, _rules.Sim.Chassis.Position.y, 0f)); break;
+                    case RaceEventType.NearMiss: if (!demo) { _hud.Popup(Loc.Get("near_miss"), new Color(1f, 0.85f, 0.2f), 0.7f); Haptics.Impact(0.4f, 1f); } break;
+                    case RaceEventType.CratesSmash: _items.Smash(at); if (!demo) { _hud.Popup(Loc.Get("smash"), new Color(1f, 0.8f, 0.4f), 0.6f); _cam.AddShake(0.4f); Haptics.Impact(0.7f, 0.6f); } break;
                     case RaceEventType.Spring: _items.SpringFx(at); _items.Burst(at, 15, new Color(0.3f, 1f, 0.5f)); if (!demo) { _hud.Popup(Loc.Get("spring"), new Color(0.3f, 1f, 0.5f), 0.7f); _cam.AddShake(0.3f); Haptics.Impact(0.6f, 0.9f); } break;
                     case RaceEventType.Blocked: _items.Burst(at, 25, volt); if (!demo) _hud.Popup(Loc.Get("blocked"), volt, 0.7f); break;
                     case RaceEventType.PowerReady: if (!demo) { _hud.Popup(Loc.Get("power_ready"), volt, 1f); Haptics.Impact(0.5f, 1f); } break;

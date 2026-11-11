@@ -463,7 +463,7 @@ internal static class Program
         var all = level.obstacles ?? Array.Empty<ObstacleData>();
         var saws = new List<ObstacleData>();
         var others = new List<ObstacleData>();
-        foreach (var o in all) (o.type == "saw" ? saws : others).Add(o);
+        foreach (var o in all) (ObstacleMotion.IsDeadly(o.type) ? saws : others).Add(o);
         total = saws.Count;
         level.obstacles = others.ToArray();
 
@@ -483,26 +483,17 @@ internal static class Program
         foreach (var sw in saws)
         {
             if (!track.GroundAt(sw.x, 10000f, out float gy, out _, out _)) continue;
-            bool moving = sw.dx != 0f || sw.dy != 0f;
-            float margin = sw.size + (moving ? 1.0f : 0.6f);
+            bool moving = sw.type != "saw" || sw.dx != 0f || sw.dy != 0f;
+            float margin = moving ? 1.0f : 0.6f;
             bool clear = true;
             foreach (var rec in recs)
             {
                 foreach (var smp in rec)
                 {
-                    Vec2 c = new Vec2(sw.x, gy + sw.y);
-                    if (moving)
-                    {
-                        float period = Math.Max(0.5f, sw.period);
-                        float k = 0.5f - 0.5f * MathF.Cos((smp[0] + sw.phase) / period * SimMath.TwoPi);
-                        c += new Vec2(sw.dx, sw.dy) * k;
-                    }
-                    if (Math.Abs(smp[1] - c.x) > margin + 3f) continue;
+                    Vec2 c = ObstacleMotion.Center(sw, gy, smp[0]);
+                    if (Math.Abs(smp[1] - c.x) > sw.size + margin + 4f) continue;
                     for (int q = 1; q < smp.Length; q += 2)
-                    {
-                        float dx = smp[q] - c.x, dy = smp[q + 1] - c.y;
-                        if (dx * dx + dy * dy < (margin + 0.4f) * (margin + 0.4f)) { clear = false; break; }
-                    }
+                        if (ObstacleMotion.Touches(sw, c, new Vec2(smp[q], smp[q + 1]), 0.4f + margin)) { clear = false; break; }
                     if (!clear) break;
                 }
                 if (!clear) break;

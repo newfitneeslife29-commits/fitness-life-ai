@@ -53,6 +53,8 @@ namespace RidgeRush.Game
             ["ring"] = ("¡ARO DE FUEGO!", "RING OF FIRE!"),
             ["boost"] = ("¡TURBO!", "BOOST!"),
             ["hit"] = ("¡AY!", "OUCH!"),
+            ["near_miss"] = ("¡POR UN PELO!", "CLOSE CALL!"),
+            ["smash"] = ("¡DESTROZO!", "SMASH!"),
             ["spring"] = ("¡SÚPER SALTO!", "SUPER JUMP!"),
             ["loop"] = ("¡LOOP!", "LOOP!"),
             ["blocked"] = ("¡BLOQUEADO!", "BLOCKED!"),

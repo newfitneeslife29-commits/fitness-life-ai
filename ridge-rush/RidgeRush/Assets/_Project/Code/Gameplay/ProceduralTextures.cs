@@ -70,6 +70,24 @@ namespace RidgeRush.Game
         public static Texture2D Planks => _planks ??= Albedo("planks", PlankHeight);
         public static Texture2D PlanksNormal => _planksNormal ??= Normal("planks_n", PlankHeight, 4f);
 
+        private static Texture2D _checker, _stripes;
+
+        /// <summary>Cuadros blancos y negros (pancarta de meta).</summary>
+        public static Texture2D Checker => _checker ??= Pattern("checker", (x, y) => ((x / 8 + y / 8) & 1) == 0 ? Color.white : new Color(0.06f, 0.06f, 0.07f), 32, FilterMode.Point);
+
+        /// <summary>Gajos verticales claros y oscuros (globos aerostáticos).</summary>
+        public static Texture2D Stripes => _stripes ??= Pattern("stripes", (x, y) => (x / 16) % 2 == 0 ? Color.white : new Color(0.95f, 0.85f, 0.3f), 64, FilterMode.Bilinear);
+
+        private static Texture2D Pattern(string name, System.Func<int, int, Color> f, int size, FilterMode filter)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { name = name, wrapMode = TextureWrapMode.Repeat, filterMode = filter };
+            var px = new Color[size * size];
+            for (int y = 0; y < size; y++) for (int x = 0; x < size; x++) px[y * size + x] = f(x, y);
+            tex.SetPixels(px);
+            tex.Apply(true);
+            return tex;
+        }
+
         /// <summary>Punto suave con borde difuminado para partículas de polvo y humo.</summary>
         public static Texture2D SoftDot
         {

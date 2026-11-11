@@ -19,6 +19,9 @@ namespace RidgeRush.Game
         private float _spin;
         private readonly Dictionary<int, float> _springSquash = new Dictionary<int, float>();
         private readonly Dictionary<int, Transform> _springTops = new Dictionary<int, Transform>();
+        private readonly Dictionary<int, Transform> _arms = new Dictionary<int, Transform>();
+        private readonly List<(TrackChain chain, Transform hanger, Vector3 hub)> _cabins = new List<(TrackChain, Transform, Vector3)>();
+        private readonly List<(Transform wheel, TrackChain chain)> _wheels = new List<(Transform, TrackChain)>();
 
         public static ItemsView Create(Transform parent, RaceRules rules)
         {
@@ -48,6 +51,8 @@ namespace RidgeRush.Game
             var hazardMat = MaterialFactory.Lit("hazard_stripe", new Color(1f, 0.78f, 0.1f), 0.2f, 0.5f, emission: new Color(0.9f, 0.65f, 0.05f));
             var springPadMat = MaterialFactory.Lit("spring_pad", new Color(0.1f, 0.85f, 0.35f), 0.3f, 0.6f, emission: new Color(0.2f, 1.8f, 0.6f));
             var coilMat = MaterialFactory.Lit("spring_coil", new Color(0.85f, 0.86f, 0.9f), 1f, 0.8f);
+            var ironMat = MaterialFactory.Lit("hazard_iron", new Color(0.16f, 0.16f, 0.18f), 0.85f, 0.5f);
+            BuildFerris();
             BuildLoops();
 
             var pk = _rules.Level.Data.pickups ?? new PickupData[0];
@@ -113,23 +118,70 @@ namespace RidgeRush.Game
                     case "saw":
                     {
                         // Sierra circular: disco, dientes, buje rojo y brazo hasta el suelo (o raíl si se mueve).
-                        var sp = _rules.SawPosition(i);
                         var arm = SimConvert.Primitive(PrimitiveType.Cylinder, "Arm", t, Vector3.zero, Vector3.one, postMat);
                         float top = Mathf.Max(o.y, o.y + o.dy) + o.size * 0.2f;
                         SimConvert.Stretch(arm.transform, new Vector3(o.x, gy, 0.9f), new Vector3(o.x + Mathf.Max(0f, o.dx), gy + top, 0.9f), 0.22f);
                         SimConvert.Primitive(PrimitiveType.Cube, "Base", t, new Vector3(0f, 0.15f, 0.9f), new Vector3(1.2f, 0.3f, 1.2f), hazardMat);
-                        var blade = new GameObject("Blade").transform;
-                        blade.SetParent(t, false);
-                        blade.position = sp.ToV3(0f);
-                        float r = o.size;
-                        SimConvert.Primitive(PrimitiveType.Cylinder, "Disc", blade, Vector3.zero, new Vector3(r * 2f, 0.04f, r * 2f), sawMat, Quaternion.Euler(90f, 0f, 0f));
-                        for (int k = 0; k < 16; k++)
+                        BuildBlade(t, i, o.size, sawMat, sawHubMat, postMat);
+                        break;
+                    }
+                    case "orbit":
+                    {
+                        // Sierra que gira alrededor de un eje: poste, brazo y disco.
+                        var post = SimConvert.Primitive(PrimitiveType.Cylinder, "Post", t, Vector3.zero, Vector3.one, postMat);
+                        SimConvert.Stretch(post.transform, new Vector3(o.x, gy, 1.1f), new Vector3(o.x, gy + o.y, 1.1f), 0.35f);
+                        SimConvert.Primitive(PrimitiveType.Cylinder, "Hub", t, new Vector3(0f, o.y, 0.9f), new Vector3(0.6f, 0.2f, 0.6f), sawHubMat, Quaternion.Euler(90f, 0f, 0f));
+                        var armT = SimConvert.Primitive(PrimitiveType.Cube, "Arm", t, new Vector3(0f, o.y, 0.6f), new Vector3(o.dx, 0.18f, 0.12f), hazardMat).transform;
+                        _arms[i] = armT;
+                        BuildBlade(t, i, o.size, sawMat, sawHubMat, postMat);
+                        break;
+                    }
+                    case "pendulum":
+                    {
+                        // Bola de demolición: pórtico, cadena y bola de hierro con pinchos.
+                        foreach (float side in new[] { -1f, 1f })
                         {
-                            float a = k / 16f * 360f;
-                            SimConvert.Primitive(PrimitiveType.Cube, "Tooth", blade, Quaternion.Euler(0, 0, a) * new Vector3(r, 0f, 0f), new Vector3(0.28f, 0.16f, 0.05f), sawMat, Quaternion.Euler(0, 0, a + 35f));
+                            var leg = SimConvert.Primitive(PrimitiveType.Cylinder, "Leg", t, Vector3.zero, Vector3.one, postMat);
+                            SimConvert.Stretch(leg.transform, new Vector3(o.x + side * 2.2f, gy, 2.2f), new Vector3(o.x + side * 0.4f, gy + o.y + 0.3f, 1.4f), 0.3f);
                         }
-                        SimConvert.Primitive(PrimitiveType.Cylinder, "Hub", blade, new Vector3(0f, 0f, -0.04f), new Vector3(r * 0.55f, 0.06f, r * 0.55f), sawHubMat, Quaternion.Euler(90f, 0f, 0f));
-                        SimConvert.Primitive(PrimitiveType.Cylinder, "Axle", blade, new Vector3(0f, 0f, 0.45f), new Vector3(0.18f, 0.45f, 0.18f), postMat, Quaternion.Euler(90f, 0f, 0f));
+                        SimConvert.Primitive(PrimitiveType.Cube, "Beam", t, new Vector3(0f, o.y + 0.3f, 1.2f), new Vector3(1.6f, 0.4f, 2.4f), hazardMat);
+                        var chain = SimConvert.Primitive(PrimitiveType.Cylinder, "Chain", t, Vector3.zero, Vector3.one, postMat).transform;
+                        _arms[i] = chain;
+                        var ball = new GameObject("Blade").transform;
+                        ball.SetParent(t, false);
+                        SimConvert.Primitive(PrimitiveType.Sphere, "Ball", ball, Vector3.zero, Vector3.one * o.size * 2f, ironMat);
+                        for (int k = 0; k < 10; k++)
+                        {
+                            var dir = Quaternion.Euler(k * 37f, k * 71f, k * 13f) * Vector3.up;
+                            SimConvert.Primitive(PrimitiveType.Cube, "Spike", ball, dir * o.size, new Vector3(0.18f, 0.5f, 0.18f), postMat, Quaternion.FromToRotation(Vector3.up, dir));
+                        }
+                        break;
+                    }
+                    case "crusher":
+                    {
+                        // Prensa: guías a los lados, carcasa arriba y bloque de acero con franjas de peligro.
+                        float top = o.y + ObstacleMotion.CrusherHalfHeight + 0.6f;
+                        foreach (float side in new[] { -1f, 1f })
+                        {
+                            var rail = SimConvert.Primitive(PrimitiveType.Cube, "Rail", t, new Vector3(side * (o.size + 0.25f), top * 0.5f, 0.6f), new Vector3(0.3f, top, 0.3f), postMat);
+                        }
+                        SimConvert.Primitive(PrimitiveType.Cube, "Housing", t, new Vector3(0f, top + 0.4f, 0.4f), new Vector3(o.size * 2f + 1.2f, 0.8f, 2.6f), postMat);
+                        var block = new GameObject("Blade").transform;
+                        block.SetParent(t, false);
+                        SimConvert.Primitive(PrimitiveType.Cube, "Block", block, Vector3.zero, new Vector3(o.size * 2f, ObstacleMotion.CrusherHalfHeight * 2f, 2.4f), ironMat);
+                        for (int k = 0; k < 4; k++)
+                            SimConvert.Primitive(PrimitiveType.Cube, "Stripe", block, new Vector3(-o.size + 0.35f + k * o.size * 0.55f, -ObstacleMotion.CrusherHalfHeight + 0.2f, -1.21f), new Vector3(0.3f, 0.35f, 0.02f), hazardMat, Quaternion.Euler(0, 0, 35f));
+                        var piston = SimConvert.Primitive(PrimitiveType.Cylinder, "Piston", t, Vector3.zero, Vector3.one, coilMat).transform;
+                        _arms[i] = piston;
+                        break;
+                    }
+                    case "crates":
+                    {
+                        // Muro de cajas de madera (2 de ancho × 3 de alto) que se rompe al atravesarlo.
+                        var crateMat = MaterialFactory.Lit("prop_crate", new Color(0.6f, 0.45f, 0.28f), 0f, 0.3f, ProceduralTextures.Planks, ProceduralTextures.PlanksNormal);
+                        for (int cx = 0; cx < 2; cx++)
+                        for (int cy = 0; cy < 3 - cx; cy++)
+                            SimConvert.Primitive(PrimitiveType.Cube, "Crate", t, new Vector3(-0.45f + cx * 0.95f, 0.47f + cy * 0.92f, (cy % 2) * 0.3f - 0.15f), Vector3.one * 0.9f, crateMat, Quaternion.Euler(0, (cx + cy) * 9f, 0));
                         break;
                     }
                     case "spring":
@@ -183,6 +235,110 @@ namespace RidgeRush.Game
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = MaterialFactory.Particles("fx_fire", ProceduralTextures.SoftDot, Color.white);
             ps.Play();
             return ps;
+        }
+
+        private void BuildBlade(Transform t, int i, float r, Material sawMat, Material hubMat, Material postMat)
+        {
+            var blade = new GameObject("Blade").transform;
+            blade.SetParent(t, false);
+            blade.position = _rules.SawPosition(i).ToV3(0f);
+            SimConvert.Primitive(PrimitiveType.Cylinder, "Disc", blade, Vector3.zero, new Vector3(r * 2f, 0.04f, r * 2f), sawMat, Quaternion.Euler(90f, 0f, 0f));
+            for (int k = 0; k < 16; k++)
+            {
+                float a = k / 16f * 360f;
+                SimConvert.Primitive(PrimitiveType.Cube, "Tooth", blade, Quaternion.Euler(0, 0, a) * new Vector3(r, 0f, 0f), new Vector3(0.28f, 0.16f, 0.05f), sawMat, Quaternion.Euler(0, 0, a + 35f));
+            }
+            SimConvert.Primitive(PrimitiveType.Cylinder, "Hub", blade, new Vector3(0f, 0f, -0.04f), new Vector3(r * 0.55f, 0.06f, r * 0.55f), hubMat, Quaternion.Euler(90f, 0f, 0f));
+            SimConvert.Primitive(PrimitiveType.Cylinder, "Axle", blade, new Vector3(0f, 0f, 0.45f), new Vector3(0.18f, 0.45f, 0.18f), postMat, Quaternion.Euler(90f, 0f, 0f));
+        }
+
+        /// <summary>
+        /// Noria: aro con luces y radios que gira, soporte en A y una barra de cada cabina al aro.
+        /// Las cabinas son plataformas de la física (se dibujan en TrackMeshBuilder); aquí va la estructura.
+        /// </summary>
+        private void BuildFerris()
+        {
+            var chains = _rules.Level.Track.Chains;
+            var hubs = new Dictionary<Vector2Int, Transform>();
+            var frame = MaterialFactory.Lit("ferris_frame", new Color(0.92f, 0.92f, 0.95f), 0.6f, 0.6f);
+            var bulbs = MaterialFactory.Lit("ferris_bulbs", new Color(1f, 0.85f, 0.4f), 0f, 0.7f, emission: new Color(3.2f, 2.4f, 0.9f));
+            var redMat = MaterialFactory.Lit("ferris_red", new Color(0.85f, 0.12f, 0.1f), 0.3f, 0.6f);
+            foreach (var ch in chains)
+            {
+                if (ch.Motion != ChainMotion.Orbit) continue;
+                float w = ch.LocalMax.x - ch.LocalMin.x;
+                // Centro de la noria = posición inicial de la cabina + medio ancho (arriba de la cabina).
+                ch.ResetMotion();
+                float R = ch.MoveDelta.x;
+                float a0 = ch.TriggerDelay * Mathf.PI * 2f;
+                Vector3 hub = new Vector3(ch.Offset.x - Mathf.Cos(a0) * R + w * 0.5f, ch.Offset.y - Mathf.Sin(a0) * R + 1.6f, 0.8f);
+                var key = new Vector2Int(Mathf.RoundToInt(hub.x * 10f), Mathf.RoundToInt(hub.y * 10f));
+                if (!hubs.TryGetValue(key, out var wheel))
+                {
+                    var root = new GameObject("FerrisWheel").transform;
+                    root.SetParent(transform, false);
+                    // Soporte en A hasta el suelo (por detrás).
+                    float ground = hub.y - R - 1.6f - 9f;
+                    foreach (float side in new[] { -1f, 1f })
+                    {
+                        var leg = SimConvert.Primitive(PrimitiveType.Cylinder, "Leg", root, Vector3.zero, Vector3.one, redMat);
+                        SimConvert.Stretch(leg.transform, new Vector3(hub.x + side * R * 0.7f, ground, 2.6f), new Vector3(hub.x, hub.y, 1.6f), 0.45f);
+                    }
+                    wheel = new GameObject("Wheel").transform;
+                    wheel.SetParent(root, false);
+                    wheel.position = new Vector3(hub.x, hub.y, 1.2f);
+                    SimConvert.Primitive(PrimitiveType.Cylinder, "Hub", wheel, Vector3.zero, new Vector3(1.2f, 0.4f, 1.2f), redMat, Quaternion.Euler(90, 0, 0));
+                    int n = 48;
+                    for (int k = 0; k < n; k++)
+                    {
+                        float a = k / (float)n * Mathf.PI * 2f, b = (k + 1) / (float)n * Mathf.PI * 2f;
+                        var p0 = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * R; var p1 = new Vector3(Mathf.Cos(b), Mathf.Sin(b), 0f) * R;
+                        var seg = SimConvert.Primitive(PrimitiveType.Cube, "Rim", wheel, (p0 + p1) * 0.5f, new Vector3((p1 - p0).magnitude + 0.05f, 0.22f, 0.22f), frame, Quaternion.Euler(0, 0, (a + b) * 0.5f * Mathf.Rad2Deg + 90f));
+                        if (k % 2 == 0) SimConvert.Primitive(PrimitiveType.Sphere, "Bulb", wheel, p0 * 1.03f + new Vector3(0, 0, -0.15f), Vector3.one * 0.22f, bulbs);
+                        if (k % 6 == 0)
+                        {
+                            var spoke = SimConvert.Primitive(PrimitiveType.Cube, "Spoke", wheel, p0 * 0.5f, new Vector3(R, 0.12f, 0.12f), frame, Quaternion.Euler(0, 0, a * Mathf.Rad2Deg));
+                        }
+                    }
+                    hubs[key] = wheel;
+                    _wheels.Add((wheel, ch));
+                }
+                var hanger = SimConvert.Primitive(PrimitiveType.Cylinder, "Hanger", transform, Vector3.zero, Vector3.one, frame).transform;
+                _cabins.Add((ch, hanger, hub));
+            }
+        }
+
+        /// <summary>Las cajas saltan en pedazos (cubos con física de Unity que rebotan en la pista y desaparecen).</summary>
+        public void Smash(Vector3 at)
+        {
+            var mat = MaterialFactory.Lit("prop_crate", new Color(0.6f, 0.45f, 0.28f), 0f, 0.3f, ProceduralTextures.Planks, ProceduralTextures.PlanksNormal);
+            int n = QualityManager.ParticleScale < 0.6f ? 6 : 12;
+            for (int k = 0; k < n; k++)
+            {
+                var piece = SimConvert.Primitive(PrimitiveType.Cube, "Debris", transform, at + new Vector3(Random.Range(-0.6f, 0.6f), Random.Range(-0.6f, 1.2f), Random.Range(-0.4f, 0.4f)),
+                    new Vector3(Random.Range(0.15f, 0.5f), Random.Range(0.08f, 0.2f), Random.Range(0.15f, 0.5f)), mat, Random.rotation);
+                piece.AddComponent<BoxCollider>();
+                var rb = piece.AddComponent<Rigidbody>();
+                rb.mass = 0.3f;
+                rb.linearVelocity = new Vector3(Random.Range(4f, 11f), Random.Range(2f, 8f), Random.Range(-3f, 3f));
+                rb.angularVelocity = Random.insideUnitSphere * 12f;
+                Destroy(piece, 3f);
+            }
+            Burst(at, 25, new Color(0.8f, 0.65f, 0.4f));
+        }
+
+        /// <summary>Fuegos artificiales sobre la meta (varias explosiones de colores durante unos segundos).</summary>
+        public void Fireworks(Vector3 at) => StartCoroutine(FireworksRoutine(at));
+
+        private System.Collections.IEnumerator FireworksRoutine(Vector3 at)
+        {
+            Color[] cols = { new Color(1f, 0.3f, 0.2f), new Color(0.2f, 0.9f, 1f), new Color(1f, 0.85f, 0.2f), new Color(0.6f, 1f, 0.3f), new Color(1f, 0.4f, 0.9f) };
+            for (int k = 0; k < 9; k++)
+            {
+                var p = at + new Vector3(Random.Range(-6f, 14f), Random.Range(9f, 17f), Random.Range(2f, 10f));
+                Burst(p, 70, cols[k % cols.Length] * 2.5f);
+                yield return new WaitForSeconds(Random.Range(0.15f, 0.45f));
+            }
         }
 
         /// <summary>Anima el trampolín más cercano a <paramref name="at"/>.</summary>
@@ -269,6 +425,14 @@ namespace RidgeRush.Game
         private void Update()
         {
             _spin += Time.deltaTime * 140f;
+            float simT = _rules.Sim.Time;
+            foreach (var (wh, ch) in _wheels) wh.localRotation = Quaternion.Euler(0f, 0f, simT / ch.Period * 360f); // gira con las cabinas
+            foreach (var (ch, hanger, hub) in _cabins)
+            {
+                float w = ch.LocalMax.x - ch.LocalMin.x;
+                Vector3 top = new Vector3(ch.Offset.x + w * 0.5f, ch.Offset.y, 0.2f);
+                SimConvert.Stretch(hanger, top, top + new Vector3(0f, 1.6f, 0.6f), 0.12f);
+            }
             var pk = _rules.Level.Data.pickups ?? new PickupData[0];
             for (int i = 0; i < _pickups.Count; i++)
             {
@@ -302,11 +466,43 @@ namespace RidgeRush.Game
                         _obstacles[i].position = new Vector3(ob[i].x, _rules.RockY(i), 0f);
                         break;
                     case "saw":
+                    case "orbit":
+                    case "pendulum":
+                    case "crusher":
                     {
                         var blade = _obstacles[i].Find("Blade");
                         if (blade == null) break;
-                        blade.position = _rules.SawPosition(i).ToV3(0f);
-                        blade.rotation = Quaternion.Euler(0f, 0f, -_spin * 6f);
+                        var o = ob[i];
+                        Vector3 c = _rules.SawPosition(i).ToV3(0f);
+                        blade.position = c;
+                        float gy = _rules.ObstacleGroundY(i);
+                        Vector3 pivot = new Vector3(o.x, gy + o.y, 0.05f);
+                        if (o.type == "saw" || o.type == "orbit") blade.rotation = Quaternion.Euler(0f, 0f, -_spin * 6f);
+                        if (_arms.TryGetValue(i, out var arm))
+                        {
+                            if (o.type == "orbit")
+                            {
+                                Vector3 d = c - pivot; d.z = 0f;
+                                arm.position = (pivot + c) * 0.5f + new Vector3(0, 0, 0.55f);
+                                arm.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+                            }
+                            else if (o.type == "pendulum")
+                            {
+                                SimConvert.Stretch(arm, pivot, c, 0.12f);
+                                blade.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(c.x - pivot.x, pivot.y - c.y) * Mathf.Rad2Deg);
+                            }
+                            else if (o.type == "crusher")
+                            {
+                                float top = gy + o.y + ObstacleMotion.CrusherHalfHeight + 0.6f;
+                                SimConvert.Stretch(arm, new Vector3(c.x, top, 0f), c + new Vector3(0f, ObstacleMotion.CrusherHalfHeight, 0f), 0.5f);
+                            }
+                        }
+                        break;
+                    }
+                    case "crates":
+                    {
+                        bool whole = !_rules.CratesBroken(i);
+                        if (_obstacles[i].gameObject.activeSelf != whole) _obstacles[i].gameObject.SetActive(whole);
                         break;
                     }
                     case "spring":

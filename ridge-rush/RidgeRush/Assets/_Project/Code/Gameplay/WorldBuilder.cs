@@ -53,9 +53,10 @@ namespace RidgeRush.Game
             else
                 ScatterProps(theme, level, root, rnd);
 
-            // Banderas de meta a los dos lados de la pista.
-            BuildProp("flag", new Vector3(level.FinishX, 0f, -TrackMeshBuilder.HalfDepth + 0.4f), 0f, 1f, 0f, level, root);
-            BuildProp("flag", new Vector3(level.FinishX, 0f, TrackMeshBuilder.HalfDepth - 0.4f), 0f, 1f, 0f, level, root);
+            // Arco de meta hinchable con pancarta de cuadros y banderas.
+            BuildFinishArch(level, theme, root);
+            // Vida en el fondo: globos, pájaros, dirigible, helicóptero...
+            BuildLife(theme, root, x0, x1, rnd);
 
             // Sonda de reflejos (solo el cielo) para el agua, la pintura y el cromo.
             var probe = new GameObject("SkyReflections").AddComponent<ReflectionProbe>();
@@ -69,6 +70,113 @@ namespace RidgeRush.Game
             probe.hdr = true;
             probe.RenderProbe();
             return world;
+        }
+
+        private static void BuildFinishArch(BuiltLevel level, WorldTheme theme, Transform root)
+        {
+            float fx = level.FinishX;
+            float gy = level.Track.GroundAt(fx, 10000f, out float y, out _, out _) ? y : 0f;
+            var t = new GameObject("FinishArch").transform;
+            t.SetParent(root, false);
+            t.position = new Vector3(fx, gy, 0f);
+            var inflate = MaterialFactory.Lit("arch_inflate", theme.Accent, 0f, 0.55f);
+            var white = MaterialFactory.Lit("arch_white", new Color(0.95f, 0.95f, 0.95f), 0f, 0.5f);
+            var checker = MaterialFactory.Lit("arch_checker", Color.white, 0f, 0.5f, ProceduralTextures.Checker, null, new Vector2(8f, 1f));
+            float z = TrackMeshBuilder.HalfDepth + 0.5f, h = 6.5f;
+            foreach (float side in new[] { -1f, 1f })
+            {
+                SimConvert.Primitive(PrimitiveType.Capsule, "Pillar", t, new Vector3(0f, h * 0.5f, side * z), new Vector3(1.3f, h * 0.5f, 1.3f), inflate);
+                SimConvert.Primitive(PrimitiveType.Cylinder, "Base", t, new Vector3(0f, 0.2f, side * z), new Vector3(1.8f, 0.2f, 1.8f), white);
+                BuildProp("flag", new Vector3(fx + 1.8f, gy, side * (z + 1.2f)), 0f, 1f, 0f, level, root);
+            }
+            SimConvert.Primitive(PrimitiveType.Capsule, "Top", t, new Vector3(0f, h, 0f), new Vector3(1.4f, z + 0.6f, 1.4f), inflate, Quaternion.Euler(90f, 0f, 0f));
+            SimConvert.Primitive(PrimitiveType.Cube, "Banner", t, new Vector3(-0.72f, h, 0f), new Vector3(0.05f, 1.1f, z * 2f - 1.6f), checker);
+            var label = new GameObject("FinishText");
+            label.transform.SetParent(t, false);
+            label.transform.localPosition = new Vector3(-0.78f, h + 0.02f, 0f);
+            label.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            var tm = label.AddComponent<TextMesh>();
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            tm.font = font; tm.text = Loc.Get("finish"); tm.fontSize = 80; tm.characterSize = 0.09f; tm.anchor = TextAnchor.MiddleCenter;
+            tm.fontStyle = FontStyle.BoldAndItalic; tm.color = new Color(1f, 0.85f, 0.2f);
+            label.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+        }
+
+        /// <summary>
+        /// Cosas que se mueven en el fondo para que el mundo se sienta vivo: globos aerostáticos y gaviotas en la
+        /// costa, buitres y globos en el desierto, aves en la selva, un helicóptero con foco y dirigible en la
+        /// ciudad y el estadio, ceniza y brasas en el volcán.
+        /// </summary>
+        private static void BuildLife(WorldTheme theme, Transform root, float x0, float x1, System.Random rnd)
+        {
+            void Balloon(float x, float y, float z, Color c)
+            {
+                var b = new GameObject("Balloon").transform;
+                b.SetParent(root, false);
+                b.position = new Vector3(x, y, z);
+                var env = MaterialFactory.Lit("balloon_" + ColorUtility.ToHtmlStringRGB(c), c, 0f, 0.6f, ProceduralTextures.Stripes, null, new Vector2(6f, 1f));
+                SimConvert.Primitive(PrimitiveType.Sphere, "Envelope", b, Vector3.zero, new Vector3(9f, 11f, 9f), env);
+                SimConvert.Primitive(PrimitiveType.Cube, "Basket", b, new Vector3(0f, -8f, 0f), new Vector3(2f, 1.4f, 2f), MaterialFactory.Lit("balloon_basket", new Color(0.45f, 0.3f, 0.15f), 0f, 0.3f));
+                b.gameObject.AddComponent<Drifter>().Init(new Vector3(R(rnd, 0.5f, 1.4f), 0f, 0f), 1.2f, x0, x1);
+            }
+            void Birds(float x, float y, float z, int n, Color c)
+            {
+                var flock = new GameObject("Birds").transform;
+                flock.SetParent(root, false);
+                flock.position = new Vector3(x, y, z);
+                var m = MaterialFactory.Lit("bird_" + ColorUtility.ToHtmlStringRGB(c), c, 0f, 0.3f);
+                for (int i = 0; i < n; i++)
+                {
+                    var bird = new GameObject("Bird").transform;
+                    bird.SetParent(flock, false);
+                    bird.localPosition = new Vector3(R(rnd, -6f, 6f), R(rnd, -2f, 2f), R(rnd, -3f, 3f));
+                    SimConvert.Primitive(PrimitiveType.Cube, "WingL", bird, new Vector3(-0.35f, 0f, 0f), new Vector3(0.7f, 0.04f, 0.25f), m, Quaternion.Euler(0, 0, 20));
+                    SimConvert.Primitive(PrimitiveType.Cube, "WingR", bird, new Vector3(0.35f, 0f, 0f), new Vector3(0.7f, 0.04f, 0.25f), m, Quaternion.Euler(0, 0, -20));
+                    bird.gameObject.AddComponent<Flapper>();
+                }
+                flock.gameObject.AddComponent<Drifter>().Init(new Vector3(R(rnd, 3f, 7f), 0f, 0f), 2f, x0, x1);
+            }
+            switch (theme.Id)
+            {
+                case "coast":
+                    for (float x = x0 + 60f; x < x1; x += R(rnd, 160f, 260f)) Balloon(x, R(rnd, 30f, 55f), R(rnd, 80f, 160f), rnd.Next(2) == 0 ? new Color(0.95f, 0.35f, 0.15f) : new Color(0.15f, 0.55f, 0.95f));
+                    for (float x = x0; x < x1; x += R(rnd, 120f, 200f)) Birds(x, R(rnd, 14f, 24f), R(rnd, 20f, 50f), 5, new Color(0.95f, 0.95f, 0.95f));
+                    break;
+                case "desert":
+                    for (float x = x0 + 80f; x < x1; x += R(rnd, 200f, 320f)) Balloon(x, R(rnd, 35f, 60f), R(rnd, 100f, 200f), new Color(0.9f, 0.75f, 0.2f));
+                    for (float x = x0; x < x1; x += R(rnd, 180f, 260f)) Birds(x, R(rnd, 25f, 35f), R(rnd, 40f, 80f), 3, new Color(0.15f, 0.12f, 0.1f));
+                    break;
+                case "jungle":
+                case "snow":
+                    for (float x = x0; x < x1; x += R(rnd, 100f, 180f)) Birds(x, R(rnd, 16f, 30f), R(rnd, 30f, 70f), 6, theme.Id == "snow" ? new Color(0.2f, 0.2f, 0.22f) : new Color(0.1f, 0.35f, 0.15f));
+                    break;
+                case "city":
+                case "stadium":
+                {
+                    // Dirigible con luces y helicóptero con foco.
+                    var blimp = new GameObject("Blimp").transform;
+                    blimp.SetParent(root, false);
+                    blimp.position = new Vector3(x0 + 100f, theme.Id == "city" ? 70f : 55f, 140f);
+                    SimConvert.Primitive(PrimitiveType.Capsule, "Body", blimp, Vector3.zero, new Vector3(12f, 22f, 12f), MaterialFactory.Lit("blimp", new Color(0.85f, 0.85f, 0.9f), 0.3f, 0.6f), Quaternion.Euler(0, 0, 90));
+                    SimConvert.Primitive(PrimitiveType.Cube, "Screen", blimp, new Vector3(0f, 0f, -6f), new Vector3(18f, 5f, 0.3f), MaterialFactory.Lit("blimp_screen", theme.Accent, 0f, 0.6f, emission: theme.Accent * 2.5f));
+                    blimp.gameObject.AddComponent<Drifter>().Init(new Vector3(2f, 0f, 0f), 1f, x0, x1);
+                    var heli = new GameObject("Helicopter").transform;
+                    heli.SetParent(root, false);
+                    heli.position = new Vector3(x0 + 40f, 38f, 70f);
+                    var heliMat = MaterialFactory.Lit("heli", new Color(0.12f, 0.13f, 0.15f), 0.6f, 0.5f);
+                    SimConvert.Primitive(PrimitiveType.Capsule, "Cabin", heli, Vector3.zero, new Vector3(2.4f, 2.6f, 2.4f), heliMat, Quaternion.Euler(0, 0, 90));
+                    SimConvert.Primitive(PrimitiveType.Cube, "Tail", heli, new Vector3(-3.5f, 0.4f, 0f), new Vector3(4f, 0.4f, 0.4f), heliMat);
+                    var rotor = SimConvert.Primitive(PrimitiveType.Cube, "Rotor", heli, new Vector3(0f, 1.5f, 0f), new Vector3(9f, 0.06f, 0.4f), heliMat);
+                    rotor.AddComponent<Spinner>().Speed = 1400f;
+                    var spot = new GameObject("Searchlight");
+                    spot.transform.SetParent(heli, false);
+                    spot.transform.localRotation = Quaternion.Euler(70f, 0f, 0f);
+                    var sl = spot.AddComponent<Light>();
+                    sl.type = LightType.Spot; sl.range = 80f; sl.spotAngle = 22f; sl.intensity = 30f; sl.color = new Color(0.9f, 0.95f, 1f);
+                    heli.gameObject.AddComponent<Drifter>().Init(new Vector3(9f, 0f, 0f), 3f, x0, x1);
+                    break;
+                }
+            }
         }
 
         // ------------------------------------------------------------------ luz y post-procesado

@@ -12,6 +12,8 @@ namespace RidgeRush.Simulation
         PingPong = 1,
         /// <summary>Puente que cae con la gravedad poco después de que la moto pase por encima.</summary>
         Collapse = 2,
+        /// <summary>Cabina de noria: da vueltas alrededor de su posición (radio = MoveDelta.x) sin girar.</summary>
+        Orbit = 3,
     }
 
     /// <summary>Contacto entre un círculo y la pista.</summary>
@@ -77,6 +79,7 @@ namespace RidgeRush.Simulation
         public void ResetMotion()
         {
             Offset = _startOffset; Velocity = Vec2.Zero; Triggered = false; TriggerTime = 0f;
+            if (Motion == ChainMotion.Orbit) Step(0f, 0f, 0f);
         }
 
         /// <summary>Avanza el movimiento de la cadena. Es función del tiempo, así el resultado es determinista.</summary>
@@ -92,6 +95,16 @@ namespace RidgeRush.Simulation
                     float ds = 0.5f * MathF.Sin(phase) * SimMath.TwoPi / Period;
                     Offset = _startOffset + MoveDelta * s;
                     Velocity = MoveDelta * ds;
+                    break;
+                }
+                case ChainMotion.Orbit:
+                {
+                    // TriggerDelay guarda la fase (0..1) de la cabina en la noria.
+                    float w = SimMath.TwoPi / Period;
+                    float a = time * w + TriggerDelay * SimMath.TwoPi;
+                    float r = MoveDelta.x;
+                    Offset = _startOffset + new Vec2(MathF.Cos(a), MathF.Sin(a)) * r;
+                    Velocity = new Vec2(-MathF.Sin(a), MathF.Cos(a)) * (r * w);
                     break;
                 }
                 case ChainMotion.Collapse:

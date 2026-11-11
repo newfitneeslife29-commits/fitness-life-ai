@@ -72,6 +72,7 @@ namespace RidgeRush.Simulation
             var checkpoints = new List<float>();
             var pickups = new List<PickupData>();
             var obstacles = new List<ObstacleData>();
+            var platforms = new List<PlatformData>();
             void Pickup(string type, float px, float py, float len = 6f) => pickups.Add(new PickupData { type = type, x = px, y = py, length = len });
             // Sierras candidatas: la herramienta de niveles solo deja las que el piloto automático puede esquivar.
             void Saw(float sx, float sy, float size, float sdx = 0f, float sdy = 0f, float period = 3f) =>
@@ -93,9 +94,9 @@ namespace RidgeRush.Simulation
                 int pattern;
                 do
                 {
-                    pattern = rnd.Next(w.Supercross ? 6 : 16);
+                    pattern = rnd.Next(w.Supercross ? 6 : 20);
                     if (w.Supercross && pattern == 5) pattern = 11; // en el estadio: loop
-                    if (pattern == 12 && w.Pit == "none") pattern = 2;
+                    if ((pattern == 12 || pattern == 16) && w.Pit == "none") pattern = 2;
                 } while (pattern == lastPattern);
                 lastPattern = pattern;
                 float before = x;
@@ -231,6 +232,53 @@ namespace RidgeRush.Simulation
                         Pickup("nitro", x - 20f, 1.2f);
                         break;
                     }
+                    case 16: // noria: las cabinas pasan por el hueco; hay que cruzar subido en una
+                    {
+                        Add("flat", 14f, surf: w.Bridge);
+                        float R = 7f, cab = 4.6f, gap = 6.5f;
+                        float gx = x + gap * 0.5f, deck = 0f;
+                        int cabins = 5;
+                        float period = 11f + (float)rnd.NextDouble() * 3f;
+                        float phase0 = (float)rnd.NextDouble();
+                        for (int c = 0; c < cabins; c++)
+                            platforms.Add(new PlatformData { x = gx - cab * 0.5f, y = deck + R, width = cab, thickness = 0.35f, surface = "Metal", motion = "Orbit",
+                                dx = R, period = period, delay = phase0 + c / (float)cabins });
+                        Add("gap", gap, depth: 9f, surf: w.Bridge, pit: PitFor(w));
+                        Pickup("coin", gx, 1.2f + 9f);
+                        Add("flat", 16f, surf: w.Bridge);
+                        break;
+                    }
+                    case 17: // bolas de demolición que se balancean sobre el camino
+                    {
+                        Add("flat", 34f, surf: w.Alt);
+                        if (saws)
+                        {
+                            float per = 2.8f + (float)rnd.NextDouble() * 0.8f;
+                            obstacles.Add(new ObstacleData { type = "pendulum", x = x - 24f, y = 7.5f, dx = 6f, dy = 55f, size = 1.1f, period = per, phase = (float)rnd.NextDouble() * per });
+                            obstacles.Add(new ObstacleData { type = "pendulum", x = x - 10f, y = 7.5f, dx = 6f, dy = 55f, size = 1.1f, period = per, phase = (float)rnd.NextDouble() * per });
+                        }
+                        break;
+                    }
+                    case 18: // prensas que caen de golpe
+                    {
+                        Add("flat", 30f, surf: w.Alt == SurfaceType.Dirt ? SurfaceType.Metal : w.Alt);
+                        if (saws)
+                        {
+                            float per = 2.6f + (float)rnd.NextDouble() * 0.8f;
+                            obstacles.Add(new ObstacleData { type = "crusher", x = x - 21f, y = 6.6f, dy = -5.4f, size = 1.5f, period = per, phase = (float)rnd.NextDouble() * per });
+                            obstacles.Add(new ObstacleData { type = "crusher", x = x - 9f, y = 6.6f, dy = -5.4f, size = 1.5f, period = per, phase = (float)rnd.NextDouble() * per });
+                        }
+                        break;
+                    }
+                    case 19: // salto con sierra que gira alrededor del aterrizaje
+                    {
+                        float h = 1.8f + d * 0.6f;
+                        Add("flat", 10f, surf: w.Alt);
+                        Add("ramp", 9f, h, w.Alt);
+                        Add("landing", 22f, h, w.Alt);
+                        if (saws) obstacles.Add(new ObstacleData { type = "orbit", x = x - 14f, y = 4.2f, dx = 2.8f, size = 1.0f, period = 2.4f + (float)rnd.NextDouble(), phase = (float)rnd.NextDouble() * 3f });
+                        break;
+                    }
                     default: // tramo de la superficie alternativa (hielo en nieve) + subida y bajada
                         Add("flat", 18f, surf: w.AllowIce && d > 0.3f ? SurfaceType.Ice : w.Alt);
                         Add("slope", 20f, 1.5f + d);
@@ -247,6 +295,12 @@ namespace RidgeRush.Simulation
                     flat += 10f;
                     string hz = w.Hazards[rnd.Next(w.Hazards.Length)];
                     obstacles.Add(new ObstacleData { type = hz, x = x + flat * 0.55f, period = hz == "oil" ? 6f : 2.6f + (float)rnd.NextDouble(), phase = (float)rnd.NextDouble() * 3f });
+                }
+                else if (rnd.NextDouble() < 0.25)
+                {
+                    // Muro de cajas para atravesar (no hace caer).
+                    flat += 6f;
+                    obstacles.Add(new ObstacleData { type = "crates", x = x + flat * 0.55f, size = 1f });
                 }
                 else if (rnd.NextDouble() < 0.35) Pickup("nitro", x + flat * 0.5f, 1.2f);
                 else for (int c = 0; c < 4; c++) Pickup("coin", x + 2f + c * 1.5f, 1f);
@@ -268,6 +322,7 @@ namespace RidgeRush.Simulation
                 checkpoints = checkpoints.ToArray(),
                 pickups = pickups.ToArray(),
                 obstacles = obstacles.ToArray(),
+                platforms = platforms.ToArray(),
                 stars = new StarTimes { gold = 60f, silver = 75f }, // se ajustan con el tiempo del piloto automático
             };
         }
