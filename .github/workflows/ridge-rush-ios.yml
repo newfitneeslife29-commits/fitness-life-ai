@@ -189,7 +189,13 @@ jobs:
       - name: Añadir los derechos (Game Center)
         run: |
           app=$(ls -d "$RUNNER_TEMP/RidgeRush.xcarchive/Products/Applications/"*.app | head -1)
-          codesign --force --sign - --entitlements "$RUNNER_TEMP/xcode/RidgeRush.entitlements" "$app"
+          # Se genera aquí: el plist que escribe Unity en Linux no lo acepta el analizador de Apple (AMFI).
+          ent="$RUNNER_TEMP/RidgeRush.entitlements"
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+            '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+            '<plist version="1.0"><dict><key>com.apple.developer.game-center</key><true/></dict></plist>' > "$ent"
+          plutil -lint "$ent"
+          codesign --force --sign - --entitlements "$ent" "$app"
           codesign -d --entitlements - "$app" 2>&1 | grep -q 'game-center' || { echo "::error::Falta el derecho de Game Center"; exit 1; }
       - name: Comprobar el archivo
         run: |
