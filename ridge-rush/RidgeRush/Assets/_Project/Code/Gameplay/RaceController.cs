@@ -113,6 +113,70 @@ namespace RidgeRush.Game
             _menu.GarageChanged += () => { if (_mode == GameMode.Demo) Load(_level.Data, GameMode.Demo); };
 
             GoToMenu();
+            if (ShotMode.Enabled) StartCoroutine(RunShots());
+        }
+
+        // ------------------------------------------------------------------ capturas automáticas (CI)
+        // El workflow ridge-rush-shots.yml compila el juego para Linux y lo abre con -rrShots <carpeta>:
+        // recorre menú, garaje y niveles de cada mundo con el piloto automático y guarda capturas.
+        private bool _autoPilot;
+
+        private System.Collections.IEnumerator RunShots()
+        {
+            Time.captureFramerate = 20; // cada fotograma avanza 0,05 s aunque el ordenador vaya lento
+            string dir = ShotMode.Directory;
+            System.IO.Directory.CreateDirectory(dir);
+            int n = 0;
+            System.Collections.IEnumerator Shot(string name)
+            {
+                yield return null; yield return null;
+                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, $"{n++:00}_{name}.png"));
+                yield return null; yield return null;
+            }
+            System.Collections.IEnumerator WaitSim(float seconds)
+            {
+                float t0 = _rules.Sim.Time;
+                int guard = 0;
+                while (_rules.Sim.Time - t0 < seconds && guard++ < 4000) yield return null;
+            }
+
+            yield return WaitSim(2f);
+            yield return Shot("menu");
+            foreach (int b in new[] { 0, 4, 6, 7, 8, 13 })
+            {
+                _menu.ShowGarageFor(b);
+                for (int i = 0; i < 30; i++) yield return null;
+                yield return Shot("garage_" + b);
+            }
+            _menu.ShowTitle();
+
+            foreach (var id in ShotMode.Levels)
+            {
+                StartLevel(id, id.StartsWith("stadium_") ? GameMode.Supercross : GameMode.Career);
+                if (_rules == null) continue;
+                _autoPilot = true;
+                yield return WaitSim(1f);
+                yield return Shot(id + "_start");
+                // Delante del primer loop, sierra o trampolín, si hay.
+                float target = float.MaxValue;
+                foreach (var l in _level.Track.Loops) target = Mathf.Min(target, l.Center.x - 14f);
+                foreach (var o in _level.Data.obstacles ?? new ObstacleData[0])
+                    if (o.type == "saw" || o.type == "spring") target = Mathf.Min(target, o.x - 12f);
+                int guard = 0;
+                if (target < float.MaxValue)
+                {
+                    while (_rules.Sim.Chassis.Position.x < target && _rules.State != RaceState.Finished && guard++ < 6000) yield return null;
+                    yield return Shot(id + "_feature");
+                    yield return WaitSim(1.2f);
+                    yield return Shot(id + "_feature2");
+                }
+                yield return WaitSim(4f);
+                yield return Shot(id + "_mid");
+                _autoPilot = false;
+            }
+            Debug.Log($"Ridge Rush: {n} capturas en {dir}");
+            yield return null;
+            Application.Quit();
         }
 
         // ------------------------------------------------------------------ flujo
@@ -350,7 +414,7 @@ namespace RidgeRush.Game
             if (!demo && _input.RestartPressed()) Restart();
             if (!demo && _input.BackPressed()) _hud.SetPaused(!_paused);
             float frameDt = Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta);
-            var input = demo ? BotDriver.Drive(_rules.Sim, 0.85f) : _input.Read(frameDt);
+            var input = demo ? BotDriver.Drive(_rules.Sim, 0.85f) : _autoPilot ? BotDriver.Drive(_rules.Sim, 0.9f) : _input.Read(frameDt);
             if (_paused) { _hud.Tick(_rules, _input, frameDt); return; }
 
             float timeScale = 1f;
@@ -361,7 +425,8 @@ namespace RidgeRush.Game
             while (_accumulator >= BikeSim.FixedDt && steps < 48)
             {
                 _prev = _curr;
-                _rules.Step(demo ? BotDriver.Drive(_rules.Sim, 0.85f) : input);
+                _rules.Step(demo ? BotDriver.Drive(_rules.Sim, 0.85f) : _autoPilot ? BotDriver.Drive(_rules.Sim, 0.9f) : input);
+                if (_autoPilot && _rules.State == RaceState.Crashed && _rules.CrashTimer > 1f) _rules.Respawn();
                 _curr = _rules.Sim.CaptureState();
                 _accumulator -= BikeSim.FixedDt;
                 steps++;
