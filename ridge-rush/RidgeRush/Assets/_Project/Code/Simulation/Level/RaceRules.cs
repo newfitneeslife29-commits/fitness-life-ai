@@ -39,6 +39,7 @@ namespace RidgeRush.Simulation
     {
         Started, CheckpointReached, Respawned, Finished, Coins, ComboChanged,
         PickupNitro, PickupRing, PickupCoin, Boost, Hit, Blocked, Explosion, PowerReady, PowerActivated, KnockoutReady, KnockedOut,
+        SawHit, Spring,
     }
 
     public struct RaceEvent
@@ -122,6 +123,17 @@ namespace RidgeRush.Simulation
         public bool BarrelExploded(int i) => _barrelExploded[i];
         public float RockY(int i) => _rockY[i];
         public bool RockTriggered(int i) => _rockTriggered[i];
+        /// <summary>Centro actual de una sierra (se mueve con el reloj de la simulación).</summary>
+        public Vec2 SawPosition(int i)
+        {
+            var o = Level.Data.obstacles[i];
+            Vec2 basePos = new Vec2(o.x, _obsGround[i] + o.y);
+            if (o.dx == 0f && o.dy == 0f) return basePos;
+            float period = Math.Max(0.5f, o.period);
+            float s = 0.5f - 0.5f * MathF.Cos((Sim.Time + o.phase) / period * SimMath.TwoPi);
+            return basePos + new Vec2(o.dx, o.dy) * s;
+        }
+
         public bool FireActive(int i)
         {
             var o = Level.Data.obstacles[i];
@@ -295,6 +307,36 @@ namespace RidgeRush.Simulation
                         if (_rockTriggered[i] && dx * dx + dy * dy < 1.4f * 1.4f) Hit(new Vec2(-3f, 3f), 2.5f, 0.6f);
                         break;
                     }
+                    case "saw":
+                    {
+                        Vec2 c = SawPosition(i);
+                        if (!SawTouches(c, o.size)) break;
+                        if (Shielded)
+                        {
+                            if (_hitCooldown <= 0f) { _hitCooldown = 1f; Push(RaceEventType.Blocked, 0, c); }
+                            break;
+                        }
+                        if (State == RaceState.Racing)
+                        {
+                            Push(RaceEventType.SawHit, 0, c);
+                            Vec2 away = (p - c).Normalized;
+                            Sim.Kick(away * 5f + new Vec2(0f, 3f), 5f);
+                            Sim.ForceCrash();
+                        }
+                        break;
+                    }
+                    case "spring":
+                    {
+                        if (_hitCooldown > 0f) break;
+                        bool onPad = (Sim.RearInfo.Grounded && Math.Abs(Sim.RearWheel.Position.x - o.x) < o.size) ||
+                                     (Sim.FrontInfo.Grounded && Math.Abs(Sim.FrontWheel.Position.x - o.x) < o.size);
+                        if (!onPad || Math.Abs(p.y - _obsGround[i]) > 2.5f) break;
+                        float vy = Sim.Chassis.Velocity.y;
+                        if (vy < o.power) Sim.Kick(new Vec2(0f, o.power - vy), 0f);
+                        _hitCooldown = 0.5f;
+                        Push(RaceEventType.Spring, 0, new Vec2(o.x, _obsGround[i]));
+                        break;
+                    }
                     case "oil":
                         if ((Sim.RearInfo.Grounded || Sim.FrontInfo.Grounded) && p.x >= o.x && p.x <= o.x + Math.Max(2f, o.period)) grip = 0.3f;
                         break;
@@ -302,6 +344,18 @@ namespace RidgeRush.Simulation
             }
             Sim.GripScale = grip;
         }
+
+        /// <summary>¿Toca la sierra a la moto o al piloto?</summary>
+        private bool SawTouches(Vec2 c, float r)
+        {
+            var bp = Sim.Params;
+            return Near(Sim.FrontWheel.Position, c, r + bp.frontWheelRadius) ||
+                   Near(Sim.RearWheel.Position, c, r + bp.rearWheelRadius) ||
+                   Near(Sim.Chassis.Position, c, r + 0.35f) ||
+                   Near(Sim.Chassis.LocalToWorld(bp.headLocal), c, r + bp.headRadius);
+        }
+
+        private static bool Near(Vec2 a, Vec2 b, float r) => (a - b).LengthSquared < r * r;
 
         /// <summary>Golpe de un peligro: empuja, frena y rompe el combo. El escudo lo bloquea.</summary>
         private void Hit(Vec2 kick, float spin, float slow)
