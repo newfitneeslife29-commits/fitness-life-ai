@@ -69,11 +69,11 @@ namespace RidgeRush.Game
             _safe = safe;
 
             // ---- Barra superior ----
-            _timer = Label("Timer", safe, "0:00.00", 80, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(600f, 96f));
+            _timer = Label("Timer", safe, "0:00.00", 80, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -66f), new Vector2(600f, 96f)); // centro de la caja (pivote 0,5)
             _timer.fontStyle = FontStyle.Bold;
-            _target = Label("Target", safe, "", 34, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -118f), new Vector2(700f, 46f));
+            _target = Label("Target", safe, "", 34, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -132f), new Vector2(700f, 46f));
             _target.color = Gold;
-            var progressBg = Panel("Progress", safe, new Vector2(0.5f, 1f), new Vector2(0f, -172f), new Vector2(620f, 12f), Steel);
+            var progressBg = Panel("Progress", safe, new Vector2(0.5f, 1f), new Vector2(0f, -176f), new Vector2(620f, 12f), Steel);
             _progressFill = Panel("Fill", progressBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(620f, 12f), Ember).GetComponent<Image>();
             _progressFill.rectTransform.pivot = new Vector2(0f, 0.5f);
             _progressFill.type = Image.Type.Filled; _progressFill.fillMethod = Image.FillMethod.Horizontal;
