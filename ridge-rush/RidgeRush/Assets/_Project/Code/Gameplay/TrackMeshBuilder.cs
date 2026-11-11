@@ -39,6 +39,7 @@ namespace RidgeRush.Game
             for (int c = 1; c < level.Track.Chains.Count; c++)
             {
                 var ch = level.Track.Chains[c];
+                if (ch.IsLoop) continue; // los loops los dibuja ItemsView (anillo detrás de la moto)
                 var go = new GameObject($"Platform_{c}");
                 go.transform.SetParent(parent, false);
                 var mesh = BuildChainMesh(ch.Points, ch.Surfaces, false, out var mats);

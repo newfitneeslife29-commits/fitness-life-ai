@@ -38,6 +38,11 @@ namespace RidgeRush.Simulation
         public readonly float Period;            // PingPong: segundos para ida y vuelta
         public readonly float TriggerDelay;      // Collapse: segundos desde que la moto la pisa
 
+        /// <summary>Las cadenas desactivadas no chocan (mitades del loop, ver <see cref="LoopGate"/>).</summary>
+        public bool Enabled = true;
+        /// <summary>Parte de un loop: dentro, la gravedad se reduce (ayuda arcade para dar la vuelta).</summary>
+        public bool IsLoop;
+
         public Vec2 Offset;    // posición actual de la cadena
         public Vec2 Velocity;  // velocidad actual
         public bool Triggered;
@@ -102,6 +107,16 @@ namespace RidgeRush.Simulation
         }
     }
 
+    /// <summary>Estado de un loop (ver <see cref="Track.UpdateGates"/>).</summary>
+    public sealed class LoopGate
+    {
+        public Vec2 Center;
+        public float Radius;
+        public int ChainUp, ChainDown;
+        /// <summary>0: llegando (solo A), 1: arriba (A y B), 2: bajando y saliendo (solo B).</summary>
+        public int State;
+    }
+
     /// <summary>
     /// Pista completa de un nivel: varias cadenas, con una rejilla por X para que las consultas sean O(1)
     /// en la práctica. No reserva memoria durante la carrera.
@@ -151,11 +166,64 @@ namespace RidgeRush.Simulation
             }
             _cells = new int[cellCount][];
             for (int i = 0; i < cellCount; i++) _cells[i] = lists[i]?.ToArray() ?? Array.Empty<int>();
+            ResetGates();
         }
 
         public void ResetMotion()
         {
             foreach (var ch in Chains) ch.ResetMotion();
+            ResetGates();
+        }
+
+        // ---- Loops ----
+        // Un loop es un círculo recorrido por dentro en sentido antihorario. Como la entrada y la salida comparten
+        // el punto de abajo, se divide en dos mitades: A (subida por la derecha hasta arriba) y B (bajada por la
+        // izquierda). Según dónde está la moto se activa una u otra, así no choca con la mitad que no toca.
+        public readonly List<LoopGate> Loops = new List<LoopGate>();
+
+        public void AddLoop(Vec2 center, float radius, TrackChain up, TrackChain down)
+        {
+            up.IsLoop = down.IsLoop = true;
+            int a = Chains.Count; Chains.Add(up);
+            int b = Chains.Count; Chains.Add(down);
+            Loops.Add(new LoopGate { Center = center, Radius = radius, ChainUp = a, ChainDown = b });
+        }
+
+        public void ResetGates()
+        {
+            for (int i = 0; i < Loops.Count; i++) SetGate(Loops[i], 0);
+        }
+
+        /// <summary>Actualiza los loops según la posición de la moto (cada pista es de un solo piloto).</summary>
+        public void UpdateGates(Vec2 p)
+        {
+            for (int i = 0; i < Loops.Count; i++)
+            {
+                var l = Loops[i];
+                Vec2 d = p - l.Center;
+                float dist = d.Length;
+                float ang = MathF.Atan2(d.y, d.x); // -π/2 abajo, 0 derecha, π/2 arriba, ±π izquierda
+                switch (l.State)
+                {
+                    case 0:
+                        if (dist < l.Radius * 1.3f && d.y > 0f && ang > 0.35f && ang < 2.8f) SetGate(l, 1);
+                        break;
+                    case 1:
+                        if (dist > l.Radius * 1.7f) SetGate(l, 0);
+                        else if (ang > 2.1f || ang < -2.3f) SetGate(l, 2);
+                        break;
+                    case 2:
+                        if (d.x > l.Radius + 1.5f || dist > l.Radius * 2.2f) SetGate(l, 0);
+                        break;
+                }
+            }
+        }
+
+        private void SetGate(LoopGate l, int state)
+        {
+            l.State = state;
+            Chains[l.ChainUp].Enabled = state != 2;
+            Chains[l.ChainDown].Enabled = state != 0;
         }
 
         public void Step(float time, float dt, float gravity)
@@ -186,6 +254,7 @@ namespace RidgeRush.Simulation
                     Unpack(cell[k], out int c, out int s);
                     // Un segmento puede estar en varias celdas: solo se evalúa en la primera que toca el círculo.
                     var ch = Chains[c];
+                    if (!ch.Enabled) continue;
                     float segMinX = Math.Min(ch.WorldPoint(s).x, ch.WorldPoint(s + 1).x);
                     if (CellIndex(Math.Max(segMinX, center.x - radius)) != i) continue;
                     TestSegment(ch, c, s, center, radius, results, ref count);
@@ -195,6 +264,7 @@ namespace RidgeRush.Simulation
             {
                 int c = _dynamicChains[d];
                 var ch = Chains[c];
+                if (!ch.Enabled) continue;
                 if (center.x + radius < ch.LocalMin.x + ch.Offset.x || center.x - radius > ch.LocalMax.x + ch.Offset.x) continue;
                 if (center.y + radius < ch.LocalMin.y + ch.Offset.y || center.y - radius > ch.LocalMax.y + ch.Offset.y) continue;
                 for (int s = 0; s < ch.SegmentCount; s++) TestSegment(ch, c, s, center, radius, results, ref count);
@@ -270,6 +340,7 @@ namespace RidgeRush.Simulation
             for (int c = 0; c < Chains.Count; c++)
             {
                 var ch = Chains[c];
+                if (!ch.Enabled || ch.IsLoop) continue;
                 if (x < ch.LocalMin.x + ch.Offset.x || x > ch.LocalMax.x + ch.Offset.x) continue;
                 for (int s = 0; s < ch.SegmentCount; s++)
                 {

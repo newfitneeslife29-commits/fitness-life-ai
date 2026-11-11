@@ -51,12 +51,23 @@ namespace RidgeRush.Simulation
     [Serializable]
     public sealed class ObstacleData
     {
-        /// <summary>barrel (explota al tocarlo), firejet (chorro de fuego intermitente), rock (cae al acercarse), oil (mancha).</summary>
+        /// <summary>
+        /// barrel (explota al tocarlo), firejet (chorro de fuego intermitente), rock (cae al acercarse), oil (mancha),
+        /// saw (sierra giratoria: tocarla es caída; puede moverse), spring (trampolín: lanza hacia arriba).
+        /// </summary>
         public string type = "barrel";
         public float x;
-        /// <summary>firejet: segundos del ciclo; oil: longitud de la mancha.</summary>
+        /// <summary>firejet: segundos del ciclo; oil: longitud de la mancha; saw: segundos de ida y vuelta.</summary>
         public float period = 3f;
         public float phase;
+        /// <summary>saw: altura del centro sobre el suelo.</summary>
+        public float y;
+        /// <summary>saw: radio; spring: media anchura.</summary>
+        public float size = 1.2f;
+        /// <summary>saw: recorrido (ida y vuelta) desde su posición.</summary>
+        public float dx, dy;
+        /// <summary>spring: velocidad vertical que da (m/s).</summary>
+        public float power = 11f;
     }
 
     [Serializable]

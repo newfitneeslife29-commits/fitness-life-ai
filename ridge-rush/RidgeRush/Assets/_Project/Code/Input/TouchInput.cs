@@ -7,21 +7,20 @@ using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 namespace RidgeRush.Game
 {
     /// <summary>
-    /// Controles en vertical (GDD §3):
-    /// - Botón derecho = gas, botón izquierdo = freno/reversa, botón central = nitro.
-    /// - Equilibrio deslizando el pulgar a izquierda/derecha sobre su botón (o inclinando el móvil, opcional).
+    /// Controles en horizontal:
+    /// - Derecha: GAS (grande), FRENO/reversa a su izquierda y TURBO (nitro) encima.
+    /// - Izquierda: inclinarse ATRÁS ◄ y ADELANTE ►; se puede deslizar el pulgar de uno a otro.
+    /// - Opcional: equilibrio inclinando el móvil.
     /// - Teclado para probar en el editor: ←/→ o A/D equilibrio, ↑/W gas, ↓/S freno, Espacio nitro.
     /// El gas sube en rampa (120 ms) porque la pantalla no mide la presión del dedo.
     /// </summary>
     public sealed class TouchInput
     {
         private const float ThrottleRamp = 1f / 0.12f;
-        private const float LeanSlidePoints = 70f;   // puntos de deslizamiento para inclinación completa
 
-        private RectTransform _gas, _brake, _nitro;
+        private RectTransform _gas, _brake, _nitro, _leanBack, _leanFwd;
         private float _throttle;
         private int _gasTouch = -1, _brakeTouch = -1;
-        private Vector2 _gasStart, _brakeStart;
         private Vector3 _tiltZero;
         private bool _tiltCalibrated;
 
@@ -29,10 +28,12 @@ namespace RidgeRush.Game
         public bool BrakeHeld { get; private set; }
         public bool NitroHeld { get; private set; }
         public float Lean { get; private set; }
+        public bool LeanBackHeld { get; private set; }
+        public bool LeanForwardHeld { get; private set; }
 
-        public void Bind(RectTransform gas, RectTransform brake, RectTransform nitro)
+        public void Bind(RectTransform gas, RectTransform brake, RectTransform nitro, RectTransform leanBack, RectTransform leanFwd)
         {
-            _gas = gas; _brake = brake; _nitro = nitro;
+            _gas = gas; _brake = brake; _nitro = nitro; _leanBack = leanBack; _leanFwd = leanFwd;
             if (!EnhancedTouchSupport.enabled) EnhancedTouchSupport.Enable();
             if (GravitySensor.current != null) InputSystem.EnableDevice(GravitySensor.current);
         }
@@ -41,29 +42,23 @@ namespace RidgeRush.Game
 
         public BikeInput Read(float dt)
         {
-            bool gas = false, brake = false, nitro = false;
+            bool gas = false, brake = false, nitro = false, back = false, fwd = false;
             float lean = 0f;
-            float scale = Screen.dpi > 0 ? Screen.dpi / 163f : 1f; // puntos → píxeles
 
             foreach (var t in Touch.activeTouches)
             {
                 Vector2 pos = t.screenPosition;
                 if (t.phase == UnityEngine.InputSystem.TouchPhase.Began)
                 {
-                    if (Contains(_gas, pos)) { _gasTouch = t.touchId; _gasStart = pos; }
-                    else if (Contains(_brake, pos)) { _brakeTouch = t.touchId; _brakeStart = pos; }
+                    if (Contains(_gas, pos, 1.1f)) _gasTouch = t.touchId;
+                    else if (Contains(_brake, pos, 1.1f)) _brakeTouch = t.touchId;
                 }
-                if (t.touchId == _gasTouch)
-                {
-                    gas = true;
-                    lean += Mathf.Clamp((pos.x - _gasStart.x) / (LeanSlidePoints * scale), -1f, 1f);
-                }
-                else if (t.touchId == _brakeTouch)
-                {
-                    brake = true;
-                    lean += Mathf.Clamp((pos.x - _brakeStart.x) / (LeanSlidePoints * scale), -1f, 1f);
-                }
+                if (t.touchId == _gasTouch) gas = true;
+                else if (t.touchId == _brakeTouch) brake = true;
                 if (Contains(_nitro, pos)) nitro = true;
+                // Inclinación: el dedo puede pasar de un botón al otro sin levantarlo.
+                if (Contains(_leanBack, pos, 1.15f)) back = true;
+                else if (Contains(_leanFwd, pos, 1.15f)) fwd = true;
                 if (t.phase == UnityEngine.InputSystem.TouchPhase.Ended || t.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
                 {
                     if (t.touchId == _gasTouch) _gasTouch = -1;
@@ -101,6 +96,10 @@ namespace RidgeRush.Game
                 if (pad.buttonSouth.isPressed) nitro = true;
             }
 
+            if (back) lean -= 1f;
+            if (fwd) lean += 1f;
+            LeanBackHeld = back || (Keyboard.current != null && (Keyboard.current.leftArrowKey.isPressed || Keyboard.current.aKey.isPressed));
+            LeanForwardHeld = fwd || (Keyboard.current != null && (Keyboard.current.rightArrowKey.isPressed || Keyboard.current.dKey.isPressed));
             _throttle = gas ? Mathf.MoveTowards(_throttle, 1f, ThrottleRamp * dt) : 0f;
             GasHeld = gas; BrakeHeld = brake; NitroHeld = nitro;
             Lean = Mathf.Clamp(lean, -1f, 1f);
@@ -114,5 +113,14 @@ namespace RidgeRush.Game
 
         private static bool Contains(RectTransform rt, Vector2 screenPos) =>
             rt != null && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null);
+
+        /// <summary>Contiene con margen (zona táctil algo mayor que el dibujo).</summary>
+        private static bool Contains(RectTransform rt, Vector2 screenPos, float scale)
+        {
+            if (rt == null) return false;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, screenPos, null, out var local)) return false;
+            var r = rt.rect;
+            return Mathf.Abs(local.x - r.center.x) <= r.width * 0.5f * scale && Mathf.Abs(local.y - r.center.y) <= r.height * 0.5f * scale;
+        }
     }
 }

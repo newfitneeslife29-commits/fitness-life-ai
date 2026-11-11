@@ -73,12 +73,16 @@ namespace RidgeRush.Simulation
             var pickups = new List<PickupData>();
             var obstacles = new List<ObstacleData>();
             void Pickup(string type, float px, float py, float len = 6f) => pickups.Add(new PickupData { type = type, x = px, y = py, length = len });
+            // Sierras candidatas: la herramienta de niveles solo deja las que el piloto automático puede esquivar.
+            void Saw(float sx, float sy, float size, float sdx = 0f, float sdy = 0f, float period = 3f) =>
+                obstacles.Add(new ObstacleData { type = "saw", x = sx, y = sy, size = size, dx = sdx, dy = sdy, period = period, phase = (float)rnd.NextDouble() * period });
+            bool saws = !w.Supercross;
             float x = 0f; // posición aproximada (para plataformas y checkpoints)
 
             void Add(string type, float length, float height = 0f, SurfaceType? surf = null, int count = 0, float depth = 3f, string pit = "ground", string bridge = "", float bridgeDelay = 0.7f)
             {
                 s.Add(new SectionData { type = type, length = length, height = height, surface = (surf ?? w.Main).ToString(), count = count, depth = depth, pit = pit, bridge = bridge, bridgeDelay = bridgeDelay });
-                if (type != "drop" && type != "step") x += length;
+                if (type != "drop") x += length;
             }
 
             Add("flat", 25f, surf: w.Alt);
@@ -87,7 +91,12 @@ namespace RidgeRush.Simulation
             for (int b = 0; b < blocks; b++)
             {
                 int pattern;
-                do pattern = rnd.Next(w.Supercross ? 5 : 11); while (pattern == lastPattern);
+                do
+                {
+                    pattern = rnd.Next(w.Supercross ? 6 : 16);
+                    if (w.Supercross && pattern == 5) pattern = 11; // en el estadio: loop
+                    if (pattern == 12 && w.Pit == "none") pattern = 2;
+                } while (pattern == lastPattern);
                 lastPattern = pattern;
                 float before = x;
                 float j = 0.8f + (float)rnd.NextDouble() * 0.4f; // variación de tamaño
@@ -111,6 +120,7 @@ namespace RidgeRush.Simulation
                         Add("ramp", 11f, 2f + d * 0.8f, w.Alt);
                         Pickup("ring", x + 6f, 2.6f);
                         Add("landing", 17f + d * 3f, 2f + d * 0.8f, w.Alt);
+                        if (saws) Saw(x - 17f, 6.5f + (float)rnd.NextDouble(), 1.1f); // castiga volar demasiado alto
                         break;
                     case 4: // whoops (baches seguidos)
                         Add("bumps", 18f * j, 0.25f + d * 0.2f, w.Main, 5 + rnd.Next(3));
@@ -123,6 +133,7 @@ namespace RidgeRush.Simulation
                         float gapLen = 7f + d * 3f;
                         Pickup("ring", x + gapLen * 0.5f, 3f + 2.8f); // sobre el foso (altura desde su fondo)
                         Add("gap", gapLen, depth: 3f, surf: w.Bridge, pit: PitFor(w));
+                        if (saws) Saw(x - gapLen * 0.5f, 3f + 5.5f + d, 1.2f, 0f, -1.2f - d, 3.5f); // sobre el foso, sube y baja
                         Add("flat", 34f, surf: w.Bridge); // zona de aterrizaje larga: las motos rápidas vuelan más
                         Add("drop", 0f, h, w.Bridge);
                         break;
@@ -147,6 +158,7 @@ namespace RidgeRush.Simulation
                         Add("slope", 45f * j, 6f * w.Relief);
                         Add("flat", 10f);
                         Pickup("nitro", x - 5f, 1.2f);
+                        if (saws) Saw(x - 5f, 4.5f, 1.3f, 0f, -3.2f, 2.6f + (float)rnd.NextDouble()); // guillotina en la cima
                         Add("landing", 40f * j, 6f * w.Relief);
                         break;
                     case 10: // acantilado: turbo, rampa grande, foso ancho con aro y aterrizaje en bajada
@@ -159,6 +171,64 @@ namespace RidgeRush.Simulation
                         Pickup("ring", x + gapLenC * 0.5f, 3f + 2.5f);
                         Add("gap", gapLenC, depth: 3f, surf: w.Alt, pit: PitFor(w));
                         Add("landing", 30f, h, w.Main);
+                        break;
+                    }
+                    case 11: // loop: placa de turbo, loop y salida
+                    {
+                        float R = 4.5f + d * 1.5f;
+                        Add("flat", 14f, surf: w.Bridge);
+                        Pickup("boost", x - 12f, 0f, 7f);
+                        Add("loop", 2f * R + 10f, R, w.Bridge);
+                        Pickup("ring", x - 6f - R, 2f * R - 1.2f); // aro arriba del loop
+                        Add("flat", 10f, surf: w.Bridge);
+                        if (saws && d > 0.25f) Saw(x - 2f, 3.2f, 1.1f, 0f, -2f, 2.2f + (float)rnd.NextDouble());
+                        break;
+                    }
+                    case 12: // pilares sobre el vacío (o agua/lava): saltos cortos y precisos, cada vez más altos
+                    {
+                        int n = 3 + rnd.Next(2) + (d > 0.5f ? 1 : 0);
+                        Add("flat", 10f, surf: w.Alt);
+                        float rise = 0f;
+                        for (int k = 0; k < n; k++)
+                        {
+                            Add("ramp", 3.5f, 0.6f, w.Alt);
+                            rise += 0.6f;
+                            Add("gap", 3.5f + d * 1.5f + (float)rnd.NextDouble(), depth: 9f + rise, surf: w.Alt, pit: PitFor(w));
+                            Add("flat", 5f + (float)rnd.NextDouble() * 2f, surf: w.Alt);
+                            if (k == n - 1) Pickup("coin", x - 2f, 1f);
+                        }
+                        Add("landing", 6f + rise * 4f, rise, w.Alt);
+                        break;
+                    }
+                    case 13: // trampolín delante de un muro: hay que llegar con velocidad para subir encima
+                    {
+                        float wall = 3f + d * 1.2f;
+                        Add("flat", 14f, surf: w.Alt);
+                        obstacles.Add(new ObstacleData { type = "spring", x = x - 5f, size = 1.4f, power = 10.5f + d * 1.5f });
+                        Add("step", 14f, wall, w.Alt);
+                        Pickup("coin", x - 9f, 1f); Pickup("coin", x - 7.5f, 1f);
+                        Add("landing", 8f + wall * 3f, wall, w.Alt);
+                        break;
+                    }
+                    case 14: // subida muy empinada (hay que echarse adelante) y bajada
+                    {
+                        float h = (3.5f + d * 2f) * Math.Max(0.8f, w.Relief);
+                        Add("flat", 8f, surf: w.Alt);
+                        Add("slope", 9f + h, h, w.Main);
+                        Add("flat", 5f);
+                        Add("landing", 14f + h * 2f, h, w.Main);
+                        break;
+                    }
+                    case 15: // pasillo de sierras que suben y bajan: hay que medir el tiempo (o frenar)
+                    {
+                        Add("flat", 36f, surf: w.Alt);
+                        if (saws)
+                        {
+                            Saw(x - 26f, 4.6f, 1.2f, 0f, -3.4f, 2.4f + (float)rnd.NextDouble());
+                            Saw(x - 14f, 4.6f, 1.2f, 0f, -3.4f, 2.4f + (float)rnd.NextDouble());
+                            if (d > 0.4f) Saw(x - 4f, 4.6f, 1.2f, 0f, -3.4f, 2.0f + (float)rnd.NextDouble());
+                        }
+                        Pickup("nitro", x - 20f, 1.2f);
                         break;
                     }
                     default: // tramo de la superficie alternativa (hielo en nieve) + subida y bajada

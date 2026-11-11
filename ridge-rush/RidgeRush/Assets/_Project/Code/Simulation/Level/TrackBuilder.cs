@@ -29,6 +29,7 @@ namespace RidgeRush.Simulation
             var surf = new List<SurfaceType>();
             var hazards = new List<HazardData>(data.hazards ?? Array.Empty<HazardData>());
             var bridges = new List<PlatformData>();
+            var loops = new List<(Vec2 center, float radius, SurfaceType surface)>();
 
             // Pared y zona de salida a la izquierda.
             pts.Add(new Vec2(-12f, 12f));
@@ -125,6 +126,14 @@ namespace RidgeRush.Simulation
                         Line(x + L * 0.4f, y, s);
                         Curve(L * 0.3f, -Math.Abs(H), t => 1f - (1f - t) * (1f - t), s);
                         break;
+                    case "loop": // loop de 360° sobre un llano: height = radio
+                    {
+                        float R = H > 1f ? H : 5f;
+                        float xb = x + R + 4f;
+                        loops.Add((new Vec2(xb, y + R), R, s));
+                        Line(x + Math.Max(L, 2f * R + 8f), y, s);
+                        break;
+                    }
                     case "finish":
                         finishX = x + 2f;
                         Line(x + L, y, s);
@@ -158,6 +167,23 @@ namespace RidgeRush.Simulation
                 var motion = ParseMotion(p.motion);
                 track.Add(new TrackChain(rect, rs, motion, new Vec2(p.x, p.y), new Vec2(p.dx, p.dy), p.period, p.delay));
                 minY = Math.Min(minY, p.y + Math.Min(0f, p.dy) - th);
+            }
+
+            foreach (var (c, R, ls) in loops)
+            {
+                // Mitad A: de abajo (−90°) a arriba (90°) por la derecha; mitad B: de arriba a abajo por la izquierda.
+                int n = Math.Max(16, (int)Math.Ceiling(MathF.PI * R / SampleStep));
+                var up = new Vec2[n + 1]; var down = new Vec2[n + 1];
+                var us = new SurfaceType[n]; var ds = new SurfaceType[n];
+                for (int i = 0; i <= n; i++)
+                {
+                    float a0 = -MathF.PI / 2f + MathF.PI * i / n;
+                    float a1 = MathF.PI / 2f + MathF.PI * i / n;
+                    up[i] = c + new Vec2(MathF.Cos(a0), MathF.Sin(a0)) * R;
+                    down[i] = c + new Vec2(MathF.Cos(a1), MathF.Sin(a1)) * R;
+                    if (i < n) { us[i] = ls; ds[i] = ls; }
+                }
+                track.AddLoop(c, R, new TrackChain(up, us), new TrackChain(down, ds));
             }
 
             track.Build();

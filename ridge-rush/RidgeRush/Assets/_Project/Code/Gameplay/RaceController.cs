@@ -103,7 +103,7 @@ namespace RidgeRush.Game
             _hud.ReplayRequested += StartReplay;
             _hud.ReplayExitRequested += StopReplay;
             _hud.KnockoutRequested += OnKnockoutPressed;
-            _input.Bind(_hud.GasButton, _hud.BrakeButton, _hud.NitroButton);
+            _input.Bind(_hud.GasButton, _hud.BrakeButton, _hud.NitroButton, _hud.LeanBackButton, _hud.LeanForwardButton);
 
             _menu = MenuView.Create();
             _menu.PlayLevel += id => StartLevel(id, id.StartsWith("stadium_") ? GameMode.Supercross : _menu.TimeTrial ? GameMode.TimeTrial : GameMode.Career);
@@ -638,6 +638,8 @@ namespace RidgeRush.Game
                     case RaceEventType.PickupCoin: if (!demo) Haptics.Impact(0.15f, 1f); break;
                     case RaceEventType.Boost: if (!demo) { _hud.Popup(Loc.Get("boost"), volt, 0.6f); _cam.AddShake(0.2f); } break;
                     case RaceEventType.Hit: _bike.AddDamage(0.15f); _items.Burst(at, 20, new Color(1f, 0.8f, 0.4f)); if (!demo) { _hud.Popup(Loc.Get("hit"), ember, 0.7f); _cam.AddShake(0.6f); Haptics.Impact(0.8f, 0.4f); } break;
+                    case RaceEventType.SawHit: _bike.AddDamage(0.3f); _items.Burst(at, 60, new Color(1f, 0.85f, 0.5f)); if (!demo) { _cam.AddShake(1f); Haptics.Impact(1f, 0.3f); _audio.PlayCrash(); } break;
+                    case RaceEventType.Spring: _items.SpringFx(at); _items.Burst(at, 15, new Color(0.3f, 1f, 0.5f)); if (!demo) { _hud.Popup(Loc.Get("spring"), new Color(0.3f, 1f, 0.5f), 0.7f); _cam.AddShake(0.3f); Haptics.Impact(0.6f, 0.9f); } break;
                     case RaceEventType.Blocked: _items.Burst(at, 25, volt); if (!demo) _hud.Popup(Loc.Get("blocked"), volt, 0.7f); break;
                     case RaceEventType.PowerReady: if (!demo) { _hud.Popup(Loc.Get("power_ready"), volt, 1f); Haptics.Impact(0.5f, 1f); } break;
                     case RaceEventType.PowerActivated: if (!demo) _hud.Popup(Loc.Get("shield"), volt, 1f); break;

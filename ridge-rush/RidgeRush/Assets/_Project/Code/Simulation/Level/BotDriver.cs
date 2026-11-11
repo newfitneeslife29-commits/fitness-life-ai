@@ -17,7 +17,15 @@ namespace RidgeRush.Simulation
             // En el aire mira dónde va a aterrizar; en el suelo, un poco por delante.
             float lookAhead = airborne ? Math.Max(1f, c.Velocity.x * 0.35f) : 1.2f;
             float target = 0f;
-            if (sim.Track.GroundAt(c.Position.x + lookAhead, c.Position.y + 1.5f, out _, out Vec2 n, out _))
+            bool loop = sim.OnLoop;
+            if (loop)
+            {
+                // En el loop: seguir la superficie que tocan las ruedas (puede estar boca abajo) y gas a fondo.
+                Vec2 n = sim.FrontInfo.Grounded ? sim.FrontInfo.ContactNormal : sim.RearInfo.ContactNormal;
+                if (sim.FrontInfo.Grounded && sim.RearInfo.Grounded) n = (sim.FrontInfo.ContactNormal + sim.RearInfo.ContactNormal).Normalized;
+                target = MathF.Atan2(-n.x, n.y);
+            }
+            else if (sim.Track.GroundAt(c.Position.x + lookAhead, c.Position.y + 1.5f, out _, out Vec2 n, out _))
                 target = MathF.Atan2(-n.x, n.y);
 
             float angle = SimMath.WrapAngle(c.Angle);
@@ -25,8 +33,9 @@ namespace RidgeRush.Simulation
             float lean = SimMath.Clamp(2.8f * error + 0.35f * c.AngularVelocity, -1f, 1f);
 
             float throttle = aggressiveness;
-            if (!airborne && error > 0.35f) throttle = 0.2f;        // controlar el wheelie
+            if (!airborne && error > 0.35f && !loop) throttle = 0.2f; // controlar el wheelie
             if (airborne) throttle = 0.6f;
+            if (loop) throttle = 1f;
 
             return new BikeInput { Throttle = throttle, Lean = lean };
         }

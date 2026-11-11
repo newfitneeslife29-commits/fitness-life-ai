@@ -17,6 +17,8 @@ namespace RidgeRush.Game
         private readonly List<ParticleSystem> _obsFires = new List<ParticleSystem>(); // uno por peligro (null si no tiene fuego)
         private ParticleSystem _burst;
         private float _spin;
+        private readonly Dictionary<int, float> _springSquash = new Dictionary<int, float>();
+        private readonly Dictionary<int, Transform> _springTops = new Dictionary<int, Transform>();
 
         public static ItemsView Create(Transform parent, RaceRules rules)
         {
@@ -40,6 +42,13 @@ namespace RidgeRush.Game
             var nozzleMat = MaterialFactory.Lit("firejet_nozzle", new Color(0.25f, 0.25f, 0.28f), 0.9f, 0.4f);
             var rockMat = MaterialFactory.Lit("falling_rock", new Color(0.4f, 0.33f, 0.28f), 0f, 0.2f, ProceduralTextures.Grain, ProceduralTextures.GrainNormal);
             var oilMat = MaterialFactory.Lit("oil", new Color(0.02f, 0.02f, 0.03f), 0.2f, 0.98f);
+            var sawMat = MaterialFactory.Lit("saw_blade", new Color(0.78f, 0.8f, 0.84f), 1f, 0.85f);
+            var sawHubMat = MaterialFactory.Lit("saw_hub", new Color(0.9f, 0.15f, 0.1f), 0.6f, 0.6f, emission: new Color(1.4f, 0.15f, 0.08f));
+            var postMat = MaterialFactory.Lit("saw_post", new Color(0.18f, 0.18f, 0.2f), 0.9f, 0.45f);
+            var hazardMat = MaterialFactory.Lit("hazard_stripe", new Color(1f, 0.78f, 0.1f), 0.2f, 0.5f, emission: new Color(0.9f, 0.65f, 0.05f));
+            var springPadMat = MaterialFactory.Lit("spring_pad", new Color(0.1f, 0.85f, 0.35f), 0.3f, 0.6f, emission: new Color(0.2f, 1.8f, 0.6f));
+            var coilMat = MaterialFactory.Lit("spring_coil", new Color(0.85f, 0.86f, 0.9f), 1f, 0.8f);
+            BuildLoops();
 
             var pk = _rules.Level.Data.pickups ?? new PickupData[0];
             for (int i = 0; i < pk.Length; i++)
@@ -101,6 +110,39 @@ namespace RidgeRush.Game
                         t.position = new Vector3(o.x, _rules.RockY(i), 0f);
                         SimConvert.Primitive(PrimitiveType.Sphere, "Rock", t, Vector3.zero, new Vector3(1.5f, 1.3f, 1.4f), rockMat, Quaternion.Euler(20f, 40f, 10f));
                         break;
+                    case "saw":
+                    {
+                        // Sierra circular: disco, dientes, buje rojo y brazo hasta el suelo (o raíl si se mueve).
+                        var sp = _rules.SawPosition(i);
+                        var arm = SimConvert.Primitive(PrimitiveType.Cylinder, "Arm", t, Vector3.zero, Vector3.one, postMat);
+                        float top = Mathf.Max(o.y, o.y + o.dy) + o.size * 0.2f;
+                        SimConvert.Stretch(arm.transform, new Vector3(o.x, gy, 0.9f), new Vector3(o.x + Mathf.Max(0f, o.dx), gy + top, 0.9f), 0.22f);
+                        SimConvert.Primitive(PrimitiveType.Cube, "Base", t, new Vector3(0f, 0.15f, 0.9f), new Vector3(1.2f, 0.3f, 1.2f), hazardMat);
+                        var blade = new GameObject("Blade").transform;
+                        blade.SetParent(t, false);
+                        blade.position = sp.ToV3(0f);
+                        float r = o.size;
+                        SimConvert.Primitive(PrimitiveType.Cylinder, "Disc", blade, Vector3.zero, new Vector3(r * 2f, 0.04f, r * 2f), sawMat, Quaternion.Euler(90f, 0f, 0f));
+                        for (int k = 0; k < 16; k++)
+                        {
+                            float a = k / 16f * 360f;
+                            SimConvert.Primitive(PrimitiveType.Cube, "Tooth", blade, Quaternion.Euler(0, 0, a) * new Vector3(r, 0f, 0f), new Vector3(0.28f, 0.16f, 0.05f), sawMat, Quaternion.Euler(0, 0, a + 35f));
+                        }
+                        SimConvert.Primitive(PrimitiveType.Cylinder, "Hub", blade, new Vector3(0f, 0f, -0.04f), new Vector3(r * 0.55f, 0.06f, r * 0.55f), sawHubMat, Quaternion.Euler(90f, 0f, 0f));
+                        SimConvert.Primitive(PrimitiveType.Cylinder, "Axle", blade, new Vector3(0f, 0f, 0.45f), new Vector3(0.18f, 0.45f, 0.18f), postMat, Quaternion.Euler(90f, 0f, 0f));
+                        break;
+                    }
+                    case "spring":
+                    {
+                        // Trampolín: base con franjas, muelle y plataforma verde que se comprime al saltar.
+                        float w = o.size * 2f;
+                        SimConvert.Primitive(PrimitiveType.Cube, "Base", t, new Vector3(0f, 0.08f, 0f), new Vector3(w + 0.3f, 0.16f, TrackMeshBuilder.HalfDepth * 1.2f), hazardMat);
+                        for (int k = 0; k < 3; k++)
+                            SimConvert.Primitive(PrimitiveType.Cylinder, "Coil", t, new Vector3(0f, 0.22f + k * 0.12f, 0f), new Vector3(w * 0.6f, 0.03f, w * 0.6f), coilMat);
+                        var top = SimConvert.Primitive(PrimitiveType.Cube, "Pad", t, new Vector3(0f, 0.6f, 0f), new Vector3(w, 0.12f, TrackMeshBuilder.HalfDepth * 1.1f), springPadMat).transform;
+                        _springTops[i] = top;
+                        break;
+                    }
                     case "oil":
                         float len = Mathf.Max(2f, o.period);
                         t.position = new Vector3(o.x + len * 0.5f, gy + 0.02f, 0f);
@@ -141,6 +183,80 @@ namespace RidgeRush.Game
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = MaterialFactory.Particles("fx_fire", ProceduralTextures.SoftDot, Color.white);
             ps.Play();
             return ps;
+        }
+
+        /// <summary>Anima el trampolín más cercano a <paramref name="at"/>.</summary>
+        public void SpringFx(Vector3 at)
+        {
+            var ob = _rules.Level.Data.obstacles ?? new ObstacleData[0];
+            int best = -1; float bd = 4f;
+            for (int i = 0; i < ob.Length; i++)
+                if (ob[i].type == "spring" && Mathf.Abs(ob[i].x - at.x) < bd) { bd = Mathf.Abs(ob[i].x - at.x); best = i; }
+            if (best >= 0) _springSquash[best] = 1f;
+        }
+
+        /// <summary>
+        /// Anillo de cada loop: banda metálica con luces, detrás de la moto (la moto recorre su borde delantero),
+        /// y dos patas hasta el suelo.
+        /// </summary>
+        private void BuildLoops()
+        {
+            var loops = _rules.Level.Track.Loops;
+            if (loops.Count == 0) return;
+            var bandMat = MaterialFactory.Lit("loop_band", new Color(0.22f, 0.24f, 0.28f), 0.85f, 0.55f);
+            var lightMat = MaterialFactory.Lit("loop_light", new Color(0.3f, 0.9f, 1f), 0f, 0.6f, emission: new Color(0.6f, 2.6f, 3.2f));
+            var legMat = MaterialFactory.Lit("loop_leg", new Color(0.3f, 0.3f, 0.33f), 0.9f, 0.4f);
+            var stripeMat = MaterialFactory.Lit("hazard_stripe", new Color(1f, 0.78f, 0.1f), 0.2f, 0.5f, emission: new Color(0.9f, 0.65f, 0.05f));
+            foreach (var l in loops)
+            {
+                var root = new GameObject("Loop").transform;
+                root.SetParent(transform, false);
+                Vector3 c = l.Center.ToV3(0f);
+                float R = l.Radius, thick = 0.35f, z0 = 0.12f, z1 = 2.1f;
+                int n = 64;
+                var verts = new List<Vector3>(); var norms = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
+                void Quad(Vector3 a, Vector3 b, Vector3 cc, Vector3 d, Vector3 nrm, float u0, float u1)
+                {
+                    int v = verts.Count;
+                    verts.Add(a); verts.Add(b); verts.Add(cc); verts.Add(d);
+                    for (int k = 0; k < 4; k++) norms.Add(nrm);
+                    uvs.Add(new Vector2(u0, 0)); uvs.Add(new Vector2(u0, 1)); uvs.Add(new Vector2(u1, 1)); uvs.Add(new Vector2(u1, 0));
+                    tris.Add(v); tris.Add(v + 1); tris.Add(v + 2); tris.Add(v); tris.Add(v + 2); tris.Add(v + 3);
+                    // Cara opuesta (las dos caras visibles: la cámara ve el anillo por dentro y por fuera).
+                    int w = verts.Count;
+                    verts.Add(d); verts.Add(cc); verts.Add(b); verts.Add(a);
+                    for (int k = 0; k < 4; k++) norms.Add(-nrm);
+                    uvs.Add(new Vector2(u1, 0)); uvs.Add(new Vector2(u1, 1)); uvs.Add(new Vector2(u0, 1)); uvs.Add(new Vector2(u0, 0));
+                    tris.Add(w); tris.Add(w + 1); tris.Add(w + 2); tris.Add(w); tris.Add(w + 2); tris.Add(w + 3);
+                }
+                for (int i = 0; i < n; i++)
+                {
+                    float a0 = i / (float)n * Mathf.PI * 2f, a1 = (i + 1) / (float)n * Mathf.PI * 2f;
+                    var d0 = new Vector3(Mathf.Cos(a0), Mathf.Sin(a0), 0f); var d1 = new Vector3(Mathf.Cos(a1), Mathf.Sin(a1), 0f);
+                    Vector3 i0 = c + d0 * R, i1 = c + d1 * R, o0 = c + d0 * (R + thick), o1 = c + d1 * (R + thick);
+                    var zf = new Vector3(0, 0, z0); var zb = new Vector3(0, 0, z1);
+                    Quad(i1 + zf, i1 + zb, i0 + zb, i0 + zf, -(d0 + d1).normalized, a1, a0);      // cara interior (donde ruedan)
+                    Quad(o0 + zf, o0 + zb, o1 + zb, o1 + zf, (d0 + d1).normalized, a0, a1);       // cara exterior
+                    Quad(i0 + zf, o0 + zf, o1 + zf, i1 + zf, Vector3.back, a0, a1);               // borde delantero
+                    if (i % 4 == 0)
+                        SimConvert.Primitive(PrimitiveType.Cube, "Light", root, c + d0 * (R + thick * 0.5f) + new Vector3(0, 0, z0 - 0.02f), new Vector3(0.18f, 0.18f, 0.04f), lightMat);
+                }
+                var mesh = new Mesh { name = "LoopRing" };
+                mesh.SetVertices(verts); mesh.SetNormals(norms); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+                mesh.RecalculateBounds();
+                var ring = new GameObject("Ring");
+                ring.transform.SetParent(root, false);
+                ring.AddComponent<MeshFilter>().sharedMesh = mesh;
+                ring.AddComponent<MeshRenderer>().sharedMaterial = bandMat;
+                // Patas y travesaño con franjas de peligro.
+                float floor = c.y - R;
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    var leg = SimConvert.Primitive(PrimitiveType.Cylinder, "Leg", root, Vector3.zero, Vector3.one, legMat);
+                    SimConvert.Stretch(leg.transform, new Vector3(c.x + side * (R + 1.2f), floor, 1.4f), new Vector3(c.x + side * (R + thick) * 0.92f, c.y + 0.3f, 1.4f), 0.3f);
+                }
+                SimConvert.Primitive(PrimitiveType.Cube, "Beam", root, new Vector3(c.x, floor + 0.12f, 2.2f), new Vector3(2f * R + 3f, 0.24f, 0.4f), stripeMat);
+            }
         }
 
         /// <summary>Explosión o chispazo en un punto (barril, K.O., golpe).</summary>
@@ -185,6 +301,25 @@ namespace RidgeRush.Game
                     case "rock":
                         _obstacles[i].position = new Vector3(ob[i].x, _rules.RockY(i), 0f);
                         break;
+                    case "saw":
+                    {
+                        var blade = _obstacles[i].Find("Blade");
+                        if (blade == null) break;
+                        blade.position = _rules.SawPosition(i).ToV3(0f);
+                        blade.rotation = Quaternion.Euler(0f, 0f, -_spin * 6f);
+                        break;
+                    }
+                    case "spring":
+                    {
+                        if (!_springTops.TryGetValue(i, out var top)) break;
+                        _springSquash.TryGetValue(i, out float sq);
+                        sq = Mathf.Max(0f, sq - Time.deltaTime * 4f);
+                        _springSquash[i] = sq;
+                        // Se hunde y rebota (curva amortiguada).
+                        float k = Mathf.Sin(sq * Mathf.PI * 3f) * sq;
+                        top.localPosition = new Vector3(0f, 0.6f - k * 0.35f, 0f);
+                        break;
+                    }
                 }
             }
         }

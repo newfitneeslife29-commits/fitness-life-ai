@@ -31,6 +31,9 @@ namespace RidgeRush.Simulation
 
         public float Time { get; private set; }
         public bool Crashed { get; private set; }
+        /// <summary>Alguna rueda toca un loop (se actualiza en cada paso).</summary>
+        public bool OnLoop { get; private set; }
+        public const float LoopGravityScale = 0.4f;
         public float Nitro { get; set; }
         public bool NitroActive { get; private set; }
         public BikeInput LastInput { get; private set; }
@@ -129,6 +132,8 @@ namespace RidgeRush.Simulation
             FrontWheel.AngularVelocity = omega * r / Params.frontWheelRadius;
             Engine.Reset();
             Crashed = false;
+            OnLoop = false;
+            Track.ResetGates();
             NitroActive = false;
             FrontInfo = default; RearInfo = default;
             _frontSlidingPrev = _rearSlidingPrev = false;
@@ -150,11 +155,13 @@ namespace RidgeRush.Simulation
             LastInput = input;
             Time += dt;
             Track.Step(Time, dt, Gravity);
+            Track.UpdateGates(Chassis.Position);
 
             Chassis.ClearForces(); FrontWheel.ClearForces(); RearWheel.ClearForces();
 
             // ---- Fuerzas ----
-            var g = new Vec2(0f, -Gravity);
+            // En el loop la gravedad se reduce (ayuda arcade): basta con llegar con algo de velocidad.
+            var g = new Vec2(0f, -Gravity * (OnLoop ? LoopGravityScale : 1f));
             Chassis.Force += g * Chassis.Mass;
             FrontWheel.Force += g * FrontWheel.Mass;
             RearWheel.Force += g * RearWheel.Mass;
@@ -305,6 +312,7 @@ namespace RidgeRush.Simulation
         {
             _contactCount = 0;
             var p = Params;
+            OnLoop = false;
             AddCircle(FrontWheel, FrontWheel.Position, p.frontWheelRadius, 0, dt);
             AddCircle(RearWheel, RearWheel.Position, p.rearWheelRadius, 1, dt);
             AddCircle(Chassis, Chassis.LocalToWorld(p.skidPlateLocal), p.skidPlateRadius, 2, dt);
@@ -351,6 +359,7 @@ namespace RidgeRush.Simulation
                     ApproachSpeed = -Vec2.Dot(rel, h.Normal),
                 };
                 Track.NotifyContact(h.Chain, Time);
+                if (kind <= 1 && Track.Chains[h.Chain].IsLoop) OnLoop = true;
             }
         }
 

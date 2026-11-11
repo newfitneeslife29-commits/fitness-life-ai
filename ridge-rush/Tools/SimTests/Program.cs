@@ -18,6 +18,7 @@ internal static class Program
     {
         if (args.Length >= 2 && args[0] == "dump") { Dump(args[1]); return 0; }
         if (args.Length >= 1 && args[0] == "trace") { Trace(); return 0; }
+        if (args.Length >= 1 && args[0] == "loop") { RunBot(LoopLevel(args.Length > 1 ? float.Parse(args[1]) : 5f), verbose: true); return 0; }
         if (args.Length >= 1 && args[0] == "generate") { return GenerateAll(args.Length >= 2 ? args[1] : null); }
         if (args.Length >= 2 && args[0] == "bot") { RunBot(LoadLevel(args[1]), verbose: true); return 0; }
 
@@ -34,6 +35,24 @@ internal static class Program
         Run("Reglas: reloj, checkpoint y meta", RaceRulesFlow);
         Run("Freestyle: 2 minutos, puntos por trucos", FreestyleMode);
         Run("Objetos, peligros, barra de poder y K.O.", ItemsAndPowers);
+        Run("Loop: la moto da la vuelta completa y sigue", () =>
+        {
+            var r = RunBot(LoopLevel(5.5f), verbose: false);
+            Assert(r.State == RaceState.Finished && r.Crashes == 0, $"no pasó el loop: {r.State}, x={r.Sim.Chassis.Position.x:0.0}");
+        });
+        Run("Sierra: tocarla es caída; trampolín: lanza hacia arriba", () =>
+        {
+            var lvl = LoopLevel(5f);
+            lvl.sections = new[] { new SectionData { type = "flat", length = 120f }, new SectionData { type = "finish", length = 20f } };
+            lvl.obstacles = new[] { new ObstacleData { type = "saw", x = 30f, y = 0.8f, size = 1.2f } };
+            var r = RunBot(lvl, verbose: false);
+            Assert(r.State == RaceState.Crashed, "la sierra no derribó a la moto");
+            lvl.obstacles = new[] { new ObstacleData { type = "spring", x = 20f, size = 1.4f, power = 11f } };
+            r = new RaceRules(TrackBuilder.Build(lvl), new BikeParams());
+            float maxY = 0f;
+            for (int i = 0; i < 240 * 6; i++) { r.Step(BotDriver.Drive(r.Sim)); r.ClearEvents(); maxY = MathF.Max(maxY, r.Sim.Chassis.Position.y); }
+            Assert(maxY > 4f, $"el trampolín no lanzó (altura máxima {maxY:0.0} m)");
+        });
         Run("Las 15 motos terminan el nivel 1 (y al máximo de mejoras la física sigue estable)", AllBikesFinish);
         foreach (var file in Directory.GetFiles(LevelsDir, "*.json", SearchOption.AllDirectories))
         {
@@ -356,6 +375,18 @@ internal static class Program
 
     // ------------------------------------------------------------------ utilidades
 
+    private static LevelData LoopLevel(float radius) => new LevelData
+    {
+        id = "loop_test",
+        sections = new[]
+        {
+            new SectionData { type = "flat", length = 40f },
+            new SectionData { type = "loop", length = 20f, height = radius },
+            new SectionData { type = "flat", length = 20f },
+            new SectionData { type = "finish", length = 20f },
+        },
+    };
+
     private static RaceRules RunBot(LevelData level, bool verbose, float aggressiveness = 1f, bool respawn = false)
     {
         var r = new RaceRules(TrackBuilder.Build(level), new BikeParams());
@@ -403,26 +434,108 @@ internal static class Program
             {
                 string file = Path.Combine(dir, $"{w.Id}_{i + 1:00}.json");
                 if (w.Id == "coast" && i == 0) continue; // hecho a mano
+                var only = Environment.GetEnvironmentVariable("ONLY_LEVEL"); // p. ej. ONLY_LEVEL=25
+                if (only != null && int.Parse(only) != i + 1) continue;
                 bool ok = false;
-                for (int seed = 0; seed < 80 && !ok; seed++)
+                for (int seed = 0; seed < (i == w.LevelCount - 1 ? 400 : 120) && !ok; seed++)
                 {
                     var level = LevelGenerator.Generate(w, i, seed);
-                    var r = RunBot(level, verbose: false);
-                    if (r.State != RaceState.Finished || r.Crashes > 0 || r.RaceTime < 30f || r.RaceTime > 110f) continue;
-                    // Robusto: también lo termina conduciendo con menos gas (otro estilo, otra trayectoria).
-                    var r2 = RunBot(level, verbose: false, aggressiveness: 0.9f);
-                    var r3 = RunBot(level, verbose: false, aggressiveness: 0.8f);
-                    if (r2.State != RaceState.Finished || r2.Crashes > 0 || r3.State != RaceState.Finished || r3.Crashes > 0) continue;
-                    float t = r.FinalTime;
+                    if (!TryValidate(level, json, out float t, out int sawsKept, out int sawsTotal)) continue;
                     level.stars = new StarTimes { gold = MathF.Round(t * 1.05f, 1), silver = MathF.Round(t * 1.3f, 1) };
                     File.WriteAllText(file, JsonSerializer.Serialize(level, json));
-                    Console.WriteLine($"  {level.id}: semilla {seed}, piloto automático {t:0.0}s → ★★★ {level.stars.gold}s");
+                    Console.WriteLine($"  {level.id}: semilla {seed}, piloto automático {t:0.0}s → ★★★ {level.stars.gold}s, sierras {sawsKept}/{sawsTotal}");
                     ok = true;
                 }
                 if (!ok) { failures++; Console.WriteLine($"  ✗ {w.Id} {i + 1}: ninguna semilla completable"); }
             }
         }
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// Prueba un nivel generado con los tres estilos del piloto automático. Las sierras son candidatas: primero se
+    /// conduce sin ellas grabando la trayectoria y solo se quedan las que nunca tocan a la moto (con margen, y
+    /// teniendo en cuenta que se mueven con el reloj). Así el nivel es difícil pero siempre se puede terminar.
+    /// </summary>
+    private static bool TryValidate(LevelData level, JsonSerializerOptions json, out float time, out int kept, out int total)
+    {
+        time = 0f; kept = 0; total = 0;
+        var all = level.obstacles ?? Array.Empty<ObstacleData>();
+        var saws = new List<ObstacleData>();
+        var others = new List<ObstacleData>();
+        foreach (var o in all) (o.type == "saw" ? saws : others).Add(o);
+        total = saws.Count;
+        level.obstacles = others.ToArray();
+
+        var styles = new[] { 1f, 0.9f, 0.8f };
+        var recs = new List<List<float[]>>();
+        foreach (float agg in styles)
+        {
+            var rec = new List<float[]>();
+            var r = RunBotRecorded(level, agg, rec);
+            if (r.State != RaceState.Finished || r.Crashes > 0 || r.RaceTime < 30f || r.RaceTime > 110f) return false;
+            if (agg == 1f) time = r.FinalTime;
+            recs.Add(rec);
+        }
+
+        var track = TrackBuilder.Build(level).Track;
+        var keep = new List<ObstacleData>();
+        foreach (var sw in saws)
+        {
+            if (!track.GroundAt(sw.x, 10000f, out float gy, out _, out _)) continue;
+            bool moving = sw.dx != 0f || sw.dy != 0f;
+            float margin = sw.size + (moving ? 1.0f : 0.6f);
+            bool clear = true;
+            foreach (var rec in recs)
+            {
+                foreach (var smp in rec)
+                {
+                    Vec2 c = new Vec2(sw.x, gy + sw.y);
+                    if (moving)
+                    {
+                        float period = Math.Max(0.5f, sw.period);
+                        float k = 0.5f - 0.5f * MathF.Cos((smp[0] + sw.phase) / period * SimMath.TwoPi);
+                        c += new Vec2(sw.dx, sw.dy) * k;
+                    }
+                    if (Math.Abs(smp[1] - c.x) > margin + 3f) continue;
+                    for (int q = 1; q < smp.Length; q += 2)
+                    {
+                        float dx = smp[q] - c.x, dy = smp[q + 1] - c.y;
+                        if (dx * dx + dy * dy < (margin + 0.4f) * (margin + 0.4f)) { clear = false; break; }
+                    }
+                    if (!clear) break;
+                }
+                if (!clear) break;
+            }
+            if (clear) keep.Add(sw);
+        }
+        kept = keep.Count;
+        others.AddRange(keep);
+        level.obstacles = others.ToArray();
+
+        // Comprobación final con las sierras puestas.
+        foreach (float agg in styles)
+        {
+            var r = RunBot(level, verbose: false, aggressiveness: agg);
+            if (r.State != RaceState.Finished || r.Crashes > 0) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Piloto automático grabando en cada paso: tiempo y posiciones de chasis, ruedas y casco.</summary>
+    private static RaceRules RunBotRecorded(LevelData level, float aggressiveness, List<float[]> rec)
+    {
+        var r = new RaceRules(TrackBuilder.Build(level), new BikeParams());
+        for (int i = 0; i < 240 * 150 && r.State != RaceState.Finished && r.State != RaceState.Crashed; i++)
+        {
+            r.Step(BotDriver.Drive(r.Sim, aggressiveness));
+            r.ClearEvents();
+            var s = r.Sim;
+            Vec2 head = s.Chassis.LocalToWorld(s.Params.headLocal);
+            rec.Add(new[] { s.Time, s.Chassis.Position.x, s.Chassis.Position.y, s.FrontWheel.Position.x, s.FrontWheel.Position.y,
+                            s.RearWheel.Position.x, s.RearWheel.Position.y, head.x, head.y });
+        }
+        return r;
     }
 
     private static void Trace()

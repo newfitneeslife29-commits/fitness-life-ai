@@ -35,15 +35,17 @@ namespace RidgeRush.Game
         private RectTransform _tutorialPanel, _replayBar;
         public event Action KnockoutRequested;
 
-        private Image _powerFill, _koFill, _powerBtn, _koBtn;
-        private Text _powerText, _koText;
+        public RectTransform LeanBackButton { get; private set; }
+        public RectTransform LeanForwardButton { get; private set; }
+        private RoundBtn _gasBtn, _brakeBtn, _nitroBtn, _leanBack, _leanFwd, _powerRb, _koRb;
+        private Sprite _circle, _ring, _soft;
         public event Action<bool> PauseChanged;
         public event Action SettingsChanged;
 
         private Font _font;
         private Sprite _rounded;
         private Text _timer, _target, _coins, _popup, _hint, _combo;
-        private Image _progressFill, _nitroFill, _gasImg, _brakeImg, _nitroImg;
+        private Image _progressFill;
         private RectTransform _pausePanel, _finishPanel, _settingsList;
         private Text _finishTime, _finishStars, _finishCoins, _finishBest;
         private Button _nextButton;
@@ -103,26 +105,22 @@ namespace RidgeRush.Game
             _levelName = Label("LevelName", safe, "", 52, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(1400f, 80f));
             _levelName.fontStyle = FontStyle.Bold;
 
-            // ---- Controles (zona del pulgar, ≥ 88 pt) ----
-            BrakeButton = ControlButton(safe, "Brake", Loc.Get("brake"), new Vector2(0f, 0f), new Vector2(190f, 170f), new Vector2(280f, 260f), out _brakeImg);
-            GasButton = ControlButton(safe, "Gas", Loc.Get("gas"), new Vector2(1f, 0f), new Vector2(-190f, 170f), new Vector2(280f, 260f), out _gasImg);
-            NitroButton = ControlButton(safe, "Nitro", Loc.Get("nitro"), new Vector2(1f, 0f), new Vector2(-460f, 120f), new Vector2(170f, 170f), out _nitroImg);
-            var nitroBar = Panel("NitroBar", NitroButton, new Vector2(0.5f, 0f), new Vector2(0f, -22f), new Vector2(170f, 14f), Steel);
-            _nitroFill = Panel("Fill", nitroBar, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(170f, 14f), Volt).GetComponent<Image>();
-            _nitroFill.rectTransform.pivot = new Vector2(0f, 0.5f);
-            _nitroFill.type = Image.Type.Filled; _nitroFill.fillMethod = Image.FillMethod.Horizontal;
-            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0f), new Vector2(-190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
-            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
-
-            // ---- Barras de poder y de K.O. (izquierda, sobre el freno) ----
-            var powerBg = Panel("PowerBar", safe, new Vector2(0f, 0f), new Vector2(190f, 420f), new Vector2(280f, 16f), Steel);
-            _powerFill = Panel("Fill", powerBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(280f, 16f), Volt).GetComponent<Image>();
-            _powerFill.rectTransform.pivot = new Vector2(0f, 0.5f); _powerFill.type = Image.Type.Filled; _powerFill.fillMethod = Image.FillMethod.Horizontal;
-            var koBg = Panel("KoBar", safe, new Vector2(0f, 0f), new Vector2(190f, 450f), new Vector2(280f, 16f), Steel);
-            _koFill = Panel("Fill", koBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(280f, 16f), Ember).GetComponent<Image>();
-            _koFill.rectTransform.pivot = new Vector2(0f, 0.5f); _koFill.type = Image.Type.Filled; _koFill.fillMethod = Image.FillMethod.Horizontal;
-            _powerBtn = ActionButton(safe, Loc.Get("power"), new Vector2(0f, 0f), new Vector2(110f, 540f), Volt, () => PowerRequested?.Invoke(), out _powerText);
-            _koBtn = ActionButton(safe, "K.O.", new Vector2(0f, 0f), new Vector2(270f, 540f), Ember, () => KnockoutRequested?.Invoke(), out _koText);
+            // ---- Controles (botones redondos de cristal oscuro con aro de color) ----
+            // Izquierda: inclinarse atrás / adelante, y encima PODER y K.O. (aro = barra de carga).
+            // Derecha: GAS grande, FRENO a su izquierda y TURBO (nitro) encima del gas (aro = nitro que queda).
+            _circle = CircleSprite(256, 0f); _ring = CircleSprite(256, 0.11f); _soft = SoftSprite(128);
+            _leanBack = RoundButton(safe, "LeanBack", "◄", Loc.Get("lean_back"), new Vector2(0f, 0f), new Vector2(150f, 165f), 210f, Volt);
+            _leanFwd = RoundButton(safe, "LeanFwd", "►", Loc.Get("lean_fwd"), new Vector2(0f, 0f), new Vector2(390f, 165f), 210f, Volt);
+            _gasBtn = RoundButton(safe, "Gas", Loc.Get("gas"), "", new Vector2(1f, 0f), new Vector2(-165f, 190f), 260f, Ember);
+            _brakeBtn = RoundButton(safe, "Brake", Loc.Get("brake"), "", new Vector2(1f, 0f), new Vector2(-420f, 150f), 190f, Bone);
+            _nitroBtn = RoundButton(safe, "Nitro", "»", Loc.Get("turbo"), new Vector2(1f, 0f), new Vector2(-185f, 430f), 150f, Volt, meter: true);
+            _powerRb = RoundButton(safe, "Power", "★", Loc.Get("power"), new Vector2(0f, 0f), new Vector2(150f, 405f), 150f, Volt, meter: true);
+            _koRb = RoundButton(safe, "KO", "K.O.", "", new Vector2(0f, 0f), new Vector2(355f, 425f), 150f, Ember, meter: true);
+            _powerRb.Root.gameObject.AddComponent<Button>().onClick.AddListener(() => PowerRequested?.Invoke());
+            _koRb.Root.gameObject.AddComponent<Button>().onClick.AddListener(() => KnockoutRequested?.Invoke());
+            _powerRb.Bg.raycastTarget = _koRb.Bg.raycastTarget = true;
+            GasButton = _gasBtn.Root; BrakeButton = _brakeBtn.Root; NitroButton = _nitroBtn.Root;
+            LeanBackButton = _leanBack.Root; LeanForwardButton = _leanFwd.Root;
 
             // Tutorial: indicación grande arriba.
             _tutorialPanel = Panel("Tutorial", safe, new Vector2(0.5f, 1f), new Vector2(0f, -280f), new Vector2(1300f, 110f), new Color(0.07f, 0.08f, 0.09f, 0.8f));
@@ -148,7 +146,6 @@ namespace RidgeRush.Game
             _progressFill.fillAmount = r.Progress;
             _coins.text = $"● {r.Coins}";
             _combo.text = r.Combo > 1.01f ? $"{Loc.Get("combo")} ×{r.Combo:0.0}" : "";
-            _nitroFill.fillAmount = r.Sim.Params.nitroCapacity > 0f ? r.Sim.Nitro / r.Sim.Params.nitroCapacity : 0f;
             _hint.enabled = r.State == RaceState.Ready;
             _levelName.enabled = r.State == RaceState.Ready;
             if (r.State == RaceState.Crashed && _popupTimer <= 0f) Popup(Loc.Get("crash"), Ember, 1f);
@@ -159,9 +156,13 @@ namespace RidgeRush.Game
             if (_freestyle) _target.text = $"{r.Score:N0} {Loc.Get("points")}";
             else if (_supercross) _target.text = $"{Loc.Get("position")} {_position}/{_racers}";
 
-            _gasImg.color = input.GasHeld ? Ember : Steel;
-            _brakeImg.color = input.BrakeHeld ? Bone * new Color(1, 1, 1, 0.9f) : Steel;
-            _nitroImg.color = input.NitroHeld && r.Sim.Nitro > 0f ? Volt : Steel;
+            _gasBtn.Set(input.GasHeld, true, dt);
+            _brakeBtn.Set(input.BrakeHeld, true, dt);
+            _leanBack.Set(input.LeanBackHeld, true, dt);
+            _leanFwd.Set(input.LeanForwardHeld, true, dt);
+            bool hasNitro = r.Sim.Nitro > 0.01f && r.Mode.nitroEnabled;
+            _nitroBtn.Set(input.NitroHeld && hasNitro, hasNitro, dt);
+            _nitroBtn.SetMeter(r.Sim.Params.nitroCapacity > 0f ? r.Sim.Nitro / r.Sim.Params.nitroCapacity : 0f);
 
             if (_popupTimer > 0f)
             {
@@ -339,55 +340,125 @@ namespace RidgeRush.Game
             return t;
         }
 
-        private Image ActionButton(RectTransform parent, string text, Vector2 anchor, Vector2 pos, Color color, Action onClick, out Text label)
-        {
-            var rt = Rect("Action_" + text, parent, anchor, anchor, pos, new Vector2(140f, 110f));
-            var img = rt.gameObject.AddComponent<Image>();
-            img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = color;
-            rt.gameObject.AddComponent<Button>().onClick.AddListener(() => onClick());
-            label = Label("Text", rt, text, 32, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(140f, 110f));
-            label.fontStyle = FontStyle.Bold;
-            rt.gameObject.SetActive(false);
-            return img;
-        }
-
         private bool _powersVisible = true;
 
-        /// <summary>Muestra u oculta las barras de poder y K.O. (no hay en Freestyle ni en la demostración).</summary>
+        /// <summary>Muestra u oculta los botones de poder y K.O. (no hay en Freestyle ni en la demostración).</summary>
         public void ShowPowers(bool visible)
         {
             _powersVisible = visible;
-            _powerFill.transform.parent.gameObject.SetActive(visible);
-            _koFill.transform.parent.gameObject.SetActive(visible);
-            if (!visible) { _powerBtn.gameObject.SetActive(false); _koBtn.gameObject.SetActive(false); }
+            _powerRb.Root.gameObject.SetActive(visible);
+            _koRb.Root.gameObject.SetActive(visible);
         }
 
-        /// <summary>Barras de poder y K.O.; los botones aparecen (y laten) cuando están llenas.</summary>
+        /// <summary>Poder y K.O.: el aro se llena con los trucos; lleno, el botón se enciende y late.</summary>
         public void TickPowers(RaceRules r, bool rivalInRange)
         {
             if (!_powersVisible) return;
-            _powerFill.fillAmount = r.Power;
-            _koFill.fillAmount = r.Knockout;
-            _koFill.transform.parent.gameObject.SetActive(r.Mode.rivals);
-            bool powerReady = r.Power >= 1f && r.State == RaceState.Racing;
-            bool koReady = r.Knockout >= 1f && r.State == RaceState.Racing;
-            _powerBtn.gameObject.SetActive(powerReady || r.Shielded);
-            _koBtn.gameObject.SetActive(koReady);
-            float pulse = 1f + Mathf.Sin(Time.unscaledTime * 8f) * 0.06f;
-            _powerBtn.rectTransform.localScale = Vector3.one * (powerReady ? pulse : 1f);
-            _powerText.text = r.Shielded ? $"{r.ShieldTime:0.0}s" : Loc.Get("power");
-            _koBtn.color = rivalInRange ? Ember : new Color(0.4f, 0.25f, 0.2f, 0.9f);
-            _koBtn.rectTransform.localScale = Vector3.one * (rivalInRange ? pulse : 1f);
+            float dt = Time.unscaledDeltaTime;
+            _koRb.Root.gameObject.SetActive(r.Mode.rivals);
+            bool racing = r.State == RaceState.Racing;
+            bool powerReady = r.Power >= 1f && racing;
+            bool koReady = r.Knockout >= 1f && racing && rivalInRange;
+            _powerRb.SetMeter(r.Shielded ? r.ShieldTime / RaceRules.ShieldSeconds : r.Power);
+            _koRb.SetMeter(r.Knockout);
+            _powerRb.Set(r.Shielded, powerReady || r.Shielded, dt);
+            _koRb.Set(false, koReady, dt);
+            _powerRb.Caption.text = r.Shielded ? $"{r.ShieldTime:0.0}s" : Loc.Get("power");
+            _koRb.Caption.text = r.Knockout >= 1f && !rivalInRange ? Loc.Get("ko_near") : "";
+            float pulse = 1f + Mathf.Sin(Time.unscaledTime * 8f) * 0.07f;
+            _powerRb.Root.localScale = Vector3.one * (powerReady ? pulse : 1f);
+            _koRb.Root.localScale = Vector3.one * (koReady ? pulse : 1f);
         }
 
-        private RectTransform ControlButton(RectTransform parent, string name, string text, Vector2 anchor, Vector2 pos, Vector2 size, out Image img)
+        /// <summary>Botón redondo: fondo de cristal oscuro, aro del color del botón, icono y texto debajo.</summary>
+        private sealed class RoundBtn
         {
-            var rt = Rect(name, parent, anchor, anchor, pos, size);
-            img = rt.gameObject.AddComponent<Image>();
-            img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = Steel;
-            img.raycastTarget = false; // el toque lo lee TouchInput, no el EventSystem
-            Label("Text", rt, text, size.x > 250 ? 52 : 36, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, size).fontStyle = FontStyle.Bold;
-            return rt;
+            public RectTransform Root;
+            public Image Bg, Ring, Meter, Glow;
+            public Text Icon, Caption;
+            public Color Accent;
+            private float _press;
+
+            public void Set(bool pressed, bool enabled, float dt)
+            {
+                _press = Mathf.MoveTowards(_press, pressed ? 1f : 0f, dt * 12f);
+                float dim = enabled ? 1f : 0.35f;
+                Bg.color = Color.Lerp(new Color(0.06f, 0.07f, 0.09f, 0.62f), new Color(Accent.r, Accent.g, Accent.b, 0.85f), _press);
+                Ring.color = new Color(Accent.r, Accent.g, Accent.b, (Meter != null ? 0.25f : 0.9f) * dim);
+                if (Meter != null) Meter.color = new Color(Accent.r, Accent.g, Accent.b, dim);
+                Glow.color = new Color(Accent.r, Accent.g, Accent.b, (enabled ? 0.18f : 0f) + _press * 0.35f);
+                Icon.color = Color.Lerp(new Color(1f, 1f, 1f, 0.95f * dim), new Color(0.05f, 0.05f, 0.06f, 1f), _press);
+                Caption.color = new Color(1f, 1f, 1f, 0.85f * dim);
+                Root.localScale = Vector3.one * (1f - 0.07f * _press);
+            }
+
+            public void SetMeter(float v) { if (Meter != null) Meter.fillAmount = Mathf.Clamp01(v); }
+        }
+
+        private RoundBtn RoundButton(RectTransform parent, string name, string icon, string caption, Vector2 anchor, Vector2 pos, float d, Color accent, bool meter = false)
+        {
+            var b = new RoundBtn { Accent = accent };
+            b.Root = Rect(name, parent, anchor, anchor, pos, new Vector2(d, d));
+            Image Img(string n, Sprite sp, float size)
+            {
+                var rt = Rect(n, b.Root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, size));
+                var img = rt.gameObject.AddComponent<Image>();
+                img.sprite = sp; img.raycastTarget = false;
+                return img;
+            }
+            b.Glow = Img("Glow", _soft, d * 1.35f);
+            b.Bg = Img("Bg", _circle, d);
+            b.Ring = Img("Ring", _ring, d);
+            if (meter)
+            {
+                b.Meter = Img("Meter", _ring, d);
+                b.Meter.type = Image.Type.Filled; b.Meter.fillMethod = Image.FillMethod.Radial360;
+                b.Meter.fillOrigin = (int)Image.Origin360.Top; b.Meter.fillClockwise = true;
+            }
+            bool word = icon.Length > 2;
+            float iconSize = word ? d * Mathf.Min(0.26f, 1.15f / icon.Length) : d * 0.38f;
+            b.Icon = Label("Icon", b.Root, icon, (int)iconSize, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0f, string.IsNullOrEmpty(caption) ? 0f : d * 0.08f), new Vector2(d, d * 0.5f));
+            b.Icon.fontStyle = FontStyle.Bold;
+            b.Caption = Label("Caption", b.Root, caption, Mathf.Max(22, (int)(d * 0.13f)), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0f, -d * 0.24f), new Vector2(d, 40f));
+            b.Caption.fontStyle = FontStyle.Bold;
+            b.Set(false, true, 1f);
+            return b;
+        }
+
+        /// <summary>Halo difuso (brillo alrededor del botón).</summary>
+        private static Sprite SoftSprite(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "soft" };
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(size * 0.5f, size * 0.5f)) / (size * 0.5f);
+                float a = Mathf.Clamp01(1f - d);
+                px[y * size + x] = new Color32(255, 255, 255, (byte)(a * a * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        /// <summary>Círculo suave (thickness = 0) o aro (grosor relativo al radio), con bordes antialias.</summary>
+        private static Sprite CircleSprite(int size, float thickness)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = thickness > 0f ? "ring" : "circle" };
+            var px = new Color32[size * size];
+            float r = size * 0.5f - 1f, inner = thickness > 0f ? r * (1f - thickness) : -1f;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(size * 0.5f, size * 0.5f));
+                float a = Mathf.Clamp01(r - d + 0.5f);
+                if (inner > 0f) a *= Mathf.Clamp01(d - inner + 0.5f);
+                px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
         }
 
         private void IconButton(RectTransform parent, string glyph, Vector2 anchor, Vector2 pos, Action onClick, float width = 110f, int fontSize = 56)
