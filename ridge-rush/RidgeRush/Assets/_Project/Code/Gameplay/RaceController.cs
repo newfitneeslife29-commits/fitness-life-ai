@@ -87,6 +87,13 @@ namespace RidgeRush.Game
             Application.runInBackground = false;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             MaterialFactory.Init(materials);
+            if (ShotMode.Enabled)
+            {
+                // Pantalla virtual sin GPU: calidad baja para que cada fotograma no tarde minutos.
+                QualitySettings.vSyncCount = 0;
+                GameSettings.QualityOverride = (int)QualityTier.Low;
+                Debug.Log("Ridge Rush: capturas — calidad baja, sin vsync");
+            }
             Store.Init();
             GameServices.Authenticate();
 
@@ -132,7 +139,7 @@ namespace RidgeRush.Game
             while (true)
             {
                 yield return null;
-                if (++frames % 20 == 0)
+                if (++frames % 20 == 0 || frames <= 5)
                     Debug.Log($"Ridge Rush: fotograma {frames}, {Time.realtimeSinceStartup - t0:0}s reales, sim {(_rules != null ? _rules.Sim.Time : 0f):0.0}s");
             }
         }

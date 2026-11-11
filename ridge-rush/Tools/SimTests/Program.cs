@@ -437,7 +437,8 @@ internal static class Program
                 var only = Environment.GetEnvironmentVariable("ONLY_LEVEL"); // p. ej. ONLY_LEVEL=25
                 if (only != null && int.Parse(only) != i + 1) continue;
                 bool ok = false;
-                for (int seed = 0; seed < (i == w.LevelCount - 1 ? 400 : 120) && !ok; seed++)
+                int maxSeeds = int.Parse(Environment.GetEnvironmentVariable("MAX_SEEDS") ?? (i == w.LevelCount - 1 ? "400" : "120"));
+                for (int seed = 0; seed < maxSeeds && !ok; seed++)
                 {
                     var level = LevelGenerator.Generate(w, i, seed);
                     if (!TryValidate(level, json, out float t, out int sawsKept, out int sawsTotal)) continue;
