@@ -18,13 +18,14 @@ namespace RidgeRush.Game
 
     /// <summary>
     /// Tienda. Las compras con dinero real usan StoreKit 2 en iPhone (Plugins/iOS/RRStore.swift).
-    /// Los productos deben existir en App Store Connect con estos mismos ids. En Android se conectará
-    /// Google Play Billing (Fase 6); en el editor las compras se simulan para poder probar.
+    /// En Android usa Google Play Billing 7 (Plugins/Android/RRBilling.androidlib). Los productos deben existir
+    /// en App Store Connect y en Google Play Console con estos mismos ids; en el editor las compras se simulan.
     /// Sin cajas de botín: todo lo que se compra se sabe de antemano (norma 3.1.1 de la App Store).
     /// </summary>
     public static class Store
     {
         public const string Prefix = "com.ridgerush.promoto.";
+        private const string AndroidBilling = "com.ridgerush.billing.RRBilling"; // Plugins/Android/RRBilling.androidlib
 
         public static readonly StoreProduct[] Products =
         {
@@ -53,6 +54,22 @@ namespace RidgeRush.Game
             var ids = new List<string>();
             foreach (var p in Products) if (p.GemCost == 0) ids.Add(p.Id);
             RRStore_Load(string.Join(",", ids));
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            var ids = new List<string>(); var cons = new List<string>();
+            foreach (var p in Products)
+            {
+                if (p.GemCost != 0) continue;
+                ids.Add(p.Id);
+                if (!p.NonConsumable) cons.Add(p.Id);
+            }
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                using var billing = new AndroidJavaClass(AndroidBilling);
+                billing.CallStatic("init", activity, string.Join(",", ids), string.Join(",", cons));
+            }
+            catch (Exception e) { Debug.LogWarning("Google Play Billing: " + e.Message); }
 #endif
         }
 
@@ -89,10 +106,12 @@ namespace RidgeRush.Game
             _pending = done;
 #if UNITY_IOS && !UNITY_EDITOR
             RRStore_Buy(id);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            try { using var billing = new AndroidJavaClass(AndroidBilling); billing.CallStatic("buy", id); }
+            catch (Exception e) { Debug.LogWarning("Google Play Billing: " + e.Message); OnFailed(id); }
 #elif UNITY_EDITOR
             OnPurchased(id); // simulación en el editor
 #else
-            Debug.LogWarning("Compras: Google Play Billing se conecta en la Fase 6.");
             OnFailed(id);
 #endif
         }
@@ -102,6 +121,9 @@ namespace RidgeRush.Game
             _pending = done;
 #if UNITY_IOS && !UNITY_EDITOR
             RRStore_Restore();
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            try { using var billing = new AndroidJavaClass(AndroidBilling); billing.CallStatic("restore"); }
+            catch (Exception) { OnRestoreFinished(""); }
 #else
             done?.Invoke(true);
 #endif
