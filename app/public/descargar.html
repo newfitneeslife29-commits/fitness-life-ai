@@ -31,6 +31,7 @@
   h1 span { color: var(--brand); }
   .lead { margin-top: 16px; font-size: 18px; color: var(--muted); max-width: 34em; }
   .stores { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  [hidden] { display: none !important; }
   .store { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; min-height: 56px; border-radius: 14px; background: #000; border: 1px solid rgba(255,255,255,.25); text-decoration: none; }
   .store:hover { border-color: #fff; }
   .store svg { width: 26px; height: 26px; flex: none; }
@@ -182,6 +183,19 @@
     render(b.dataset.lang);
   }));
   render(pick());
+
+  // Phones go to their own store. Coming from an ad (utm_source), straight
+  // there: every extra tap loses people. The web app link is for computers,
+  // so on a phone it doesn't pull people away from installing.
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  if (ios || android) {
+    document.querySelectorAll('.web').forEach(el => { el.hidden = true; });
+    const store = ios ? APP_STORE : PLAY;
+    document.querySelectorAll('[data-stores] .store').forEach(a => { if (a.href !== store) a.hidden = true; });
+    if (new URLSearchParams(location.search).has('utm_source')) location.replace(store);
+  }
 </script>
 </body>
 </html>
