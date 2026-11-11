@@ -18,13 +18,14 @@ namespace RidgeRush.Game
 
     /// <summary>
     /// Tienda. Las compras con dinero real usan StoreKit 2 en iPhone (Plugins/iOS/RRStore.swift).
-    /// Los productos deben existir en App Store Connect con estos mismos ids. En Android se conectará
-    /// Google Play Billing (Fase 6); en el editor las compras se simulan para poder probar.
+    /// En Android usa Google Play Billing 7 (Plugins/Android/RRBilling.androidlib). Los productos deben existir
+    /// en App Store Connect y en Google Play Console con estos mismos ids; en el editor las compras se simulan.
     /// Sin cajas de botín: todo lo que se compra se sabe de antemano (norma 3.1.1 de la App Store).
     /// </summary>
     public static class Store
     {
         public const string Prefix = "com.ridgerush.promoto.";
+        private const string AndroidBilling = "com.ridgerush.billing.RRBilling"; // Plugins/Android/RRBilling.androidlib
 
         public static readonly StoreProduct[] Products =
         {
@@ -33,6 +34,7 @@ namespace RidgeRush.Game
             new StoreProduct { Id = Prefix + "gems1200", TitleEs = "Bóveda de gemas", TitleEn = "Gem vault", Gems = 1200, FallbackPrice = "9,99 €" },
             new StoreProduct { Id = Prefix + "starter", TitleEs = "Pack de inicio", TitleEn = "Starter pack", Gems = 300, Coins = 5000, FallbackPrice = "2,99 €" },
             new StoreProduct { Id = Prefix + "noads", TitleEs = "Sin anuncios", TitleEn = "No ads", NonConsumable = true, FallbackPrice = "3,99 €" },
+            new StoreProduct { Id = Prefix + "season1", TitleEs = "Pase premium T1", TitleEn = "Premium pass S1", NonConsumable = true, FallbackPrice = "4,99 €" },
             new StoreProduct { Id = "coins5000", TitleEs = "5.000 monedas", TitleEn = "5,000 coins", Coins = 5000, GemCost = 50 },
             new StoreProduct { Id = "coins15000", TitleEs = "15.000 monedas", TitleEn = "15,000 coins", Coins = 15000, GemCost = 120 },
         };
@@ -52,6 +54,22 @@ namespace RidgeRush.Game
             var ids = new List<string>();
             foreach (var p in Products) if (p.GemCost == 0) ids.Add(p.Id);
             RRStore_Load(string.Join(",", ids));
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            var ids = new List<string>(); var cons = new List<string>();
+            foreach (var p in Products)
+            {
+                if (p.GemCost != 0) continue;
+                ids.Add(p.Id);
+                if (!p.NonConsumable) cons.Add(p.Id);
+            }
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                using var billing = new AndroidJavaClass(AndroidBilling);
+                billing.CallStatic("init", activity, string.Join(",", ids), string.Join(",", cons));
+            }
+            catch (Exception e) { Debug.LogWarning("Google Play Billing: " + e.Message); }
 #endif
         }
 
@@ -60,9 +78,12 @@ namespace RidgeRush.Game
             var p = Find(id);
             if (p == null) return "";
             if (p.GemCost > 0) return $"◆ {p.GemCost}";
-            if (p.NonConsumable && NoAds) return "✓";
+            if (IsOwned(p)) return "✓";
             return Prices.TryGetValue(id, out var price) ? price : p.FallbackPrice;
         }
+
+        private static bool IsOwned(StoreProduct p) =>
+            (p.Id == Prefix + "noads" && NoAds) || (p.Id == Prefix + "season1" && SaveSystem.Data.seasonPremium);
 
         public static StoreProduct Find(string id)
         {
@@ -81,14 +102,16 @@ namespace RidgeRush.Game
                 d.gems -= p.GemCost; Grant(p); done?.Invoke(true);
                 return;
             }
-            if (p.NonConsumable && NoAds) { done?.Invoke(true); return; }
+            if (IsOwned(p)) { done?.Invoke(true); return; }
             _pending = done;
 #if UNITY_IOS && !UNITY_EDITOR
             RRStore_Buy(id);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            try { using var billing = new AndroidJavaClass(AndroidBilling); billing.CallStatic("buy", id); }
+            catch (Exception e) { Debug.LogWarning("Google Play Billing: " + e.Message); OnFailed(id); }
 #elif UNITY_EDITOR
             OnPurchased(id); // simulación en el editor
 #else
-            Debug.LogWarning("Compras: Google Play Billing se conecta en la Fase 6.");
             OnFailed(id);
 #endif
         }
@@ -98,6 +121,9 @@ namespace RidgeRush.Game
             _pending = done;
 #if UNITY_IOS && !UNITY_EDITOR
             RRStore_Restore();
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            try { using var billing = new AndroidJavaClass(AndroidBilling); billing.CallStatic("restore"); }
+            catch (Exception) { OnRestoreFinished(""); }
 #else
             done?.Invoke(true);
 #endif
@@ -107,7 +133,8 @@ namespace RidgeRush.Game
         {
             var d = SaveSystem.Data;
             d.gems += p.Gems; d.coins += p.Coins;
-            if (p.NonConsumable) PlayerPrefs.SetInt("rr_noads", 1);
+            if (p.Id == Prefix + "noads") PlayerPrefs.SetInt("rr_noads", 1);
+            if (p.Id == Prefix + "season1") d.seasonPremium = true;
             SaveSystem.Save();
         }
 

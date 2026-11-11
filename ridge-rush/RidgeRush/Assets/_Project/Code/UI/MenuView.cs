@@ -23,6 +23,7 @@ namespace RidgeRush.Game
         public event Action<string> PlayLevel;
         public event Action PlayEndless;
         public event Action PlayFreestyle;
+        public event Action PlayTutorial;
         public event Action GarageChanged;
 
         /// <summary>Modo elegido en la pantalla de niveles: Carrera (con checkpoints) o Contrarreloj (con fantasma).</summary>
@@ -50,10 +51,14 @@ namespace RidgeRush.Game
             return menu;
         }
 
-        public void Show(bool visible) => gameObject.SetActive(visible);
+        public void Show(bool visible) { gameObject.SetActive(visible); if (!visible) InGarage = false; }
+
+        /// <summary>El garaje está abierto (la escena muestra la moto parada de cerca).</summary>
+        public bool InGarage { get; private set; }
 
         private RectTransform NewScreen()
         {
+            InGarage = false;
             if (_screen != null) Destroy(_screen.gameObject);
             _screen = UiKit.Rect("Screen", (RectTransform)transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var safe = UiKit.Rect("Safe", _screen, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -79,11 +84,14 @@ namespace RidgeRush.Game
             title.fontStyle = FontStyle.BoldAndItalic;
             UiKit.Label(_font, s, "PRO MOTO", 56, TextAnchor.MiddleLeft, new Vector2(0f, 0.6f), new Vector2(560f, 0f), new Vector2(1000f, 80f), Ember).fontStyle = FontStyle.Bold;
             WalletBar(s);
-            UiKit.Button(_font, _rounded, s, Loc.Get("play"), new Vector2(0f, 0.42f), new Vector2(380f, 0f), new Vector2(560f, 120f), Ember, 54, ShowWorlds);
+            UiKit.Button(_font, _rounded, s, Loc.Get("play"), new Vector2(0f, 0.42f), new Vector2(380f, 0f), new Vector2(560f, 120f), Ember, 54,
+                () => { if (!SaveSystem.Data.tutorialDone) PlayTutorial?.Invoke(); else ShowWorlds(); });
             UiKit.Button(_font, _rounded, s, Loc.Get("freestyle"), new Vector2(0f, 0.42f), new Vector2(810f, 0f), new Vector2(260f, 120f), new Color(0.15f, 0.35f, 0.4f, 0.95f), 32, () => PlayFreestyle?.Invoke());
             UiKit.Button(_font, _rounded, s, Loc.Get("garage"), new Vector2(0f, 0.29f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowGarage);
             UiKit.Button(_font, _rounded, s, Loc.Get("shop"), new Vector2(0f, 0.18f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowShop);
             UiKit.Button(_font, _rounded, s, Loc.Get("leaderboards"), new Vector2(0f, 0.07f), new Vector2(380f, 0f), new Vector2(560f, 90f), Steel, 36, GameServices.ShowDashboard);
+            UiKit.Button(_font, _rounded, s, Loc.Get("season"), new Vector2(0f, 0.29f), new Vector2(810f, 0f), new Vector2(260f, 100f), new Color(0.45f, 0.3f, 0.05f, 0.95f), 30, ShowSeason);
+            UiKit.Button(_font, _rounded, s, Loc.Get("tutorial"), new Vector2(0f, 0.18f), new Vector2(810f, 0f), new Vector2(260f, 100f), Steel, 30, () => PlayTutorial?.Invoke());
             DailyReward(s);
         }
 
@@ -180,6 +188,7 @@ namespace RidgeRush.Game
             var d = SaveSystem.Data;
             if (_garageIndex < 0) _garageIndex = Math.Max(0, Array.FindIndex(bikes, b => b.Id == d.selectedBike));
             var bike = bikes[_garageIndex];
+            InGarage = true;
             bool owned = d.ownedBikes.Contains(bike.Id);
             var up = SaveSystem.Upgrades(bike.Id);
 
@@ -261,6 +270,46 @@ namespace RidgeRush.Game
                 if (d.coins < cost) return;
                 d.coins -= cost; set(level + 1); SaveSystem.Save(); GarageChanged?.Invoke(); ShowGarage();
             });
+        }
+
+        // ------------------------------------------------------------------ pase de temporada
+
+        public void ShowSeason()
+        {
+            var s = NewScreen();
+            UiKit.Panel(_rounded, s, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(4000f, 4000f), Asphalt);
+            UiKit.Label(_font, s, Loc.Get("season_title"), 64, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(620f, -70f), new Vector2(1000f, 90f), Bone).fontStyle = FontStyle.Bold;
+            WalletBar(s);
+            UiKit.Button(_font, _rounded, s, "‹ " + Loc.Get("back"), new Vector2(0f, 1f), new Vector2(150f, -70f), new Vector2(230f, 90f), Steel, 34, ShowTitle);
+            var d = SaveSystem.Data;
+            UiKit.Label(_font, s, $"{Loc.Get("tier")} {SeasonPass.Tier}/{SeasonPass.Tiers} · {SeasonPass.TierProgress:P0}", 36, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(620f, -150f), new Vector2(900f, 50f), Volt);
+            if (!d.seasonPremium)
+                UiKit.Button(_font, _rounded, s, $"{Loc.Get("premium")}  {Store.PriceLabel(SeasonPass.ProductId)}", new Vector2(1f, 1f), new Vector2(-330f, -150f), new Vector2(560f, 80f), Gold, 32,
+                    () => Store.Buy(SeasonPass.ProductId, ok => ShowSeason()));
+
+            // 10 niveles visibles alrededor del actual (2 filas: gratis y premium).
+            int first = Math.Max(0, Math.Min(SeasonPass.Tiers - 10, SeasonPass.Tier - 3));
+            UiKit.Label(_font, s, Loc.Get("free"), 30, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(160f, 130f), new Vector2(200f, 40f), Bone);
+            UiKit.Label(_font, s, Loc.Get("premium"), 30, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(160f, -140f), new Vector2(200f, 40f), Gold);
+            for (int k = 0; k < 10; k++)
+            {
+                int tier = first + k;
+                float x = -650f + k * 160f;
+                bool reached = tier < SeasonPass.Tier;
+                UiKit.Label(_font, s, (tier + 1).ToString(), 30, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(x + 80f, 250f), new Vector2(140f, 40f), reached ? Volt : Bone);
+                for (int row = 0; row < 2; row++)
+                {
+                    bool premium = row == 1;
+                    var reward = premium ? SeasonPass.Premium(tier) : SeasonPass.Free(tier);
+                    bool claimed = premium ? d.seasonClaimedPremium.Contains(tier) : d.seasonClaimedFree.Contains(tier);
+                    bool can = SeasonPass.CanClaim(tier, premium);
+                    int t = tier;
+                    UiKit.Button(_font, _rounded, s, claimed ? "✓" : reward.Label, new Vector2(0.5f, 0.5f), new Vector2(x + 80f, premium ? -140f : 130f), new Vector2(140f, 200f),
+                        claimed ? new Color(0.15f, 0.3f, 0.2f, 0.95f) : can ? Ember : (premium && !d.seasonPremium ? new Color(0.25f, 0.2f, 0.1f, 0.95f) : Steel), 28,
+                        () => { if (SeasonPass.Claim(t, premium)) ShowSeason(); });
+                }
+            }
+            UiKit.Label(_font, s, Loc.Get("season_hint"), 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0f), new Vector2(0f, 70f), new Vector2(1600f, 40f), Bone);
         }
 
         // ------------------------------------------------------------------ tienda

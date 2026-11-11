@@ -21,7 +21,7 @@
 | Guardado en la nube | ~~CloudKit~~ | — | CloudKit solo funciona en Apple → **guardado en nuestro backend** para las dos plataformas |
 | Clasificaciones y logros | Game Center | Google Play Games | La **clasificación real vive en nuestro servidor** (común a todos); se refleja en Game Center y Play Games para la parte social del sistema |
 | Multijugador | ~~GameKit~~ | — | GameKit solo empareja dispositivos Apple → **relé dedicado propio** desde el principio, con juego cruzado iOS ↔ Android |
-| Compras | StoreKit 2 | Google Play Billing | Unity IAP 5 cubre ambas; los recibos se validan en el servidor |
+| Compras | StoreKit 2 (`Plugins/iOS/RRStore.swift`) | Google Play Billing 7 (`Plugins/Android/RRBilling.androidlib`) | Mismos ids de producto y mismos mensajes a `RRStoreBridge`; los no consumibles se reconocen y las gemas se consumen |
 | Antitrampas | App Attest | **Play Integrity** | Además de la validación de tiempos re-simulando la carrera (igual en ambas) |
 | Vibración | Core Haptics (motor continuo + golpes) | `Vibrator` con amplitud | En Android solo golpes cortos: la mayoría de motores de vibración Android no reproducen bien una vibración continua de motor. En Pixel y Galaxy de gama alta se podrá usar `VibrationEffect.Composition` (API 30+) |
 | Compartir clips | ReplayKit | MediaProjection | **Se renderiza la repetición a vídeo dentro del juego** (AVAssetWriter / MediaCodec): mismo resultado en las dos y sin pedir permiso de grabar pantalla |
@@ -60,7 +60,7 @@ Hay miles de modelos, así que no se puede hacer una tabla por modelo como en iP
 
 ## 6. Pendiente (en sus fases)
 
-- Fase 5: Google Play Billing (Unity IAP 5) y guardado en el backend.
+- Fase 5: Google Play Billing 7 conectado (crear en Play Console los mismos productos que en `07-app-store.md`).
 - Fase 6: Google Play Games, cuenta propia, relé multijugador con juego cruzado, Play Integrity.
 - Fase 7: Adaptive Performance, pruebas en la lista de móviles, ajuste de la tabla de calidad.
 - Fase 8: ficha de Google Play (capturas, vídeo, clasificación IARC, formulario de seguridad de datos).

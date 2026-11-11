@@ -20,25 +20,34 @@ namespace RidgeRush.Simulation
         public float checkpointPenalty = 3f;
         public bool trickTimeBonus = true;
         public bool nitroEnabled = true;
+        /// <summary>Hay rivales en pista: se llena la barra de K.O.</summary>
+        public bool rivals = false;
         /// <summary>Freestyle: segundos de sesión (0 = sin límite). Al acabar el tiempo, la sesión termina.</summary>
         public float timeLimit = 0f;
         /// <summary>Freestyle: puntúan los trucos; no hay meta ni estrellas por tiempo.</summary>
         public bool freestyle = false;
 
-        public static ModeRules Career => new ModeRules();
+        public static ModeRules Career => new ModeRules { rivals = true };
+        public static ModeRules Supercross => new ModeRules { checkpoints = false, rivals = true };
         public static ModeRules Freestyle => new ModeRules { checkpoints = true, checkpointPenalty = 0f, trickTimeBonus = false, timeLimit = 120f, freestyle = true };
         public static ModeRules TimeTrial => new ModeRules { checkpoints = false };
         public static ModeRules Online => new ModeRules { checkpoints = false, trickTimeBonus = true };
     }
 
     /// <summary>Eventos de carrera (además de los de la moto).</summary>
-    public enum RaceEventType : byte { Started, CheckpointReached, Respawned, Finished, Coins, ComboChanged }
+    public enum RaceEventType : byte
+    {
+        Started, CheckpointReached, Respawned, Finished, Coins, ComboChanged,
+        PickupNitro, PickupRing, PickupCoin, Boost, Hit, Blocked, Explosion, PowerReady, PowerActivated, KnockoutReady, KnockedOut,
+    }
 
     public struct RaceEvent
     {
         public RaceEventType Type;
         public int Value;
         public float Time;
+        /// <summary>Posición en el mundo del evento (para efectos visuales).</summary>
+        public float X, Y;
     }
 
     /// <summary>
@@ -83,9 +92,42 @@ namespace RidgeRush.Simulation
 
         private long _simEventsSeen;
         private float _timeSinceTrickGrounded;
-        private readonly RaceEvent[] _events = new RaceEvent[32];
+        private readonly RaceEvent[] _events = new RaceEvent[64];
         public int EventCount { get; private set; }
         public ref readonly RaceEvent GetEvent(int i) => ref _events[i];
+
+        // ---- Poderes ----
+        public const float ShieldSeconds = 5f;
+        public const float PowerBoostForce = 1300f;
+        /// <summary>Barra de poder (0..1): se llena con trucos y aros. Llena = turbo con escudo.</summary>
+        public float Power { get; private set; }
+        /// <summary>Barra de K.O. (0..1): se llena con trucos cuando hay rivales. Llena = derribar a un rival cercano.</summary>
+        public float Knockout { get; private set; }
+        public float ShieldTime { get; private set; }
+        public bool Shielded => ShieldTime > 0f;
+        private float _boostPadTime, _hitCooldown;
+
+        // ---- Objetos y peligros ----
+        private bool[] _pickupTaken = Array.Empty<bool>();
+        private float[] _pickupY = Array.Empty<float>();
+        private float[] _obsGround = Array.Empty<float>();
+        private bool[] _barrelExploded = Array.Empty<bool>();
+        private float[] _rockY = Array.Empty<float>(), _rockVy = Array.Empty<float>();
+        private bool[] _rockTriggered = Array.Empty<bool>();
+
+        public bool PickupTaken(int i) => _pickupTaken[i];
+        /// <summary>Altura en el mundo del centro del objeto.</summary>
+        public float PickupWorldY(int i) => _pickupY[i];
+        public float ObstacleGroundY(int i) => _obsGround[i];
+        public bool BarrelExploded(int i) => _barrelExploded[i];
+        public float RockY(int i) => _rockY[i];
+        public bool RockTriggered(int i) => _rockTriggered[i];
+        public bool FireActive(int i)
+        {
+            var o = Level.Data.obstacles[i];
+            float period = Math.Max(1f, o.period);
+            return o.type == "firejet" && ((Sim.Time + o.phase) % period) < period * 0.4f;
+        }
 
         public RaceRules(BuiltLevel level, BikeParams bike, ModeRules mode = null)
         {
@@ -107,6 +149,171 @@ namespace RidgeRush.Simulation
             Coins = 0; Combo = 1f; LastCheckpoint = -1; Crashes = 0; Stars = 0; CrashTimer = 0f; Score = 0;
             _simEventsSeen = 0; _timeSinceTrickGrounded = 0f;
             EventCount = 0;
+            Power = 0f; Knockout = 0f; ShieldTime = 0f; _boostPadTime = 0f; _hitCooldown = 0f;
+            Sim.BoostForce = 0f; Sim.GripScale = 1f;
+            ResetItems();
+        }
+
+        private void ResetItems()
+        {
+            var pk = Level.Data.pickups ?? Array.Empty<PickupData>();
+            var ob = Level.Data.obstacles ?? Array.Empty<ObstacleData>();
+            if (_pickupTaken.Length != pk.Length) { _pickupTaken = new bool[pk.Length]; _pickupY = new float[pk.Length]; }
+            if (_obsGround.Length != ob.Length)
+            {
+                _obsGround = new float[ob.Length]; _barrelExploded = new bool[ob.Length];
+                _rockY = new float[ob.Length]; _rockVy = new float[ob.Length]; _rockTriggered = new bool[ob.Length];
+            }
+            for (int i = 0; i < pk.Length; i++)
+            {
+                _pickupTaken[i] = false;
+                _pickupY[i] = Ground(pk[i].x) + pk[i].y;
+            }
+            for (int i = 0; i < ob.Length; i++)
+            {
+                _obsGround[i] = Ground(ob[i].x);
+                _barrelExploded[i] = false; _rockTriggered[i] = false; _rockVy[i] = 0f;
+                _rockY[i] = _obsGround[i] + 14f;
+            }
+        }
+
+        private float Ground(float x) => Level.Track.GroundAt(x, 10000f, out float y, out _, out _) ? y : 0f;
+
+        /// <summary>Usa la barra de poder: turbo con escudo durante unos segundos.</summary>
+        public bool ActivatePower()
+        {
+            if (Power < 1f || State != RaceState.Racing) return false;
+            Power = 0f; ShieldTime = ShieldSeconds;
+            Push(RaceEventType.PowerActivated, 0);
+            return true;
+        }
+
+        /// <summary>¿Puede derribar a este rival? (barra llena y rival cerca, delante o detrás).</summary>
+        public bool CanKnockout(RaceRules rival) =>
+            Knockout >= 1f && State == RaceState.Racing && rival.State == RaceState.Racing && !rival.Shielded &&
+            Math.Abs(rival.Sim.Chassis.Position.x - Sim.Chassis.Position.x) < 12f;
+
+        /// <summary>K.O.: onda expansiva que derriba al rival (sin daño gráfico: el piloto sale volando y reaparece).</summary>
+        public bool KnockoutRival(RaceRules rival)
+        {
+            if (!CanKnockout(rival)) return false;
+            Knockout = 0f;
+            rival.Sim.Kick(new Vec2(-4f, 8f), 6f);
+            rival.Sim.ForceCrash();
+            AddScore(3000);
+            AddCoins(50);
+            Push(RaceEventType.KnockedOut, 1, rival.Sim.Chassis.Position);
+            return true;
+        }
+
+        private void AddMeters(float power, float knockout)
+        {
+            bool wasPower = Power >= 1f, wasKo = Knockout >= 1f;
+            Power = Math.Min(1f, Power + power);
+            if (Mode.rivals) Knockout = Math.Min(1f, Knockout + knockout);
+            if (!wasPower && Power >= 1f) Push(RaceEventType.PowerReady, 0);
+            if (!wasKo && Knockout >= 1f) Push(RaceEventType.KnockoutReady, 0);
+        }
+
+        /// <summary>Objetos, peligros y poderes en cada paso.</summary>
+        private void StepItems(float dt)
+        {
+            Vec2 p = Sim.Chassis.Position;
+            if (ShieldTime > 0f) ShieldTime -= dt;
+            if (_boostPadTime > 0f) _boostPadTime -= dt;
+            if (_hitCooldown > 0f) _hitCooldown -= dt;
+            Sim.BoostForce = (ShieldTime > 0f ? PowerBoostForce : 0f) + (_boostPadTime > 0f ? 1800f : 0f);
+            if (State != RaceState.Racing) { Sim.BoostForce = 0f; return; }
+
+            var pk = Level.Data.pickups ?? Array.Empty<PickupData>();
+            for (int i = 0; i < pk.Length; i++)
+            {
+                if (_pickupTaken[i]) continue;
+                var d = pk[i];
+                if (d.type == "boost")
+                {
+                    // Placa en el suelo: acelera mientras se pisa.
+                    if ((Sim.RearInfo.Grounded || Sim.FrontInfo.Grounded) && p.x >= d.x && p.x <= d.x + d.length && Math.Abs(p.y - _pickupY[i]) < 2.5f)
+                    {
+                        if (_boostPadTime <= 0f) Push(RaceEventType.Boost, 0, new Vec2(p.x, p.y));
+                        _boostPadTime = 0.6f;
+                    }
+                    continue;
+                }
+                float dx = p.x - d.x, dy = p.y - _pickupY[i];
+                float r = d.type == "ring" ? 2.0f : 1.4f;
+                if (dx * dx + dy * dy > r * r) continue;
+                _pickupTaken[i] = true;
+                var at = new Vec2(d.x, _pickupY[i]);
+                switch (d.type)
+                {
+                    case "nitro":
+                        Sim.Nitro = Math.Min(Sim.Params.nitroCapacity, Sim.Nitro + Sim.Params.nitroCapacity * 0.4f);
+                        Push(RaceEventType.PickupNitro, 0, at);
+                        break;
+                    case "ring":
+                        AddScore(500); AddCoins(10); AddMeters(0.25f, 0.2f);
+                        Sim.ApplySpeedBoost(2.5f);
+                        Push(RaceEventType.PickupRing, 0, at);
+                        break;
+                    default:
+                        AddCoins(5);
+                        Push(RaceEventType.PickupCoin, 5, at);
+                        break;
+                }
+            }
+
+            var ob = Level.Data.obstacles ?? Array.Empty<ObstacleData>();
+            float grip = 1f;
+            for (int i = 0; i < ob.Length; i++)
+            {
+                var o = ob[i];
+                switch (o.type)
+                {
+                    case "barrel":
+                    {
+                        if (_barrelExploded[i]) break;
+                        float dx = p.x - o.x, dy = p.y - (_obsGround[i] + 0.6f);
+                        if (dx * dx + dy * dy > 1.5f * 1.5f) break;
+                        _barrelExploded[i] = true;
+                        Push(RaceEventType.Explosion, 0, new Vec2(o.x, _obsGround[i] + 0.6f));
+                        Hit(new Vec2(-2.5f, 4.5f), 2f, 0.85f);
+                        break;
+                    }
+                    case "firejet":
+                        if (FireActive(i) && Math.Abs(p.x - o.x) < 0.9f && p.y < _obsGround[i] + 5f) Hit(new Vec2(0f, 1.5f), 0f, 0.55f);
+                        break;
+                    case "rock":
+                    {
+                        if (!_rockTriggered[i] && p.x > o.x - 16f) _rockTriggered[i] = true;
+                        if (_rockTriggered[i] && _rockY[i] > _obsGround[i] + 0.7f)
+                        {
+                            _rockVy[i] -= BikeSim.Gravity * dt;
+                            _rockY[i] = Math.Max(_obsGround[i] + 0.7f, _rockY[i] + _rockVy[i] * dt);
+                        }
+                        float dx = p.x - o.x, dy = p.y - _rockY[i];
+                        if (_rockTriggered[i] && dx * dx + dy * dy < 1.4f * 1.4f) Hit(new Vec2(-3f, 3f), 2.5f, 0.6f);
+                        break;
+                    }
+                    case "oil":
+                        if ((Sim.RearInfo.Grounded || Sim.FrontInfo.Grounded) && p.x >= o.x && p.x <= o.x + Math.Max(2f, o.period)) grip = 0.3f;
+                        break;
+                }
+            }
+            Sim.GripScale = grip;
+        }
+
+        /// <summary>Golpe de un peligro: empuja, frena y rompe el combo. El escudo lo bloquea.</summary>
+        private void Hit(Vec2 kick, float spin, float slow)
+        {
+            if (_hitCooldown > 0f) return;
+            _hitCooldown = 1f;
+            if (Shielded) { Push(RaceEventType.Blocked, 0, Sim.Chassis.Position); return; }
+            Sim.Slow(slow);
+            Sim.Kick(kick, spin);
+            if (Combo > 1f) { Combo = 1f; Push(RaceEventType.ComboChanged, 10); }
+            Power = Math.Max(0f, Power - 0.15f);
+            Push(RaceEventType.Hit, 0, Sim.Chassis.Position);
         }
 
         /// <summary>Vuelve al último checkpoint (o al inicio en modos sin checkpoints).</summary>
@@ -138,6 +345,7 @@ namespace RidgeRush.Simulation
 
             Sim.Wind = WindAt(Sim.Chassis.Position.x);
             Sim.Step(input);
+            StepItems(dt);
 
             if (State == RaceState.Racing || State == RaceState.Crashed) RaceTime += dt;
 
@@ -234,6 +442,7 @@ namespace RidgeRush.Simulation
                     case SimEventType.PerfectLanding:
                         AddCoins(PerfectLandingCoins);
                         AddScore(200);
+                        AddMeters(0.12f, 0.1f);
                         BumpCombo(0.2f);
                         break;
                 }
@@ -250,21 +459,25 @@ namespace RidgeRush.Simulation
                     if (Mode.trickTimeBonus) BonusTime += FlipTimeBonus * e.Count;
                     AddCoins(FlipCoins * e.Count);
                     AddScore(1000 * e.Count * e.Count); // dobles y triples valen mucho más
+                    AddMeters(0.3f * e.Count, 0.25f * e.Count);
                     BumpCombo(0.5f * e.Count);
                     break;
                 case TrickType.Wheelie:
                     AddCoins((int)(WheelieCoinsPerSecond * e.Value));
                     AddScore((int)(250 * e.Value));
+                    AddMeters(0.08f * e.Value, 0.05f * e.Value);
                     BumpCombo(0.25f);
                     break;
                 case TrickType.Stoppie:
                     AddCoins((int)(StoppieCoinsPerSecond * e.Value));
                     AddScore((int)(350 * e.Value));
+                    AddMeters(0.1f * e.Value, 0.06f * e.Value);
                     BumpCombo(0.25f);
                     break;
                 case TrickType.LongJump:
                     AddCoins(LongJumpCoins);
                     AddScore((int)(150 * e.Value));
+                    AddMeters(0.08f, 0.06f);
                     break;
             }
             if (Mode.nitroEnabled) Sim.Nitro = Math.Min(Sim.Params.nitroCapacity, Sim.Nitro + NitroPerTrick);
@@ -288,9 +501,9 @@ namespace RidgeRush.Simulation
             if (Combo != old) Push(RaceEventType.ComboChanged, (int)MathF.Round(Combo * 10f));
         }
 
-        private void Push(RaceEventType type, int value)
+        private void Push(RaceEventType type, int value, Vec2 at = default)
         {
-            if (EventCount < _events.Length) _events[EventCount++] = new RaceEvent { Type = type, Value = value, Time = RaceTime };
+            if (EventCount < _events.Length) _events[EventCount++] = new RaceEvent { Type = type, Value = value, Time = RaceTime, X = at.x, Y = at.y };
         }
 
         /// <summary>Lo llama quien consume los eventos (HUD, audio...) tras leerlos. Limpia también los de la moto.</summary>
