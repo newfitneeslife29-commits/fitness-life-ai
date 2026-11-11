@@ -4,8 +4,8 @@
   "world": "coast",
   "nameEs": "Costa Coral 11",
   "nameEn": "Coral Coast 11",
-  "timeOfDay": 16.77888,
-  "weather": "clear",
+  "timeOfDay": 17.71194,
+  "weather": "fog",
   "startX": 2,
   "sections": [
     {
@@ -42,10 +42,10 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "slope",
-      "length": 45.89288,
-      "height": 5.3999996,
-      "surface": "Sand",
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -53,20 +53,31 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "flat",
-      "length": 10,
-      "height": 0,
-      "surface": "Sand",
+      "type": "ramp",
+      "length": 12,
+      "height": 2.8,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 10.666667,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "water",
       "bridge": "",
       "bridgeDelay": 0.7
     },
     {
       "type": "landing",
-      "length": 40.79367,
-      "height": 5.3999996,
+      "length": 30,
+      "height": 2.8,
       "surface": "Sand",
       "count": 0,
       "depth": 3,
@@ -76,29 +87,7 @@
     },
     {
       "type": "flat",
-      "length": 13.6654215,
-      "height": 0,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 34,
-      "height": 0,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 8.733665,
+      "length": 13.24623,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -142,51 +131,7 @@
     },
     {
       "type": "flat",
-      "length": 9.854704,
-      "height": 0,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 14,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "gap",
-      "length": 6.5,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 9,
-      "pit": "water",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 16,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 8.359415,
+      "length": 13.313096,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -230,7 +175,7 @@
     },
     {
       "type": "flat",
-      "length": 12.344445,
+      "length": 13.1012,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -241,53 +186,9 @@
     },
     {
       "type": "flat",
-      "length": 12,
+      "length": 30,
       "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "ramp",
-      "length": 10,
-      "height": 1.8000001,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "gap",
-      "length": 8,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "water",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 34,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "drop",
-      "length": 0,
-      "height": 1.8000001,
-      "surface": "Wood",
+      "surface": "Metal",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -296,7 +197,7 @@
     },
     {
       "type": "flat",
-      "length": 10.924385,
+      "length": 15.975492,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -329,7 +230,7 @@
     },
     {
       "type": "gap",
-      "length": 4.4429455,
+      "length": 4.561388,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -340,7 +241,7 @@
     },
     {
       "type": "flat",
-      "length": 5.70519,
+      "length": 6.014497,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -362,7 +263,7 @@
     },
     {
       "type": "gap",
-      "length": 4.8583555,
+      "length": 4.323509,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -373,7 +274,7 @@
     },
     {
       "type": "flat",
-      "length": 5.875167,
+      "length": 5.818414,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -395,7 +296,7 @@
     },
     {
       "type": "gap",
-      "length": 4.473589,
+      "length": 4.7240744,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -406,7 +307,7 @@
     },
     {
       "type": "flat",
-      "length": 5.445961,
+      "length": 6.5381274,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -428,29 +329,7 @@
     },
     {
       "type": "flat",
-      "length": 16.781597,
-      "height": 0,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "bumps",
-      "length": 18.827917,
-      "height": 0.31666666,
-      "surface": "Sand",
-      "count": 5,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "flat",
-      "length": 19.921862,
+      "length": 22.403736,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -461,9 +340,9 @@
     },
     {
       "type": "flat",
-      "length": 12,
+      "length": 14,
       "height": 0,
-      "surface": "Wood",
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -472,9 +351,9 @@
     },
     {
       "type": "ramp",
-      "length": 10,
-      "height": 1.8000001,
-      "surface": "Wood",
+      "length": 12,
+      "height": 2.8,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -483,9 +362,9 @@
     },
     {
       "type": "gap",
-      "length": 8,
+      "length": 10.666667,
       "height": 0,
-      "surface": "Wood",
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "water",
@@ -493,21 +372,10 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "flat",
-      "length": 34,
-      "height": 0,
-      "surface": "Wood",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "drop",
-      "length": 0,
-      "height": 1.8000001,
-      "surface": "Wood",
+      "type": "landing",
+      "length": 30,
+      "height": 2.8,
+      "surface": "Sand",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -516,7 +384,7 @@
     },
     {
       "type": "flat",
-      "length": 19.118511,
+      "length": 13.153812,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -560,7 +428,7 @@
     },
     {
       "type": "flat",
-      "length": 10.977642,
+      "length": 10.11557,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -570,33 +438,11 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "flat",
-      "length": 10,
-      "height": 0,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "ramp",
-      "length": 9,
-      "height": 2,
-      "surface": "Dirt",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "landing",
-      "length": 22,
-      "height": 2,
-      "surface": "Dirt",
-      "count": 0,
+      "type": "bumps",
+      "length": 17.737919,
+      "height": 0.31666666,
+      "surface": "Sand",
+      "count": 7,
       "depth": 3,
       "pit": "ground",
       "bridge": "",
@@ -604,7 +450,7 @@
     },
     {
       "type": "flat",
-      "length": 22.2106,
+      "length": 18.376366,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -615,7 +461,7 @@
     },
     {
       "type": "slope",
-      "length": 23.525923,
+      "length": 28.198256,
       "height": 2.85,
       "surface": "Sand",
       "count": 0,
@@ -637,7 +483,7 @@
     },
     {
       "type": "slope",
-      "length": 20.165077,
+      "length": 24.169933,
       "height": -2.85,
       "surface": "Sand",
       "count": 0,
@@ -648,7 +494,7 @@
     },
     {
       "type": "flat",
-      "length": 23.673645,
+      "length": 20.600174,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -659,9 +505,31 @@
     },
     {
       "type": "flat",
-      "length": 12,
+      "length": 30,
       "height": 0,
-      "surface": "Wood",
+      "surface": "Metal",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 10.977642,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -670,8 +538,8 @@
     },
     {
       "type": "ramp",
-      "length": 10,
-      "height": 1.8000001,
+      "length": 7,
+      "height": 1.6,
       "surface": "Wood",
       "count": 0,
       "depth": 3,
@@ -680,21 +548,32 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "gap",
-      "length": 8,
-      "height": 0,
-      "surface": "Wood",
+      "type": "landing",
+      "length": 10,
+      "height": 1.6,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
-      "pit": "water",
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "bumps",
+      "length": 44,
+      "height": 0.51666665,
+      "surface": "Sand",
+      "count": 8,
+      "depth": 3,
+      "pit": "ground",
       "bridge": "",
       "bridgeDelay": 0.7
     },
     {
       "type": "flat",
-      "length": 34,
+      "length": 12,
       "height": 0,
-      "surface": "Wood",
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -702,10 +581,65 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "drop",
-      "length": 0,
-      "height": 1.8000001,
-      "surface": "Wood",
+      "type": "flat",
+      "length": 15.825439,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "slope",
+      "length": 26.424532,
+      "height": 2.85,
+      "surface": "Sand",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 6,
+      "height": 0,
+      "surface": "Sand",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "slope",
+      "length": 22.6496,
+      "height": -2.85,
+      "surface": "Sand",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 18.742826,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 36,
+      "height": 0,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -768,10 +702,98 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "slope",
-      "length": 42.237892,
-      "height": 5.3999996,
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "ramp",
+      "length": 12,
+      "height": 2.8,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 10.666667,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "water",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "landing",
+      "length": 30,
+      "height": 2.8,
       "surface": "Sand",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 13.863892,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "table",
+      "length": 28.266737,
+      "height": 1.7333333,
+      "surface": "Sand",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 13.341873,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "loop",
+      "length": 20,
+      "height": 5,
+      "surface": "Wood",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -782,18 +804,7 @@
       "type": "flat",
       "length": 10,
       "height": 0,
-      "surface": "Sand",
-      "count": 0,
-      "depth": 3,
-      "pit": "ground",
-      "bridge": "",
-      "bridgeDelay": 0.7
-    },
-    {
-      "type": "landing",
-      "length": 37.544792,
-      "height": 5.3999996,
-      "surface": "Sand",
+      "surface": "Wood",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -802,7 +813,7 @@
     },
     {
       "type": "flat",
-      "length": 19.710281,
+      "length": 8.580245,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -813,7 +824,7 @@
     },
     {
       "type": "flat",
-      "length": 8,
+      "length": 10,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -823,10 +834,10 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "slope",
-      "length": 12.75,
-      "height": 3.7499998,
-      "surface": "Sand",
+      "type": "ramp",
+      "length": 3.5,
+      "height": 0.6,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -834,10 +845,120 @@
       "bridgeDelay": 0.7
     },
     {
-      "type": "flat",
-      "length": 5,
+      "type": "gap",
+      "length": 4.00374,
       "height": 0,
-      "surface": "Sand",
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 9.6,
+      "pit": "water",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 6.314949,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "ramp",
+      "length": 3.5,
+      "height": 0.6,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 4.54219,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 10.2,
+      "pit": "water",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 5.8539877,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "ramp",
+      "length": 3.5,
+      "height": 0.6,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 4.3171105,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 10.8,
+      "pit": "water",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 6.780175,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "ramp",
+      "length": 3.5,
+      "height": 0.6,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 4.31734,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 11.4,
+      "pit": "water",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 6.636936,
+      "height": 0,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -846,9 +967,9 @@
     },
     {
       "type": "landing",
-      "length": 21.5,
-      "height": 3.7499998,
-      "surface": "Sand",
+      "length": 15.6,
+      "height": 2.4,
+      "surface": "Dirt",
       "count": 0,
       "depth": 3,
       "pit": "ground",
@@ -857,7 +978,161 @@
     },
     {
       "type": "flat",
-      "length": 12.42829,
+      "length": 19.180296,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "bumps",
+      "length": 22.96409,
+      "height": 0.4166667,
+      "surface": "Dirt",
+      "count": 5,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 9.165674,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "loop",
+      "length": 20,
+      "height": 5,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 10,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 10.461872,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 36,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 13.841452,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 34,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 17.464184,
+      "height": 0,
+      "surface": "Dirt",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 14,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "gap",
+      "length": 10.333333,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "water",
+      "bridge": "collapse",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 16,
+      "height": 0,
+      "surface": "Wood",
+      "count": 0,
+      "depth": 3,
+      "pit": "ground",
+      "bridge": "",
+      "bridgeDelay": 0.7
+    },
+    {
+      "type": "flat",
+      "length": 10.922911,
       "height": 0,
       "surface": "Dirt",
       "count": 0,
@@ -880,324 +1155,481 @@
   ],
   "platforms": [
     {
-      "x": 295.91864,
-      "y": 7,
-      "width": 4.6,
-      "thickness": 0.35,
-      "surface": "Metal",
-      "motion": "Orbit",
-      "dx": 7,
+      "x": 719.7443,
+      "y": 4.4,
+      "width": 46,
+      "thickness": 0.4,
+      "surface": "Wood",
+      "motion": "Static",
+      "dx": 0,
       "dy": 0,
-      "period": 11.987745,
-      "delay": 0.5030824
-    },
-    {
-      "x": 295.91864,
-      "y": 7,
-      "width": 4.6,
-      "thickness": 0.35,
-      "surface": "Metal",
-      "motion": "Orbit",
-      "dx": 7,
-      "dy": 0,
-      "period": 11.987745,
-      "delay": 0.7030824
-    },
-    {
-      "x": 295.91864,
-      "y": 7,
-      "width": 4.6,
-      "thickness": 0.35,
-      "surface": "Metal",
-      "motion": "Orbit",
-      "dx": 7,
-      "dy": 0,
-      "period": 11.987745,
-      "delay": 0.9030824
-    },
-    {
-      "x": 295.91864,
-      "y": 7,
-      "width": 4.6,
-      "thickness": 0.35,
-      "surface": "Metal",
-      "motion": "Orbit",
-      "dx": 7,
-      "dy": 0,
-      "period": 11.987745,
-      "delay": 1.1030824
-    },
-    {
-      "x": 295.91864,
-      "y": 7,
-      "width": 4.6,
-      "thickness": 0.35,
-      "surface": "Metal",
-      "motion": "Orbit",
-      "dx": 7,
-      "dy": 0,
-      "period": 11.987745,
-      "delay": 1.3030825
+      "period": 4,
+      "delay": 0.4
     }
   ],
   "hazards": [],
   "winds": [],
   "checkpoints": [
-    273.11392,
-    523.5981,
-    754.559,
-    985.95245
+    257.25427,
+    471.0814,
+    777.7443,
+    1058.9019,
+    1291.4656
   ],
   "stars": {
-    "gold": 53.4,
-    "silver": 66.1
+    "gold": 63.5,
+    "silver": 78.6
   },
   "props": [],
   "pickups": [
     {
-      "type": "nitro",
-      "x": 110.92116,
-      "y": 1.2,
+      "type": "boost",
+      "x": 62.028282,
+      "y": 0,
+      "length": 8
+    },
+    {
+      "type": "ring",
+      "x": 91.36162,
+      "y": 5.5,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 158.71483,
+      "x": 128.69495,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 160.21483,
+      "x": 130.19495,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 161.71483,
+      "x": 131.69495,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 163.21483,
+      "x": 133.19495,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 206.38025,
+      "x": 199.94118,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 207.88025,
+      "x": 201.44118,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 209.38025,
+      "x": 202.94118,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 210.88025,
+      "x": 204.44118,
       "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 273.11392,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 274.61392,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 276.11392,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 277.61392,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 298.21863,
-      "y": 10.2,
-      "length": 6
-    },
-    {
-      "type": "nitro",
-      "x": 321.64835,
-      "y": 1.2,
       "length": 6
     },
     {
       "type": "boost",
-      "x": 327.82803,
+      "x": 213.25427,
       "y": 0,
       "length": 7
     },
     {
       "type": "ring",
-      "x": 348.82803,
+      "x": 234.25427,
       "y": 8.8,
       "length": 6
     },
     {
       "type": "nitro",
-      "x": 376.00024,
+      "x": 261.80487,
       "y": 1.2,
       "length": 6
     },
     {
-      "type": "ring",
-      "x": 408.1725,
-      "y": 5.8,
-      "length": 6
-    },
-    {
       "type": "coin",
-      "x": 448.1725,
+      "x": 364.81097,
       "y": 1,
       "length": 6
     },
     {
-      "type": "coin",
-      "x": 449.6725,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 451.1725,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 452.6725,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 506.39807,
-      "y": 1,
-      "length": 6
+      "type": "boost",
+      "x": 404.41473,
+      "y": 0,
+      "length": 8
     },
     {
       "type": "ring",
-      "x": 603.1295,
-      "y": 5.8,
+      "x": 433.74808,
+      "y": 5.5,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 475.6583,
+      "y": 1.2,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 702.58136,
+      "x": 524.56854,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 704.08136,
+      "x": 526.06854,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 705.58136,
+      "x": 527.56854,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 707.08136,
+      "x": 529.06854,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 801.29553,
+      "x": 599.9966,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 802.79553,
+      "x": 601.4966,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 679.76666,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 681.26666,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 682.76666,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 684.26666,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "boost",
+      "x": 689.7443,
+      "y": 0,
+      "length": 8
+    },
+    {
+      "type": "coin",
+      "x": 725.7443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 730.2443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 734.7443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 739.2443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 743.7443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 748.2443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 752.7443,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 757.2443,
       "y": 1,
       "length": 6
     },
     {
       "type": "ring",
-      "x": 874.1343,
-      "y": 5.8,
+      "x": 747.3443,
+      "y": 2.4,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 759.7443,
+      "y": 1.2,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 914.1343,
+      "x": 820.9943,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 915.6343,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 917.1343,
-      "y": 1,
-      "length": 6
-    },
-    {
-      "type": "coin",
-      "x": 918.6343,
+      "x": 822.4943,
       "y": 1,
       "length": 6
     },
     {
       "type": "nitro",
-      "x": 1048.2207,
+      "x": 881.3867,
       "y": 1.2,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 1159.7258,
+      "x": 903.3867,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 1161.2258,
+      "x": 904.8867,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 1162.7258,
+      "x": 906.3867,
       "y": 1,
       "length": 6
     },
     {
       "type": "coin",
-      "x": 1164.2258,
+      "x": 907.8867,
       "y": 1,
+      "length": 6
+    },
+    {
+      "type": "boost",
+      "x": 992.2352,
+      "y": 0,
+      "length": 8
+    },
+    {
+      "type": "ring",
+      "x": 1021.56854,
+      "y": 5.5,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1058.9019,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1060.4019,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1061.9019,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1063.4019,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1101.0325,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1102.5325,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1104.0325,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1105.5325,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "boost",
+      "x": 1114.3744,
+      "y": 0,
+      "length": 7
+    },
+    {
+      "type": "ring",
+      "x": 1135.3744,
+      "y": 8.8,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1158.3744,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1159.8744,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1161.3744,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1162.8744,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1229.7212,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1291.4656,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1292.9656,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1294.4656,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1295.9656,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "boost",
+      "x": 1300.6312,
+      "y": 0,
+      "length": 7
+    },
+    {
+      "type": "ring",
+      "x": 1321.6312,
+      "y": 8.8,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 1347.8622,
+      "y": 1.2,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 1369.0931,
+      "y": 1.2,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1391.0931,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1392.5931,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1394.0931,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 1395.5931,
+      "y": 1,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 1500.1936,
+      "y": 1.2,
       "length": 6
     }
   ],
@@ -1215,7 +1647,7 @@
     },
     {
       "type": "crates",
-      "x": 530.82794,
+      "x": 307.142,
       "period": 3,
       "phase": 0,
       "y": 0,
@@ -1226,9 +1658,9 @@
     },
     {
       "type": "barrel",
-      "x": 568.1647,
-      "period": 3.0333624,
-      "phase": 0.6702121,
+      "x": 392.33304,
+      "period": 3.4128437,
+      "phase": 0.3306572,
       "y": 0,
       "size": 1.2,
       "dx": 0,
@@ -1236,8 +1668,41 @@
       "power": 11
     },
     {
+      "type": "barrel",
+      "x": 560.529,
+      "period": 2.6422882,
+      "phase": 0.9609308,
+      "y": 0,
+      "size": 1.2,
+      "dx": 0,
+      "dy": 0,
+      "power": 11
+    },
+    {
+      "type": "barrel",
+      "x": 638.4966,
+      "period": 2.7972362,
+      "phase": 2.1392112,
+      "y": 0,
+      "size": 1.2,
+      "dx": 0,
+      "dy": 0,
+      "power": 11
+    },
+    {
+      "type": "sign",
+      "x": 698.7443,
+      "period": 3,
+      "phase": 0,
+      "y": 0,
+      "size": 1,
+      "dx": 0,
+      "dy": 0,
+      "power": 11
+    },
+    {
       "type": "crates",
-      "x": 651.6447,
+      "x": 784.4483,
       "period": 3,
       "phase": 0,
       "y": 0,
@@ -1248,20 +1713,31 @@
     },
     {
       "type": "barrel",
-      "x": 764.77484,
-      "period": 2.959333,
-      "phase": 0.37141344,
+      "x": 856.95245,
+      "period": 3.5456073,
+      "phase": 0.010526786,
       "y": 0,
       "size": 1.2,
+      "dx": 0,
+      "dy": 0,
+      "power": 11
+    },
+    {
+      "type": "crates",
+      "x": 982.57153,
+      "period": 3,
+      "phase": 0,
+      "y": 0,
+      "size": 1,
       "dx": 0,
       "dy": 0,
       "power": 11
     },
     {
       "type": "barrel",
-      "x": 837.48114,
-      "period": 3.1288834,
-      "phase": 1.2524724,
+      "x": 1257.8704,
+      "period": 3.4784827,
+      "phase": 2.3317647,
       "y": 0,
       "size": 1.2,
       "dx": 0,
@@ -1270,7 +1746,7 @@
     },
     {
       "type": "crates",
-      "x": 993.3191,
+      "x": 1446.5399,
       "period": 3,
       "phase": 0,
       "y": 0,
@@ -1280,14 +1756,14 @@
       "power": 11
     },
     {
-      "type": "crates",
-      "x": 1101.6062,
-      "period": 3,
-      "phase": 0,
-      "y": 0,
-      "size": 1,
+      "type": "crusher",
+      "x": 277.35547,
+      "period": 3.2632313,
+      "phase": 2.6485827,
+      "y": 6.6,
+      "size": 1.5,
       "dx": 0,
-      "dy": 0,
+      "dy": -5.4,
       "power": 11
     }
   ]
