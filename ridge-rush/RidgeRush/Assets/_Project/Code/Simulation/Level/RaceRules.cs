@@ -20,8 +20,13 @@ namespace RidgeRush.Simulation
         public float checkpointPenalty = 3f;
         public bool trickTimeBonus = true;
         public bool nitroEnabled = true;
+        /// <summary>Freestyle: segundos de sesión (0 = sin límite). Al acabar el tiempo, la sesión termina.</summary>
+        public float timeLimit = 0f;
+        /// <summary>Freestyle: puntúan los trucos; no hay meta ni estrellas por tiempo.</summary>
+        public bool freestyle = false;
 
         public static ModeRules Career => new ModeRules();
+        public static ModeRules Freestyle => new ModeRules { checkpoints = true, checkpointPenalty = 0f, trickTimeBonus = false, timeLimit = 120f, freestyle = true };
         public static ModeRules TimeTrial => new ModeRules { checkpoints = false };
         public static ModeRules Online => new ModeRules { checkpoints = false, trickTimeBonus = true };
     }
@@ -66,6 +71,10 @@ namespace RidgeRush.Simulation
         public float Combo { get; private set; } = 1f;
         public int LastCheckpoint { get; private set; } = -1;
         public int Crashes { get; private set; }
+        /// <summary>Puntos de trucos (Freestyle, y como dato en el resto de modos).</summary>
+        public int Score { get; private set; }
+        /// <summary>Tiempo que queda en Freestyle.</summary>
+        public float TimeLeft => Mode.timeLimit > 0f ? Math.Max(0f, Mode.timeLimit - RaceTime) : 0f;
         public int Stars { get; private set; }
         public float CrashTimer { get; private set; }
 
@@ -95,7 +104,7 @@ namespace RidgeRush.Simulation
             Sim.Nitro = Mode.nitroEnabled ? Sim.Params.nitroCapacity * 0.34f : 0f;
             State = RaceState.Ready;
             RaceTime = BonusTime = PenaltyTime = 0f;
-            Coins = 0; Combo = 1f; LastCheckpoint = -1; Crashes = 0; Stars = 0; CrashTimer = 0f;
+            Coins = 0; Combo = 1f; LastCheckpoint = -1; Crashes = 0; Stars = 0; CrashTimer = 0f; Score = 0;
             _simEventsSeen = 0; _timeSinceTrickGrounded = 0f;
             EventCount = 0;
         }
@@ -152,15 +161,25 @@ namespace RidgeRush.Simulation
                     _timeSinceTrickGrounded += dt;
                     if (_timeSinceTrickGrounded > ComboWindow && Combo > 1f) { Combo = 1f; Push(RaceEventType.ComboChanged, 10); }
                 }
-                // Meta.
-                if (Sim.Chassis.Position.x >= Level.FinishX)
+                // Freestyle: termina al acabar el tiempo (o al llegar al final del parque).
+                if (Mode.timeLimit > 0f && RaceTime >= Mode.timeLimit)
                 {
                     State = RaceState.Finished;
-                    Stars = StarsFor(FinalTime);
+                    Stars = Mode.freestyle ? FreestyleStars(Score) : StarsFor(FinalTime);
+                    Push(RaceEventType.Finished, Stars);
+                }
+                // Meta.
+                else if (Sim.Chassis.Position.x >= Level.FinishX)
+                {
+                    State = RaceState.Finished;
+                    Stars = Mode.freestyle ? FreestyleStars(Score) : StarsFor(FinalTime);
                     Push(RaceEventType.Finished, Stars);
                 }
             }
         }
+
+        /// <summary>Estrellas de Freestyle por puntos.</summary>
+        public static int FreestyleStars(int score) => score >= 60000 ? 3 : score >= 30000 ? 2 : 1;
 
         public int StarsFor(float time)
         {
@@ -214,6 +233,7 @@ namespace RidgeRush.Simulation
                         break;
                     case SimEventType.PerfectLanding:
                         AddCoins(PerfectLandingCoins);
+                        AddScore(200);
                         BumpCombo(0.2f);
                         break;
                 }
@@ -229,18 +249,22 @@ namespace RidgeRush.Simulation
                 case TrickType.Frontflip:
                     if (Mode.trickTimeBonus) BonusTime += FlipTimeBonus * e.Count;
                     AddCoins(FlipCoins * e.Count);
+                    AddScore(1000 * e.Count * e.Count); // dobles y triples valen mucho más
                     BumpCombo(0.5f * e.Count);
                     break;
                 case TrickType.Wheelie:
                     AddCoins((int)(WheelieCoinsPerSecond * e.Value));
+                    AddScore((int)(250 * e.Value));
                     BumpCombo(0.25f);
                     break;
                 case TrickType.Stoppie:
                     AddCoins((int)(StoppieCoinsPerSecond * e.Value));
+                    AddScore((int)(350 * e.Value));
                     BumpCombo(0.25f);
                     break;
                 case TrickType.LongJump:
                     AddCoins(LongJumpCoins);
+                    AddScore((int)(150 * e.Value));
                     break;
             }
             if (Mode.nitroEnabled) Sim.Nitro = Math.Min(Sim.Params.nitroCapacity, Sim.Nitro + NitroPerTrick);
@@ -253,6 +277,8 @@ namespace RidgeRush.Simulation
             Coins += c;
             Push(RaceEventType.Coins, c);
         }
+
+        private void AddScore(int points) => Score += (int)MathF.Round(points * Combo);
 
         private void BumpCombo(float amount)
         {

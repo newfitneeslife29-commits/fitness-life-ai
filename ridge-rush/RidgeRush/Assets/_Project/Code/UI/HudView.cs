@@ -113,7 +113,7 @@ namespace RidgeRush.Game
 
         public void Tick(RaceRules r, TouchInput input, float dt)
         {
-            _timer.text = Loc.Time(r.FinalTime);
+            _timer.text = _freestyle ? Loc.Time(r.TimeLeft) : Loc.Time(r.FinalTime);
             _progressFill.fillAmount = r.Progress;
             _coins.text = $"● {r.Coins}";
             _combo.text = r.Combo > 1.01f ? $"{Loc.Get("combo")} ×{r.Combo:0.0}" : "";
@@ -125,6 +125,8 @@ namespace RidgeRush.Game
             int nextStars = r.FinalTime <= r.Level.Data.stars.gold ? 3 : r.FinalTime <= r.Level.Data.stars.silver ? 2 : 1;
             float targetTime = nextStars == 3 ? r.Level.Data.stars.gold : r.Level.Data.stars.silver;
             _target.text = nextStars >= 2 ? $"{new string('★', nextStars)}  {Loc.Time(targetTime)}" : "★";
+            if (_freestyle) _target.text = $"{r.Score:N0} {Loc.Get("points")}";
+            else if (_supercross) _target.text = $"{Loc.Get("position")} {_position}/{_racers}";
 
             _gasImg.color = input.GasHeld ? Ember : Steel;
             _brakeImg.color = input.BrakeHeld ? Bone * new Color(1, 1, 1, 0.9f) : Steel;
@@ -163,11 +165,19 @@ namespace RidgeRush.Game
 
         public void SetLevelName(string name) => _levelName.text = name;
 
+        private bool _freestyle, _supercross;
+        private int _position = 1, _racers = 1;
+
+        /// <summary>Freestyle: muestra puntos y tiempo restante. Supercross: muestra el puesto.</summary>
+        public void SetMode(bool freestyle, bool supercross) { _freestyle = freestyle; _supercross = supercross; }
+
+        public void SetPosition(int position, int racers) { _position = position; _racers = racers; }
+
         public void ShowFinish(RaceRules r, float previousBest, bool hasNext)
         {
             _finishPanel.gameObject.SetActive(true);
             _nextButton.interactable = hasNext;
-            _finishTime.text = Loc.Time(r.FinalTime);
+            _finishTime.text = _freestyle ? $"{r.Score:N0} {Loc.Get("points")}" : _supercross ? $"{_position}º · {Loc.Time(r.FinalTime)}" : Loc.Time(r.FinalTime);
             _finishStars.text = new string('★', r.Stars) + new string('☆', 3 - r.Stars);
             _finishCoins.text = $"● {r.Coins} {Loc.Get("coins")}";
             bool newBest = previousBest <= 0f || r.FinalTime < previousBest;

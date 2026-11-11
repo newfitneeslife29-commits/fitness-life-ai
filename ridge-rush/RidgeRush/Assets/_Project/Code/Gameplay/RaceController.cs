@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RidgeRush.Game
 {
-    public enum GameMode { Career, TimeTrial, Endless, Demo }
+    public enum GameMode { Career, TimeTrial, Endless, Freestyle, Supercross, Demo }
 
     /// <summary>
     /// Punto de entrada del juego. Gestiona menús y carreras en una sola escena:
@@ -50,6 +50,9 @@ namespace RidgeRush.Game
         private bool _finishShown;
         private float _bestBefore;
 
+        // Supercross: rivales con IA (cada uno con su propia simulación; no chocan con el jugador).
+        private readonly List<(RaceRules rules, BikeView view, float skill, BikeState prev, BikeState curr)> _rivals = new List<(RaceRules, BikeView, float, BikeState, BikeState)>();
+
         // Fantasma: grabación de esta carrera y reproducción del mejor tiempo.
         private readonly List<float> _recording = new List<float>(4096);
         private float[] _ghostData;
@@ -78,8 +81,9 @@ namespace RidgeRush.Game
             _input.Bind(_hud.GasButton, _hud.BrakeButton, _hud.NitroButton);
 
             _menu = MenuView.Create();
-            _menu.PlayLevel += id => StartLevel(id, _menu.TimeTrial ? GameMode.TimeTrial : GameMode.Career);
+            _menu.PlayLevel += id => StartLevel(id, id.StartsWith("stadium_") ? GameMode.Supercross : _menu.TimeTrial ? GameMode.TimeTrial : GameMode.Career);
             _menu.PlayEndless += () => StartLevel("endless", GameMode.Endless);
+            _menu.PlayFreestyle += () => StartLevel("freestyle", GameMode.Freestyle);
             _menu.GarageChanged += () => { if (_mode == GameMode.Demo) Load(_level.Data, GameMode.Demo); };
 
             GoToMenu();
@@ -99,7 +103,8 @@ namespace RidgeRush.Game
         private void StartLevel(string id, GameMode mode)
         {
             LevelData data;
-            if (id == "endless")
+            if (id == "freestyle") data = LevelGenerator.FreestylePark(Random.Range(0, 100000));
+            else if (id == "endless")
             {
                 // Modo Infinito: pista procedural muy larga de un mundo al azar; la puntuación es la distancia.
                 var worlds = LevelGenerator.Worlds;
@@ -127,7 +132,7 @@ namespace RidgeRush.Game
         private void PlayNext()
         {
             string next = _level != null ? LevelCatalog.Next(_level.Data.id) : null;
-            if (next != null && SaveSystem.Stars(_level.Data.id) > 0) StartLevel(next, _mode == GameMode.TimeTrial ? GameMode.TimeTrial : GameMode.Career);
+            if (next != null && SaveSystem.Stars(_level.Data.id) > 0) StartLevel(next, _mode);
             else GoToMenu();
         }
 
@@ -143,7 +148,8 @@ namespace RidgeRush.Game
             var def = BikeCatalog.Get(mode == GameMode.Demo && _menu != null && _menu.GarageBike != null ? _menu.GarageBike : save.selectedBike);
             var up = SaveSystem.Upgrades(def.Id);
             var bikeParams = BikeCatalog.Build(def, up.engine, up.tires, up.suspension, up.brakes, up.nitro);
-            var modeRules = mode == GameMode.TimeTrial ? ModeRules.TimeTrial : ModeRules.Career;
+            var modeRules = mode == GameMode.TimeTrial || mode == GameMode.Supercross ? ModeRules.TimeTrial
+                          : mode == GameMode.Freestyle ? ModeRules.Freestyle : ModeRules.Career;
             _rules = new RaceRules(_level, bikeParams, modeRules);
 
             _world = WorldBuilder.Build(_level, _root);
@@ -183,7 +189,26 @@ namespace RidgeRush.Game
                 _ghost.name = "Ghost";
             }
 
+            // Rivales del Supercross: 3 pilotos con IA de distinto nivel y su propia moto de serie.
+            foreach (var rv in _rivals) if (rv.view != null) Destroy(rv.view.gameObject);
+            _rivals.Clear();
+            if (mode == GameMode.Supercross)
+            {
+                var rivalBikes = new[] { "haldane_raptor_250", "vextor_brute_450", "ferrum_trailhound_300" };
+                var rivalColors = new[] { new Color(0.1f, 0.3f, 0.85f), new Color(0.9f, 0.1f, 0.15f), new Color(0.2f, 0.55f, 0.2f) };
+                for (int i = 0; i < 3; i++)
+                {
+                    var rp = BikeCatalog.Build(BikeCatalog.Get(rivalBikes[i]));
+                    var rr = new RaceRules(_level, rp, ModeRules.TimeTrial);
+                    var view = BikeModelFactory.Create(rp, _root, rivalColors[i]);
+                    view.name = "Rival_" + i;
+                    var st = rr.Sim.CaptureState();
+                    _rivals.Add((rr, view, 0.78f + i * 0.07f, st, st));
+                }
+            }
+
             _hud.SetVisible(mode != GameMode.Demo);
+            _hud.SetMode(mode == GameMode.Freestyle, mode == GameMode.Supercross);
             _hud.SetLevelName(Loc.Spanish ? data.nameEs : data.nameEn);
             ApplySettings();
             Restart();
@@ -200,6 +225,13 @@ namespace RidgeRush.Game
         private void Restart()
         {
             _rules.Restart();
+            for (int i = 0; i < _rivals.Count; i++)
+            {
+                var rv = _rivals[i];
+                rv.rules.Restart();
+                var st = rv.rules.Sim.CaptureState();
+                _rivals[i] = (rv.rules, rv.view, rv.skill, st, st);
+            }
             _rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
             _curr = _prev = _rules.Sim.CaptureState();
             _accumulator = 0f;
@@ -253,6 +285,7 @@ namespace RidgeRush.Game
                 steps++;
                 Record();
                 HandleEvents(demo);
+                StepRivals();
             }
             float alpha = Mathf.Clamp01(_accumulator / BikeSim.FixedDt);
             var state = BikeState.Lerp(_prev, _curr, alpha);
@@ -262,6 +295,13 @@ namespace RidgeRush.Game
             _rider.Pose(_bike.Chassis, state, frameDt * timeScale);
             foreach (var (chain, view) in _platforms) view.position = chain.Offset.ToV3();
             if (_ghost != null) ApplyGhost(_rules.RaceTime);
+            for (int i = 0; i < _rivals.Count; i++)
+            {
+                var rv = _rivals[i];
+                rv.view.Apply(BikeState.Lerp(rv.prev, rv.curr, alpha));
+                rv.view.ApplyOffset(new Vector3(0f, 0f, 1.1f + i * 0.9f)); // carriles detrás del jugador
+            }
+            if (_rivals.Count > 0) _hud.SetPosition(RacePosition(), _rivals.Count + 1);
 
             Vector2 vel = sim.Chassis.Velocity.ToV2();
             float rpm01 = Mathf.InverseLerp(sim.Params.idleRpm, sim.Params.revLimitRpm, sim.Engine.Rpm);
@@ -294,10 +334,52 @@ namespace RidgeRush.Game
             }
         }
 
+        /// <summary>Avanza los rivales al mismo ritmo que el jugador (salen cuando él arranca).</summary>
+        private void StepRivals()
+        {
+            if (_rivals.Count == 0 || _rules.State == RaceState.Ready) return;
+            for (int i = 0; i < _rivals.Count; i++)
+            {
+                var rv = _rivals[i];
+                var prev = rv.curr;
+                var input = rv.rules.State == RaceState.Finished ? new BikeInput { Brake = 1f } : BotDriver.Drive(rv.rules.Sim, rv.skill);
+                if (rv.rules.State == RaceState.Ready) input.Throttle = Mathf.Max(input.Throttle, 0.5f);
+                rv.rules.Step(input);
+                if (rv.rules.State == RaceState.Crashed && rv.rules.CrashTimer > 1.3f) rv.rules.Respawn();
+                rv.rules.ClearEvents();
+                _rivals[i] = (rv.rules, rv.view, rv.skill, prev, rv.rules.Sim.CaptureState());
+            }
+        }
+
+        /// <summary>Puesto del jugador (1 = primero) por progreso; quien ya terminó va delante.</summary>
+        private int RacePosition()
+        {
+            int pos = 1;
+            float mine = _rules.State == RaceState.Finished ? 2f + 1f / Mathf.Max(0.01f, _rules.FinalTime) : _rules.Progress;
+            foreach (var rv in _rivals)
+            {
+                float theirs = rv.rules.State == RaceState.Finished ? 2f + 1f / Mathf.Max(0.01f, rv.rules.FinalTime) : rv.rules.Progress;
+                if (theirs > mine) pos++;
+            }
+            return pos;
+        }
+
         private void OnFinished()
         {
             var id = _level.Data.id;
             bool best = false;
+            if (_mode == GameMode.Freestyle)
+            {
+                var save = SaveSystem.Data;
+                save.freestyleBest = Mathf.Max(save.freestyleBest, _rules.Score);
+                save.coins += _rules.Coins;
+                SaveSystem.Save();
+                GameServices.Score("rr_freestyle", _rules.Score);
+                _hud.ShowFinish(_rules, 0f, false);
+                Haptics.Impact(0.8f, 0.6f);
+                return;
+            }
+            if (_mode == GameMode.Supercross && RacePosition() == 1) GameServices.Achievement("rr_supercross_win");
             if (_mode != GameMode.Endless)
             {
                 best = SaveSystem.ReportFinish(id, _rules.Stars, _rules.FinalTime, _rules.Coins);

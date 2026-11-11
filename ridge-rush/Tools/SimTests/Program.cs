@@ -32,6 +32,7 @@ internal static class Program
         Run("Aterrizar de cabeza = caída", HeadFirstCrashes);
         Run("Plataforma que se derrumba cae tras pisarla", CollapsingPlatform);
         Run("Reglas: reloj, checkpoint y meta", RaceRulesFlow);
+        Run("Freestyle: 2 minutos, puntos por trucos", FreestyleMode);
         Run("Las 15 motos terminan el nivel 1 (y al máximo de mejoras llegan al 85 %)", AllBikesFinish);
         foreach (var file in Directory.GetFiles(LevelsDir, "*.json", SearchOption.AllDirectories))
         {
@@ -253,6 +254,21 @@ internal static class Program
         Console.WriteLine($"      recta de 80 m en {r.FinalTime:0.00}s → {r.Stars} estrella(s)");
         r.Restart();
         Assert(r.State == RaceState.Ready && r.RaceTime == 0f && r.Sim.Chassis.Position.x < 5f, "el reinicio no volvió al inicio");
+    }
+
+    private static void FreestyleMode()
+    {
+        var r = new RaceRules(TrackBuilder.Build(LevelGenerator.FreestylePark(1)), new BikeParams(), ModeRules.Freestyle);
+        for (int i = 0; i < 240 * 130 && r.State != RaceState.Finished; i++)
+        {
+            r.Step(BotDriver.Drive(r.Sim));
+            if (r.State == RaceState.Crashed && r.CrashTimer > 1.3f) r.Respawn();
+            r.ClearEvents();
+        }
+        Assert(r.State == RaceState.Finished, $"la sesión no terminó ({r.State})");
+        Assert(r.RaceTime <= 120.1f, $"duró {r.RaceTime:0.0}s");
+        Assert(r.Score > 0, "sin puntos");
+        Console.WriteLine($"      piloto automático: {r.Score} puntos, {r.Stars} estrella(s)");
     }
 
     private static void AllBikesFinish()

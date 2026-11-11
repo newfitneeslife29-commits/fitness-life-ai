@@ -30,6 +30,7 @@ namespace RidgeRush.Game
         public List<BikeUpgrades> upgrades = new List<BikeUpgrades>();
         public List<BikePaint> paints = new List<BikePaint>();
         public string lastLevel = "coast_01";
+        public int freestyleBest;      // récord de puntos en Freestyle
         public long lastDailyReward;   // día (UTC) de la última recompensa diaria
         public int dailyStreak;
     }

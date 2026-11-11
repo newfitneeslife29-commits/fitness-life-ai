@@ -80,6 +80,7 @@ Cada producto necesita una captura de revisión (la tienda del juego) y una nota
 | `rr_final_city` | Clásica | Menor es mejor | Tiempo (centésimas) |
 | `rr_final_volcano` | Clásica | Menor es mejor | Tiempo (centésimas) |
 | `rr_final_stadium` | Clásica | Menor es mejor | Tiempo (centésimas) |
+| `rr_freestyle` | Clásica | Mayor es mejor | Entero (puntos) |
 
 **Logros** (100 puntos en total recomendados)
 
@@ -97,6 +98,7 @@ Cada producto necesita una captura de revisión (la tienda del juego) y una nota
 | `rr_world_city` | Noche de neón | Final de Neón Bay | 5 |
 | `rr_world_volcano` | Forjado en lava | Final de Forja Volcán | 10 |
 | `rr_world_stadium` | Campeón del estadio | Final del Thunderdome | 10 |
+| `rr_supercross_win` | Primero en la arena | Ganar una carrera de Supercross | 5 |
 
 ## 7. Capturas y vídeo
 

@@ -22,6 +22,7 @@ namespace RidgeRush.Game
 
         public event Action<string> PlayLevel;
         public event Action PlayEndless;
+        public event Action PlayFreestyle;
         public event Action GarageChanged;
 
         /// <summary>Modo elegido en la pantalla de niveles: Carrera (con checkpoints) o Contrarreloj (con fantasma).</summary>
@@ -79,6 +80,7 @@ namespace RidgeRush.Game
             UiKit.Label(_font, s, "PRO MOTO", 56, TextAnchor.MiddleLeft, new Vector2(0f, 0.6f), new Vector2(560f, 0f), new Vector2(1000f, 80f), Ember).fontStyle = FontStyle.Bold;
             WalletBar(s);
             UiKit.Button(_font, _rounded, s, Loc.Get("play"), new Vector2(0f, 0.42f), new Vector2(380f, 0f), new Vector2(560f, 120f), Ember, 54, ShowWorlds);
+            UiKit.Button(_font, _rounded, s, Loc.Get("freestyle"), new Vector2(0f, 0.42f), new Vector2(810f, 0f), new Vector2(260f, 120f), new Color(0.15f, 0.35f, 0.4f, 0.95f), 32, () => PlayFreestyle?.Invoke());
             UiKit.Button(_font, _rounded, s, Loc.Get("garage"), new Vector2(0f, 0.29f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowGarage);
             UiKit.Button(_font, _rounded, s, Loc.Get("shop"), new Vector2(0f, 0.18f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowShop);
             UiKit.Button(_font, _rounded, s, Loc.Get("leaderboards"), new Vector2(0f, 0.07f), new Vector2(380f, 0f), new Vector2(560f, 90f), Steel, 36, GameServices.ShowDashboard);
@@ -127,7 +129,7 @@ namespace RidgeRush.Game
                 UiKit.Label(_font, rt, Loc.Spanish ? w.NameEs : w.NameEn, 40, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.7f), Vector2.zero, new Vector2(380f, 100f), Bone).fontStyle = FontStyle.Bold;
                 int stars = SaveSystem.WorldStars(w.Id);
                 UiKit.Label(_font, rt, unlocked ? $"★ {stars}/{w.LevelCount * 3}" : $"{Loc.Get("locked")} · ★ {SaveSystem.StarsNeeded(i)}", 32, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.3f), Vector2.zero, new Vector2(380f, 60f), unlocked ? Gold : Bone);
-                if (w.Supercross) UiKit.Label(_font, rt, "BONUS", 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(380f, 40f), Volt);
+                if (w.Supercross) UiKit.Label(_font, rt, "SUPERCROSS · BONUS", 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(380f, 40f), Volt);
             }
             // Modo Infinito (8.ª tarjeta).
             var endless = UiKit.Button(_font, _rounded, s, "", new Vector2(0.5f, 0.5f), new Vector2(-645f + 3 * 430f, 150f - 380f), new Vector2(400f, 350f), new Color(0.15f, 0.35f, 0.4f, 0.95f), 30, () => PlayEndless?.Invoke());

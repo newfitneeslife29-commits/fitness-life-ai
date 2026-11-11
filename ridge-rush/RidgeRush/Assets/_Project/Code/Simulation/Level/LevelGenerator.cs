@@ -162,6 +162,39 @@ namespace RidgeRush.Simulation
             };
         }
 
+        /// <summary>
+        /// Parque de Freestyle: rampas grandes con bajadas largas (volteretas), mesas y baches, sin fosos.
+        /// Muy largo para que la sesión de 2 minutos no se acabe; se repite el patrón.
+        /// </summary>
+        public static LevelData FreestylePark(int seed)
+        {
+            var rnd = new Random(seed);
+            var s = new List<SectionData>();
+            void Add(string type, float length, float height = 0f, SurfaceType surf = SurfaceType.Dirt, int count = 0) =>
+                s.Add(new SectionData { type = type, length = length, height = height, surface = surf.ToString(), count = count });
+            Add("flat", 30f);
+            for (int b = 0; b < 40; b++)
+            {
+                switch (rnd.Next(4))
+                {
+                    case 0: Add("ramp", 12f, 4.5f, SurfaceType.Wood); Add("flat", 3f, 0f, SurfaceType.Wood); Add("landing", 32f, 4.5f); break; // voltereta
+                    case 1: Add("ramp", 10f, 3f, SurfaceType.Wood); Add("landing", 24f, 3f); break;
+                    case 2: Add("table", 30f, 2.5f); break;
+                    default: Add("bumps", 20f, 0.5f, SurfaceType.Dirt, 3); break;
+                }
+                Add("flat", 14f);
+            }
+            Add("finish", 20f);
+            var checkpoints = new List<float>();
+            for (float x = 150f; x < 3000f; x += 150f) checkpoints.Add(x);
+            return new LevelData
+            {
+                id = "freestyle", world = "stadium", nameEs = "Freestyle · Parque", nameEn = "Freestyle · Park",
+                timeOfDay = 22f, weather = "clear", sections = s.ToArray(), checkpoints = checkpoints.ToArray(),
+                stars = new StarTimes { gold = 9999f, silver = 9999f },
+            };
+        }
+
         private static string PitFor(WorldDef w) => w.Pit == "none" ? "ground" : w.Pit;
 
         private static int Hash(string world, int index, int seed)
