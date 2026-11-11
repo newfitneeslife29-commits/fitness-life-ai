@@ -21,6 +21,9 @@ npm install
 npm test            # todas las pruebas
 npm run typecheck
 npm run demo        # partida de 4 bots narrada en consola (npm run demo -- <semilla>)
+npm run dev -w @parques/web      # app web en http://localhost:5173 (?speed=10 acelera animaciones y bots)
+npm run build -w @parques/web    # build de producción + PWA (apps/web/dist)
+npm run icons -w @parques/web    # regenera los íconos PNG de la PWA desde SVG (usa Playwright)
 npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
 ```
 
@@ -42,6 +45,18 @@ npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
 - Posición de ficha = progreso desde su salida: `-1` cárcel, `0..entry` recorrido común, pasillo de 7 casillas, `home` = cielo.
   4 lados: entry 63, home 71. 6 lados: entry 97, home 105.
 - Turnos en orden de lado ascendente. En parejas, compañeros en lados opuestos (`team = side % (sides/2)`).
+
+## Arquitectura de la web (`apps/web`)
+- `src/game/boardLayout.ts`: geometría SVG genérica (4 y 6 lados). Brazos de 3 columnas x 8 filas que salen de un polígono
+  central: columna L = offsets 1..8 del lado del brazo (hacia adentro), M = entrada (fila 7) + pasillo, R = offsets 9..16 del lado
+  anterior. Cárcel del lado s en la cuña entre brazo s y s+1. Probado en `boardLayout.test.ts`.
+- `src/stores/gameStore.ts` (Zustand): `game` = verdad del motor; `view` = posiciones dibujadas que se actualizan paso a paso
+  reproduciendo los eventos (saltos casilla por casilla, explosión de estrellas, corona, cartel de tres pares, soplo).
+  También maneja bots (`autoAction`), temporizador de turno (si vence, la IA juega por el humano), ventana de soplo (4,5 s)
+  y límite de tiempo del Modo Rápido (`TIME_UP`). `?speed=N` en la URL acelera todo (útil para pruebas).
+- Pantallas en `src/screens` (Home, Setup, Game, Victory) con navegación simple en `stores/appStore.ts`.
+- El tablero rota para que la cárcel del primer humano quede abajo a la izquierda; los asientos se ubican según su cárcel.
+- Gráficos 100 % SVG/CSS (logo, sombrero vueltiao, flores de salida, estrellas de seguro). Fuentes Baloo 2 + Nunito.
 
 ## Reglas implementadas
 1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores: amarillo, azul, rojo, verde (+ morado, naranja en 6).
@@ -74,7 +89,7 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 
 ## Fases
 1. ✅ Motor de reglas + pruebas unitarias + IA + simulaciones.
-2. Tablero SVG, dados, fichas, animaciones; partida local y vs IA; pantalla de victoria; PWA básica.
+2. ✅ Tablero SVG (4 y 6), dados, fichas, animaciones; partida local, vs IA, parejas y Rápido; victoria; PWA básica.
 3. Lobby, perfil, ajustes, reglas de la casa, sonidos, guardado local.
 4. Monedas, tienda, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
 5. Online: Node + Socket.IO, mesas privadas, emparejamiento, reconexión, bot que reemplaza al que abandona.
