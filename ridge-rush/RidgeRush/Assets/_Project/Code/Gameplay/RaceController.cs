@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RidgeRush.Game
 {
-    public enum GameMode { Career, TimeTrial, Endless, Freestyle, Supercross, Demo }
+    public enum GameMode { Career, TimeTrial, Endless, Freestyle, Supercross, Demo, Knockout }
 
     /// <summary>
     /// Punto de entrada del juego. Gestiona menús y carreras en una sola escena:
@@ -58,6 +58,9 @@ namespace RidgeRush.Game
             public RiderRig Rider;
             public float Skill;
             public BikeState Prev, Curr;
+            public string Name;
+            public TextMesh Tag;
+            public bool Reported;
         }
         private readonly List<Rival> _rivals = new List<Rival>();
         private ItemsView _items;
@@ -110,6 +113,7 @@ namespace RidgeRush.Game
             _menu.PlayEndless += () => StartLevel("endless", GameMode.Endless);
             _menu.PlayFreestyle += () => StartLevel("freestyle", GameMode.Freestyle);
             _menu.PlayTutorial += StartTutorial;
+            _menu.PlayKnockout += StartKnockout;
             _menu.GarageChanged += () => { if (_mode == GameMode.Demo) Load(_level.Data, GameMode.Demo); };
 
             GoToMenu();
@@ -184,6 +188,7 @@ namespace RidgeRush.Game
 
         private void GoToMenu()
         {
+            _hud.HideBanner();
             _hud.SetPaused(false);
             _hud.HideFinish();
             var demo = LevelCatalog.Load(SaveSystem.Data.lastLevel) ?? LevelCatalog.Load("coast_01") ?? JsonUtility.FromJson<LevelData>(levelJson.text);
@@ -334,23 +339,43 @@ namespace RidgeRush.Game
                 var rivalBikes = new[] { "haldane_raptor_250", "vextor_brute_450", "ferrum_trailhound_300" };
                 var rivalColors = new[] { new Color(0.1f, 0.3f, 0.85f), new Color(0.9f, 0.1f, 0.15f), new Color(0.2f, 0.55f, 0.2f) };
                 var jerseys = new[] { new Color(0.95f, 0.85f, 0.2f), new Color(0.15f, 0.15f, 0.15f), new Color(0.9f, 0.4f, 0.8f) };
-                for (int i = 0; i < 3; i++)
+                bool ko = mode == GameMode.Knockout && _ko != null;
+                int count = ko ? _ko.Alive.Count : 3;
+                var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                for (int i = 0; i < count; i++)
                 {
-                    var rp = BikeCatalog.Build(BikeCatalog.Get(rivalBikes[i]));
+                    var bdef = ko ? BikeCatalog.Bikes[_ko.NextBike(BikeCatalog.Bikes.Length)] : BikeCatalog.Get(rivalBikes[i]);
+                    var rp = BikeCatalog.Build(bdef);
                     var rr = new RaceRules(TrackBuilder.Build(data), rp, ModeRules.TimeTrial);
-                    var view = BikeModelFactory.Create(rp, _root, BikeCatalog.Get(rivalBikes[i]));
+                    var view = BikeModelFactory.Create(rp, _root, bdef);
                     view.name = "Rival_" + i;
-                    var rider = RiderRig.Create(rp, _root, jerseys[i], rivalColors[i]);
+                    var rider = ko ? RiderRig.Create(rp, _root, new Color(bdef.BodyR, bdef.BodyG, bdef.BodyB), LiveryTextures.Rgb(bdef.Secondary))
+                                   : RiderRig.Create(rp, _root, jerseys[i], rivalColors[i]);
                     var st = rr.Sim.CaptureState();
-                    // En Carrera son algo más lentos (se les puede ganar); en Supercross, más duros.
-                    float skill = (mode == GameMode.Supercross ? 0.8f : 0.7f) + i * 0.07f;
-                    _rivals.Add(new Rival { Rules = rr, View = view, Rider = rider, Skill = skill, Prev = st, Curr = st });
+                    // En Carrera son algo más lentos (se les puede ganar); en Supercross, más duros; en Eliminatoria, variados.
+                    float skill = ko ? _ko.NextSkill() : (mode == GameMode.Supercross ? 0.8f : 0.7f) + i * 0.07f;
+                    var rv = new Rival { Rules = rr, View = view, Rider = rider, Skill = skill, Prev = st, Curr = st };
+                    if (ko)
+                    {
+                        // Nombre flotando sobre el piloto (siempre mira a la cámara).
+                        rv.Name = _ko.Alive[i];
+                        var tagGo = new GameObject("NameTag");
+                        tagGo.transform.SetParent(_root, false);
+                        var tm = tagGo.AddComponent<TextMesh>();
+                        tm.font = font; tm.text = rv.Name; tm.fontSize = 48; tm.characterSize = 0.045f; tm.anchor = TextAnchor.MiddleCenter;
+                        tm.fontStyle = FontStyle.Bold; tm.color = Color.Lerp(Color.white, new Color(bdef.BodyR, bdef.BodyG, bdef.BodyB), 0.35f);
+                        tagGo.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+                        rv.Tag = tm;
+                    }
+                    _rivals.Add(rv);
                 }
             }
             _hud.ShowPowers(mode != GameMode.Demo && mode != GameMode.Freestyle);
 
             _hud.SetVisible(mode != GameMode.Demo);
-            _hud.SetMode(mode == GameMode.Freestyle, mode == GameMode.Supercross);
+            _hud.SetMode(mode == GameMode.Freestyle, mode == GameMode.Supercross || mode == GameMode.Knockout);
+            _hud.SetTargetOverride(null);
+            _koDone = false; _koPlayerReported = false;
             _hud.SetLevelName(Loc.Spanish ? data.nameEs : data.nameEn);
             ApplySettings();
             Restart();
@@ -367,6 +392,12 @@ namespace RidgeRush.Game
         private void Restart()
         {
             _rules.Restart();
+            if (_mode == GameMode.Knockout && _ko != null)
+            {
+                _ko.Finished.Clear(); _koDone = false; _koPlayerReported = false;
+                foreach (var rv in _rivals) rv.Reported = false;
+                _hud.HideBanner();
+            }
             foreach (var rv in _rivals)
             {
                 rv.Rules.Restart();
@@ -415,6 +446,7 @@ namespace RidgeRush.Game
             if (!demo && _input.RestartPressed()) Restart();
             if (!demo && _input.BackPressed()) _hud.SetPaused(!_paused);
             float frameDt = Mathf.Min(Time.unscaledDeltaTime, MaxFrameDelta);
+            if (!demo && (_rules.Sim.Nitro <= 0f || _rules.State != RaceState.Racing && _rules.State != RaceState.Ready)) _input.CancelTurbo();
             var input = demo ? BotDriver.Drive(_rules.Sim, 0.85f) : _autoPilot ? BotDriver.Drive(_rules.Sim, 0.9f) : _input.Read(frameDt);
             if (_paused) { _hud.Tick(_rules, _input, frameDt); return; }
 
@@ -448,10 +480,16 @@ namespace RidgeRush.Game
                 var rv = _rivals[i];
                 var rs = BikeState.Lerp(rv.Prev, rv.Curr, alpha);
                 rv.View.Apply(rs);
-                rv.View.ApplyOffset(new Vector3(0f, 0f, 1.1f + i * 0.9f)); // carriles detrás del jugador
+                rv.View.ApplyOffset(new Vector3(0f, 0f, _rivals.Count > 3 ? 0.9f + (i % 4) * 0.6f : 1.1f + i * 0.9f)); // carriles detrás del jugador
                 rv.Rider.Pose(rv.View.Chassis, rs, frameDt * timeScale);
+                if (rv.Tag != null)
+                {
+                    rv.Tag.transform.position = rv.View.Chassis.position + new Vector3(0f, 2.3f, 0f);
+                    rv.Tag.transform.rotation = mainCamera.transform.rotation;
+                }
             }
             if (_rivals.Count > 0) _hud.SetPosition(RacePosition(), _rivals.Count + 1);
+            if (_mode == GameMode.Knockout) TickKnockout();
             _shield.SetActive(_rules.Shielded);
             if (!demo) _hud.TickPowers(_rules, NearestKnockoutTarget() != null);
 
@@ -659,6 +697,7 @@ namespace RidgeRush.Game
 
         private void OnFinished()
         {
+            if (_mode == GameMode.Knockout) { _replayData = _recording.ToArray(); Haptics.Impact(0.8f, 0.6f); return; } // lo resuelve TickKnockout
             SeasonPass.AddXp(SeasonPass.XpFor(_rules.Stars, _rules.Coins, true));
             if (_tutorial) { _tutorial = false; _hud.SetTutorial(null); SaveSystem.Data.tutorialDone = true; SaveSystem.Save(); }
             _replayData = _recording.ToArray();
@@ -686,6 +725,78 @@ namespace RidgeRush.Game
             string next = LevelCatalog.Next(id);
             _hud.ShowFinish(_rules, _bestBefore, next != null && _mode != GameMode.Endless);
             Haptics.Impact(0.8f, 0.6f);
+        }
+
+        // ------------------------------------------------------------------ eliminatoria
+
+        private KnockoutSession _ko;
+        private bool _koDone, _koPlayerReported;
+
+        private void StartKnockout()
+        {
+            _ko = new KnockoutSession(Random.Range(0, 1000000));
+            NextKnockoutRound();
+        }
+
+        private void NextKnockoutRound()
+        {
+            _ko.StartRound();
+            var data = LevelCatalog.Load(_ko.PickLevel()) ?? LevelCatalog.Load("coast_03");
+            _menu.Show(false);
+            _hud.HideBanner();
+            Load(data, GameMode.Knockout);
+            string round = _ko.Round == _ko.Rounds ? Loc.Get("final_round") : $"{Loc.Get("round")} {_ko.Round}/{_ko.Rounds}";
+            _hud.SetLevelName($"{round}  ·  {(_ko.Qualify == 1 ? Loc.Get("only_winner") : string.Format(Loc.Get("qualify_n"), _ko.Qualify))}");
+        }
+
+        /// <summary>Orden de llegada, contador de clasificados y fin de ronda.</summary>
+        private void TickKnockout()
+        {
+            if (_ko == null || _koDone) return;
+            if (_rules.State == RaceState.Finished && !_koPlayerReported) { _koPlayerReported = true; _ko.Finished.Add(KnockoutSession.You); }
+            foreach (var rv in _rivals)
+                if (rv.Rules.State == RaceState.Finished && !rv.Reported) { rv.Reported = true; _ko.Finished.Add(rv.Name); }
+            int done = Mathf.Min(_ko.Finished.Count, _ko.Qualify);
+            _hud.SetTargetOverride($"{Loc.Get("qualified")} {done}/{_ko.Qualify}");
+            int place = _ko.Place(KnockoutSession.You);
+            bool qualified = place > 0 && place <= _ko.Qualify;
+            if (qualified || _ko.Finished.Count >= _ko.Qualify) EndKnockoutRound(qualified);
+        }
+
+        private void EndKnockoutRound(bool qualified)
+        {
+            _koDone = true;
+            // Los puestos que quedan se reparten por cómo iba cada uno.
+            var next = new List<string>();
+            foreach (var n in _ko.Finished) if (n != KnockoutSession.You && next.Count < _ko.Qualify) next.Add(n);
+            var rest = new List<Rival>(_rivals.FindAll(r => !_ko.Finished.Contains(r.Name)));
+            rest.Sort((a, b) => b.Rules.Progress.CompareTo(a.Rules.Progress));
+            int spots = _ko.Qualify - (qualified ? 1 : 0);
+            foreach (var r in rest) if (next.Count < spots) next.Add(r.Name);
+            _ko.Alive.Clear(); _ko.Alive.AddRange(next);
+
+            var save = SaveSystem.Data;
+            if (qualified && _ko.Round == _ko.Rounds)
+            {
+                save.coins += 500 + _rules.Coins; save.gems += 20; SaveSystem.Save();
+                SeasonPass.AddXp(400);
+                _items.Fireworks(_rules.Sim.Chassis.Position.ToV3());
+                _hud.ShowBanner(Loc.Get("champion"), "+500 ●   +20 ◆", new Color(1f, 0.78f, 0.15f),
+                    Loc.Get("play_again"), StartKnockout, Loc.Get("menu"), GoToMenu);
+            }
+            else if (qualified)
+            {
+                save.coins += 60 * _ko.Round + _rules.Coins; SaveSystem.Save();
+                _hud.ShowBanner(Loc.Get("qualified_big"), string.Format(Loc.Get("place_of"), _ko.Place(KnockoutSession.You), _ko.Qualify), new Color(0.3f, 0.95f, 0.45f),
+                    Loc.Get("next_round"), NextKnockoutRound, Loc.Get("menu"), GoToMenu);
+            }
+            else
+            {
+                save.coins += 40 * _ko.Round + _rules.Coins; SaveSystem.Save();
+                SeasonPass.AddXp(60 * _ko.Round);
+                _hud.ShowBanner(Loc.Get("eliminated"), string.Format(Loc.Get("eliminated_round"), _ko.Round), new Color(1f, 0.3f, 0.25f),
+                    Loc.Get("play_again"), StartKnockout, Loc.Get("menu"), GoToMenu);
+            }
         }
 
         private void HandleEvents(bool demo)

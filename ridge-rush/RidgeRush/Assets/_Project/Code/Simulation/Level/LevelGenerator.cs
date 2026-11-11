@@ -66,7 +66,7 @@ namespace RidgeRush.Simulation
             bool final = index == w.LevelCount - 1;
             // Dificultad 0..1: sube dentro del mundo y un poco de mundo en mundo.
             float d = Math.Min(1f, index / (float)Math.Max(1, w.LevelCount - 1) * 0.8f + worldNo * 0.04f);
-            int blocks = 14 + (int)(d * 10) + (final ? 8 : 0);
+            int blocks = 20 + (int)(d * 12) + (final ? 8 : 0);
 
             var s = new List<SectionData>();
             var checkpoints = new List<float>();
@@ -94,7 +94,8 @@ namespace RidgeRush.Simulation
                 int pattern;
                 do
                 {
-                    pattern = rnd.Next(w.Supercross ? 6 : 20);
+                    pattern = rnd.Next(w.Supercross ? 6 : 22);
+                    if (pattern == 21) pattern = 20; // los atajos salen más a menudo
                     if (w.Supercross && pattern == 5) pattern = 11; // en el estadio: loop
                     if ((pattern == 12 || pattern == 16) && w.Pit == "none") pattern = 2;
                 } while (pattern == lastPattern);
@@ -277,6 +278,25 @@ namespace RidgeRush.Simulation
                         Add("ramp", 9f, h, w.Alt);
                         Add("landing", 22f, h, w.Alt);
                         if (saws) obstacles.Add(new ObstacleData { type = "orbit", x = x - 14f, y = 4.2f, dx = 2.8f, size = 1.0f, period = 2.4f + (float)rnd.NextDouble(), phase = (float)rnd.NextDouble() * 3f });
+                        break;
+                    }
+                    case 20: // ATAJO: con turbo y velocidad, la rampa lleva a un camino alto más rápido y con premios
+                    {
+                        Add("flat", 14f, surf: w.Alt);
+                        Pickup("boost", x - 13f, 0f, 8f);
+                        obstacles.Add(new ObstacleData { type = "sign", x = x - 4f, size = 1f });
+                        Add("ramp", 7f, 1.6f, w.Bridge);
+                        float lip = x;
+                        Add("landing", 10f, 1.6f, w.Alt);
+                        // Abajo: baches y cajas (más lento). Arriba: plataforma larga con monedas y un aro.
+                        Add("bumps", 44f, 0.45f + d * 0.2f, w.Main, 6 + rnd.Next(3));
+                        float upY = 4.4f, upX = lip + 10f, upLen = 46f;
+                        platforms.Add(new PlatformData { x = upX, y = upY, width = upLen, thickness = 0.4f, surface = w.Bridge.ToString() });
+                        // Alturas relativas al suelo más alto (aquí, la plataforma).
+                        for (int c = 0; c < 8; c++) Pickup("coin", upX + 6f + c * 4.5f, 1f);
+                        Pickup("ring", upX + upLen * 0.6f, 2.4f);
+                        Pickup("nitro", upX + upLen - 6f, 1.2f);
+                        Add("flat", 12f, surf: w.Alt);
                         break;
                     }
                     default: // tramo de la superficie alternativa (hielo en nieve) + subida y bajada

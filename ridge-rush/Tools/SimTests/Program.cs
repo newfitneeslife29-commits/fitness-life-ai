@@ -74,7 +74,7 @@ internal static class Program
                 // automático (sistema caótico) puede caerse en otro sitio: como en el juego, reaparece en el checkpoint.
                 Assert(r.State == RaceState.Finished, $"no terminó (estado {r.State}, x={r.Sim.Chassis.Position.x:0.0}, caídas {r.Crashes})");
                 Assert(r.Crashes <= 2, $"se cayó {r.Crashes} veces");
-                Assert(r.RaceTime >= 30f && r.RaceTime <= 150f, $"duración {r.RaceTime:0.0}s fuera de 30–150 s");
+                Assert(r.RaceTime >= 30f && r.RaceTime <= 200f, $"duración {r.RaceTime:0.0}s fuera de 30–200 s");
                 if (Environment.GetEnvironmentVariable("VERBOSE_LEVELS") == "1")
                     Console.WriteLine($"      tiempo {r.RaceTime:0.00}s, final {r.FinalTime:0.00}s, monedas {r.Coins}, estrellas {r.Stars}");
             });
@@ -352,7 +352,7 @@ internal static class Program
                 var p = BikeCatalog.Build(bike, lvl, lvl, lvl, lvl, lvl);
                 var r = new RaceRules(TrackBuilder.Build(level), p);
                 // Como en el juego: si se cae, reaparece en el checkpoint.
-                for (int i = 0; i < 240 * 150 && r.State != RaceState.Finished; i++)
+                for (int i = 0; i < 240 * 210 && r.State != RaceState.Finished; i++)
                 {
                     r.Step(BotDriver.Drive(r.Sim));
                     if (r.State == RaceState.Crashed && r.CrashTimer > 1.3f) r.Respawn();
@@ -391,7 +391,7 @@ internal static class Program
     {
         var r = new RaceRules(TrackBuilder.Build(level), new BikeParams());
         float lastPrint = 0f;
-        for (int i = 0; i < 240 * 150 && r.State != RaceState.Finished && (respawn || r.State != RaceState.Crashed); i++)
+        for (int i = 0; i < 240 * 210 && r.State != RaceState.Finished && (respawn || r.State != RaceState.Crashed); i++)
         {
             r.Step(BotDriver.Drive(r.Sim, aggressiveness));
             if (respawn && r.State == RaceState.Crashed && r.CrashTimer > 1.3f) r.Respawn();
@@ -473,7 +473,7 @@ internal static class Program
         {
             var rec = new List<float[]>();
             var r = RunBotRecorded(level, agg, rec);
-            if (r.State != RaceState.Finished || r.Crashes > 0 || r.RaceTime < 30f || r.RaceTime > 110f) return false;
+            if (r.State != RaceState.Finished || r.Crashes > 0 || r.RaceTime < 30f || r.RaceTime > 150f) return false;
             if (agg == 1f) time = r.FinalTime;
             recs.Add(rec);
         }
@@ -517,7 +517,7 @@ internal static class Program
     private static RaceRules RunBotRecorded(LevelData level, float aggressiveness, List<float[]> rec)
     {
         var r = new RaceRules(TrackBuilder.Build(level), new BikeParams());
-        for (int i = 0; i < 240 * 150 && r.State != RaceState.Finished && r.State != RaceState.Crashed; i++)
+        for (int i = 0; i < 240 * 210 && r.State != RaceState.Finished && r.State != RaceState.Crashed; i++)
         {
             r.Step(BotDriver.Drive(r.Sim, aggressiveness));
             r.ClearEvents();

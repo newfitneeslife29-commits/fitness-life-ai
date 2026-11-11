@@ -175,6 +175,22 @@ namespace RidgeRush.Game
                         _arms[i] = piston;
                         break;
                     }
+                    case "sign":
+                    {
+                        // Cartel de atajo: poste y tablero amarillo con flecha, detrás de la pista.
+                        float zb = TrackMeshBuilder.HalfDepth + 0.4f;
+                        SimConvert.Primitive(PrimitiveType.Cylinder, "Post", t, new Vector3(0f, 1.6f, zb), new Vector3(0.18f, 1.6f, 0.18f), postMat);
+                        SimConvert.Primitive(PrimitiveType.Cube, "Board", t, new Vector3(0f, 3.4f, zb), new Vector3(3.2f, 1.3f, 0.12f), hazardMat);
+                        var label = new GameObject("Text");
+                        label.transform.SetParent(t, false);
+                        label.transform.localPosition = new Vector3(0f, 3.4f, zb - 0.08f);
+                        var tm = label.AddComponent<TextMesh>();
+                        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                        tm.font = font; tm.text = Loc.Get("shortcut") + " ↑"; tm.fontSize = 80; tm.characterSize = 0.07f;
+                        tm.anchor = TextAnchor.MiddleCenter; tm.fontStyle = FontStyle.Bold; tm.color = new Color(0.08f, 0.08f, 0.1f);
+                        label.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+                        break;
+                    }
                     case "crates":
                     {
                         // Muro de cajas de madera (2 de ancho × 3 de alto) que se rompe al atravesarlo.

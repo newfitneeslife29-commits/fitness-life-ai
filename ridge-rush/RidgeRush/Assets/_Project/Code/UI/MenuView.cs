@@ -13,7 +13,8 @@ namespace RidgeRush.Game
     public sealed class MenuView : MonoBehaviour
     {
         private static readonly Color Asphalt = new Color32(0x12, 0x14, 0x17, 0xD9);
-        private static readonly Color Steel = new Color32(0x22, 0x26, 0x2C, 0xE6);
+        private static readonly Color Steel = new Color32(0x2E, 0x5B, 0xD8, 0xF2); // azul vivo (botones secundarios)
+        private static readonly Color Muted = new Color32(0x4A, 0x4F, 0x5A, 0xE6); // no disponible
         private static readonly Color Bone = new Color32(0xF2, 0xEF, 0xE9, 0xFF);
         private static readonly Color Ember = new Color32(0xFF, 0x5A, 0x1F, 0xFF);
         private static readonly Color Volt = new Color32(0x2F, 0xE3, 0xFF, 0xFF);
@@ -24,6 +25,7 @@ namespace RidgeRush.Game
         public event Action PlayEndless;
         public event Action PlayFreestyle;
         public event Action PlayTutorial;
+        public event Action PlayKnockout;
         public event Action GarageChanged;
 
         /// <summary>Modo elegido en la pantalla de niveles: Carrera (con checkpoints) o Contrarreloj (con fantasma).</summary>
@@ -87,6 +89,14 @@ namespace RidgeRush.Game
             UiKit.Button(_font, _rounded, s, Loc.Get("play"), new Vector2(0f, 0.42f), new Vector2(380f, 0f), new Vector2(560f, 120f), Ember, 54,
                 () => { if (!SaveSystem.Data.tutorialDone) PlayTutorial?.Invoke(); else ShowWorlds(); });
             UiKit.Button(_font, _rounded, s, Loc.Get("freestyle"), new Vector2(0f, 0.42f), new Vector2(810f, 0f), new Vector2(260f, 120f), new Color(0.15f, 0.35f, 0.4f, 0.95f), 32, () => PlayFreestyle?.Invoke());
+            // ELIMINATORIA: botón grande y llamativo a la derecha.
+            var koBtn = UiKit.Button(_font, _rounded, s, "", new Vector2(1f, 0.5f), new Vector2(-330f, 60f), new Vector2(520f, 300f), new Color(0.98f, 0.3f, 0.55f, 0.97f), 30, () => PlayKnockout?.Invoke());
+            var kort = (RectTransform)koBtn.transform;
+            UiKit.Panel(_rounded, kort, new Vector2(0.5f, 0f), new Vector2(0f, -10f), new Vector2(520f, 22f), new Color(0.55f, 0.1f, 0.28f, 1f));
+            var kt = UiKit.Label(_font, kort, Loc.Get("knockout_mode"), 64, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.62f), Vector2.zero, new Vector2(500f, 90f), Bone);
+            kt.fontStyle = FontStyle.BoldAndItalic;
+            kt.gameObject.AddComponent<Outline>().effectColor = new Color(0.3f, 0f, 0.1f, 0.9f);
+            UiKit.Label(_font, kort, Loc.Get("knockout_hint"), 28, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(480f, 80f), new Color(1f, 0.95f, 0.85f));
             UiKit.Button(_font, _rounded, s, Loc.Get("garage"), new Vector2(0f, 0.29f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowGarage);
             UiKit.Button(_font, _rounded, s, Loc.Get("shop"), new Vector2(0f, 0.18f), new Vector2(380f, 0f), new Vector2(560f, 100f), Steel, 44, ShowShop);
             UiKit.Button(_font, _rounded, s, Loc.Get("leaderboards"), new Vector2(0f, 0.07f), new Vector2(380f, 0f), new Vector2(560f, 90f), Steel, 36, GameServices.ShowDashboard);
@@ -108,7 +118,7 @@ namespace RidgeRush.Game
             d.coins += coins; d.gems += gems;
             SaveSystem.Save();
             WalletBar(s);
-            var box = UiKit.Panel(_rounded, s, new Vector2(1f, 0f), new Vector2(-330f, 170f), new Vector2(560f, 200f), Steel);
+            var box = UiKit.Panel(_rounded, s, new Vector2(1f, 0f), new Vector2(-330f, 170f), new Vector2(560f, 200f), new Color(0.1f, 0.12f, 0.2f, 0.9f));
             UiKit.Label(_font, box, $"{Loc.Get("daily")} · {Loc.Get("day")} {d.dailyStreak}/7", 34, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.72f), Vector2.zero, new Vector2(540f, 60f), Bone);
             UiKit.Label(_font, box, gems > 0 ? $"+{coins} ●  +{gems} ◆" : $"+{coins} ●", 52, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.32f), Vector2.zero, new Vector2(540f, 80f), Gold).fontStyle = FontStyle.Bold;
         }
@@ -156,8 +166,8 @@ namespace RidgeRush.Game
             WalletBar(s);
             UiKit.Button(_font, _rounded, s, "‹ " + Loc.Get("back"), new Vector2(0f, 1f), new Vector2(150f, -70f), new Vector2(230f, 90f), Steel, 34, ShowWorlds);
             int wi = worldIndex;
-            UiKit.Button(_font, _rounded, s, Loc.Get("career"), new Vector2(0.5f, 0f), new Vector2(-230f, 80f), new Vector2(420f, 90f), TimeTrial ? Steel : Ember, 34, () => { TimeTrial = false; ShowLevels(wi); });
-            UiKit.Button(_font, _rounded, s, Loc.Get("timetrial"), new Vector2(0.5f, 0f), new Vector2(230f, 80f), new Vector2(420f, 90f), TimeTrial ? Ember : Steel, 34, () => { TimeTrial = true; ShowLevels(wi); });
+            UiKit.Button(_font, _rounded, s, Loc.Get("career"), new Vector2(0.5f, 0f), new Vector2(-230f, 80f), new Vector2(420f, 90f), TimeTrial ? Muted : Ember, 34, () => { TimeTrial = false; ShowLevels(wi); });
+            UiKit.Button(_font, _rounded, s, Loc.Get("timetrial"), new Vector2(0.5f, 0f), new Vector2(230f, 80f), new Vector2(420f, 90f), TimeTrial ? Ember : Muted, 34, () => { TimeTrial = true; ShowLevels(wi); });
 
             int perRow = 9;
             for (int i = 0; i < w.LevelCount; i++)
@@ -271,7 +281,7 @@ namespace RidgeRush.Game
             {
                 string price = bike.PriceCoins > 0 ? $"{bike.PriceCoins:N0} ●" : $"{bike.PriceGems:N0} ◆";
                 bool canBuy = bike.PriceCoins > 0 ? d.coins >= bike.PriceCoins : d.gems >= bike.PriceGems;
-                UiKit.Button(_font, _rounded, s, $"{Loc.Get("buy")}   {price}", new Vector2(1f, 0f), new Vector2(-400f, 80f), new Vector2(740f, 110f), canBuy ? Ember : Steel, 44, () =>
+                UiKit.Button(_font, _rounded, s, $"{Loc.Get("buy")}   {price}", new Vector2(1f, 0f), new Vector2(-400f, 80f), new Vector2(740f, 110f), canBuy ? Ember : Muted, 44, () =>
                 {
                     if (bike.PriceCoins > 0 && d.coins >= bike.PriceCoins) d.coins -= bike.PriceCoins;
                     else if (bike.PriceGems > 0 && d.gems >= bike.PriceGems) d.gems -= bike.PriceGems;
@@ -307,7 +317,7 @@ namespace RidgeRush.Game
             if (level >= BikeCatalog.MaxUpgrade) { UiKit.Label(_font, card, "MAX", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0.5f), new Vector2(-100f, 0f), new Vector2(180f, 50f), Gold).fontStyle = FontStyle.Bold; return; }
             int cost = BikeCatalog.UpgradeCost(bike, level);
             var d = SaveSystem.Data;
-            UiKit.Button(_font, _rounded, card, $"+ {cost:N0} ●", new Vector2(1f, 0.5f), new Vector2(-110f, 0f), new Vector2(200f, 54f), d.coins >= cost ? Ember : Steel, 26, () =>
+            UiKit.Button(_font, _rounded, card, $"+ {cost:N0} ●", new Vector2(1f, 0.5f), new Vector2(-110f, 0f), new Vector2(200f, 54f), d.coins >= cost ? Ember : Muted, 26, () =>
             {
                 if (d.coins < cost) return;
                 d.coins -= cost; set(level + 1); SaveSystem.Save(); GarageChanged?.Invoke(); ShowGarage();
@@ -417,15 +427,29 @@ namespace RidgeRush.Game
             return t;
         }
 
+        /// <summary>
+        /// Botón "gordito" estilo juego de fiesta: labio inferior más oscuro (relieve), brillo arriba,
+        /// texto con contorno y se hunde un poco al pulsarlo.
+        /// </summary>
         public static Button Button(Font font, Sprite sprite, RectTransform parent, string text, Vector2 anchor, Vector2 pos, Vector2 size, Color color, int fontSize, Action onClick)
         {
+            float lipH = Mathf.Clamp(size.y * 0.09f, 6f, 14f);
+            var lip = Panel(sprite, parent, anchor, pos + new Vector2(0f, -lipH), size, new Color(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, Mathf.Max(0.9f, color.a)));
+            lip.name = "ButtonLip";
             var rt = Rect("Button", parent, anchor, anchor, pos, size);
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = sprite; img.type = Image.Type.Sliced; img.color = color;
             var b = rt.gameObject.AddComponent<Button>();
+            var colors = b.colors; colors.pressedColor = new Color(0.85f, 0.85f, 0.85f); colors.highlightedColor = Color.white; b.colors = colors;
             if (onClick != null) b.onClick.AddListener(() => onClick());
+            if (size.y >= 60f)
+                Panel(sprite, rt, new Vector2(0.5f, 1f), new Vector2(0f, -Mathf.Min(18f, size.y * 0.16f)), new Vector2(size.x - 28f, Mathf.Min(14f, size.y * 0.12f)), new Color(1f, 1f, 1f, 0.22f));
             if (!string.IsNullOrEmpty(text))
-                Label(font, rt, text, fontSize, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, size, new Color32(0xF2, 0xEF, 0xE9, 0xFF)).fontStyle = FontStyle.Bold;
+            {
+                var l = Label(font, rt, text, fontSize, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, size, new Color32(0xFF, 0xFF, 0xFF, 0xFF));
+                l.fontStyle = FontStyle.Bold;
+                var o = l.gameObject.AddComponent<Outline>(); o.effectColor = new Color(0f, 0f, 0f, 0.55f); o.effectDistance = new Vector2(2f, -2f);
+            }
             return b;
         }
 

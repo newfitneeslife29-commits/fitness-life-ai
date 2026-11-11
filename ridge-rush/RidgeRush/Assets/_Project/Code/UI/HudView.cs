@@ -113,9 +113,9 @@ namespace RidgeRush.Game
             _leanFwd = RoundButton(safe, "LeanFwd", "►", Loc.Get("lean_fwd"), new Vector2(0f, 0f), new Vector2(390f, 165f), 210f, Volt);
             _gasBtn = RoundButton(safe, "Gas", Loc.Get("gas"), "", new Vector2(1f, 0f), new Vector2(-165f, 190f), 260f, Ember);
             _brakeBtn = RoundButton(safe, "Brake", Loc.Get("brake"), "", new Vector2(1f, 0f), new Vector2(-420f, 150f), 190f, Bone);
-            _nitroBtn = RoundButton(safe, "Nitro", "»", Loc.Get("turbo"), new Vector2(1f, 0f), new Vector2(-185f, 430f), 150f, Volt, meter: true);
-            _powerRb = RoundButton(safe, "Power", "★", Loc.Get("power"), new Vector2(0f, 0f), new Vector2(150f, 405f), 150f, Volt, meter: true);
-            _koRb = RoundButton(safe, "KO", "K.O.", "", new Vector2(0f, 0f), new Vector2(355f, 425f), 150f, Ember, meter: true);
+            _nitroBtn = RoundButton(safe, "Nitro", "»", Loc.Get("turbo"), new Vector2(0f, 0f), new Vector2(270f, 420f), 170f, Volt, meter: true);
+            _powerRb = RoundButton(safe, "Power", "★", Loc.Get("power"), new Vector2(1f, 0f), new Vector2(-185f, 430f), 150f, Gold, meter: true);
+            _koRb = RoundButton(safe, "KO", "K.O.", "", new Vector2(1f, 0f), new Vector2(-420f, 375f), 140f, Ember, meter: true);
             _powerRb.Root.gameObject.AddComponent<Button>().onClick.AddListener(() => PowerRequested?.Invoke());
             _koRb.Root.gameObject.AddComponent<Button>().onClick.AddListener(() => KnockoutRequested?.Invoke());
             _powerRb.Bg.raycastTarget = _koRb.Bg.raycastTarget = true;
@@ -154,14 +154,22 @@ namespace RidgeRush.Game
             float targetTime = nextStars == 3 ? r.Level.Data.stars.gold : r.Level.Data.stars.silver;
             _target.text = nextStars >= 2 ? $"{new string('★', nextStars)}  {Loc.Time(targetTime)}" : "★";
             if (_freestyle) _target.text = $"{r.Score:N0} {Loc.Get("points")}";
+            if (_banner != null && _bannerTitle != null)
+            {
+                // Entrada con rebote del título.
+                _bannerAnim += dt;
+                float k = Mathf.Clamp01(_bannerAnim * 3f);
+                _bannerTitle.localScale = Vector3.one * (1f + Mathf.Sin(k * Mathf.PI) * 0.25f) * Mathf.Lerp(0.3f, 1f, k);
+            }
             else if (_supercross) _target.text = $"{Loc.Get("position")} {_position}/{_racers}";
+            if (_targetOverride != null) _target.text = $"{_targetOverride}   ·   {Loc.Get("position")} {_position}/{_racers}";
 
             _gasBtn.Set(input.GasHeld, true, dt);
             _brakeBtn.Set(input.BrakeHeld, true, dt);
             _leanBack.Set(input.LeanBackHeld, true, dt);
             _leanFwd.Set(input.LeanForwardHeld, true, dt);
             bool hasNitro = r.Sim.Nitro > 0.01f && r.Mode.nitroEnabled;
-            _nitroBtn.Set(input.NitroHeld && hasNitro, hasNitro, dt);
+            _nitroBtn.Set(input.TurboActive || (input.NitroHeld && hasNitro), hasNitro, dt);
             _nitroBtn.SetMeter(r.Sim.Params.nitroCapacity > 0f ? r.Sim.Nitro / r.Sim.Params.nitroCapacity : 0f);
 
             if (_popupTimer > 0f)
@@ -218,6 +226,58 @@ namespace RidgeRush.Game
         public void SetMode(bool freestyle, bool supercross) { _freestyle = freestyle; _supercross = supercross; }
 
         public void SetPosition(int position, int racers) { _position = position; _racers = racers; }
+
+        private string _targetOverride;
+        /// <summary>Texto fijo en lugar del objetivo (p. ej. "Clasificados 3/8" en la Eliminatoria).</summary>
+        public void SetTargetOverride(string text) => _targetOverride = text;
+
+        private RectTransform _banner;
+
+        /// <summary>
+        /// Cartel grande a pantalla completa (Eliminatoria): título enorme con contorno, subtítulo y dos botones
+        /// gordos de colores, estilo juego de fiesta.
+        /// </summary>
+        public void ShowBanner(string title, string subtitle, Color color, string primary, Action onPrimary, string secondary, Action onSecondary)
+        {
+            HideBanner();
+            _banner = Rect("Banner", transform as RectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var dim = _banner.gameObject.AddComponent<Image>();
+            dim.color = new Color(0.02f, 0.03f, 0.08f, 0.55f);
+            var stripe = Panel("Stripe", _banner, new Vector2(0.5f, 0.6f), Vector2.zero, new Vector2(4000f, 260f), new Color(color.r * 0.35f, color.g * 0.35f, color.b * 0.35f, 0.92f));
+            stripe.localRotation = Quaternion.Euler(0f, 0f, -3f);
+            var t = Label("Title", _banner, title, 150, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.62f), Vector2.zero, new Vector2(1800f, 200f));
+            t.fontStyle = FontStyle.BoldAndItalic; t.color = color;
+            var o = t.gameObject.AddComponent<Outline>(); o.effectColor = new Color(0f, 0f, 0f, 0.9f); o.effectDistance = new Vector2(6f, -6f);
+            Label("Sub", _banner, subtitle, 50, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.45f), Vector2.zero, new Vector2(1600f, 70f)).fontStyle = FontStyle.Bold;
+            ChunkyButton(_banner, primary, new Vector2(0.5f, 0.22f), new Vector2(260f, 0f), new Color(1f, 0.78f, 0.1f), onPrimary);
+            ChunkyButton(_banner, secondary, new Vector2(0.5f, 0.22f), new Vector2(-260f, 0f), new Color(0.25f, 0.55f, 1f), onSecondary);
+            _bannerAnim = 0f;
+            _bannerTitle = t.rectTransform;
+        }
+
+        public void HideBanner()
+        {
+            if (_banner != null) Destroy(_banner.gameObject);
+            _banner = null;
+        }
+
+        private float _bannerAnim;
+        private RectTransform _bannerTitle;
+
+        /// <summary>Botón gordo con "labio" inferior más oscuro (aspecto 3D) y texto con contorno.</summary>
+        private void ChunkyButton(RectTransform parent, string text, Vector2 anchor, Vector2 pos, Color color, Action onClick)
+        {
+            var size = new Vector2(460f, 130f);
+            var lip = Panel("Lip", parent, anchor, pos + new Vector2(0f, -12f), size, new Color(color.r * 0.55f, color.g * 0.55f, color.b * 0.55f, 1f));
+            var rt = Rect("Btn", parent, anchor, anchor, pos, size);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = color;
+            rt.gameObject.AddComponent<Button>().onClick.AddListener(() => onClick?.Invoke());
+            Panel("Shine", rt, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(size.x - 40f, 18f), new Color(1f, 1f, 1f, 0.35f));
+            var l = Label("Text", rt, text, 54, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, size);
+            l.fontStyle = FontStyle.Bold;
+            var o = l.gameObject.AddComponent<Outline>(); o.effectColor = new Color(0f, 0f, 0f, 0.8f); o.effectDistance = new Vector2(3f, -3f);
+        }
 
         public void ShowFinish(RaceRules r, float previousBest, bool hasNext)
         {
