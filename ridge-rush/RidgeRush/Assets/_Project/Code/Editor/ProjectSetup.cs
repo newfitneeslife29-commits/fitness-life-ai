@@ -27,7 +27,7 @@ namespace RidgeRush.EditorTools
         private const string SettingsDir = Root + "/Settings";
         private const string MaterialsDir = Root + "/Art/Materials";
         private const string ScenePath = Root + "/Scenes/Race_Prototype.unity";
-        private const string LevelPath = Root + "/Levels/coast/w1_l01.json";
+        private const string LevelPath = Root + "/Resources/Levels/coast/coast_01.json";
 
         [MenuItem("Ridge Rush/Configurar proyecto (iOS + Android)", priority = 0)]
         public static void SetupAll()

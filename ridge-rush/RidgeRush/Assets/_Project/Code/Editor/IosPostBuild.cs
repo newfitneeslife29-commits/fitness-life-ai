@@ -9,7 +9,7 @@ namespace RidgeRush.EditorTools
     /// <summary>
     /// Ajustes del proyecto de Xcode que Unity no expone:
     /// - CADisableMinimumFrameDurationOnPhone: permite 120 Hz en iPhone con ProMotion.
-    /// - Enlaza CoreHaptics para el plugin de vibración.
+    /// - Enlaza CoreHaptics, GameKit (Game Center) y StoreKit (compras) y crea RidgeRush.entitlements.
     /// - ITSAppUsesNonExemptEncryption = false (solo HTTPS estándar), evita la pregunta de exportación en cada envío.
     /// </summary>
     public static class IosPostBuild
@@ -31,6 +31,14 @@ namespace RidgeRush.EditorTools
             proj.ReadFromFile(projPath);
             string framework = proj.GetUnityFrameworkTargetGuid();
             proj.AddFrameworkToProject(framework, "CoreHaptics.framework", false);
+            proj.AddFrameworkToProject(framework, "GameKit.framework", false);
+            proj.AddFrameworkToProject(framework, "StoreKit.framework", false);
+
+            // Derechos de la app (Game Center). El workflow los aplica al firmar (el archivo se compila sin firmar).
+            var entitlements = new PlistDocument();
+            entitlements.root.SetBoolean("com.apple.developer.game-center", true);
+            entitlements.WriteToFile(Path.Combine(path, "RidgeRush.entitlements"));
+            proj.SetBuildProperty(proj.GetUnityMainTargetGuid(), "CODE_SIGN_ENTITLEMENTS", "RidgeRush.entitlements");
             proj.SetBuildProperty(framework, "SWIFT_VERSION", "5.0");
             proj.WriteToFile(projPath);
         }

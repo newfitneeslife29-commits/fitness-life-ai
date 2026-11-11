@@ -45,8 +45,12 @@ namespace RidgeRush.Simulation
         public int count = 0;
         /// <summary>gap: profundidad del foso.</summary>
         public float depth = 3f;
-        /// <summary>gap: contenido del foso (ground, water, lava). Agua y lava reinician.</summary>
+        /// <summary>gap: contenido del foso (ground, water, lava, void). Agua, lava y vacío reinician.</summary>
         public string pit = "ground";
+        /// <summary>gap: puente sobre el foso ("", "static" o "collapse": se derrumba poco después de pisarlo).</summary>
+        public string bridge = "";
+        /// <summary>gap con bridge = collapse: segundos desde que se pisa hasta que cae.</summary>
+        public float bridgeDelay = 0.7f;
     }
 
     [Serializable]

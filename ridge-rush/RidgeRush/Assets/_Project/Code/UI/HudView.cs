@@ -26,6 +26,8 @@ namespace RidgeRush.Game
         public RectTransform NitroButton { get; private set; }
 
         public event Action RestartRequested;
+        public event Action MenuRequested;
+        public event Action NextRequested;
         public event Action<bool> PauseChanged;
         public event Action SettingsChanged;
 
@@ -35,6 +37,9 @@ namespace RidgeRush.Game
         private Image _progressFill, _nitroFill, _gasImg, _brakeImg, _nitroImg;
         private RectTransform _pausePanel, _finishPanel, _settingsList;
         private Text _finishTime, _finishStars, _finishCoins, _finishBest;
+        private Button _nextButton;
+        private Text _levelName;
+        private RectTransform _safe;
         private float _popupTimer;
         private CanvasGroup _popupGroup;
 
@@ -61,6 +66,7 @@ namespace RidgeRush.Game
 
             var safe = Rect("SafeArea", transform as RectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             safe.gameObject.AddComponent<SafeAreaFitter>();
+            _safe = safe;
 
             // ---- Barra superior ----
             _timer = Label("Timer", safe, "0:00.00", 80, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(600f, 96f));
@@ -85,6 +91,8 @@ namespace RidgeRush.Game
             _popupGroup = _popup.gameObject.AddComponent<CanvasGroup>();
             _popupGroup.alpha = 0f;
             _hint = Label("Hint", safe, Loc.Get("hold_gas"), 42, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.74f), Vector2.zero, new Vector2(1000f, 80f));
+            _levelName = Label("LevelName", safe, "", 52, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(1400f, 80f));
+            _levelName.fontStyle = FontStyle.Bold;
 
             // ---- Controles (zona del pulgar, ≥ 88 pt) ----
             BrakeButton = ControlButton(safe, "Brake", Loc.Get("brake"), new Vector2(0f, 0f), new Vector2(190f, 170f), new Vector2(280f, 260f), out _brakeImg);
@@ -111,6 +119,7 @@ namespace RidgeRush.Game
             _combo.text = r.Combo > 1.01f ? $"{Loc.Get("combo")} ×{r.Combo:0.0}" : "";
             _nitroFill.fillAmount = r.Sim.Params.nitroCapacity > 0f ? r.Sim.Nitro / r.Sim.Params.nitroCapacity : 0f;
             _hint.enabled = r.State == RaceState.Ready;
+            _levelName.enabled = r.State == RaceState.Ready;
             if (r.State == RaceState.Crashed && _popupTimer <= 0f) Popup(Loc.Get("crash"), Ember, 1f);
 
             int nextStars = r.FinalTime <= r.Level.Data.stars.gold ? 3 : r.FinalTime <= r.Level.Data.stars.silver ? 2 : 1;
@@ -150,9 +159,14 @@ namespace RidgeRush.Game
             Popup(text, e.Type == SimEventType.PerfectLanding ? Volt : Gold);
         }
 
-        public void ShowFinish(RaceRules r, float previousBest)
+        public void SetVisible(bool visible) => _safe.gameObject.SetActive(visible);
+
+        public void SetLevelName(string name) => _levelName.text = name;
+
+        public void ShowFinish(RaceRules r, float previousBest, bool hasNext)
         {
             _finishPanel.gameObject.SetActive(true);
+            _nextButton.interactable = hasNext;
             _finishTime.text = Loc.Time(r.FinalTime);
             _finishStars.text = new string('★', r.Stars) + new string('☆', 3 - r.Stars);
             _finishCoins.text = $"● {r.Coins} {Loc.Get("coins")}";
@@ -178,8 +192,9 @@ namespace RidgeRush.Game
             _pausePanel.gameObject.AddComponent<Image>().color = Asphalt;
             Label("Title", _pausePanel, Loc.Get("paused"), 70, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(800f, 100f)).fontStyle = FontStyle.Bold;
             _settingsList = Rect("Settings", _pausePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(1640f, 560f));
-            TextButton(_pausePanel, Loc.Get("resume"), new Vector2(0.5f, 0.12f), new Vector2(380f, 0f), Ember, () => SetPaused(false));
-            TextButton(_pausePanel, Loc.Get("restart"), new Vector2(0.5f, 0.12f), new Vector2(-380f, 0f), Steel, () => { SetPaused(false); RestartRequested?.Invoke(); });
+            TextButton(_pausePanel, Loc.Get("resume"), new Vector2(0.5f, 0.12f), new Vector2(560f, 0f), Ember, () => SetPaused(false));
+            TextButton(_pausePanel, Loc.Get("restart"), new Vector2(0.5f, 0.12f), new Vector2(0f, 0f), Steel, () => { SetPaused(false); RestartRequested?.Invoke(); });
+            TextButton(_pausePanel, Loc.Get("menu"), new Vector2(0.5f, 0.12f), new Vector2(-560f, 0f), Steel, () => { SetPaused(false); MenuRequested?.Invoke(); });
             _pausePanel.gameObject.SetActive(false);
         }
 
@@ -227,8 +242,9 @@ namespace RidgeRush.Game
             _finishBest = Label("Best", _finishPanel, "", 40, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(900f, 60f));
             _finishCoins = Label("Coins", _finishPanel, "", 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.34f), Vector2.zero, new Vector2(900f, 60f));
             _finishCoins.color = Gold;
-            TextButton(_finishPanel, Loc.Get("retry"), new Vector2(0.5f, 0.15f), new Vector2(-380f, 0f), Ember, () => RestartRequested?.Invoke());
-            TextButton(_finishPanel, Loc.Get("next"), new Vector2(0.5f, 0.15f), new Vector2(380f, 0f), Steel, null).interactable = false;
+            TextButton(_finishPanel, Loc.Get("menu"), new Vector2(0.5f, 0.15f), new Vector2(-560f, 0f), Steel, () => MenuRequested?.Invoke());
+            TextButton(_finishPanel, Loc.Get("retry"), new Vector2(0.5f, 0.15f), new Vector2(0f, 0f), Steel, () => RestartRequested?.Invoke());
+            _nextButton = TextButton(_finishPanel, Loc.Get("next"), new Vector2(0.5f, 0.15f), new Vector2(560f, 0f), Ember, () => NextRequested?.Invoke());
             _finishPanel.gameObject.SetActive(false);
         }
 
@@ -288,12 +304,12 @@ namespace RidgeRush.Game
 
         private Button TextButton(RectTransform parent, string text, Vector2 anchor, Vector2 pos, Color color, Action onClick)
         {
-            var rt = Rect("Btn", parent, anchor, anchor, pos, new Vector2(700f, 120f));
+            var rt = Rect("Btn", parent, anchor, anchor, pos, new Vector2(520f, 120f));
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = color;
             var b = rt.gameObject.AddComponent<Button>();
             if (onClick != null) b.onClick.AddListener(() => onClick());
-            Label("Text", rt, text, 50, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 120f)).fontStyle = FontStyle.Bold;
+            Label("Text", rt, text, 46, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 120f)).fontStyle = FontStyle.Bold;
             return b;
         }
 

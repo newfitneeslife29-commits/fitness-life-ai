@@ -9,7 +9,61 @@ namespace RidgeRush.Game
     public static class ProceduralTextures
     {
         private const int Size = 256;
-        private static Texture2D _grain, _grainNormal, _planks, _planksNormal, _softDot;
+        private static Texture2D _grain, _grainNormal, _planks, _planksNormal, _softDot, _windows, _crowd;
+
+        /// <summary>Fachada con ventanas (algunas encendidas): para los edificios de la ciudad (albedo y emisión).</summary>
+        public static Texture2D Windows
+        {
+            get
+            {
+                if (_windows != null) return _windows;
+                const int s = 64;
+                _windows = new Texture2D(s, s, TextureFormat.RGBA32, true) { name = "windows", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear };
+                var px = new Color32[s * s];
+                var rnd = new System.Random(5);
+                for (int cy = 0; cy < 8; cy++)
+                for (int cx = 0; cx < 8; cx++)
+                {
+                    bool lit = rnd.NextDouble() < 0.45;
+                    var c = lit ? (rnd.NextDouble() < 0.7 ? new Color32(255, 214, 150, 255) : new Color32(150, 210, 255, 255)) : new Color32(18, 20, 26, 255);
+                    for (int y = 0; y < 8; y++)
+                    for (int x = 0; x < 8; x++)
+                    {
+                        bool frame = x < 2 || y < 2;
+                        px[(cy * 8 + y) * s + cx * 8 + x] = frame ? new Color32(8, 8, 10, 255) : c;
+                    }
+                }
+                _windows.SetPixels32(px);
+                _windows.Apply(true, true);
+                return _windows;
+            }
+        }
+
+        /// <summary>Público de las gradas: puntos de colores sobre fondo oscuro.</summary>
+        public static Texture2D Crowd
+        {
+            get
+            {
+                if (_crowd != null) return _crowd;
+                const int s = 64;
+                _crowd = new Texture2D(s, s, TextureFormat.RGBA32, true) { name = "crowd", wrapMode = TextureWrapMode.Repeat };
+                var px = new Color32[s * s];
+                var rnd = new System.Random(9);
+                var palette = new[] { new Color32(230, 80, 40, 255), new Color32(40, 200, 240, 255), new Color32(240, 200, 60, 255), new Color32(220, 220, 220, 255), new Color32(60, 60, 70, 255) };
+                for (int i = 0; i < px.Length; i++) px[i] = new Color32(30, 30, 36, 255);
+                for (int cy = 0; cy < 16; cy++)
+                for (int cx = 0; cx < 16; cx++)
+                {
+                    var c = palette[rnd.Next(palette.Length)];
+                    for (int y = 1; y < 4; y++)
+                    for (int x = 1; x < 3; x++)
+                        px[(cy * 4 + y) * s + cx * 4 + x] = c;
+                }
+                _crowd.SetPixels32(px);
+                _crowd.Apply(true, true);
+                return _crowd;
+            }
+        }
 
         public static Texture2D Grain => _grain ??= Albedo("grain", GrainHeight);
         public static Texture2D GrainNormal => _grainNormal ??= Normal("grain_n", GrainHeight, 2.5f);

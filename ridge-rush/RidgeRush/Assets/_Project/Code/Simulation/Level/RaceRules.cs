@@ -72,7 +72,7 @@ namespace RidgeRush.Simulation
         /// <summary>Progreso 0..1 hasta la meta.</summary>
         public float Progress => SimMath.Clamp01((Sim.Chassis.Position.x - Level.Data.startX) / (Level.FinishX - Level.Data.startX));
 
-        private int _simEventsProcessed;
+        private long _simEventsSeen;
         private float _timeSinceTrickGrounded;
         private readonly RaceEvent[] _events = new RaceEvent[32];
         public int EventCount { get; private set; }
@@ -96,7 +96,7 @@ namespace RidgeRush.Simulation
             State = RaceState.Ready;
             RaceTime = BonusTime = PenaltyTime = 0f;
             Coins = 0; Combo = 1f; LastCheckpoint = -1; Crashes = 0; Stars = 0; CrashTimer = 0f;
-            _simEventsProcessed = 0; _timeSinceTrickGrounded = 0f;
+            _simEventsSeen = 0; _timeSinceTrickGrounded = 0f;
             EventCount = 0;
         }
 
@@ -110,7 +110,7 @@ namespace RidgeRush.Simulation
             Combo = 1f;
             State = RaceState.Racing;
             CrashTimer = 0f;
-            _simEventsProcessed = Sim.EventCount;
+            _simEventsSeen = Sim.TotalEvents;
             Push(RaceEventType.Respawned, LastCheckpoint);
         }
 
@@ -197,9 +197,13 @@ namespace RidgeRush.Simulation
 
         private void ProcessSimEvents()
         {
-            for (; _simEventsProcessed < Sim.EventCount; _simEventsProcessed++)
+            // Eventos nuevos = los últimos (TotalEvents - vistos) de la lista (aunque se haya llenado).
+            long unseen = Sim.TotalEvents - _simEventsSeen;
+            int start = (int)Math.Max(0, Sim.EventCount - unseen);
+            _simEventsSeen = Sim.TotalEvents;
+            for (int idx = start; idx < Sim.EventCount; idx++)
             {
-                ref readonly var e = ref Sim.GetEvent(_simEventsProcessed);
+                ref readonly var e = ref Sim.GetEvent(idx);
                 switch (e.Type)
                 {
                     case SimEventType.Crashed:
@@ -268,7 +272,6 @@ namespace RidgeRush.Simulation
         {
             EventCount = 0;
             Sim.ClearEvents();
-            _simEventsProcessed = 0;
         }
     }
 }
