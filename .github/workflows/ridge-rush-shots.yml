@@ -1,0 +1,100 @@
+name: Ridge Rush screenshots
+
+# Compila Ridge Rush para Linux y lo abre en una pantalla virtual con -rrShots: el juego recorre el menú,
+# el garaje y varios niveles con el piloto automático y guarda capturas. Se suben a la rama
+# ridge-rush-shots-<n.º de ejecución> junto con el registro del juego (para ver errores).
+on:
+  workflow_dispatch:
+    inputs:
+      levels:
+        description: Niveles separados por comas (vacío = uno por mundo)
+        required: false
+        default: ""
+
+concurrency:
+  group: ridge-rush-shots
+
+permissions:
+  contents: write
+
+env:
+  UNITY_VERSION: 6000.0.85f2
+  PROJECT_PATH: ridge-rush/RidgeRush
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Liberar espacio en disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune --all --force > /dev/null
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PROJECT_PATH }}/Library
+          key: ridge-rush-library-linux-${{ env.UNITY_VERSION }}-${{ hashFiles('ridge-rush/RidgeRush/Packages/manifest.json', 'ridge-rush/RidgeRush/Assets/**/*.cs') }}
+          restore-keys: |
+            ridge-rush-library-linux-${{ env.UNITY_VERSION }}-
+      - name: Unity — configurar el proyecto
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: StandaloneLinux64
+          buildName: RidgeRush
+          buildsPath: build-setup
+          versioning: None
+          buildMethod: RidgeRush.EditorTools.CiBuild.PrepareProject
+      - name: Unity — compilar para Linux
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: StandaloneLinux64
+          buildName: RidgeRush
+          buildsPath: build
+          versioning: None
+          buildMethod: RidgeRush.EditorTools.CiBuild.BuildLinuxShots
+      - name: Pantalla virtual y OpenGL por software
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglu1-mesa mesa-utils > /dev/null
+      - name: Hacer las capturas
+        env:
+          LEVELS: ${{ github.event.inputs.levels }}
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" build
+          exe=$(find build -name 'RidgeRush.x86_64' -type f | head -1)
+          [ -n "$exe" ] || { echo "::error::No se encontró el ejecutable"; find build -maxdepth 3; exit 1; }
+          chmod +x "$exe"
+          mkdir -p shots
+          extra=""
+          [ -n "$LEVELS" ] && extra="-rrShotLevels $LEVELS"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          timeout 3000 xvfb-run -a -s "-screen 0 1920x1080x24" "$exe" -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 \
+            -force-glcore -rrShots "$PWD/shots" $extra -logFile "$PWD/shots/player.log" || echo "El juego terminó con código $?"
+          ls -la shots
+      - name: Subir las capturas a una rama
+        run: |
+          branch="ridge-rush-shots-${{ github.run_number }}"
+          cp -r shots /tmp/shots
+          git config user.name "ridge-rush-ci"
+          git config user.email "ridge-rush-ci@users.noreply.github.com"
+          git checkout --orphan "$branch"
+          git rm -rf -q . > /dev/null
+          rm -rf ridge-rush .github build build-setup
+          cp /tmp/shots/* .
+          git add -A
+          git commit -q -m "Capturas de Ridge Rush (ejecución ${{ github.run_number }}, ${{ github.sha }})"
+          git push -q origin "$branch"
+          echo "Capturas en la rama $branch"

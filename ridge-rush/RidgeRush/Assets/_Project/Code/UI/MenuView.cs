@@ -181,6 +181,15 @@ namespace RidgeRush.Game
 
         private int _garageIndex = -1;
 
+        /// <summary>Abre el garaje en una moto concreta (capturas automáticas).</summary>
+        public void ShowGarageFor(int index)
+        {
+            Show(true);
+            _garageIndex = Mathf.Clamp(index, 0, BikeCatalog.Bikes.Length - 1);
+            GarageChanged?.Invoke();
+            ShowGarage();
+        }
+
         public void ShowGarage()
         {
             var s = NewScreen();
