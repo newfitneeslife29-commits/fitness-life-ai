@@ -96,7 +96,24 @@ jobs:
           key: ridge-rush-library-ios-${{ env.UNITY_VERSION }}-${{ hashFiles('ridge-rush/RidgeRush/Packages/manifest.json', 'ridge-rush/RidgeRush/Assets/**/*.cs') }}
           restore-keys: |
             ridge-rush-library-ios-${{ env.UNITY_VERSION }}-
-      - uses: game-ci/unity-builder@v4
+      # 1.ª pasada: configura el proyecto y lo guarda (el cambio de Input System necesita reiniciar Unity).
+      - name: Unity — configurar el proyecto
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: iOS
+          buildName: RidgeRush
+          buildsPath: build-setup
+          versioning: None
+          buildMethod: RidgeRush.EditorTools.CiBuild.PrepareProject
+      # 2.ª pasada: Unity arranca ya con la configuración guardada y genera el proyecto de Xcode.
+      - name: Unity — generar el proyecto de Xcode
+        uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}

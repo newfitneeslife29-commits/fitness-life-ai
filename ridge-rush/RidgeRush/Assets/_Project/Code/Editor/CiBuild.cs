@@ -13,8 +13,23 @@ namespace RidgeRush.EditorTools
     /// </summary>
     public static class CiBuild
     {
+        /// <summary>
+        /// Primera pasada en CI: configura el proyecto (URP, materiales, ajustes de jugador, Input System, escena)
+        /// y lo guarda. Unity solo aplica el cambio de sistema de entrada al reiniciarse, por eso la compilación
+        /// se hace en una segunda ejecución de Unity (<see cref="BuildIos"/>).
+        /// </summary>
+        public static void PrepareProject()
+        {
+            ProjectSetup.SetupAll();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Ridge Rush: proyecto configurado y guardado para la compilación.");
+        }
+
         public static void BuildIos()
         {
+#if !ENABLE_INPUT_SYSTEM
+            throw new Exception("El editor arrancó sin el nuevo Input System. Ejecuta antes CiBuild.PrepareProject en otra sesión de Unity.");
+#endif
             string output = Arg("-customBuildPath") ?? "build/iOS";
             string buildNumber = Arg("-rrBuildNumber") ?? "1";
             string version = Arg("-rrVersion") ?? "0.1." + buildNumber;
