@@ -125,9 +125,25 @@ namespace RidgeRush.Game
         // recorre menú, garaje y niveles de cada mundo con el piloto automático y guarda capturas.
         private bool _autoPilot;
 
+        private System.Collections.IEnumerator ShotHeartbeat()
+        {
+            int frames = 0;
+            float t0 = Time.realtimeSinceStartup;
+            while (true)
+            {
+                yield return null;
+                if (++frames % 20 == 0)
+                    Debug.Log($"Ridge Rush: fotograma {frames}, {Time.realtimeSinceStartup - t0:0}s reales, sim {(_rules != null ? _rules.Sim.Time : 0f):0.0}s");
+            }
+        }
+
         private System.Collections.IEnumerator RunShots()
         {
+            QualitySettings.vSyncCount = 0; // la pantalla virtual va a 0 Hz: sin esto se queda esperando
+            Application.targetFrameRate = -1;
             Time.captureFramerate = 20; // cada fotograma avanza 0,05 s aunque el ordenador vaya lento
+            Debug.Log("Ridge Rush: modo capturas iniciado");
+            StartCoroutine(ShotHeartbeat());
             string dir = ShotMode.Directory;
             System.IO.Directory.CreateDirectory(dir);
             int n = 0;

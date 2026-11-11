@@ -88,7 +88,7 @@ jobs:
           extra=""
           [ -n "$LEVELS" ] && extra="-rrShotLevels $LEVELS"
           export LIBGL_ALWAYS_SOFTWARE=1
-          timeout 3300 xvfb-run -a -s "-screen 0 1600x900x24" "$exe" -screen-width 1600 -screen-height 900 -screen-fullscreen 0 \
+          timeout 3300 xvfb-run -a -s "-screen 0 1280x720x24" "$exe" -screen-width 1280 -screen-height 720 -screen-fullscreen 0 \
             -force-glcore -rrShots "$PWD/shots" $extra -logFile "$PWD/shots/player.log" || echo "El juego terminó con código $?"
           ls -la shots
           tail -40 shots/player.log || true
