@@ -67,8 +67,15 @@ jobs:
           buildMethod: RidgeRush.EditorTools.CiBuild.BuildLinuxShots
       - name: Pantalla virtual y OpenGL por software
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglu1-mesa mesa-utils > /dev/null
+          # La imagen del runner suele traer Xvfb; si no, se instala (con reintentos: los espejos fallan a veces).
+          if ! command -v xvfb-run > /dev/null || ! ls /usr/lib/x86_64-linux-gnu/dri/swrast_dri.so > /dev/null 2>&1; then
+            for i in 1 2 3; do
+              sudo apt-get update -qq || true
+              sudo apt-get install -y -qq --no-install-recommends xvfb libgl1-mesa-dri libglu1-mesa > /dev/null && break
+              sleep 20
+            done
+          fi
+          command -v xvfb-run
       - name: Hacer las capturas
         env:
           LEVELS: ${{ github.event.inputs.levels }}
