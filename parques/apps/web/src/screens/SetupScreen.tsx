@@ -5,8 +5,12 @@ import { COLORS_4, COLORS_6 } from '@parques/engine';
 import { AVATARS, BOT_NAMES } from '../lib/avatars';
 import { useApp } from '../stores/appStore';
 import { useGame, type MatchConfig, type SeatConfig } from '../stores/gameStore';
+import { useSettings } from '../stores/settingsStore';
+import { useProfile } from '../stores/profileStore';
+import { TopBar } from '../components/TopBar';
+import { play } from '../audio/audio';
 
-const TITLES = { ai: 'Contra la máquina', local: 'Partida local', teams: 'Parejas 2 vs 2', quick: 'Modo Rápido' } as const;
+const TITLES = { ai: 'Práctica libre', local: 'Partida local', teams: 'Parejas 2 vs 2', quick: 'Modo Rápido', online: 'Online' } as const;
 const COLOR_NAME: Record<Color, string> = { amarillo: 'Amarillo', azul: 'Azul', rojo: 'Rojo', verde: 'Verde', morado: 'Morado', naranja: 'Naranja' };
 
 function sidesFor(count: number): number[] {
@@ -21,10 +25,12 @@ export function SetupScreen() {
   const [count, setCount] = useState(mode === 'teams' ? 4 : mode === 'quick' ? 2 : 4);
   const [kinds, setKinds] = useState<('human' | 'bot')[]>(() => Array.from({ length: 6 }, (_, i) => (i === 0 || (mode === 'local' && i === 1) ? 'human' : 'bot')));
   const [level, setLevel] = useState<AiLevel>('normal');
-  const [soplar, setSoplar] = useState(true);
-  const [triple, setTriple] = useState(true);
-  const [attempts, setAttempts] = useState(3);
-  const [turnSeconds, setTurnSeconds] = useState(20);
+  const defaults = useSettings();
+  const me = useProfile();
+  const [soplar, setSoplar] = useState(defaults.houseRules.soplar);
+  const [triple, setTriple] = useState(defaults.houseRules.triplePairPenalty);
+  const [attempts, setAttempts] = useState(defaults.houseRules.jailAttempts);
+  const [turnSeconds, setTurnSeconds] = useState(defaults.turnSeconds);
 
   const sides = count === 6 ? 6 : 4;
   const colors = sides === 4 ? COLORS_4 : COLORS_6;
@@ -37,13 +43,15 @@ export function SetupScreen() {
     let humanN = 0;
     const seats: SeatConfig[] = seatSides.map((side, k) => {
       const kind = kinds[k]!;
-      const name = kind === 'human' ? (humans > 1 ? `Jugador ${++humanN}` : 'Tú') : names[k % names.length]!;
-      return { name, side, kind, level, avatar: kind === 'human' ? AVATARS[k % AVATARS.length]! : AVATARS[(k + 4) % AVATARS.length]! };
+      const name = kind === 'human' ? (humans > 1 ? `Jugador ${++humanN}` : me.name) : names[k % names.length]!;
+      const avatar = kind === 'human' ? (humans > 1 ? AVATARS[k % AVATARS.length]! : me.avatar) : AVATARS[(k + 4) % AVATARS.length]!;
+      return { name, side, kind, level, avatar };
     });
     const config: MatchConfig = {
       sides,
       seats,
       mode,
+      table: null,
       turnSeconds,
       timeLimitSec: mode === 'quick' ? 300 : 0,
       rules: {
@@ -54,19 +62,14 @@ export function SetupScreen() {
         piecesPerPlayer: mode === 'quick' ? 2 : 4,
       },
     };
+    play('tap');
     start(config);
     go('game');
   };
 
   return (
     <div className="screen setup-screen">
-      <header className="setup-top">
-        <button className="btn3d ghost icon" onClick={() => go('home')} aria-label="Volver">
-          ←
-        </button>
-        <h2>{TITLES[mode]}</h2>
-        <span style={{ width: 44 }} />
-      </header>
+      <TopBar back title={TITLES[mode]} />
 
       <section className="card setup-card">
         <h3>Jugadores</h3>

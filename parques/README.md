@@ -1,18 +1,23 @@
 # Parqués 🎲🇨🇴
 
-Parqués colombiano moderno para el navegador y el celular (PWA).
-
-## Estado
-- **Fase 1 — Motor de reglas:** lista. Incluye todas las reglas, las reglas de la casa, la IA de 3 niveles y las pruebas.
-- **Fase 2 — Juego en el navegador:** lista. Tablero de 4 y 6 jugadores, dados y fichas animados, partida contra la máquina, local, parejas y Modo Rápido, pantalla de victoria y PWA instalable.
+Parqués colombiano moderno para el navegador y el celular (PWA instalable): tablero clásico, contra la máquina,
+local, parejas, Modo Rápido, online con amigos, torneos, tienda de skins, misiones y mucho más.
 
 ## Probar
 ```bash
 cd parques
 npm install
-npm test        # pruebas del motor
-npm run demo    # partida de 4 bots narrada en la consola
-npm run dev -w @parques/web   # abre http://localhost:5173
+npm run dev          # app en http://localhost:5173
+npm run dev:server   # (otra terminal) servidor online para partidas en línea, ranking y torneo
+```
+- Celular en la misma red Wi-Fi: abre `http://<IP-de-tu-PC>:5173`.
+- Todo en un solo puerto (como producción): `npm start` y abre `http://localhost:3001`.
+- `?speed=10` en la URL acelera animaciones y bots.
+
+## Pruebas
+```bash
+npm test         # motor (75), web (18) y servidor (14)
+npm run demo     # partida de 4 bots narrada en la consola
 ```
 
 El contexto completo para desarrollar (reglas, arquitectura y convenciones) está en [CLAUDE.md](./CLAUDE.md).

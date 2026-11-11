@@ -11,6 +11,12 @@ import { boardBox, jailGeom, piecePoint, viewRotation } from '../game/boardLayou
 import { CHAT_PHRASES, REACTIONS } from '../game/phrases';
 import { humanSeat, legalMovesCache, SOPLO_WINDOW_MS, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
+import { useLevel, useProfile } from '../stores/profileStore';
+import { item } from '../meta/catalog';
+import { Background } from '../components/Background';
+import { play } from '../audio/audio';
+import { useSettings } from '../stores/settingsStore';
+import { Toggle } from './SettingsScreen';
 
 const LEVEL_LABEL = { easy: 'Fácil', normal: 'Normal', expert: 'Experto' } as const;
 
@@ -21,6 +27,14 @@ export function GameScreen() {
   const [chatOpen, setChatOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [, tick] = useState(0);
+  const equipped = useProfile((p) => p.equipped);
+  const theme = item(equipped.board).board!;
+  const diceSkin = item(equipped.dice).dice!;
+  const pieceStyle = item(equipped.pieces).pieces!;
+  const effect = item(equipped.effect).effect!;
+  const myFrame = equipped.frame;
+  const settings = useSettings();
+  const myLevel = useLevel().level;
 
   // Reloj para contadores (Modo Rápido y soplo).
   useEffect(() => {
@@ -92,6 +106,8 @@ export function GameScreen() {
         avatar={cfg.avatar}
         active={game.current === i && game.phase !== 'over'}
         isBot={cfg.kind === 'bot'}
+        tag={cfg.kind === 'bot' ? '🤖' : cfg.kind === 'remote' ? '🌐' : `Nv ${myLevel}`}
+        frameId={cfg.kind === 'human' ? myFrame : undefined}
         level={cfg.kind === 'bot' ? LEVEL_LABEL[cfg.level] : undefined}
         place={place >= 0 && (p.finished || game.phase === 'over') ? place + 1 : null}
         crowned={view[i]!.filter((x) => x === home).length}
@@ -134,15 +150,11 @@ export function GameScreen() {
     return `${who}: mueve una ficha`;
   })();
 
-  const speaker = (() => {
-    if (rollerIsHuman) return game.current;
-    return game.players.findIndex((_, i) => humanSeat(config, game, i));
-  })();
-
   return (
     <div className="screen game-screen">
+      <Background tint={theme.page} />
       <header className="game-top">
-        <button className="btn3d ghost icon" onClick={() => { setMenuOpen(true); s.setPaused(true); }} aria-label="Menú">
+        <button className="btn3d ghost icon" onClick={() => { setMenuOpen(true); s.setPaused(true); play('tap'); }} aria-label="Menú">
           ☰
         </button>
         <div className="game-status" style={{ ['--pc' as string]: `var(--${current.color})` }}>
@@ -172,9 +184,23 @@ export function GameScreen() {
             fx={s.fx}
             onPiece={onPiece}
             onTarget={(m) => s.humanMove(m)}
+            theme={theme}
+            pieceStyle={pieceStyle}
+            effect={effect}
           />
         </div>
         <Banner banner={s.banner} />
+        <AnimatePresence>
+          {exitMoves.length > 0 ? (
+            <motion.div className="exit-choices" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
+              {exitMoves.map((m) => (
+                <motion.button key={m.count} className="btn3d green small" whileTap={{ scale: 0.9 }} onClick={() => s.humanMove(m)}>
+                  🔓 Sacar {m.count > 2 ? `todas (${m.count})` : m.count}
+                </motion.button>
+              ))}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       <div className="seat-row bottom">{bottomRow.map((p, k) => renderSeat(p.i, alignFor(k, bottomRow.length, p.x)))}</div>
@@ -188,6 +214,7 @@ export function GameScreen() {
           canRoll={humanTurn && game.phase === 'roll'}
           tint={`var(--${current.color})`}
           onRoll={s.humanRoll}
+          skin={diceSkin}
         />
         <div className="side-actions">
           {matchLeft !== null ? (
@@ -198,17 +225,6 @@ export function GameScreen() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {exitMoves.length > 0 ? (
-          <motion.div className="exit-choices" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
-            {exitMoves.map((m) => (
-              <motion.button key={m.count} className="btn3d green small" whileTap={{ scale: 0.9 }} onClick={() => s.humanMove(m)}>
-                🔓 Sacar {m.count > 2 ? `todas (${m.count})` : m.count}
-              </motion.button>
-            ))}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       <AnimatePresence>
         {soplo && humanCanSoplar ? (
@@ -234,14 +250,14 @@ export function GameScreen() {
           <motion.div className="chat-panel card" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}>
             <div className="chat-reactions">
               {REACTIONS.map((r) => (
-                <button key={r} onClick={() => { if (speaker >= 0) s.say(speaker, r); setChatOpen(false); }}>
+                <button key={r} onClick={() => { s.chat(r); setChatOpen(false); }}>
                   {r}
                 </button>
               ))}
             </div>
             <div className="chat-phrases">
               {CHAT_PHRASES.map((p) => (
-                <button key={p} onClick={() => { if (speaker >= 0) s.say(speaker, p); setChatOpen(false); }}>
+                <button key={p} onClick={() => { s.chat(p); setChatOpen(false); }}>
                   {p}
                 </button>
               ))}
@@ -254,12 +270,15 @@ export function GameScreen() {
         {menuOpen ? (
           <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="modal card" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
-              <h2>Pausa</h2>
+              <h2>{s.online ? 'Menú' : 'Pausa'}</h2>
               <p className="modal-text">Reglas de esta mesa: {describeRules(game.rules)}</p>
+              <Toggle label="🔈 Sonido" value={settings.sound} onChange={(v) => settings.set({ sound: v })} />
+              <Toggle label="🎵 Música" value={settings.music} onChange={(v) => settings.set({ music: v })} />
+              <Toggle label="📳 Vibración" value={settings.vibration} onChange={(v) => settings.set({ vibration: v })} />
               <button className="btn3d green" onClick={() => { setMenuOpen(false); s.setPaused(false); }}>
                 Seguir jugando
               </button>
-              <button className="btn3d red" onClick={() => { setMenuOpen(false); s.quit(); go('home'); }}>
+              <button className="btn3d red" onClick={() => { setMenuOpen(false); s.quit(); go('lobby'); }}>
                 Salir de la partida
               </button>
             </motion.div>

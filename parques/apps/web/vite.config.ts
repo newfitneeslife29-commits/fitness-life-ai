@@ -37,5 +37,10 @@ export default defineConfig({
       },
     }),
   ],
-  server: { port: 5173 },
+  server: {
+    port: 5173,
+    // En desarrollo el cliente habla con el servidor online por el mismo puerto.
+    proxy: { '/socket.io': { target: 'http://localhost:3001', ws: true } },
+  },
+  preview: { proxy: { '/socket.io': { target: 'http://localhost:3001', ws: true } } },
 });

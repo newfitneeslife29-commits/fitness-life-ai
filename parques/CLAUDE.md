@@ -19,13 +19,13 @@ Rama de trabajo: `claude/parques-colombiano-plan-y4l8bo`.
 ## Comandos (desde `parques/`)
 ```bash
 npm install
-npm test            # todas las pruebas
+npm test            # todas las pruebas (motor, web y servidor)
 npm run typecheck
+npm run dev         # app web en http://localhost:5173 (?speed=10 acelera animaciones y bots)
+npm run dev:server  # servidor online en :3001 (Vite le pasa /socket.io por proxy)
+npm start           # compila la web y la sirve junto al servidor en http://localhost:3001
 npm run demo        # partida de 4 bots narrada en consola (npm run demo -- <semilla>)
-npm run dev -w @parques/web      # app web en http://localhost:5173 (?speed=10 acelera animaciones y bots)
-npm run build -w @parques/web    # build de producción + PWA (apps/web/dist)
-npm run icons -w @parques/web    # regenera los íconos PNG de la PWA desde SVG (usa Playwright)
-npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
+npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.svg (Playwright)
 ```
 
 ## Arquitectura del motor
@@ -54,13 +54,34 @@ npm run bench -w @parques/engine   # Experto vs Normal, velocidad de la IA
   (fila 4 = SEGURO). Entre dos brazos hay una curva de 6 casillas (offsets 6..11) alrededor de la cárcel (esquina redondeada).
   Cielo con nubes en el centro. Orden de colores: amarillo → rojo → verde → azul (sentido contrario a las agujas del reloj);
   vista por defecto: azul arriba, amarillo izquierda, rojo abajo, verde derecha. Probado en `boardLayout.test.ts`.
-- `src/stores/gameStore.ts` (Zustand): `game` = verdad del motor; `view` = posiciones dibujadas que se actualizan paso a paso
-  reproduciendo los eventos (saltos casilla por casilla, explosión de estrellas, corona, cartel de tres pares, soplo).
-  También maneja bots (`autoAction`), temporizador de turno (si vence, la IA juega por el humano), ventana de soplo (4,5 s)
-  y límite de tiempo del Modo Rápido (`TIME_UP`). `?speed=N` en la URL acelera todo (útil para pruebas).
-- Pantallas en `src/screens` (Home, Setup, Game, Victory) con navegación simple en `stores/appStore.ts`.
-- El tablero rota (`viewRotation`) para que la cárcel del primer humano quede abajo a la izquierda; los asientos se ubican según su cárcel.
-- Gráficos 100 % SVG/CSS (tablero, ícono y logo). Fuentes Baloo 2 + Nunito.
+- `src/stores/gameStore.ts`: `game` = verdad; `view` = posiciones dibujadas que se animan reproduciendo los eventos.
+  En local maneja bots, temporizador de turno (si vence, la IA juega), ventana de soplo (4,5 s) y `TIME_UP` del Modo Rápido.
+  En online (`startOnline`/`receive`) solo anima lo que manda el servidor. `finishMatch()` aplica premios al perfil una vez.
+- `src/stores/profileStore.ts` (persistido en localStorage): monedas, gemas, XP/nivel, estadísticas, logros, objetos de la
+  tienda y equipados, recompensa diaria + ruleta, misiones diarias/semanales, amigos. `settingsStore.ts`: sonido, música,
+  vibración, idioma (es/en), tema claro/oscuro, reglas de la casa por defecto, URL del servidor.
+- `src/meta/`: lógica pura y probada (`meta.test.ts`): `economy` (niveles, mesas Barrio/Ciudad/Capital/Leyenda, premios,
+  racha diaria, ruleta), `missions`, `achievements`, `catalog` (skins de tablero, dados, fichas, marcos, efectos; algunas de
+  temporada), `seasons` (Carnaval 15 ene–15 mar, Feria de las Flores 15 jul–15 sep, Navidad 1 nov–10 ene).
+- `src/audio/`: efectos y música tropical **sintetizados** con OfflineAudioContext → WAV → Howler.js (sin archivos de audio).
+- `src/lib/online.ts`: cliente Socket.IO (una sola conexión reutilizada, reconexión automática con `resume`).
+- Pantallas en `src/screens`: Splash, Lobby, Tables (mesas con apuesta), Setup (práctica/local/parejas/rápido), Game, Victory,
+  Profile, Shop, Events (misiones + temporada), Ranking, Settings, Friends, Online (rápida y mesa privada), Tournament.
+  Navegación en `stores/appStore.ts`; efectos globales (monedas volando, avisos) en `stores/fxStore.ts` + `components/Overlays`.
+- Estilo en `styles/global.css`, `screens.css` y `ui.css` (fondo animado, botones 3D con brillo, vidrio, modo claro).
+- Solo en desarrollo: `window.__parques` expone los stores para depurar.
+
+## Servidor online (`apps/server`)
+- `src/room.ts`: una mesa. **Autoridad**: tira los dados con su semilla (los clientes reciben `rng: 0`), ignora dados del
+  cliente, valida turno y tipo de acción (`ROLL`/`MOVE`/`SOPLAR`; nunca `DISMISS_SOPLO`/`TIME_UP`), mueve bots, temporizador
+  de turno (20 s → la IA juega), ventana de soplo, desconexión con 30 s de gracia y luego la IA lo reemplaza; abandono = IA.
+- `src/server.ts`: Socket.IO + emparejamiento (4 por mesa o se completa con bots a los 10 s), mesas privadas con código de
+  5 letras (el anfitrión empieza; sillas vacías = bots), reconexión (`resume`), chat, ranking y torneo.
+  También sirve `apps/web/dist` para jugar desde un solo puerto.
+- `src/store.ts`: persistencia en JSON (`apps/server/data/db.json`, ignorado por git): trofeos (rating), victorias,
+  torneo semanal por semana ISO (1º 10 pts, 2º 6, 3º 3, 4º 1) y premios top 3 reclamables la semana siguiente.
+  Se puede cambiar por Supabase implementando la misma clase.
+- Protocolo compartido en `packages/engine/src/net.ts`. Pruebas: `room.test.ts`, `store.test.ts`, `server.test.ts` (Socket.IO real).
 
 ## Reglas implementadas
 1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores en orden de juego: amarillo, rojo, verde, azul (+ naranja y morado en 6).
@@ -94,7 +115,12 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 ## Fases
 1. ✅ Motor de reglas + pruebas unitarias + IA + simulaciones.
 2. ✅ Tablero SVG (4 y 6), dados, fichas, animaciones; partida local, vs IA, parejas y Rápido; victoria; PWA básica.
-3. Lobby, perfil, ajustes, reglas de la casa, sonidos, guardado local.
-4. Monedas, tienda, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
-5. Online: Node + Socket.IO, mesas privadas, emparejamiento, reconexión, bot que reemplaza al que abandona.
-6. Torneos, ranking (global, país, amigos) y temporadas (Feria de las Flores, Carnaval de Barranquilla, Navidad).
+3. ✅ Carga animada, lobby, perfil, ajustes, reglas de la casa, sonidos y música, modo claro/oscuro, guardado local.
+4. ✅ Monedas y gemas, mesas con apuesta, tienda de skins, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
+5. ✅ Online: Node + Socket.IO, partida rápida, mesas privadas, reconexión, la IA reemplaza a quien abandona.
+6. ✅ Torneo semanal con tabla, ranking (global, país, amigos) y temporadas con skins.
+
+## Pendiente / ideas
+- Cuentas en la nube (Supabase) para no depender del dispositivo; hoy el perfil vive en localStorage y el servidor usa JSON.
+- Traducción al inglés completa (hoy: menús principales). Las frases del chat quedan en colombiano a propósito.
+- Online solo en tablero de 4 (6 jugadores es local/IA).

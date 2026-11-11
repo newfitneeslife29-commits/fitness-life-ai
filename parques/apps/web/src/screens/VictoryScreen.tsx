@@ -1,14 +1,62 @@
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
+import { Avatar } from '../components/Avatar';
+import { Background } from '../components/Background';
+import { CoinIcon, CurrencyPill } from '../components/Counter';
 import { humanSeat, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
-
-const COINS = [150, 60, 20, 0, 0, 0];
-const XP = [60, 40, 25, 15, 10, 10];
+import { useLevel, useProfile } from '../stores/profileStore';
+import { centerOf, useFx } from '../stores/fxStore';
+import { levelFromXp } from '../meta/economy';
+import { play } from '../audio/audio';
+import { useT } from '../lib/i18n';
 
 export function VictoryScreen() {
-  const { game, config, rematch, quit } = useGame();
+  const { game, config, rematch, quit, finishMatch, outcome, online } = useGame();
   const go = useApp((a) => a.go);
+  const profile = useProfile();
+  const lvl = useLevel();
+  const fx = useFx();
+  const t = useT();
+  const rewardsRef = useRef<HTMLDivElement>(null);
+  const [levelUp, setLevelUp] = useState<number | null>(null);
+  const [xpShown, setXpShown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!game || !config) return;
+    const before = profile.xp;
+    const res = outcome ?? finishMatch();
+    const me = game.players.findIndex((_, i) => humanSeat(config, game, i));
+    const won = me >= 0 && (game.rules.teams ? game.players[game.ranking[0]!]!.team === game.players[me]!.team : game.ranking[0] === me);
+    play(won || me < 0 ? 'win' : 'lose');
+    if (!res || outcome) return;
+    setXpShown(before);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    timers.push(
+      setTimeout(() => {
+        const from = centerOf(rewardsRef.current);
+        if (res.coins) {
+          fx.fly('coin', from, Math.min(14, 4 + Math.round(res.coins / 60)));
+          play('coin');
+        }
+        setXpShown(before + res.xp);
+      }, 1300),
+    );
+    if (res.levelAfter > res.levelBefore) {
+      timers.push(
+        setTimeout(() => {
+          setLevelUp(res.levelAfter);
+          play('levelup');
+        }, 2600),
+      );
+    }
+    res.achievements.forEach((a, i) => timers.push(setTimeout(() => fx.toast({ icon: a.badge, title: `¡Logro: ${a.name}!`, sub: `${a.desc} · +${a.gems} 💎` }), 2000 + i * 900)));
+    res.missions.forEach((m, i) => timers.push(setTimeout(() => fx.toast({ icon: '🎯', title: 'Misión completada', sub: `${m.text} · reclámala en Eventos` }), 3000 + i * 900)));
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!game || !config) return null;
 
   const ranking = game.ranking;
@@ -18,13 +66,20 @@ export function VictoryScreen() {
   const myPlace = me >= 0 ? ranking.indexOf(me) : -1;
   const won = game.rules.teams && me >= 0 ? game.players[ranking[0]!]!.team === game.players[me]!.team : myPlace === 0;
   const avatar = (i: number) => config.seats.find((s) => s.side === game.players[i]!.side)!.avatar;
+  const xpLvl = levelFromXp(xpShown ?? profile.xp);
 
   return (
     <div className="screen victory-screen">
-      <Confetti />
+      <Background />
+      {won || me < 0 ? <Confetti /> : null}
+      <div className="victory-pills">
+        <CurrencyPill kind="coin" value={profile.coins} />
+        <CurrencyPill kind="gem" value={profile.gems} />
+      </div>
       <motion.h1 className="victory-title" initial={{ scale: 0.3, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 12 }}>
         {me < 0 ? '¡Partida terminada!' : won ? '¡Ganaste, parce! 🎉' : myPlace >= 0 ? `Quedaste ${myPlace + 1}º` : '¡Buena partida!'}
       </motion.h1>
+      {me >= 0 && !won ? <p className="victory-sub">¡La próxima es tuya! Pilas con los soplos 😉</p> : null}
 
       <div className="podium">
         {podium.map((i) => {
@@ -33,13 +88,11 @@ export function VictoryScreen() {
           return (
             <motion.div key={i} className="podium-col" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 + (2 - place) * 0.25 }}>
               {place === 0 ? (
-                <motion.div className="podium-crown" animate={{ y: [0, -6, 0] }} transition={{ duration: 1.4, repeat: Infinity }}>
+                <motion.div className="podium-crown" animate={{ y: [0, -6, 0], rotate: [-8, 8, -8] }} transition={{ duration: 1.4, repeat: Infinity }}>
                   👑
                 </motion.div>
               ) : null}
-              <div className="podium-avatar" style={{ ['--pc' as string]: `var(--${p.color})` }}>
-                {avatar(i)}
-              </div>
+              <Avatar emoji={avatar(i)} size={place === 0 ? 72 : 60} color={`var(--${p.color})`} frameId={i === me ? profile.equipped.frame : undefined} />
               <div className="podium-name">{p.name}</div>
               <div className="podium-block" style={{ height: heights[place], ['--pc' as string]: `var(--${p.color})` }}>
                 {place + 1}º
@@ -49,51 +102,86 @@ export function VictoryScreen() {
         })}
       </div>
 
-      {myPlace >= 0 ? (
-        <motion.div className="rewards card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1 }}>
+      {outcome ? (
+        <motion.div ref={rewardsRef} className="rewards card glossy" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
           <div className="reward">
-            <span className="reward-icon">🪙</span>
-            <span className="reward-val">+{COINS[myPlace]}</span>
+            <span className="reward-icon"><CoinIcon size={30} /></span>
+            <span className="reward-val">+{outcome.coins + outcome.levelCoins}</span>
             <span className="reward-lbl">monedas</span>
           </div>
-          <div className="reward">
-            <span className="reward-icon">⭐</span>
-            <span className="reward-val">+{XP[myPlace]! + game.players[me]!.stats.captures * 5}</span>
-            <span className="reward-lbl">XP</span>
+          <div className="reward grow">
+            <span className="reward-lbl">Nivel {xpLvl.level}</span>
+            <div className="xpbar big">
+              <motion.div className="xpbar-fill" initial={false} animate={{ width: `${(xpLvl.into / xpLvl.need) * 100}%` }} transition={{ duration: 1 }} />
+            </div>
+            <span className="reward-val small">+{outcome.xp} XP</span>
           </div>
           <div className="reward">
             <span className="reward-icon">💥</span>
-            <span className="reward-val">{game.players[me]!.stats.captures}</span>
+            <span className="reward-val">{me >= 0 ? game.players[me]!.stats.captures : 0}</span>
             <span className="reward-lbl">capturas</span>
           </div>
         </motion.div>
-      ) : null}
+      ) : (
+        <div ref={rewardsRef} className="rule-note">{me < 0 ? 'Partida entre máquinas: sin premios.' : config.mode === 'local' ? 'Partida local de varios jugadores: sin premios individuales.' : ''}</div>
+      )}
 
-      <div className="results card">
+      <div className="results card glossy">
         {ranking.map((i, k) => {
           const p = game.players[i]!;
           return (
-            <div key={i} className="result-line" style={{ ['--pc' as string]: `var(--${p.color})` }}>
+            <div key={i} className={`result-line ${i === me ? 'me' : ''}`} style={{ ['--pc' as string]: `var(--${p.color})` }}>
               <span className="result-place">{k + 1}º</span>
               <span className="seat-swatch" />
               <span className="result-name">{p.name}</span>
               <span className="result-stat">💥 {p.stats.captures}</span>
               <span className="result-stat">🌬️ {p.stats.soplosHechos}</span>
-              <span className="result-stat">🎲 {p.stats.pairs} pares</span>
+              <span className="result-stat">🎲 {p.stats.pairs}</span>
             </div>
           );
         })}
       </div>
 
       <div className="victory-actions">
-        <motion.button className="btn3d green" whileTap={{ scale: 0.93 }} onClick={() => { rematch(); go('game'); }}>
-          🔁 Revancha
-        </motion.button>
-        <motion.button className="btn3d ghost" whileTap={{ scale: 0.93 }} onClick={() => { quit(); go('home'); }}>
-          Menú
+        {!online ? (
+          <motion.button
+            className="btn3d green shine"
+            whileTap={{ scale: 0.93 }}
+            onClick={() => {
+              if (config.table) return go('tables');
+              rematch();
+              go('game');
+            }}
+          >
+            🔁 {t('Revancha')}
+          </motion.button>
+        ) : (
+          <motion.button className="btn3d green shine" whileTap={{ scale: 0.93 }} onClick={() => { quit(); go('online'); }}>
+            🌐 Otra online
+          </motion.button>
+        )}
+        <motion.button className="btn3d ghost" whileTap={{ scale: 0.93 }} onClick={() => { quit(); go('lobby'); }}>
+          🏠 {t('Menú')}
         </motion.button>
       </div>
-      <p className="rule-note">Las monedas y la XP se guardarán en tu perfil a partir de la fase 4.</p>
+
+      <AnimatePresence>
+        {levelUp ? (
+          <motion.div className="levelup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLevelUp(null)}>
+            <motion.div className="levelup-card" initial={{ scale: 0.2, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 12 }}>
+              <div className="lu-rays" />
+              <span className="lu-star">⭐</span>
+              <h2>¡Subiste de nivel!</h2>
+              <div className="lu-level">{levelUp}</div>
+              <p>
+                +{outcome?.levelCoins} <CoinIcon size={16} /> · +{outcome?.levelGems} 💎
+              </p>
+              <small>Toca para seguir</small>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+      <span hidden>{lvl.level}</span>
     </div>
   );
 }

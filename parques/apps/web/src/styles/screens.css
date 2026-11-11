@@ -90,7 +90,8 @@
 .pc-dot.on { background: var(--gold); border-color: var(--gold-dark); }
 .pc-dot.last { border-color: var(--rojo); }
 
-.exit-choices { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-bottom) + 112px); display: flex; gap: 10px; z-index: 30; }
+.exit-choices { position: absolute; left: 0; right: 0; bottom: 7%; display: flex; justify-content: center; gap: 10px; z-index: 30; pointer-events: none; }
+.exit-choices > * { pointer-events: auto; box-shadow: 0 6px 0 var(--c-dark), 0 0 24px rgba(52, 215, 107, 0.6); }
 .exit-choices .btn3d { white-space: nowrap; }
 
 .soplar-btn { position: absolute; right: 14px; bottom: calc(var(--safe-bottom) + 120px); z-index: 40; border: 0; border-radius: 22px; padding: 12px 18px 10px; font-family: var(--font-title); font-weight: 800; font-size: 1.35rem; color: #fff; background: linear-gradient(180deg, #63b3ff, #1f6fe0); box-shadow: 0 6px 0 #0f3f8f, 0 0 30px rgba(99, 179, 255, 0.8); cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }

@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
+import { Avatar } from '../components/Avatar';
 
 interface Props {
   player: PlayerState;
   avatar: string;
   active: boolean;
   isBot: boolean;
+  /** Etiqueta bajo el avatar (🤖, 🌐 o nivel). */
+  tag: string;
+  frameId?: string;
   level?: string;
   place: number | null;
   crowned: number;
@@ -20,7 +24,7 @@ interface Props {
 
 const RING = 2 * Math.PI * 30;
 
-export function PlayerSeat({ player, avatar, active, isBot, level, place, crowned, deadline, totalMs, bubble, align, team }: Props) {
+export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team }: Props) {
   const color = `var(--${player.color})`;
   return (
     <div className={`seat ${active ? 'active' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
@@ -29,8 +33,10 @@ export function PlayerSeat({ player, avatar, active, isBot, level, place, crowne
           <circle cx={34} cy={34} r={30} fill="none" stroke="rgba(255,255,255,.12)" strokeWidth={5} />
           {active && deadline ? <TimerRing key={deadline} deadline={deadline} totalMs={totalMs} /> : null}
         </svg>
-        <div className="seat-face">{avatar}</div>
-        <span className="seat-level">{isBot ? '🤖' : 'Nv 1'}</span>
+        <div className="seat-face-wrap">
+          <Avatar emoji={avatar} frameId={frameId} size={46} color={color} />
+        </div>
+        <span className="seat-level">{tag}</span>
         {place ? <span className="seat-place">{place}º</span> : null}
       </div>
       <div className="seat-info">

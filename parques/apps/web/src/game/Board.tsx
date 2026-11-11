@@ -22,6 +22,7 @@ import {
 import { Piece } from './Piece';
 import { FxLayer } from './Effects';
 import type { Fx } from '../stores/gameStore';
+import type { BoardTheme, EffectStyle, PieceStyle } from '../meta/catalog';
 
 interface Props {
   game: GameState;
@@ -33,12 +34,15 @@ interface Props {
   fx: Fx[];
   onPiece: (ref: PieceRef) => void;
   onTarget: (move: Move) => void;
+  theme: BoardTheme;
+  pieceStyle: PieceStyle;
+  effect: EffectStyle;
 }
 
 const c = (color: Color) => `var(--${color})`;
 const cd = (color: Color) => `var(--${color}-dark)`;
 const tint = (color: Color, pct: number) => `color-mix(in srgb, ${c(color)} ${pct}%, white)`;
-const LINE = '#13254f';
+const LINE = 'var(--board-line)';
 
 function Label({ cell, text, font }: { cell: Cell; text: string; font: number }) {
   return (
@@ -74,7 +78,7 @@ function SolidCell({ cell, color }: { cell: Cell; color: Color }) {
 }
 
 /** Capa estática del tablero (memoizada: no cambia durante la partida). */
-const BoardBase = memo(function BoardBase({ sides, active }: { sides: 4 | 6; active: boolean[] }) {
+const BoardBase = memo(function BoardBase({ sides, active, theme }: { sides: 4 | 6; active: boolean[]; theme: BoardTheme }) {
   const colors = sides === 4 ? COLORS_4 : COLORS_6;
   const len = trackLength(sides);
   const { font } = params(sides);
@@ -83,18 +87,13 @@ const BoardBase = memo(function BoardBase({ sides, active }: { sides: 4 | 6; act
   return (
     <g>
       {/* Marco */}
-      <polygon points={outlinePoints(sides, 16)} fill="#0d2f80" stroke="#071a4d" strokeWidth={10} strokeLinejoin="round" />
-      <polygon points={outlinePoints(sides, 2)} fill="url(#skyBg)" stroke="#0a2466" strokeWidth={4} strokeLinejoin="round" />
+      <polygon points={outlinePoints(sides, 16)} fill={theme.frame} stroke={theme.frameDark} strokeWidth={10} strokeLinejoin="round" />
+      <polygon points={outlinePoints(sides, 2)} fill="url(#skyBg)" stroke={theme.frameDark} strokeWidth={4} strokeLinejoin="round" />
 
       {/* Cielo */}
-      <circle r={sky + 10} fill="#0d2f80" opacity={0.25} />
+      <circle r={sky + 10} fill={theme.frameDark} opacity={0.25} />
       <circle r={sky} fill="url(#skyCircle)" stroke="#fff" strokeWidth={6} />
-      <g pointerEvents="none">
-        <Cloud x={-sky * 0.45} y={-sky * 0.5} s={sky / 120} />
-        <Cloud x={sky * 0.35} y={-sky * 0.25} s={sky / 140} />
-        <Cloud x={-sky * 0.3} y={sky * 0.2} s={sky / 110} />
-        <Cloud x={sky * 0.4} y={sky * 0.55} s={sky / 150} />
-      </g>
+      <Deco kind={theme.deco} sky={sky} />
 
       {/* Cárceles */}
       {colors.map((color, side) => {
@@ -147,7 +146,7 @@ const BoardBase = memo(function BoardBase({ sides, active }: { sides: 4 | 6; act
             </g>
           );
         }
-        return <polygon key={`sq-${sq}`} points={cell.points} fill={tint(color, 16)} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />;
+        return <polygon key={`sq-${sq}`} points={cell.points} fill={tint(color, theme.tint)} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />;
       })}
 
       {/* Pasillos y llegada */}
@@ -165,6 +164,30 @@ const BoardBase = memo(function BoardBase({ sides, active }: { sides: 4 | 6; act
   );
 });
 
+/** Decoración del cielo según el tablero. */
+function Deco({ kind, sky }: { kind: BoardTheme['deco']; sky: number }) {
+  const spots: [number, number, number][] = [
+    [-0.45, -0.5, 120], [0.35, -0.25, 140], [-0.3, 0.2, 110], [0.4, 0.55, 150], [-0.05, -0.05, 170],
+  ];
+  if (kind === 'clouds') {
+    return (
+      <g pointerEvents="none">
+        {spots.slice(0, 4).map(([x, y, k], i) => <Cloud key={i} x={sky * x} y={sky * y} s={sky / k} />)}
+      </g>
+    );
+  }
+  const glyph = { flowers: '🌸', snow: '❄️', coffee: '☕', confetti: '🎉', stars: '⭐' }[kind];
+  return (
+    <g pointerEvents="none">
+      {spots.map(([x, y, k], i) => (
+        <text key={i} x={sky * x} y={sky * y} fontSize={(sky / k) * 34} textAnchor="middle" dominantBaseline="central" opacity={0.9}>
+          {glyph}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} opacity={0.95}>
@@ -177,17 +200,17 @@ function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
   );
 }
 
-export function BoardDefs() {
+export function BoardDefs({ theme }: { theme: BoardTheme }) {
   return (
     <defs>
       <radialGradient id="skyBg" cx="50%" cy="50%" r="60%">
-        <stop offset="0%" stopColor="#bfe6ff" />
-        <stop offset="60%" stopColor="#5fb4f2" />
-        <stop offset="100%" stopColor="#2f86e0" />
+        <stop offset="0%" stopColor={theme.sky[0]} />
+        <stop offset="60%" stopColor={theme.sky[1]} />
+        <stop offset="100%" stopColor={theme.sky[2]} />
       </radialGradient>
       <radialGradient id="skyCircle" cx="45%" cy="35%" r="70%">
-        <stop offset="0%" stopColor="#8fd3ff" />
-        <stop offset="100%" stopColor="#1e88e5" />
+        <stop offset="0%" stopColor={theme.circle[0]} />
+        <stop offset="100%" stopColor={theme.circle[1]} />
       </radialGradient>
       <linearGradient id="cellGloss" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="rgba(255,255,255,.35)" />
@@ -208,7 +231,7 @@ export function BoardDefs() {
   );
 }
 
-export function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget }: Props) {
+export function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget, theme, pieceStyle, effect }: Props) {
   const sides = game.sides;
   const box = boardBox(sides);
   const rot = viewRotation(sides, viewSide);
@@ -247,10 +270,10 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
   }, [view, game.players, sides]);
 
   return (
-    <svg viewBox={`${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2}`} className="board-svg" role="img" aria-label="Tablero de parqués">
-      <BoardDefs />
+    <svg viewBox={`${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2}`} className="board-svg" role="img" aria-label="Tablero de parqués" style={{ ['--board-line' as string]: theme.line }}>
+      <BoardDefs theme={theme} />
       <g transform={`rotate(${rot})`}>
-        <BoardBase sides={sides} active={activeSides} />
+        <BoardBase sides={sides} active={activeSides} theme={theme} />
 
         {targets.map((t, i) => (
           <g key={`t-${i}`} onClick={() => onTarget(t.move)} style={{ cursor: 'pointer' }} data-target={t.label}>
@@ -290,12 +313,13 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
                 movable={movable.has(key)}
                 selected={!!selected && selected.owner === p.ref.owner && selected.index === p.ref.index}
                 crowned={p.pos === homeFor(sides)}
+                style={pieceStyle}
                 onClick={() => onPiece(p.ref)}
               />
             );
           })}
 
-        <FxLayer fx={fx} rot={rot} />
+        <FxLayer fx={fx} rot={rot} effect={effect} />
       </g>
     </svg>
   );

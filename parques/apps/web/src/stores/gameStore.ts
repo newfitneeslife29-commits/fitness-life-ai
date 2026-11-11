@@ -1,9 +1,10 @@
 /**
  * Store de la partida (Zustand).
- *  - `game` es la verdad (estado del motor).
+ *  - `game` es la verdad (estado del motor; en online, la copia que manda el servidor).
  *  - `view` son las posiciones que se DIBUJAN; se actualizan paso a paso
  *    mientras se reproducen los eventos para animar.
- *  - También maneja bots, temporizador de turno, ventana de soplo y efectos.
+ *  - En local maneja bots, temporizador de turno y ventana de soplo.
+ *    En online todo eso lo hace el servidor (autoridad) y aquí solo se anima.
  */
 import { create } from 'zustand';
 import {
@@ -15,14 +16,17 @@ import {
   shouldSoplar,
   squareOf,
 } from '@parques/engine';
-import type { Action, AiLevel, GameEvent, GameState, HouseRules, Move, PieceRef } from '@parques/engine';
+import type { Action, AiLevel, GameEvent, GameState, HouseRules, Move, PieceRef, UpdateMsg } from '@parques/engine';
 import { piecePoint, trackCell, type Pt } from '../game/boardLayout';
 import { BOT_LINES, pick } from '../game/phrases';
+import { play, vibrate } from '../audio/audio';
+import type { TableTier, MatchSummary } from '../meta/economy';
+import { useProfile, type MatchOutcome } from './profileStore';
 
 export interface SeatConfig {
   name: string;
   side: number;
-  kind: 'human' | 'bot';
+  kind: 'human' | 'bot' | 'remote';
   level: AiLevel;
   avatar: string;
 }
@@ -35,7 +39,15 @@ export interface MatchConfig {
   turnSeconds: number;
   /** Límite de la partida en segundos (Modo Rápido), 0 = sin límite. */
   timeLimitSec: number;
-  mode: 'ai' | 'local' | 'teams' | 'quick';
+  mode: 'ai' | 'local' | 'teams' | 'quick' | 'online';
+  table: TableTier['id'] | null;
+}
+
+/** Conexión con el servidor durante una partida online. */
+export interface OnlineLink {
+  sendAction: (a: Action) => void;
+  sendChat: (text: string) => void;
+  leave: () => void;
 }
 
 export type FxKind = 'burst' | 'crown' | 'jail' | 'exit';
@@ -97,8 +109,14 @@ interface GameStore {
   viewSide: number;
   speed: number;
   paused: boolean;
+  online: OnlineLink | null;
+  /** Mi asiento (índice de jugador) en online. */
+  mySeat: number | null;
+  outcome: MatchOutcome | null;
 
   start: (config: MatchConfig) => void;
+  startOnline: (config: MatchConfig, msg: UpdateMsg, link: OnlineLink, mySeat: number) => void;
+  receive: (msg: UpdateMsg) => void;
   rematch: () => void;
   quit: () => void;
   dispatch: (action: Action) => boolean;
@@ -107,7 +125,10 @@ interface GameStore {
   humanSoplar: () => void;
   select: (ref: PieceRef | null) => void;
   say: (player: number, text: string) => void;
+  chat: (text: string) => void;
   setPaused: (p: boolean) => void;
+  /** Aplica los premios de la partida al perfil (una sola vez). */
+  finishMatch: () => MatchOutcome | null;
 }
 
 let uid = 1;
@@ -129,12 +150,13 @@ const colorVar = (state: GameState, owner: number) => `var(--${state.players[own
 export const useGame = create<GameStore>((set, get) => {
   const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms / get().speed));
 
-  function isHuman(player: number): boolean {
-    return get().config?.seats.find((s) => s.side === get().game?.players[player]?.side)?.kind === 'human';
-  }
   function seatOf(player: number): SeatConfig | undefined {
     const g = get().game;
     return get().config?.seats.find((s) => s.side === g?.players[player]?.side);
+  }
+  function isHuman(player: number): boolean {
+    if (get().online) return player === get().mySeat;
+    return seatOf(player)?.kind === 'human';
   }
 
   function pushFx(kind: FxKind, at: Pt, color: string, ms = 900) {
@@ -152,7 +174,7 @@ export const useGame = create<GameStore>((set, get) => {
   }
 
   function botSay(player: number, lines: readonly string[], chance = 0.5) {
-    if (isHuman(player) || Math.random() > chance) return;
+    if (get().online || isHuman(player) || Math.random() > chance) return;
     get().say(player, pick(lines));
   }
 
@@ -174,8 +196,11 @@ export const useGame = create<GameStore>((set, get) => {
       switch (e.type) {
         case 'ROLLED': {
           set({ rolling: true, shownDice: get().shownDice ?? e.dice });
+          play('roll');
           await sleep(BASE.roll);
           set({ rolling: false, shownDice: e.dice });
+          play('land');
+          if (e.pair) play('pair');
           if (e.pair && e.pairStreak === 2 && final.rules.triplePairPenalty) {
             showBanner('pair', '¡Dos pares!', 'Pilas pues: un par más y a la cárcel', 1300);
             botSay((e.player + 1) % final.players.length, ['¡Pilas pues!', '¡Uy, se viene!'], 0.4);
@@ -189,14 +214,17 @@ export const useGame = create<GameStore>((set, get) => {
           let view = get().view;
           for (const p of e.pieces) view = setPiece(view, p, 0);
           set({ view });
+          play('exit');
           pushFx('exit', pointOf(final, e.pieces[0]!, 0), colorVar(final, e.player));
           await sleep(BASE.exit);
           break;
         }
         case 'PIECE_MOVED': {
+          let k = 0;
           for (const pos of e.path) {
             if (!alive()) return;
             set({ view: setPiece(get().view, e.piece, pos) });
+            play('step', 1 + Math.min(0.6, k++ * 0.05));
             await sleep(BASE.step);
           }
           break;
@@ -206,8 +234,9 @@ export const useGame = create<GameStore>((set, get) => {
           const sq = squareOf(g.sides, g.players[e.by.owner]!.side, pos);
           const at = sq === null ? pointOf(final, e.by, pos) : trackCell(g.sides, sq).center;
           pushFx('burst', at, colorVar(final, e.by.owner), 1000);
+          play('capture');
           showBanner('capture', '¡Captura!', `${g.players[e.by.owner]!.name} manda a la cárcel a ${g.players[e.victims[0]!.owner]!.name}`, 1100);
-          navigator.vibrate?.(60);
+          vibrate(60);
           await sleep(BASE.capture * 0.45);
           let view = get().view;
           for (const v of e.victims) view = setPiece(view, v, -1);
@@ -219,18 +248,21 @@ export const useGame = create<GameStore>((set, get) => {
         }
         case 'CROWNED': {
           pushFx('crown', pointOf(final, e.piece, final.players[e.piece.owner]!.pieces[e.piece.index]!), 'var(--gold)', 1200);
+          play('crown');
           botSay(e.piece.owner, BOT_LINES.crown, 0.4);
           await sleep(BASE.crown);
           break;
         }
         case 'TRIPLE_PAIR': {
           showBanner('triple', '¡TRES PARES!', e.piece ? '¡Esa ficha se va pa\' la cárcel!' : 'Se acabó el turno', BASE.triple);
-          navigator.vibrate?.([80, 60, 160]);
+          play('triple');
+          vibrate([80, 60, 160]);
           await sleep(BASE.triple * 0.5);
           if (e.piece) {
             const pos = get().view[e.piece.owner]![e.piece.index]!;
             pushFx('jail', pointOf(final, e.piece, pos), 'var(--rojo)', 900);
             set({ view: setPiece(get().view, e.piece, -1) });
+            play('jail');
           }
           await sleep(BASE.triple * 0.5);
           break;
@@ -238,12 +270,16 @@ export const useGame = create<GameStore>((set, get) => {
         case 'SOPLADO': {
           const pos = get().view[e.piece.owner]![e.piece.index]!;
           pushFx('jail', pointOf(final, e.piece, pos), 'var(--azul)', 900);
+          play('soplo');
           showBanner('soplo', '¡Lo soplé!', `${g.players[e.by]!.name} sopló a ${g.players[e.offender]!.name}`, BASE.soplo);
           set({ view: setPiece(get().view, e.piece, -1) });
           botSay(e.by, BOT_LINES.soplo, 0.7);
           await sleep(BASE.soplo * 0.6);
           break;
         }
+        case 'SOPLO_AVAILABLE':
+          if (!isHuman(e.offender)) play('tap', 1.6);
+          break;
         case 'DICE_FORFEITED':
           await sleep(BASE.forfeit);
           break;
@@ -252,6 +288,7 @@ export const useGame = create<GameStore>((set, get) => {
           await sleep(500);
           break;
         case 'TURN_CHANGED':
+          if (isHuman(e.player)) play('turn');
           await sleep(BASE.turn);
           break;
         default:
@@ -260,11 +297,15 @@ export const useGame = create<GameStore>((set, get) => {
     }
   }
 
-  /** Después de cada acción: bots, temporizadores, soplo y fin de partida. */
+  /** Después de cada acción (solo local): bots, temporizadores, soplo y fin de partida. */
   function scheduleNext() {
     clearTimers();
     const { game, config, paused } = get();
     if (!game || !config || paused) return;
+    if (get().online) {
+      autoSelect();
+      return;
+    }
     const speed = get().speed;
 
     if (game.phase === 'over') {
@@ -279,7 +320,6 @@ export const useGame = create<GameStore>((set, get) => {
       const deadline = get().soploDeadline ?? Date.now() + SOPLO_WINDOW_MS / speed;
       set({ soploDeadline: deadline });
       later(() => get().dispatch({ type: 'DISMISS_SOPLO' }), Math.max(0, deadline - Date.now()));
-      // Bots que pueden soplar reaccionan con un retraso según su nivel.
       game.players.forEach((_, i) => {
         const seat = seatOf(i);
         if (!seat || seat.kind !== 'bot' || canSoplar(game, i) !== null) return;
@@ -321,13 +361,13 @@ export const useGame = create<GameStore>((set, get) => {
         if (a) get().dispatch(a);
       }, ms);
     }
-    // Auto-selección cuando solo hay una ficha que se puede mover.
     autoSelect();
   }
 
+  /** Auto-selección cuando solo hay una ficha que se puede mover. */
   function autoSelect() {
     const { game } = get();
-    if (!game || game.phase !== 'move') return;
+    if (!game || game.phase !== 'move' || !isHuman(game.current)) return;
     const pieces = new Map<string, PieceRef>();
     let hasExit = false;
     for (const m of legalMovesCache(game)) {
@@ -336,6 +376,29 @@ export const useGame = create<GameStore>((set, get) => {
     }
     if (pieces.size === 1 && !hasExit) set({ selected: [...pieces.values()][0]! });
   }
+
+  function viewSideFor(config: MatchConfig, mySeat: number | null, game: GameState): number {
+    if (mySeat !== null) return game.players[mySeat]!.side;
+    const firstHuman = config.seats.filter((s) => s.kind === 'human').sort((a, b) => a.side - b.side)[0];
+    return firstHuman?.side ?? 0;
+  }
+
+  const fresh = (config: MatchConfig, game: GameState) => ({
+    config,
+    game,
+    view: game.players.map((p) => [...p.pieces]),
+    shownDice: null,
+    rolling: false,
+    busy: false,
+    selected: null,
+    fx: [],
+    banner: null,
+    bubbles: {},
+    turnDeadline: null,
+    soploDeadline: null,
+    paused: false,
+    outcome: null,
+  });
 
   return {
     config: null,
@@ -354,6 +417,9 @@ export const useGame = create<GameStore>((set, get) => {
     viewSide: 0,
     speed: readSpeed(),
     paused: false,
+    online: null,
+    mySeat: null,
+    outcome: null,
 
     start(config) {
       epoch++;
@@ -364,25 +430,8 @@ export const useGame = create<GameStore>((set, get) => {
         rules: config.rules,
         players: config.seats.map((s) => ({ name: s.name, side: s.side, isBot: s.kind === 'bot' })),
       });
-      const firstHuman = config.seats.filter((s) => s.kind === 'human').sort((a, b) => a.side - b.side)[0];
       const matchDeadline = config.timeLimitSec > 0 ? Date.now() + (config.timeLimitSec * 1000) / get().speed : null;
-      set({
-        config,
-        game,
-        view: game.players.map((p) => [...p.pieces]),
-        shownDice: null,
-        rolling: false,
-        busy: false,
-        selected: null,
-        fx: [],
-        banner: null,
-        bubbles: {},
-        turnDeadline: null,
-        soploDeadline: null,
-        matchDeadline,
-        viewSide: firstHuman?.side ?? 0,
-        paused: false,
-      });
+      set({ ...fresh(config, game), matchDeadline, online: null, mySeat: null, viewSide: viewSideFor(config, null, game) });
       if (matchDeadline) {
         const myEpoch = epoch;
         setTimeout(() => {
@@ -392,20 +441,50 @@ export const useGame = create<GameStore>((set, get) => {
       scheduleNext();
     },
 
+    startOnline(config, msg, link, mySeat) {
+      epoch++;
+      clearTimers();
+      queue = Promise.resolve();
+      set({ ...fresh(config, msg.state), matchDeadline: null, online: link, mySeat, viewSide: viewSideFor(config, mySeat, msg.state) });
+      applyDeadlines(msg);
+      autoSelect();
+    },
+
+    receive(msg) {
+      if (!get().online) return;
+      const myEpoch = epoch;
+      set({ game: msg.state, busy: true, selected: null });
+      applyDeadlines(msg);
+      queue = queue.then(async () => {
+        await animate(msg.events, msg.state, myEpoch);
+        if (myEpoch !== epoch) return;
+        const g = get().game!;
+        set({ view: g.players.map((p) => [...p.pieces]), busy: false });
+        autoSelect();
+      });
+    },
+
     rematch() {
       const c = get().config;
-      if (c) get().start(c);
+      if (c && !get().online) get().start(c);
     },
 
     quit() {
       epoch++;
       clearTimers();
-      set({ game: null, config: null, busy: false, banner: null, fx: [], selected: null });
+      get().online?.leave();
+      set({ game: null, config: null, busy: false, banner: null, fx: [], selected: null, online: null, mySeat: null });
     },
 
     dispatch(action) {
       const game = get().game;
       if (!game) return false;
+      const link = get().online;
+      if (link) {
+        if (get().busy && action.type !== 'SOPLAR') return false;
+        link.sendAction(action);
+        return true;
+      }
       // Las acciones de juego esperan a que termine la animación anterior; soplar no.
       if (get().busy && action.type !== 'SOPLAR' && action.type !== 'TIME_UP') return false;
       const r = applyAction(game, action);
@@ -438,6 +517,11 @@ export const useGame = create<GameStore>((set, get) => {
     humanSoplar() {
       const g = get().game;
       if (!g?.pendingSoplo) return;
+      if (get().online) {
+        const me = get().mySeat;
+        if (me !== null && canSoplar(g, me) === null) get().dispatch({ type: 'SOPLAR', player: me });
+        return;
+      }
       // Sopla el humano elegible más cercano en orden de turno después del infractor.
       const n = g.players.length;
       for (let k = 1; k < n; k++) {
@@ -451,6 +535,7 @@ export const useGame = create<GameStore>((set, get) => {
 
     select(ref) {
       set({ selected: ref });
+      if (ref) play('tap');
     },
 
     say(player, text) {
@@ -467,12 +552,62 @@ export const useGame = create<GameStore>((set, get) => {
       }, 2600);
     },
 
+    chat(text) {
+      const link = get().online;
+      if (link) {
+        link.sendChat(text);
+        return;
+      }
+      const g = get().game;
+      const config = get().config;
+      if (!g || !config) return;
+      const speaker = isHuman(g.current) ? g.current : g.players.findIndex((_, i) => isHuman(i));
+      if (speaker >= 0) get().say(speaker, text);
+    },
+
     setPaused(p) {
+      if (get().online) return;
       set({ paused: p });
       if (p) clearTimers();
       else scheduleNext();
     },
+
+    finishMatch() {
+      const { game, config, outcome } = get();
+      if (outcome || !game || !config || game.phase !== 'over') return outcome;
+      const humans = game.players.map((_, i) => i).filter((i) => isHuman(i));
+      // En partidas locales de varios humanos no hay premios individuales.
+      if (humans.length !== 1) return null;
+      const me = humans[0]!;
+      const p = game.players[me]!;
+      const place = game.ranking.indexOf(me);
+      const won = game.rules.teams ? game.players[game.ranking[0]!]!.team === p.team : place === 0;
+      const summary: MatchSummary = {
+        place: game.rules.teams ? (won ? 0 : 2) : place,
+        players: game.players.length,
+        won,
+        captures: p.stats.captures,
+        captured: p.stats.captured,
+        crowned: p.stats.crowned,
+        soplos: p.stats.soplosHechos,
+        pairs: p.stats.pairs,
+        triplePenalties: p.stats.tripleParCastigos,
+        mode: config.mode,
+        table: config.table,
+      };
+      const result = useProfile.getState().applyMatch(summary);
+      set({ outcome: result });
+      return result;
+    },
   };
+
+  function applyDeadlines(msg: UpdateMsg) {
+    const now = Date.now();
+    set({
+      turnDeadline: msg.deadlines.turnMs !== null ? now + msg.deadlines.turnMs : null,
+      soploDeadline: msg.deadlines.soploMs !== null ? now + msg.deadlines.soploMs : null,
+    });
+  }
 });
 
 // Pequeña caché para no recalcular jugadas legales en cada render.
@@ -486,7 +621,10 @@ export function legalMovesCache(state: GameState): Move[] {
   return cacheVal;
 }
 
+/** ¿El jugador `player` lo controla esta pantalla? */
 export function humanSeat(config: MatchConfig | null, state: GameState | null, player: number): boolean {
   if (!config || !state) return false;
+  const { online, mySeat } = useGame.getState();
+  if (online) return player === mySeat;
   return config.seats.find((s) => s.side === state.players[player]?.side)?.kind === 'human';
 }
