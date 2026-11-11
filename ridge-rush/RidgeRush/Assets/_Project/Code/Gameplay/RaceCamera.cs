@@ -3,8 +3,9 @@ using UnityEngine;
 namespace RidgeRush.Game
 {
     /// <summary>
-    /// Cámara de carrera para pantalla vertical (docs/02 §3):
-    /// - seguimiento suave con anticipación según la velocidad (la moto queda en el 40 % izquierdo),
+    /// Cámara de carrera en horizontal:
+    /// - seguimiento suave con anticipación según la velocidad (la moto queda en el tercio izquierdo
+    ///   para ver la pista que viene),
     /// - se aleja en los saltos para que se vea el aterrizaje y con la velocidad,
     /// - sacudida en impactos (desactivable en Accesibilidad),
     /// - sigue al piloto cuando se cae.
@@ -12,10 +13,10 @@ namespace RidgeRush.Game
     public sealed class RaceCamera : MonoBehaviour
     {
         public Camera Cam;
-        [Tooltip("Distancia base a la pista (m)")] public float baseDistance = 11f;
+        [Tooltip("Distancia base a la pista (m)")] public float baseDistance = 10f;
         public float heightOffset = 1.6f;
-        public float lookAheadPerMps = 0.22f;
-        public float maxLookAhead = 4.5f;
+        public float lookAheadPerMps = 0.32f;
+        public float maxLookAhead = 6.5f;
 
         private Vector3 _pos;
         private Vector3 _vel;
@@ -45,7 +46,8 @@ namespace RidgeRush.Game
         {
             if (dt <= 0f) return;
             float speed = velocity.magnitude;
-            float lookAhead = Mathf.Clamp(velocity.x * lookAheadPerMps, -maxLookAhead * 0.5f, maxLookAhead);
+            // Incluso parada, la moto queda algo a la izquierda (se ve lo que viene).
+            float lookAhead = Mathf.Clamp(1.8f + velocity.x * lookAheadPerMps, -maxLookAhead * 0.5f, maxLookAhead);
             float lookUp = Mathf.Clamp(velocity.y * 0.12f, -1.5f, 1.5f);
             Vector3 desired = target + new Vector3(lookAhead, heightOffset + lookUp + Mathf.Min(heightAboveGround, 6f) * 0.35f, 0f);
 
@@ -55,7 +57,9 @@ namespace RidgeRush.Game
             _distance = Mathf.SmoothDamp(_distance, desiredDistance, ref _distanceVel, 0.5f, 100f, dt);
 
             // Campo de visión un poco más abierto a más velocidad (sensación de velocidad).
-            Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, 48f + Mathf.Clamp(speed, 0f, 30f) * 0.18f, 1f - Mathf.Exp(-3f * dt));
+            // FOV vertical: en horizontal la pantalla es baja, así que se usa un ángulo menor que en vertical.
+            float baseFov = Cam.aspect >= 1f ? 34f : 48f;
+            Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, baseFov + Mathf.Clamp(speed, 0f, 30f) * 0.15f, 1f - Mathf.Exp(-3f * dt));
 
             _shake = Mathf.MoveTowards(_shake, 0f, dt * 2.5f);
             _shakeSeed += dt * 25f;

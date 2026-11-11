@@ -35,7 +35,8 @@ namespace RidgeRush.Game
 
         /// <summary>Material PBR. metallic/smoothness como en URP Lit.</summary>
         public static Material Lit(string key, Color color, float metallic = 0f, float smoothness = 0.4f,
-                                   Texture2D albedo = null, Texture2D normal = null, Vector2? tiling = null, Color? emission = null)
+                                   Texture2D albedo = null, Texture2D normal = null, Vector2? tiling = null, Color? emission = null,
+                                   Texture2D emissionMap = null)
         {
             if (Cache.TryGetValue(key, out var m)) return m;
             m = new Material(_lib.lit) { name = key };
@@ -57,6 +58,11 @@ namespace RidgeRush.Game
             {
                 m.EnableKeyword("_EMISSION");
                 m.SetColor("_EmissionColor", emission.Value);
+                if (emissionMap != null)
+                {
+                    m.SetTexture("_EmissionMap", emissionMap);
+                    m.SetTextureScale("_EmissionMap", tiling ?? Vector2.one);
+                }
                 m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
             Cache[key] = m;

@@ -28,6 +28,7 @@ namespace RidgeRush.Simulation
             var pts = new List<Vec2>();
             var surf = new List<SurfaceType>();
             var hazards = new List<HazardData>(data.hazards ?? Array.Empty<HazardData>());
+            var bridges = new List<PlatformData>();
 
             // Pared y zona de salida a la izquierda.
             pts.Add(new Vec2(-12f, 12f));
@@ -92,8 +93,14 @@ namespace RidgeRush.Simulation
                         Line(x + L, y, pitSurface);
                         float pitX1 = x;
                         Line(x + WallWidth, top, s);
-                        if (sec.pit == "water" || sec.pit == "lava")
+                        if (sec.pit == "water" || sec.pit == "lava" || sec.pit == "void")
                             hazards.Add(new HazardData { type = sec.pit, x0 = pitX0, x1 = pitX1, yTop = top - depth + Math.Min(1.2f, depth * 0.5f) });
+                        if (!string.IsNullOrEmpty(sec.bridge))
+                            bridges.Add(new PlatformData
+                            {
+                                x = pitX0 - WallWidth, y = top, width = pitX1 - pitX0 + 2f * WallWidth, thickness = 0.35f,
+                                surface = sec.surface, motion = sec.bridge == "collapse" ? "Collapse" : "Static", delay = sec.bridgeDelay,
+                            });
                         break;
                     }
                     case "bumps":
@@ -136,7 +143,9 @@ namespace RidgeRush.Simulation
             var ground = new TrackChain(pts.ToArray(), surf.ToArray());
             track.Add(ground);
 
-            foreach (var p in data.platforms ?? Array.Empty<PlatformData>())
+            var allPlatforms = new List<PlatformData>(data.platforms ?? Array.Empty<PlatformData>());
+            allPlatforms.AddRange(bridges);
+            foreach (var p in allPlatforms)
             {
                 // Plataforma como rectángulo cerrado en sentido horario (normales hacia fuera).
                 float w = p.width, th = Math.Max(0.1f, p.thickness);

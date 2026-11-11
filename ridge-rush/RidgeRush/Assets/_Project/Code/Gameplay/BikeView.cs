@@ -57,6 +57,13 @@ namespace RidgeRush.Game
             Swingarm.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 180f);
         }
 
+        /// <summary>Desplaza las piezas tras <see cref="Apply"/> (el fantasma va detrás de la moto del jugador).</summary>
+        public void ApplyOffset(Vector3 o)
+        {
+            Chassis.position += o; FrontWheel.position += o; RearWheel.position += o;
+            ForkLower.position += o; Swingarm.position += o;
+        }
+
         /// <summary>La moto se ensucia en barro, arena y agua y se limpia muy poco a poco.</summary>
         public void UpdateDirt(in WheelInfo rear, float speed, float dt)
         {
@@ -90,7 +97,7 @@ namespace RidgeRush.Game
             root.transform.SetParent(parent, false);
             var view = root.AddComponent<BikeView>();
 
-            var plastic = MaterialFactory.Lit("bike_plastic", paint, 0f, 0.78f);
+            var plastic = MaterialFactory.Lit("bike_plastic_" + ColorUtility.ToHtmlStringRGB(paint), paint, 0f, 0.78f);
             var plasticWhite = MaterialFactory.Lit("bike_plastic_white", new Color(0.92f, 0.92f, 0.9f), 0f, 0.75f);
             var frameMat = MaterialFactory.Lit("bike_frame", new Color(0.12f, 0.12f, 0.13f), 0.6f, 0.55f);
             var alu = MaterialFactory.Lit("bike_alu", new Color(0.78f, 0.79f, 0.8f), 1f, 0.7f);

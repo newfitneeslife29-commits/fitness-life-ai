@@ -71,6 +71,9 @@ namespace RidgeRush.Simulation
         // ---- Eventos ----
         private readonly SimEvent[] _events = new SimEvent[MaxEvents];
         public int EventCount { get; private set; }
+        /// <summary>Total de eventos emitidos desde el último reinicio (no baja al vaciar la lista). Permite a varios
+        /// consumidores saber qué eventos no han visto aunque la lista se haya llenado y descartado los más antiguos.</summary>
+        public long TotalEvents { get; private set; }
         public ref readonly SimEvent GetEvent(int i) => ref _events[i];
         public void ClearEvents() => EventCount = 0;
 
@@ -126,6 +129,7 @@ namespace RidgeRush.Simulation
             _frontLoadPrev = _rearLoadPrev = 0f;
             _tricks.Reset();
             EventCount = 0;
+            TotalEvents = 0;
         }
 
         /// <summary>Pone el reloj de la simulación (al reiniciar un nivel).</summary>
@@ -465,6 +469,7 @@ namespace RidgeRush.Simulation
         internal void PushEvent(SimEvent e)
         {
             e.Time = Time;
+            TotalEvents++;
             if (EventCount < MaxEvents) _events[EventCount++] = e;
             else
             {

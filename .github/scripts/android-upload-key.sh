@@ -14,7 +14,9 @@ set -euo pipefail
 : "${SUPABASE_PROJECT_REF:?}" "${SUPABASE_ACCESS_TOKEN:?}"
 api="https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query"
 work="${RUNNER_TEMP:-$(mktemp -d)}"
-name='android_upload_key'
+# UPLOAD_KEY_NAME / UPLOAD_KEY_LABEL permiten guardar otra clave (p. ej. la del juego Ridge Rush).
+name="${UPLOAD_KEY_NAME:-android_upload_key}"
+label="${UPLOAD_KEY_LABEL:-Fitness Life}"
 
 query() {
   jq -n --arg q "$1" '{query: $q}' > "$work/query.json"
@@ -41,12 +43,12 @@ if [ -z "$stored" ]; then
   pass=$(openssl rand -hex 24)
   echo "::add-mask::$pass"
   keytool -genkeypair -keystore "$work/new.p12" -storetype PKCS12 -alias upload \
-    -keyalg RSA -keysize 4096 -validity 10000 -dname 'CN=Fitness Life, O=Fitness Life' \
+    -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=$label, O=$label" \
     -storepass "$pass" -keypass "$pass" 2>/dev/null
   value=$(jq -nc --arg k "$(base64 -w0 "$work/new.p12")" --arg p "$pass" '{keystore: $k, password: $p}')
   rm -f "$work/new.p12"
   # Another run may have created it meanwhile (the name is unique): then use that one.
-  query "select vault.create_secret('$value', '$name', 'Fitness Life: Google Play upload key. Do not delete.')" \
+  query "select vault.create_secret('$value', '$name', '$label: Google Play upload key. Do not delete.')" \
     || echo "Could not store the new key; reading the existing one."
   stored=$(read_key) || exit 1
 fi

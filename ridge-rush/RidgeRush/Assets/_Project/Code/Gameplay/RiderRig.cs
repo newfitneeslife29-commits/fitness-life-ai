@@ -45,7 +45,7 @@ namespace RidgeRush.Game
             _grip = forkTop + new Vector2(-0.05f, 0.08f);
             _peg = new Vector2(-0.10f, -0.22f);
 
-            var jerseyMat = MaterialFactory.Lit("rider_jersey", jersey, 0f, 0.3f);
+            var jerseyMat = MaterialFactory.Lit("rider_jersey_" + ColorUtility.ToHtmlStringRGB(jersey), jersey, 0f, 0.3f);
             var pantsMat = MaterialFactory.Lit("rider_pants", new Color(0.15f, 0.16f, 0.2f), 0f, 0.35f);
             var bootMat = MaterialFactory.Lit("rider_boots", new Color(0.9f, 0.9f, 0.9f), 0f, 0.6f);
             var helmetMat = MaterialFactory.Lit("rider_helmet", helmet, 0.1f, 0.85f);

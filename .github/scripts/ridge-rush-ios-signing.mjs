@@ -61,9 +61,26 @@ async function ensureBundleId() {
     return created.data;
 }
 
+// Capacidades que necesita el juego en su App ID (el perfil de firma lleva las del App ID).
+async function ensureCapabilities(bundle) {
+    const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities`);
+    for (const type of ['GAME_CENTER', 'IN_APP_PURCHASE']) {
+        if (caps.data.some(c => c.attributes.capabilityType === type)) continue;
+        try {
+            await api('POST', '/bundleIdCapabilities', {
+                data: { type: 'bundleIdCapabilities', attributes: { capabilityType: type },
+                    relationships: { bundleId: { data: { type: 'bundleIds', id: bundle.id } } } },
+            });
+            console.log(`Activada la capacidad ${type} en ${BUNDLE_ID}`);
+        } catch (e) {
+            console.log(`::warning::No se pudo activar ${type}: ${e.message}`);
+        }
+    }
+}
+
 // Antes de compilar: App ID registrado y app creada en App Store Connect (la API no permite crear apps).
 async function check() {
-    await ensureBundleId();
+    await ensureCapabilities(await ensureBundleId());
     const apps = await api('GET', `/apps?filter[bundleId]=${encodeURIComponent(BUNDLE_ID)}&limit=10`);
     if (!apps.data.some(a => a.attributes.bundleId === BUNDLE_ID)) {
         throw new Error(`Falta crear la app en App Store Connect: Apps → "+" → Nueva app → plataforma iOS, nombre "${APP_NAME}", ` +
