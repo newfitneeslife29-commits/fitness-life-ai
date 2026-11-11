@@ -131,6 +131,7 @@ namespace RidgeRush.Game
             {
                 yield return null; yield return null;
                 ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, $"{n++:00}_{name}.png"));
+                Debug.Log($"Ridge Rush: captura {n} {name} (t={Time.realtimeSinceStartup:0}s)");
                 yield return null; yield return null;
             }
             System.Collections.IEnumerator WaitSim(float seconds)
@@ -142,7 +143,7 @@ namespace RidgeRush.Game
 
             yield return WaitSim(2f);
             yield return Shot("menu");
-            foreach (int b in new[] { 0, 4, 6, 7, 8, 13 })
+            foreach (int b in new[] { 0, 6, 7, 9 })
             {
                 _menu.ShowGarageFor(b);
                 for (int i = 0; i < 30; i++) yield return null;

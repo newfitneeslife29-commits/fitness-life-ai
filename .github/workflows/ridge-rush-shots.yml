@@ -88,20 +88,23 @@ jobs:
           extra=""
           [ -n "$LEVELS" ] && extra="-rrShotLevels $LEVELS"
           export LIBGL_ALWAYS_SOFTWARE=1
-          timeout 3000 xvfb-run -a -s "-screen 0 1920x1080x24" "$exe" -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 \
+          timeout 3300 xvfb-run -a -s "-screen 0 1600x900x24" "$exe" -screen-width 1600 -screen-height 900 -screen-fullscreen 0 \
             -force-glcore -rrShots "$PWD/shots" $extra -logFile "$PWD/shots/player.log" || echo "El juego terminó con código $?"
           ls -la shots
+          tail -40 shots/player.log || true
       - name: Subir las capturas a una rama
+        if: always()
+        env:
+          TOKEN: ${{ github.token }}
         run: |
           branch="ridge-rush-shots-${{ github.run_number }}"
-          cp -r shots /tmp/shots
+          mkdir -p /tmp/shotrepo && cd /tmp/shotrepo
+          git init -q && git checkout -q -b "$branch"
+          cp "$GITHUB_WORKSPACE"/shots/* . 2>/dev/null || true
+          ls -la
           git config user.name "ridge-rush-ci"
           git config user.email "ridge-rush-ci@users.noreply.github.com"
-          git checkout --orphan "$branch"
-          git rm -rf -q . > /dev/null
-          rm -rf ridge-rush .github build build-setup
-          cp /tmp/shots/* .
           git add -A
           git commit -q -m "Capturas de Ridge Rush (ejecución ${{ github.run_number }}, ${{ github.sha }})"
-          git push -q origin "$branch"
+          git push -q "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" "HEAD:$branch"
           echo "Capturas en la rama $branch"

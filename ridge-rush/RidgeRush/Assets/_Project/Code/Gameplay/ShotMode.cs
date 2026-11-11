@@ -10,7 +10,7 @@ namespace RidgeRush.Game
     {
         public static bool Enabled => Directory != null;
         public static readonly string Directory = Arg("-rrShots");
-        public static readonly string[] Levels = (Arg("-rrShotLevels") ?? "coast_01,coast_08,desert_06,jungle_06,snow_06,city_06,volcano_06,stadium_03").Split(',');
+        public static readonly string[] Levels = (Arg("-rrShotLevels") ?? "coast_01,desert_06,city_06,volcano_06").Split(',');
 
         private static string Arg(string name)
         {
