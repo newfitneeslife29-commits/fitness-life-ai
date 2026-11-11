@@ -17,7 +17,7 @@ namespace RidgeRush.EditorTools
     /// Menú "Ridge Rush → Configurar proyecto (iOS + Android)": deja el proyecto listo para jugar el prototipo.
     /// 1) Crea y asigna el URP (si el proyecto no tiene uno).
     /// 2) Crea los materiales base (para que los shaders entren en la compilación).
-    /// 3) Ajustes de jugador para iOS (Metal, iOS 17, vertical) y Android (Vulkan, ARM64, Android 10+, vertical).
+    /// 3) Ajustes de jugador para iOS (Metal, iOS 17, horizontal) y Android (Vulkan, ARM64, Android 10+, horizontal).
     /// 4) Crea la escena Race_Prototype y la añade a la compilación.
     /// Se puede ejecutar varias veces sin duplicar nada.
     /// </summary>
@@ -125,7 +125,12 @@ namespace RidgeRush.EditorTools
             PlayerSettings.companyName = "Ridge Rush Studio";
             PlayerSettings.productName = "Ridge Rush";
             PlayerSettings.colorSpace = ColorSpace.Linear;
-            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            // Horizontal: gira entre las dos orientaciones apaisadas, nunca en vertical.
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+            PlayerSettings.allowedAutorotateToLandscapeRight = true;
+            PlayerSettings.allowedAutorotateToPortrait = false;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.statusBarHidden = true;
             UseNewInputSystem();
 

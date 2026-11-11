@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace RidgeRush.Game
 {
     /// <summary>
-    /// HUD de carrera en vertical (GDD §3, docs/02 §6), construido por código para el prototipo:
+    /// HUD de carrera en horizontal (GDD §3, docs/02 §6), construido por código para el prototipo:
     /// tiempo bajo la Dynamic Island, estrellas objetivo, progreso, monedas, avisos de trucos,
     /// botones grandes de freno/gas/nitro abajo, menú de pausa con ajustes y accesibilidad, y pantalla de meta.
     /// Todo dentro del Safe Area. Producción: UI Toolkit con el diseño final.
@@ -46,8 +46,8 @@ namespace RidgeRush.Game
             canvas.sortingOrder = 10;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080f, 1920f);
-            scaler.matchWidthOrHeight = 0f;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 1f; // horizontal: escala con la altura
             go.AddComponent<GraphicRaycaster>();
             var hud = go.AddComponent<HudView>();
             hud.Build();
@@ -63,39 +63,39 @@ namespace RidgeRush.Game
             safe.gameObject.AddComponent<SafeAreaFitter>();
 
             // ---- Barra superior ----
-            _timer = Label("Timer", safe, "0:00.00", 92, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(600f, 110f));
+            _timer = Label("Timer", safe, "0:00.00", 80, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(600f, 96f));
             _timer.fontStyle = FontStyle.Bold;
-            _target = Label("Target", safe, "", 36, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(700f, 50f));
+            _target = Label("Target", safe, "", 34, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -118f), new Vector2(700f, 46f));
             _target.color = Gold;
-            var progressBg = Panel("Progress", safe, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(620f, 12f), Steel);
+            var progressBg = Panel("Progress", safe, new Vector2(0.5f, 1f), new Vector2(0f, -172f), new Vector2(620f, 12f), Steel);
             _progressFill = Panel("Fill", progressBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(620f, 12f), Ember).GetComponent<Image>();
             _progressFill.rectTransform.pivot = new Vector2(0f, 0.5f);
             _progressFill.type = Image.Type.Filled; _progressFill.fillMethod = Image.FillMethod.Horizontal;
-            _coins = Label("Coins", safe, "0", 40, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(170f, -60f), new Vector2(300f, 60f));
+            _coins = Label("Coins", safe, "0", 40, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(430f, -70f), new Vector2(300f, 60f));
             _coins.color = Gold;
-            _combo = Label("Combo", safe, "", 40, TextAnchor.UpperRight, new Vector2(1f, 1f), new Vector2(-170f, -60f), new Vector2(300f, 60f));
+            _combo = Label("Combo", safe, "", 40, TextAnchor.MiddleRight, new Vector2(1f, 1f), new Vector2(-300f, -70f), new Vector2(300f, 60f));
             _combo.color = Volt;
 
             IconButton(safe, "II", new Vector2(1f, 1f), new Vector2(-70f, -70f), () => SetPaused(true));
-            IconButton(safe, "↻", new Vector2(0f, 1f), new Vector2(70f, -70f), () => RestartRequested?.Invoke());
+            IconButton(safe, Loc.Get("restart"), new Vector2(0f, 1f), new Vector2(150f, -70f), () => RestartRequested?.Invoke(), 230f, 30);
 
             // ---- Avisos ----
-            _popup = Label("Popup", safe, "", 64, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(1000f, 200f));
+            _popup = Label("Popup", safe, "", 60, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.7f), Vector2.zero, new Vector2(1200f, 180f));
             _popup.fontStyle = FontStyle.Bold;
             _popupGroup = _popup.gameObject.AddComponent<CanvasGroup>();
             _popupGroup.alpha = 0f;
-            _hint = Label("Hint", safe, Loc.Get("hold_gas"), 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.32f), Vector2.zero, new Vector2(900f, 80f));
+            _hint = Label("Hint", safe, Loc.Get("hold_gas"), 42, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.74f), Vector2.zero, new Vector2(1000f, 80f));
 
             // ---- Controles (zona del pulgar, ≥ 88 pt) ----
-            BrakeButton = ControlButton(safe, "Brake", Loc.Get("brake"), new Vector2(0f, 0f), new Vector2(180f, 190f), new Vector2(300f, 300f), out _brakeImg);
-            GasButton = ControlButton(safe, "Gas", Loc.Get("gas"), new Vector2(1f, 0f), new Vector2(-180f, 190f), new Vector2(300f, 300f), out _gasImg);
-            NitroButton = ControlButton(safe, "Nitro", Loc.Get("nitro"), new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(190f, 190f), out _nitroImg);
+            BrakeButton = ControlButton(safe, "Brake", Loc.Get("brake"), new Vector2(0f, 0f), new Vector2(190f, 170f), new Vector2(280f, 260f), out _brakeImg);
+            GasButton = ControlButton(safe, "Gas", Loc.Get("gas"), new Vector2(1f, 0f), new Vector2(-190f, 170f), new Vector2(280f, 260f), out _gasImg);
+            NitroButton = ControlButton(safe, "Nitro", Loc.Get("nitro"), new Vector2(1f, 0f), new Vector2(-460f, 120f), new Vector2(170f, 170f), out _nitroImg);
             var nitroBar = Panel("NitroBar", NitroButton, new Vector2(0.5f, 0f), new Vector2(0f, -22f), new Vector2(170f, 14f), Steel);
             _nitroFill = Panel("Fill", nitroBar, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(170f, 14f), Volt).GetComponent<Image>();
             _nitroFill.rectTransform.pivot = new Vector2(0f, 0.5f);
             _nitroFill.type = Image.Type.Filled; _nitroFill.fillMethod = Image.FillMethod.Horizontal;
-            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0f), new Vector2(-180f, 370f), new Vector2(300f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
-            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(180f, 370f), new Vector2(300f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
+            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0f), new Vector2(-190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
+            Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
 
             BuildPause(safe);
             BuildFinish(safe);
@@ -176,10 +176,10 @@ namespace RidgeRush.Game
         {
             _pausePanel = Rect("Pause", transform as RectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             _pausePanel.gameObject.AddComponent<Image>().color = Asphalt;
-            Label("Title", _pausePanel, Loc.Get("paused"), 80, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(800f, 120f)).fontStyle = FontStyle.Bold;
-            _settingsList = Rect("Settings", _pausePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(900f, 900f));
-            TextButton(_pausePanel, Loc.Get("resume"), new Vector2(0.5f, 0.2f), Vector2.zero, Ember, () => SetPaused(false));
-            TextButton(_pausePanel, Loc.Get("restart"), new Vector2(0.5f, 0.11f), Vector2.zero, Steel, () => { SetPaused(false); RestartRequested?.Invoke(); });
+            Label("Title", _pausePanel, Loc.Get("paused"), 70, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(800f, 100f)).fontStyle = FontStyle.Bold;
+            _settingsList = Rect("Settings", _pausePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(1640f, 560f));
+            TextButton(_pausePanel, Loc.Get("resume"), new Vector2(0.5f, 0.12f), new Vector2(380f, 0f), Ember, () => SetPaused(false));
+            TextButton(_pausePanel, Loc.Get("restart"), new Vector2(0.5f, 0.12f), new Vector2(-380f, 0f), Steel, () => { SetPaused(false); RestartRequested?.Invoke(); });
             _pausePanel.gameObject.SetActive(false);
         }
 
@@ -206,11 +206,13 @@ namespace RidgeRush.Game
 
         private Button SettingRow(int index, string text)
         {
-            var rt = Rect("Row", _settingsList, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f - index * 110f), new Vector2(900f, 96f));
+            // Dos columnas de filas (en horizontal no caben 8 filas en una sola columna).
+            float x = index % 2 == 0 ? -420f : 420f;
+            var rt = Rect("Row", _settingsList, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(x, -55f - (index / 2) * 120f), new Vector2(800f, 100f));
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = Steel;
             var b = rt.gameObject.AddComponent<Button>();
-            Label("Text", rt, text, 38, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(860f, 96f));
+            Label("Text", rt, text, 34, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 100f));
             return b;
         }
 
@@ -218,15 +220,15 @@ namespace RidgeRush.Game
         {
             _finishPanel = Rect("Finish", transform as RectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             _finishPanel.gameObject.AddComponent<Image>().color = new Color(0.07f, 0.08f, 0.09f, 0.82f);
-            Label("Title", _finishPanel, Loc.Get("finish"), 110, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.8f), Vector2.zero, new Vector2(900f, 160f)).fontStyle = FontStyle.Bold;
-            _finishStars = Label("Stars", _finishPanel, "", 140, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.66f), Vector2.zero, new Vector2(900f, 180f));
+            Label("Title", _finishPanel, Loc.Get("finish"), 96, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(900f, 130f)).fontStyle = FontStyle.Bold;
+            _finishStars = Label("Stars", _finishPanel, "", 120, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.69f), Vector2.zero, new Vector2(900f, 150f));
             _finishStars.color = Gold;
-            _finishTime = Label("Time", _finishPanel, "", 96, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.54f), Vector2.zero, new Vector2(900f, 120f));
-            _finishBest = Label("Best", _finishPanel, "", 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.47f), Vector2.zero, new Vector2(900f, 70f));
-            _finishCoins = Label("Coins", _finishPanel, "", 48, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.41f), Vector2.zero, new Vector2(900f, 70f));
+            _finishTime = Label("Time", _finishPanel, "", 84, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.53f), Vector2.zero, new Vector2(900f, 110f));
+            _finishBest = Label("Best", _finishPanel, "", 40, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.42f), Vector2.zero, new Vector2(900f, 60f));
+            _finishCoins = Label("Coins", _finishPanel, "", 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.34f), Vector2.zero, new Vector2(900f, 60f));
             _finishCoins.color = Gold;
-            TextButton(_finishPanel, Loc.Get("retry"), new Vector2(0.5f, 0.25f), Vector2.zero, Ember, () => RestartRequested?.Invoke());
-            TextButton(_finishPanel, Loc.Get("next"), new Vector2(0.5f, 0.16f), Vector2.zero, Steel, null).interactable = false;
+            TextButton(_finishPanel, Loc.Get("retry"), new Vector2(0.5f, 0.15f), new Vector2(-380f, 0f), Ember, () => RestartRequested?.Invoke());
+            TextButton(_finishPanel, Loc.Get("next"), new Vector2(0.5f, 0.15f), new Vector2(380f, 0f), Steel, null).interactable = false;
             _finishPanel.gameObject.SetActive(false);
         }
 
@@ -275,13 +277,13 @@ namespace RidgeRush.Game
             return rt;
         }
 
-        private void IconButton(RectTransform parent, string glyph, Vector2 anchor, Vector2 pos, Action onClick)
+        private void IconButton(RectTransform parent, string glyph, Vector2 anchor, Vector2 pos, Action onClick, float width = 110f, int fontSize = 56)
         {
-            var rt = Rect("Btn_" + glyph, parent, anchor, anchor, pos, new Vector2(110f, 110f));
+            var rt = Rect("Btn_" + glyph, parent, anchor, anchor, pos, new Vector2(width, 110f));
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = Steel;
             rt.gameObject.AddComponent<Button>().onClick.AddListener(() => onClick());
-            Label("Glyph", rt, glyph, 56, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 110f));
+            Label("Glyph", rt, glyph, fontSize, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width, 110f));
         }
 
         private Button TextButton(RectTransform parent, string text, Vector2 anchor, Vector2 pos, Color color, Action onClick)

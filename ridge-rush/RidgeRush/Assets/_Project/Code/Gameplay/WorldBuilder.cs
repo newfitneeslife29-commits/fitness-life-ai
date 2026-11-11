@@ -213,8 +213,9 @@ namespace RidgeRush.Game
             }
             for (int i = 0; i < 8; i++)
             {
-                var q = Quaternion.Euler(0f, i * 45f, 0f) * Quaternion.Euler(0f, 0f, -55f);
-                SimConvert.Primitive(PrimitiveType.Cube, "Frond", t, p + q * new Vector3(1.4f, 0f, 0f), new Vector3(3f, 0.05f, 0.6f), leaf, q * Quaternion.Euler(0f, 0f, 20f));
+                // Hojas que salen hacia fuera desde la copa y caen un poco por el peso.
+                var q = Quaternion.Euler(0f, i * 45f + 10f, 0f) * Quaternion.Euler(0f, 0f, -22f);
+                SimConvert.Primitive(PrimitiveType.Cube, "Frond", t, p + q * new Vector3(1.5f, 0f, 0f), new Vector3(3.2f, 0.05f, 0.7f), leaf, q);
             }
             SimConvert.Primitive(PrimitiveType.Sphere, "Coconuts", t, p - Vector3.up * 0.2f, Vector3.one * 0.5f, MaterialFactory.Lit("palm_coconut", new Color(0.3f, 0.22f, 0.12f), 0f, 0.3f));
         }
