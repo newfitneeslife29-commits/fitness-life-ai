@@ -51,7 +51,17 @@ namespace RidgeRush.Game
         private float _bestBefore;
 
         // Supercross: rivales con IA (cada uno con su propia simulación; no chocan con el jugador).
-        private readonly List<(RaceRules rules, BikeView view, float skill, BikeState prev, BikeState curr)> _rivals = new List<(RaceRules, BikeView, float, BikeState, BikeState)>();
+        private sealed class Rival
+        {
+            public RaceRules Rules;
+            public BikeView View;
+            public RiderRig Rider;
+            public float Skill;
+            public BikeState Prev, Curr;
+        }
+        private readonly List<Rival> _rivals = new List<Rival>();
+        private ItemsView _items;
+        private GameObject _shield;
 
         // Fantasma: grabación de esta carrera y reproducción del mejor tiempo.
         private readonly List<float> _recording = new List<float>(4096);
@@ -78,6 +88,8 @@ namespace RidgeRush.Game
             _hud.SettingsChanged += ApplySettings;
             _hud.MenuRequested += GoToMenu;
             _hud.NextRequested += PlayNext;
+            _hud.PowerRequested += OnPowerPressed;
+            _hud.KnockoutRequested += OnKnockoutPressed;
             _input.Bind(_hud.GasButton, _hud.BrakeButton, _hud.NitroButton);
 
             _menu = MenuView.Create();
@@ -148,8 +160,10 @@ namespace RidgeRush.Game
             var def = BikeCatalog.Get(mode == GameMode.Demo && _menu != null && _menu.GarageBike != null ? _menu.GarageBike : save.selectedBike);
             var up = SaveSystem.Upgrades(def.Id);
             var bikeParams = BikeCatalog.Build(def, up.engine, up.tires, up.suspension, up.brakes, up.nitro);
-            var modeRules = mode == GameMode.TimeTrial || mode == GameMode.Supercross ? ModeRules.TimeTrial
-                          : mode == GameMode.Freestyle ? ModeRules.Freestyle : ModeRules.Career;
+            var modeRules = mode == GameMode.TimeTrial ? ModeRules.TimeTrial
+                          : mode == GameMode.Supercross ? ModeRules.Supercross
+                          : mode == GameMode.Freestyle ? ModeRules.Freestyle
+                          : mode == GameMode.Endless ? new ModeRules() : ModeRules.Career;
             _rules = new RaceRules(_level, bikeParams, modeRules);
 
             _world = WorldBuilder.Build(_level, _root);
@@ -189,23 +203,35 @@ namespace RidgeRush.Game
                 _ghost.name = "Ghost";
             }
 
-            // Rivales del Supercross: 3 pilotos con IA de distinto nivel y su propia moto de serie.
-            foreach (var rv in _rivals) if (rv.view != null) Destroy(rv.view.gameObject);
+            // Objetos y peligros del nivel.
+            _items = ItemsView.Create(_root, _rules);
+
+            // Escudo del poder: burbuja alrededor de la moto.
+            _shield = SimConvert.Primitive(PrimitiveType.Sphere, "Shield", _bike.Chassis, new Vector3(0f, 0.2f, 0f), new Vector3(3.2f, 2.6f, 2.2f),
+                MaterialFactory.Particles("shield_bubble", Texture2D.whiteTexture, new Color(0.2f, 0.9f, 1f, 0.22f)));
+            _shield.SetActive(false);
+
+            // Rivales con IA en Carrera y Supercross (con su propia pista: los puentes que caen son de cada uno).
             _rivals.Clear();
-            if (mode == GameMode.Supercross)
+            if (modeRules.rivals)
             {
                 var rivalBikes = new[] { "haldane_raptor_250", "vextor_brute_450", "ferrum_trailhound_300" };
                 var rivalColors = new[] { new Color(0.1f, 0.3f, 0.85f), new Color(0.9f, 0.1f, 0.15f), new Color(0.2f, 0.55f, 0.2f) };
+                var jerseys = new[] { new Color(0.95f, 0.85f, 0.2f), new Color(0.15f, 0.15f, 0.15f), new Color(0.9f, 0.4f, 0.8f) };
                 for (int i = 0; i < 3; i++)
                 {
                     var rp = BikeCatalog.Build(BikeCatalog.Get(rivalBikes[i]));
-                    var rr = new RaceRules(_level, rp, ModeRules.TimeTrial);
+                    var rr = new RaceRules(TrackBuilder.Build(data), rp, ModeRules.TimeTrial);
                     var view = BikeModelFactory.Create(rp, _root, rivalColors[i]);
                     view.name = "Rival_" + i;
+                    var rider = RiderRig.Create(rp, _root, jerseys[i], rivalColors[i]);
                     var st = rr.Sim.CaptureState();
-                    _rivals.Add((rr, view, 0.78f + i * 0.07f, st, st));
+                    // En Carrera son algo más lentos (se les puede ganar); en Supercross, más duros.
+                    float skill = (mode == GameMode.Supercross ? 0.8f : 0.7f) + i * 0.07f;
+                    _rivals.Add(new Rival { Rules = rr, View = view, Rider = rider, Skill = skill, Prev = st, Curr = st });
                 }
             }
+            _hud.ShowPowers(mode != GameMode.Demo && mode != GameMode.Freestyle);
 
             _hud.SetVisible(mode != GameMode.Demo);
             _hud.SetMode(mode == GameMode.Freestyle, mode == GameMode.Supercross);
@@ -225,12 +251,11 @@ namespace RidgeRush.Game
         private void Restart()
         {
             _rules.Restart();
-            for (int i = 0; i < _rivals.Count; i++)
+            foreach (var rv in _rivals)
             {
-                var rv = _rivals[i];
-                rv.rules.Restart();
-                var st = rv.rules.Sim.CaptureState();
-                _rivals[i] = (rv.rules, rv.view, rv.skill, st, st);
+                rv.Rules.Restart();
+                rv.Prev = rv.Curr = rv.Rules.Sim.CaptureState();
+                rv.Rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
             }
             _rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
             _curr = _prev = _rules.Sim.CaptureState();
@@ -298,10 +323,14 @@ namespace RidgeRush.Game
             for (int i = 0; i < _rivals.Count; i++)
             {
                 var rv = _rivals[i];
-                rv.view.Apply(BikeState.Lerp(rv.prev, rv.curr, alpha));
-                rv.view.ApplyOffset(new Vector3(0f, 0f, 1.1f + i * 0.9f)); // carriles detrás del jugador
+                var rs = BikeState.Lerp(rv.Prev, rv.Curr, alpha);
+                rv.View.Apply(rs);
+                rv.View.ApplyOffset(new Vector3(0f, 0f, 1.1f + i * 0.9f)); // carriles detrás del jugador
+                rv.Rider.Pose(rv.View.Chassis, rs, frameDt * timeScale);
             }
             if (_rivals.Count > 0) _hud.SetPosition(RacePosition(), _rivals.Count + 1);
+            _shield.SetActive(_rules.Shielded);
+            if (!demo) _hud.TickPowers(_rules, NearestKnockoutTarget() != null);
 
             Vector2 vel = sim.Chassis.Velocity.ToV2();
             float rpm01 = Mathf.InverseLerp(sim.Params.idleRpm, sim.Params.revLimitRpm, sim.Engine.Rpm);
@@ -338,17 +367,56 @@ namespace RidgeRush.Game
         private void StepRivals()
         {
             if (_rivals.Count == 0 || _rules.State == RaceState.Ready) return;
-            for (int i = 0; i < _rivals.Count; i++)
+            foreach (var rv in _rivals)
             {
-                var rv = _rivals[i];
-                var prev = rv.curr;
-                var input = rv.rules.State == RaceState.Finished ? new BikeInput { Brake = 1f } : BotDriver.Drive(rv.rules.Sim, rv.skill);
-                if (rv.rules.State == RaceState.Ready) input.Throttle = Mathf.Max(input.Throttle, 0.5f);
-                rv.rules.Step(input);
-                if (rv.rules.State == RaceState.Crashed && rv.rules.CrashTimer > 1.3f) rv.rules.Respawn();
-                rv.rules.ClearEvents();
-                _rivals[i] = (rv.rules, rv.view, rv.skill, prev, rv.rules.Sim.CaptureState());
+                rv.Prev = rv.Curr;
+                var input = rv.Rules.State == RaceState.Finished ? new BikeInput { Brake = 1f } : BotDriver.Drive(rv.Rules.Sim, rv.Skill);
+                if (rv.Rules.State == RaceState.Ready) input.Throttle = Mathf.Max(input.Throttle, 0.5f);
+                rv.Rules.Step(input);
+                var sim = rv.Rules.Sim;
+                if (rv.Rules.State == RaceState.Crashed && !rv.Rider.Ragdoll)
+                    rv.Rider.SetRagdoll(true, sim.Chassis.Velocity.ToV3(), sim.Chassis.AngularVelocity, sim.Chassis.Position.ToV3());
+                if (rv.Rules.State == RaceState.Crashed && rv.Rules.CrashTimer > 1.6f)
+                {
+                    rv.Rules.Respawn();
+                    rv.Rider.SetRagdoll(false, Vector3.zero, 0f, Vector3.zero);
+                }
+                rv.Rules.ClearEvents();
+                rv.Curr = sim.CaptureState();
             }
+        }
+
+        /// <summary>Rival más cercano que se puede derribar ahora mismo, o null.</summary>
+        private Rival NearestKnockoutTarget()
+        {
+            Rival best = null; float bestDist = float.MaxValue;
+            foreach (var rv in _rivals)
+            {
+                if (!_rules.CanKnockout(rv.Rules)) continue;
+                float d = Mathf.Abs(rv.Rules.Sim.Chassis.Position.x - _rules.Sim.Chassis.Position.x);
+                if (d < bestDist) { bestDist = d; best = rv; }
+            }
+            return best;
+        }
+
+        private void OnPowerPressed()
+        {
+            if (_rules.ActivatePower()) { Haptics.Impact(0.7f, 0.9f); _cam.AddShake(0.3f); }
+        }
+
+        private void OnKnockoutPressed()
+        {
+            var target = NearestKnockoutTarget();
+            if (target == null) { _hud.Popup(Loc.Get("ko_far"), new Color(1f, 0.6f, 0.4f), 0.8f); return; }
+            if (!_rules.KnockoutRival(target.Rules)) return;
+            var at = target.Rules.Sim.Chassis.Position.ToV3();
+            _items.Burst(at, 80, new Color(1f, 0.4f, 0.1f));
+            _items.Burst(_rules.Sim.Chassis.Position.ToV3(), 40, new Color(0.2f, 0.9f, 1f));
+            _cam.AddShake(1f);
+            Haptics.Impact(1f, 1f);
+            _audio.PlayCrash();
+            if (GameSettings.SlowMotion) _slowMoTimer = 0.9f;
+            GameServices.Achievement("rr_first_ko");
         }
 
         /// <summary>Puesto del jugador (1 = primero) por progreso; quien ya terminó va delante.</summary>
@@ -358,7 +426,7 @@ namespace RidgeRush.Game
             float mine = _rules.State == RaceState.Finished ? 2f + 1f / Mathf.Max(0.01f, _rules.FinalTime) : _rules.Progress;
             foreach (var rv in _rivals)
             {
-                float theirs = rv.rules.State == RaceState.Finished ? 2f + 1f / Mathf.Max(0.01f, rv.rules.FinalTime) : rv.rules.Progress;
+                float theirs = rv.Rules.State == RaceState.Finished ? 2f + 1f / Mathf.Max(0.01f, rv.Rules.FinalTime) : rv.Rules.Progress;
                 if (theirs > mine) pos++;
             }
             return pos;
@@ -428,7 +496,24 @@ namespace RidgeRush.Game
             for (int i = 0; i < _rules.EventCount; i++)
             {
                 ref readonly var re = ref _rules.GetEvent(i);
-                if (!demo && re.Type == RaceEventType.CheckpointReached) { _hud.Popup(Loc.Get("checkpoint"), new Color(0.18f, 0.89f, 1f)); Haptics.Impact(0.4f, 1f); }
+                var at = new Vector3(re.X, re.Y, 0f);
+                var volt = new Color(0.18f, 0.89f, 1f);
+                var ember = new Color(1f, 0.35f, 0.12f);
+                switch (re.Type)
+                {
+                    case RaceEventType.Explosion: _items.Burst(at, 70, new Color(1f, 0.5f, 0.1f)); if (!demo) { _cam.AddShake(0.8f); Haptics.Impact(0.9f, 0.5f); _audio.PlayCrash(); } break;
+                    case RaceEventType.PickupRing: _items.Burst(at, 30, new Color(1f, 0.6f, 0.2f)); if (!demo) { _hud.Popup(Loc.Get("ring"), ember, 0.9f); Haptics.Impact(0.5f, 0.8f); } break;
+                    case RaceEventType.PickupNitro: _items.Burst(at, 15, volt); if (!demo) { _hud.Popup(Loc.Get("nitro_pick"), volt, 0.7f); Haptics.Impact(0.3f, 1f); } break;
+                    case RaceEventType.PickupCoin: if (!demo) Haptics.Impact(0.15f, 1f); break;
+                    case RaceEventType.Boost: if (!demo) { _hud.Popup(Loc.Get("boost"), volt, 0.6f); _cam.AddShake(0.2f); } break;
+                    case RaceEventType.Hit: _items.Burst(at, 20, new Color(1f, 0.8f, 0.4f)); if (!demo) { _hud.Popup(Loc.Get("hit"), ember, 0.7f); _cam.AddShake(0.6f); Haptics.Impact(0.8f, 0.4f); } break;
+                    case RaceEventType.Blocked: _items.Burst(at, 25, volt); if (!demo) _hud.Popup(Loc.Get("blocked"), volt, 0.7f); break;
+                    case RaceEventType.PowerReady: if (!demo) { _hud.Popup(Loc.Get("power_ready"), volt, 1f); Haptics.Impact(0.5f, 1f); } break;
+                    case RaceEventType.PowerActivated: if (!demo) _hud.Popup(Loc.Get("shield"), volt, 1f); break;
+                    case RaceEventType.KnockoutReady: if (!demo) { _hud.Popup(Loc.Get("ko_ready"), ember, 1f); Haptics.Impact(0.6f, 1f); } break;
+                    case RaceEventType.KnockedOut: if (!demo) _hud.Popup(Loc.Get("knockout"), ember, 1.2f); break;
+                    case RaceEventType.CheckpointReached: if (!demo) { _hud.Popup(Loc.Get("checkpoint"), volt); Haptics.Impact(0.4f, 1f); } break;
+                }
             }
             _rules.ClearEvents();
         }

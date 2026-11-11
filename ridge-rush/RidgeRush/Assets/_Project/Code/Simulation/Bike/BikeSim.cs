@@ -35,6 +35,12 @@ namespace RidgeRush.Simulation
         public bool NitroActive { get; private set; }
         public BikeInput LastInput { get; private set; }
 
+        /// <summary>Multiplicador del agarre (manchas de aceite lo bajan). Lo fijan las reglas del nivel.</summary>
+        public float GripScale = 1f;
+
+        /// <summary>Fuerza extra hacia delante (poder de turbo, placas de aceleración). Lo fijan las reglas.</summary>
+        public float BoostForce;
+
         /// <summary>Asistencia de control de tracción (Ajustes → Asistencias). Reduce el par si la rueda trasera patina.</summary>
         public bool TractionControl = true;
 
@@ -200,6 +206,7 @@ namespace RidgeRush.Simulation
             // Giro de la rueda trasera relativo al chasis (hacia delante = horario = negativo).
             float rearRel = RearWheel.AngularVelocity - Chassis.AngularVelocity;
 
+            if (BoostForce > 0f && !Crashed) Chassis.Force += forward * BoostForce;
             NitroActive = input.Nitro && Nitro > 0f && !Crashed;
             if (NitroActive)
             {
@@ -329,7 +336,7 @@ namespace RidgeRush.Simulation
                 if (kind <= 1)
                 {
                     bool slidingPrev = kind == 0 ? _frontSlidingPrev : _rearSlidingPrev;
-                    mu = props.Grip * Params.tireGrip * (slidingPrev ? props.SlideFactor : 1f);
+                    mu = props.Grip * Params.tireGrip * GripScale * (slidingPrev ? props.SlideFactor : 1f);
                 }
                 else mu = props.BodyFriction;
 
@@ -455,8 +462,22 @@ namespace RidgeRush.Simulation
             PushEvent(new SimEvent { Type = SimEventType.Crashed, Value = Chassis.Velocity.Length });
         }
 
-        /// <summary>Impulso de velocidad hacia delante a lo largo del suelo (aterrizaje perfecto).</summary>
-        internal void ApplySpeedBoost(float amount)
+        /// <summary>Golpe externo (explosión, K.O.): cambia la velocidad de toda la moto y la hace girar.</summary>
+        public void Kick(Vec2 dv, float spin)
+        {
+            Chassis.Velocity += dv; FrontWheel.Velocity += dv; RearWheel.Velocity += dv;
+            Chassis.AngularVelocity += spin;
+        }
+
+        /// <summary>Frena la moto (fuego, impactos): multiplica su velocidad.</summary>
+        public void Slow(float factor)
+        {
+            Chassis.Velocity *= factor; FrontWheel.Velocity *= factor; RearWheel.Velocity *= factor;
+            FrontWheel.AngularVelocity *= factor; RearWheel.AngularVelocity *= factor;
+        }
+
+        /// <summary>Impulso de velocidad hacia delante a lo largo del suelo (aterrizaje perfecto, turbo).</summary>
+        public void ApplySpeedBoost(float amount)
         {
             Vec2 forward = GroundNormal.PerpLeft * -1f;
             float sign = Vec2.Dot(Chassis.Velocity, forward) >= 0f ? 1f : -1f;

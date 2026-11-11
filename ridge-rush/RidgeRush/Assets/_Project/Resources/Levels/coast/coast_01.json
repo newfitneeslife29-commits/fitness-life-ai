@@ -800,5 +800,117 @@
       "scale": 1,
       "rotation": 0
     }
+  ],
+  "pickups": [
+    {
+      "type": "coin",
+      "x": 30.0,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 31.5,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 33.0,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 34.5,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 36.0,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "ring",
+      "x": 135,
+      "y": 5.6,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 160,
+      "y": 1.2,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 228,
+      "y": 1.2,
+      "length": 6
+    },
+    {
+      "type": "ring",
+      "x": 417,
+      "y": 5.4,
+      "length": 6
+    },
+    {
+      "type": "ring",
+      "x": 609.7,
+      "y": 5.6,
+      "length": 6
+    },
+    {
+      "type": "nitro",
+      "x": 470,
+      "y": 1.2,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 330.0,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 331.5,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 333.0,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 334.5,
+      "y": 1.0,
+      "length": 6
+    },
+    {
+      "type": "coin",
+      "x": 336.0,
+      "y": 1.0,
+      "length": 6
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "barrel",
+      "x": 250,
+      "period": 3,
+      "phase": 0
+    },
+    {
+      "type": "barrel",
+      "x": 455,
+      "period": 3,
+      "phase": 0
+    }
   ]
 }

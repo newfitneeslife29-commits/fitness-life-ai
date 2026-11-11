@@ -13,10 +13,10 @@ namespace RidgeRush.Game
     public sealed class RaceCamera : MonoBehaviour
     {
         public Camera Cam;
-        [Tooltip("Distancia base a la pista (m)")] public float baseDistance = 10f;
-        public float heightOffset = 1.6f;
-        public float lookAheadPerMps = 0.32f;
-        public float maxLookAhead = 6.5f;
+        [Tooltip("Distancia base a la pista (m)")] public float baseDistance = 16f;
+        public float heightOffset = 2.4f;
+        public float lookAheadPerMps = 0.45f;
+        public float maxLookAhead = 10f;
 
         private Vector3 _pos;
         private Vector3 _vel;
@@ -47,18 +47,18 @@ namespace RidgeRush.Game
             if (dt <= 0f) return;
             float speed = velocity.magnitude;
             // Incluso parada, la moto queda algo a la izquierda (se ve lo que viene).
-            float lookAhead = Mathf.Clamp(1.8f + velocity.x * lookAheadPerMps, -maxLookAhead * 0.5f, maxLookAhead);
+            float lookAhead = Mathf.Clamp(3.5f + velocity.x * lookAheadPerMps, -maxLookAhead * 0.5f, maxLookAhead);
             float lookUp = Mathf.Clamp(velocity.y * 0.12f, -1.5f, 1.5f);
             Vector3 desired = target + new Vector3(lookAhead, heightOffset + lookUp + Mathf.Min(heightAboveGround, 6f) * 0.35f, 0f);
 
             _pos = Vector3.SmoothDamp(_pos, desired, ref _vel, 0.18f, 200f, dt);
 
-            float desiredDistance = baseDistance + Mathf.Clamp(speed - 8f, 0f, 25f) * 0.12f + Mathf.Clamp(heightAboveGround - 1f, 0f, 8f) * 0.6f;
+            float desiredDistance = baseDistance + Mathf.Clamp(speed - 8f, 0f, 25f) * 0.18f + Mathf.Clamp(heightAboveGround - 1f, 0f, 8f) * 0.7f;
             _distance = Mathf.SmoothDamp(_distance, desiredDistance, ref _distanceVel, 0.5f, 100f, dt);
 
             // Campo de visión un poco más abierto a más velocidad (sensación de velocidad).
             // FOV vertical: en horizontal la pantalla es baja, así que se usa un ángulo menor que en vertical.
-            float baseFov = Cam.aspect >= 1f ? 34f : 48f;
+            float baseFov = Cam.aspect >= 1f ? 42f : 52f; // vista amplia: se ve más mapa
             Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, baseFov + Mathf.Clamp(speed, 0f, 30f) * 0.15f, 1f - Mathf.Exp(-3f * dt));
 
             _shake = Mathf.MoveTowards(_shake, 0f, dt * 2.5f);

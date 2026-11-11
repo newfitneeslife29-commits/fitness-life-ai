@@ -99,6 +99,7 @@ Cada producto necesita una captura de revisión (la tienda del juego) y una nota
 | `rr_world_volcano` | Forjado en lava | Final de Forja Volcán | 10 |
 | `rr_world_stadium` | Campeón del estadio | Final del Thunderdome | 10 |
 | `rr_supercross_win` | Primero en la arena | Ganar una carrera de Supercross | 5 |
+| `rr_first_ko` | Fuera de combate | Derribar a un rival con el K.O. | 5 |
 
 ## 7. Capturas y vídeo
 

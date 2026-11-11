@@ -30,6 +30,33 @@ namespace RidgeRush.Simulation
         public float[] checkpoints = Array.Empty<float>();
         public StarTimes stars = new StarTimes();
         public PropData[] props = Array.Empty<PropData>();
+        /// <summary>Objetos que se recogen: nitro, aros de fuego, monedas, placas de turbo.</summary>
+        public PickupData[] pickups = Array.Empty<PickupData>();
+        /// <summary>Peligros: barriles explosivos, chorros de fuego, rocas que caen, aceite.</summary>
+        public ObstacleData[] obstacles = Array.Empty<ObstacleData>();
+    }
+
+    [Serializable]
+    public sealed class PickupData
+    {
+        /// <summary>nitro, ring (aro de fuego), coin, boost (placa de turbo en el suelo).</summary>
+        public string type = "coin";
+        public float x;
+        /// <summary>Altura sobre el suelo (los aros van altos, sobre los saltos).</summary>
+        public float y = 1f;
+        /// <summary>boost: longitud de la placa.</summary>
+        public float length = 6f;
+    }
+
+    [Serializable]
+    public sealed class ObstacleData
+    {
+        /// <summary>barrel (explota al tocarlo), firejet (chorro de fuego intermitente), rock (cae al acercarse), oil (mancha).</summary>
+        public string type = "barrel";
+        public float x;
+        /// <summary>firejet: segundos del ciclo; oil: longitud de la mancha.</summary>
+        public float period = 3f;
+        public float phase;
     }
 
     [Serializable]

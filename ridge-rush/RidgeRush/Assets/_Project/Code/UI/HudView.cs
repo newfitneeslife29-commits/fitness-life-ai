@@ -28,6 +28,11 @@ namespace RidgeRush.Game
         public event Action RestartRequested;
         public event Action MenuRequested;
         public event Action NextRequested;
+        public event Action PowerRequested;
+        public event Action KnockoutRequested;
+
+        private Image _powerFill, _koFill, _powerBtn, _koBtn;
+        private Text _powerText, _koText;
         public event Action<bool> PauseChanged;
         public event Action SettingsChanged;
 
@@ -104,6 +109,16 @@ namespace RidgeRush.Game
             _nitroFill.type = Image.Type.Filled; _nitroFill.fillMethod = Image.FillMethod.Horizontal;
             Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(1f, 0f), new Vector2(-190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
             Label("Slide", safe, "◄  ►", 30, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(190f, 330f), new Vector2(280f, 40f)).color = new Color(1f, 1f, 1f, 0.5f);
+
+            // ---- Barras de poder y de K.O. (izquierda, sobre el freno) ----
+            var powerBg = Panel("PowerBar", safe, new Vector2(0f, 0f), new Vector2(190f, 420f), new Vector2(280f, 16f), Steel);
+            _powerFill = Panel("Fill", powerBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(280f, 16f), Volt).GetComponent<Image>();
+            _powerFill.rectTransform.pivot = new Vector2(0f, 0.5f); _powerFill.type = Image.Type.Filled; _powerFill.fillMethod = Image.FillMethod.Horizontal;
+            var koBg = Panel("KoBar", safe, new Vector2(0f, 0f), new Vector2(190f, 450f), new Vector2(280f, 16f), Steel);
+            _koFill = Panel("Fill", koBg, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(280f, 16f), Ember).GetComponent<Image>();
+            _koFill.rectTransform.pivot = new Vector2(0f, 0.5f); _koFill.type = Image.Type.Filled; _koFill.fillMethod = Image.FillMethod.Horizontal;
+            _powerBtn = ActionButton(safe, Loc.Get("power"), new Vector2(0f, 0f), new Vector2(110f, 540f), Volt, () => PowerRequested?.Invoke(), out _powerText);
+            _koBtn = ActionButton(safe, "K.O.", new Vector2(0f, 0f), new Vector2(270f, 540f), Ember, () => KnockoutRequested?.Invoke(), out _koText);
 
             BuildPause(safe);
             BuildFinish(safe);
@@ -291,6 +306,47 @@ namespace RidgeRush.Game
             shadow.effectColor = new Color(0f, 0f, 0f, 0.6f);
             shadow.effectDistance = new Vector2(3f, -3f);
             return t;
+        }
+
+        private Image ActionButton(RectTransform parent, string text, Vector2 anchor, Vector2 pos, Color color, Action onClick, out Text label)
+        {
+            var rt = Rect("Action_" + text, parent, anchor, anchor, pos, new Vector2(140f, 110f));
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = _rounded; img.type = Image.Type.Sliced; img.color = color;
+            rt.gameObject.AddComponent<Button>().onClick.AddListener(() => onClick());
+            label = Label("Text", rt, text, 32, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(140f, 110f));
+            label.fontStyle = FontStyle.Bold;
+            rt.gameObject.SetActive(false);
+            return img;
+        }
+
+        private bool _powersVisible = true;
+
+        /// <summary>Muestra u oculta las barras de poder y K.O. (no hay en Freestyle ni en la demostración).</summary>
+        public void ShowPowers(bool visible)
+        {
+            _powersVisible = visible;
+            _powerFill.transform.parent.gameObject.SetActive(visible);
+            _koFill.transform.parent.gameObject.SetActive(visible);
+            if (!visible) { _powerBtn.gameObject.SetActive(false); _koBtn.gameObject.SetActive(false); }
+        }
+
+        /// <summary>Barras de poder y K.O.; los botones aparecen (y laten) cuando están llenas.</summary>
+        public void TickPowers(RaceRules r, bool rivalInRange)
+        {
+            if (!_powersVisible) return;
+            _powerFill.fillAmount = r.Power;
+            _koFill.fillAmount = r.Knockout;
+            _koFill.transform.parent.gameObject.SetActive(r.Mode.rivals);
+            bool powerReady = r.Power >= 1f && r.State == RaceState.Racing;
+            bool koReady = r.Knockout >= 1f && r.State == RaceState.Racing;
+            _powerBtn.gameObject.SetActive(powerReady || r.Shielded);
+            _koBtn.gameObject.SetActive(koReady);
+            float pulse = 1f + Mathf.Sin(Time.unscaledTime * 8f) * 0.06f;
+            _powerBtn.rectTransform.localScale = Vector3.one * (powerReady ? pulse : 1f);
+            _powerText.text = r.Shielded ? $"{r.ShieldTime:0.0}s" : Loc.Get("power");
+            _koBtn.color = rivalInRange ? Ember : new Color(0.4f, 0.25f, 0.2f, 0.9f);
+            _koBtn.rectTransform.localScale = Vector3.one * (rivalInRange ? pulse : 1f);
         }
 
         private RectTransform ControlButton(RectTransform parent, string name, string text, Vector2 anchor, Vector2 pos, Vector2 size, out Image img)
