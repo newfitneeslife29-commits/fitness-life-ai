@@ -6,7 +6,7 @@ name: Parqués for Google Play
 # "Parqués" con el paquete parques.app); Google Play exige esa primera subida manual.
 #
 # Necesita, en Settings → Secrets and variables → Actions:
-# - Variable PARQUES_SERVER_URL: la dirección HTTPS del servidor en Railway (p. ej. https://parques-production.up.railway.app).
+# - Variable PARQUES_SERVER_URL: opcional; por defecto el servidor de Railway https://parques-server-production.up.railway.app.
 # - Variable PARQUES_RC_ANDROID_KEY: la clave pública de Google Play del proyecto de Parqués en RevenueCat (goog_…).
 # - Los del Supabase de Fitness Life (variable SUPABASE_PROJECT_REF, secreto SUPABASE_ACCESS_TOKEN): ahí se guarda
 #   la clave de subida de Parqués (parques_upload_key), distinta de las de Fitness Life y Ridge Rush.
@@ -26,7 +26,7 @@ jobs:
     env:
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
-      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL }}
+      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL || 'https://parques-server-production.up.railway.app' }}
       VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
       VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
     steps:

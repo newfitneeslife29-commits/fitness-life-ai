@@ -8,22 +8,26 @@ Fitness Life. Nada de esto modifica las otras apps del repositorio.
 |---|---|
 | Nombre en las tiendas | **Parqués** |
 | ID de paquete (Android) / Bundle ID (iOS) | **`parques.app`** |
-| Servidor | Railway (carpeta `parques`, `Dockerfile`) |
-| Base de datos | Supabase Postgres (esquema `parques`, se crea solo al arrancar) |
+| Servidor | Railway: proyecto `parques`, servicio `parques-server`, **https://parques-server-production.up.railway.app** ✅ |
+| Base de datos | Supabase Postgres: esquema `parques`, usuario restringido `parques_server` ✅ |
 
 > Los workflows `workflow_dispatch` solo aparecen en la pestaña **Actions** cuando están en la rama principal:
 > primero hay que unir (merge) esta rama a `main`.
 
 ---
 
-## 1. Servidor en Railway (primero: las apps necesitan su dirección)
+## 1. Servidor en Railway — ✅ YA HECHO
+
+Creado y en línea (carpeta raíz `parques`, `Dockerfile`, 1 réplica, healthcheck `/health`, variables `DATABASE_URL`,
+`PARQUES_DEMO_PURCHASES=off`, `NODE_ENV`, `PORT=3001`). Falta solo agregar en Railway → servicio → Variables las claves
+secretas `REVENUECAT_SECRET_KEY` y `STRIPE_SECRET_KEY` cuando las tengas. Los pasos de abajo quedan como referencia.
 
 1. **Cadena de conexión de Supabase**: Supabase → tu proyecto → botón **Connect** → *Session pooler* → copia la URI
    (`postgresql://postgres.xxxx:[TU-CONTRASEÑA]@aws-0-….pooler.supabase.com:5432/postgres`) y pon la contraseña de la base.
    Usa el *Session pooler* (funciona con IPv4, que es lo que tiene Railway).
 2. **Railway** → New Project → *Deploy from GitHub repo* → este repositorio.
 3. En el servicio → **Settings**:
-   - *Root Directory*: `parques` (Railway lee `parques/railway.json` y construye con `parques/Dockerfile`).
+   - *Root Directory*: `parques` (construye con `parques/Dockerfile`; Healthcheck Path `/health`).
    - *Branch*: la rama que quieras publicar (`main`).
    - *Networking* → **Generate Domain** → te da `https://algo.up.railway.app`. Esa es la **URL del servidor**.
    - Réplicas: **1** (las mesas viven en la memoria del servidor).
@@ -76,7 +80,7 @@ Ya tienes de Fitness Life: variable `APPLE_TEAM_ID`, `SUPABASE_PROJECT_REF`; sec
 
 | Variable | Valor |
 |---|---|
-| `PARQUES_SERVER_URL` | la URL de Railway, p. ej. `https://parques-production.up.railway.app` (sin `/` al final) |
+| `PARQUES_SERVER_URL` | opcional: ya viene puesta `https://parques-server-production.up.railway.app` |
 | `PARQUES_RC_ANDROID_KEY` | clave pública de Google Play en RevenueCat (`goog_…`) |
 | `PARQUES_RC_IOS_KEY` | clave pública de App Store en RevenueCat (`appl_…`) |
 

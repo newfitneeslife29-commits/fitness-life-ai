@@ -1,5 +1,5 @@
 # Servidor de Parqués (cuentas, partidas online, pagos) + la versión web del juego.
-# Railway lo construye con este archivo (ver railway.json). Escucha en $PORT.
+# Railway lo construye con este archivo (carpeta raíz `parques`). Escucha en $PORT.
 FROM node:22-slim
 
 WORKDIR /app

@@ -7,7 +7,7 @@ name: Parqués for TestFlight
 # Necesita, en Settings → Secrets and variables → Actions:
 # - Lo mismo que ios-release.yml (Fitness Life): variable APPLE_TEAM_ID y secretos
 #   APPSTORE_KEY_ID, APPSTORE_ISSUER_ID y APPSTORE_PRIVATE_KEY.
-# - Variable PARQUES_SERVER_URL: la dirección HTTPS del servidor en Railway.
+# - Variable PARQUES_SERVER_URL: opcional; por defecto el servidor de Railway https://parques-server-production.up.railway.app.
 # - Variable PARQUES_RC_IOS_KEY: la clave pública de App Store del proyecto de Parqués en RevenueCat (appl_…).
 # - La app creada en App Store Connect con el ID de paquete parques.app
 #   (el primer paso registra el ID si falta y avisa si la app no existe todavía).
@@ -29,7 +29,7 @@ jobs:
       ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
       BUILD_NUMBER: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
-      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL }}
+      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL || 'https://parques-server-production.up.railway.app' }}
       VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
       VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
     steps:

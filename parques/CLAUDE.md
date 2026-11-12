@@ -134,7 +134,9 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 - **No tocar las otras apps del repo** (Fitness Life en `app/`, Ridge Rush): Parqués usa solo archivos propios
   (`parques/**`, `.github/workflows/parques-*.yml`, `.github/scripts/parques-ios-signing.mjs`). Scripts compartidos como
   `android-upload-key.sh` se usan sin modificarlos (con `UPLOAD_KEY_NAME=parques_upload_key`).
-- Servidor: Railway (raíz `parques`, `Dockerfile`, 1 réplica, healthcheck `/health`). Sin `DATABASE_URL` en Railway no arranca.
+- Servidor: Railway, proyecto `parques`, servicio `parques-server` → https://parques-server-production.up.railway.app
+  (raíz `parques`, `Dockerfile`, 1 réplica, healthcheck `/health`, ajustes puestos por API; Railway ya no usa railway.json).
+  Sin `DATABASE_URL` en Railway no arranca.
 - Supabase (proyecto pmnsdovmbitqjdtxbeuo): usuario `parques_server` (sin superusuario, dueño solo del esquema `parques`,
   sin acceso a public/auth/vault/storage). Conexión: Session pooler `aws-1-ca-central-1.pooler.supabase.com:5432`,
   usuario `parques_server.pmnsdovmbitqjdtxbeuo`. La contraseña solo vive en la variable `DATABASE_URL` de Railway.
@@ -188,7 +190,7 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 4. ✅ Monedas y gemas, mesas con apuesta, tienda de skins, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
 5. ✅ Online: Node + Socket.IO, partida rápida, mesas privadas, reconexión, la IA reemplaza a quien abandona.
 6. ✅ Torneo semanal con tabla, ranking (global, país, amigos) y temporadas con skins.
-9. ✅ v0.8: publicación — servidor en Railway (Dockerfile + railway.json) con Postgres de Supabase; workflows
+9. ✅ v0.8: publicación — servidor en Railway (Dockerfile) con Postgres de Supabase; workflows
    `parques-android.yml` (Google Play), `parques-ios.yml` (TestFlight), `parques-ci.yml`. Guía en `PUBLICAR.md`.
 8. ✅ v0.7: juego 100 % online (cuentas y monedero en el servidor, partidas contra la máquina en el servidor), apps iOS/Android con Capacitor y compras en tiendas (RevenueCat).
 7. ✅ v0.6: economía con entradas y reparto, nivel 2000, pagos reales (Stripe), gemas para emotes, pase de batalla,
