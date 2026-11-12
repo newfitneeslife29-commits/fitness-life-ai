@@ -10,6 +10,8 @@ name: Parqués for Google Play
 # - Variable PARQUES_RC_ANDROID_KEY: la clave pública de Google Play del proyecto de Parqués en RevenueCat (goog_…).
 # - Los del Supabase de Fitness Life (variable SUPABASE_PROJECT_REF, secreto SUPABASE_ACCESS_TOKEN): ahí se guarda
 #   la clave de subida de Parqués (parques_upload_key), distinta de las de Fitness Life y Ridge Rush.
+# - Opcionales: PARQUES_ADMOB_ANDROID_APP_ID y PARQUES_ADMOB_ANDROID_REWARDED (anuncios con premio; sin ellos, anuncios
+#   de prueba) y PARQUES_GOOGLE_WEB_CLIENT_ID (botón "Continuar con Google").
 # Cada ejecución lleva un version code mayor, como exige Google Play.
 on:
   workflow_dispatch:
@@ -29,6 +31,10 @@ jobs:
       VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL || 'https://parques-server-production.up.railway.app' }}
       VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
       VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
+      # Anuncios con premio (AdMob) e inicio de sesión con Google: opcionales.
+      VITE_ADMOB_REWARDED_ANDROID: ${{ vars.PARQUES_ADMOB_ANDROID_REWARDED }}
+      VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.PARQUES_GOOGLE_WEB_CLIENT_ID }}
+      ADMOB_APP_ID: ${{ vars.PARQUES_ADMOB_ANDROID_APP_ID }}
     steps:
       - uses: actions/checkout@v5
       - name: Comprobar los ajustes
@@ -66,6 +72,15 @@ jobs:
       - name: Compilar la app y copiarla al proyecto Android
         working-directory: parques/apps/web
         run: npm run build:mobile && npx cap sync android
+      - name: Id de AdMob de la app
+        working-directory: parques/apps/web
+        run: |
+          if [ -n "$ADMOB_APP_ID" ]; then
+            sed -i "s#ca-app-pub-3940256099942544~3347511713#$ADMOB_APP_ID#" android/app/src/main/AndroidManifest.xml
+            echo "AdMob: id propio"
+          else
+            echo "::notice::Sin PARQUES_ADMOB_ANDROID_APP_ID: se usan los anuncios de prueba de Google."
+          fi
       - name: Clave de subida de Google Play (Supabase Vault)
         working-directory: .
         env:

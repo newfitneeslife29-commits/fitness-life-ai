@@ -1,33 +1,71 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { PublicPlayer } from '@parques/engine';
 import { TopBar } from '../components/TopBar';
 import { BottomNav } from '../components/BottomNav';
 import { Avatar } from '../components/Avatar';
 import { useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
 import { useFx } from '../stores/fxStore';
+import { useOnline } from '../lib/online';
 import { useT } from '../lib/i18n';
+import { play } from '../audio/audio';
 
 export function FriendsScreen() {
   const t = useT();
   const p = useProfile();
   const go = useApp((a) => a.go);
   const toast = useFx((f) => f.toast);
+  const online = useOnline();
   const [code, setCode] = useState('');
-  const [name, setName] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [found, setFound] = useState<PublicPlayer | null | 'none'>(null);
+  const [onlineIds, setOnlineIds] = useState<string[]>([]);
+  const [inviting, setInviting] = useState<string | null>(null);
 
-  const add = () => {
+  // Quién está conectado (se refresca cada 20 s).
+  useEffect(() => {
+    let alive = true;
+    const load = () => void online.friendsOnline(p.friends.map((f) => f.id)).then((ids) => alive && setOnlineIds(ids));
+    load();
+    const id = setInterval(load, 20000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.friends.length]);
+
+  const search = async () => {
     const id = code.trim().toUpperCase();
     if (id.length < 6) return toast({ icon: '🤔', title: t('Ese código no parece válido') });
     if (id === p.id) return toast({ icon: '😅', title: t('Ese es tu propio código') });
-    p.addFriend({ id, name: name.trim() || t('Parcero {id}', { id: id.slice(0, 3) }), avatar: '🙂' });
-    toast({ icon: '🤝', title: t('¡Amigo agregado!'), sub: t('Lo verás en el ranking de amigos') });
+    setSearching(true);
+    const r = await online.findPlayer(id);
+    setSearching(false);
+    setFound(r ?? 'none');
+  };
+
+  const add = async (pl: PublicPlayer) => {
+    const r = await p.addFriend({ id: pl.id, name: pl.name, avatar: pl.avatar });
+    if (!r.ok) return toast({ icon: '⚠️', title: t(r.error ?? 'Error') });
+    play('coin');
+    toast({ icon: '🤝', title: t('¡Amigo agregado!'), sub: t('Podrás invitarlo a tus mesas y competir en el ranking de amigos') });
+    setFound(null);
     setCode('');
-    setName('');
+  };
+
+  const invite = async (id: string) => {
+    setInviting(id);
+    const err = await online.inviteFriend(id);
+    setInviting(null);
+    if (err) return toast({ icon: '⚠️', title: t(err) });
+    toast({ icon: '📨', title: t('Invitación enviada'), sub: t('Te esperamos en la mesa privada') });
+    go('online');
   };
 
   const share = async () => {
-    const text = t('¡Juguemos Parqués! Mi código de amigo es {id}', { id: p.id });
+    const text = t('¡Juguemos Parqués Colombia! Mi código de amigo es {id}', { id: p.id });
     try {
       if (navigator.share) await navigator.share({ text });
       else {
@@ -39,43 +77,83 @@ export function FriendsScreen() {
     }
   };
 
+  const friends = [...p.friends].sort((a, b) => Number(onlineIds.includes(b.id)) - Number(onlineIds.includes(a.id)));
+
   return (
     <div className="screen friends-screen with-nav">
       <TopBar back title={t('Amigos')} />
-      <section className="card glossy setup-card">
+      <motion.section className="card glossy setup-card" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <h3>{t('Tu código')}</h3>
         <div className="friend-code">{p.id}</div>
         <button className="btn3d small blue" onClick={share}>
           📤 {t('Compartir')}
         </button>
-      </section>
-      <section className="card glossy setup-card">
-        <h3>{t('Agregar amigo')}</h3>
-        <input className="text-input" placeholder={t('Código de tu amigo')} value={code} onChange={(e) => setCode(e.target.value)} maxLength={8} />
-        <input className="text-input" placeholder={t('¿Cómo se llama? (opcional)')} value={name} onChange={(e) => setName(e.target.value)} maxLength={14} />
-        <button className="btn3d small green" onClick={add}>
-          ➕ {t('Agregar')}
-        </button>
-      </section>
-      <section className="card glossy setup-card">
-        <h3>{t('Mis amigos ({n})', { n: p.friends.length })}</h3>
+      </motion.section>
+
+      <motion.section className="card glossy setup-card" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}>
+        <h3>🔎 {t('Buscar jugador por su código')}</h3>
+        <div className="search-row">
+          <input className="text-input" placeholder={t('Código de tu amigo')} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} onKeyDown={(e) => e.key === 'Enter' && search()} />
+          <button className="btn3d small green" onClick={search} disabled={searching}>
+            {searching ? '…' : t('Buscar')}
+          </button>
+        </div>
+        <AnimatePresence mode="wait">
+          {found === 'none' ? (
+            <motion.p key="none" className="rule-note" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {t('No encontramos a nadie con ese código')}
+            </motion.p>
+          ) : found ? (
+            <motion.div key={found.id} className="found-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}>
+              <Avatar emoji={found.avatar} size={52} level={found.level} />
+              <span className="fr-name">
+                {found.name} {found.country === 'CO' ? '🇨🇴' : found.country}
+                <small>
+                  {t('Nivel {n}', { n: found.level })} · 🏆 {found.rating} · {t('{n} victorias', { n: found.wins })}
+                </small>
+                <small className={found.online ? 'on' : 'off'}>{found.online ? `● ${t('Conectado')}` : `○ ${t('Desconectado')}`}</small>
+              </span>
+              {p.friends.some((f) => f.id === found.id) ? (
+                <span className="chip">{t('Ya es tu amigo')}</span>
+              ) : (
+                <button className="btn3d small green" onClick={() => add(found)}>
+                  ➕ {t('Agregar')}
+                </button>
+              )}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </motion.section>
+
+      <motion.section className="card glossy setup-card" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+        <h3>
+          {t('Mis amigos ({n})', { n: p.friends.length })} · <span className="on">● {onlineIds.length}</span>
+        </h3>
         {p.friends.length === 0 ? <p className="rule-note">{t('Todavía no tienes amigos agregados. ¡Comparte tu código!')}</p> : null}
-        {p.friends.map((f) => (
-          <motion.div key={f.id} className="friend-row" layout>
-            <Avatar emoji={f.avatar} size={40} />
-            <span className="fr-name">
-              {f.name}
-              <small>{f.id}</small>
-            </span>
-            <button className="btn3d small purple" onClick={() => go('online')}>
-              🔐 {t('Invitar')}
-            </button>
-            <button className="round-btn small" onClick={() => p.removeFriend(f.id)} aria-label="Quitar">
-              ✕
-            </button>
-          </motion.div>
-        ))}
-      </section>
+        {friends.map((f, i) => {
+          const on = onlineIds.includes(f.id);
+          return (
+            <motion.div key={f.id} className="friend-row" layout initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.03 }}>
+              <span className="fr-av">
+                <Avatar emoji={f.avatar} size={40} />
+                <span className={`presence ${on ? 'on' : ''}`} />
+              </span>
+              <span className="fr-name">
+                {f.name}
+                <small>
+                  {f.id} · {on ? t('Conectado') : t('Desconectado')}
+                </small>
+              </span>
+              <button className="btn3d small purple" disabled={!on || inviting === f.id} onClick={() => invite(f.id)}>
+                {inviting === f.id ? '…' : `🎲 ${t('Invitar')}`}
+              </button>
+              <button className="round-btn small" onClick={() => p.removeFriend(f.id)} aria-label="Quitar">
+                ✕
+              </button>
+            </motion.div>
+          );
+        })}
+      </motion.section>
       <BottomNav />
     </div>
   );

@@ -1,3 +1,4 @@
+import { providers, signIn } from '../lib/auth';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSession, useOnline } from '../lib/online';
@@ -91,7 +92,7 @@ export function SettingsScreen() {
         </button>
         <AccountRecovery />
       </section>
-      <p className="rule-note">{t('Parqués · progreso guardado en este dispositivo')}</p>
+      <p className="rule-note">{t('Parqués Colombia · tu progreso se guarda en el servidor')}</p>
     </div>
   );
 }
@@ -105,8 +106,21 @@ function AccountRecovery() {
   const [code, setCode] = useState('');
   const session = getSession();
   const recovery = session ? `${session.id}-${session.token}` : '';
+  const linked = useProfile((p) => p.linked);
+  const provs = providers();
   return (
     <div className="recovery">
+      {provs.length ? (
+        <div className="signin-box">
+          <p className="rule-note">{t('Inicia sesión para no perder tu progreso y jugar en otro celular con la misma cuenta.')}</p>
+          {provs.map((pv) => (
+            <button key={pv} className={`signin-btn ${pv}`} disabled={linked.includes(pv)} onClick={() => void signIn(pv)}>
+              <span className="si-logo">{pv === 'apple' ? '' : 'G'}</span>
+              {linked.includes(pv) ? t('Cuenta de {p} vinculada ✓', { p: pv === 'apple' ? 'Apple' : 'Google' }) : t('Continuar con {p}', { p: pv === 'apple' ? 'Apple' : 'Google' })}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <p className="rule-note">{t('Tu progreso se guarda en el servidor. Con tu código de recuperación puedes entrar desde otro celular.')}</p>
       {show ? (
         <div className="recovery-code" onClick={() => navigator.clipboard?.writeText(recovery).then(() => toast({ icon: '📋', title: t('Código copiado') }))}>

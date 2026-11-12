@@ -8,6 +8,8 @@ name: Parqués for TestFlight
 # - Lo mismo que ios-release.yml (Fitness Life): variable APPLE_TEAM_ID y secretos
 #   APPSTORE_KEY_ID, APPSTORE_ISSUER_ID y APPSTORE_PRIVATE_KEY.
 # - Variable PARQUES_SERVER_URL: opcional; por defecto el servidor de Railway https://parques-server-production.up.railway.app.
+# - Opcionales: PARQUES_ADMOB_IOS_APP_ID y PARQUES_ADMOB_IOS_REWARDED (anuncios; sin ellos, de prueba),
+#   PARQUES_GOOGLE_WEB_CLIENT_ID y PARQUES_GOOGLE_IOS_CLIENT_ID (botón "Continuar con Google").
 # - Variable PARQUES_RC_IOS_KEY: la clave pública de App Store del proyecto de Parqués en RevenueCat (appl_…).
 # - La app creada en App Store Connect con el ID de paquete parques.app
 #   (el primer paso registra el ID si falta y avisa si la app no existe todavía).
@@ -32,6 +34,11 @@ jobs:
       VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL || 'https://parques-server-production.up.railway.app' }}
       VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
       VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
+      # Anuncios con premio (AdMob) e inicio de sesión con Google: opcionales.
+      VITE_ADMOB_REWARDED_IOS: ${{ vars.PARQUES_ADMOB_IOS_REWARDED }}
+      VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.PARQUES_GOOGLE_WEB_CLIENT_ID }}
+      VITE_GOOGLE_IOS_CLIENT_ID: ${{ vars.PARQUES_GOOGLE_IOS_CLIENT_ID }}
+      ADMOB_APP_ID: ${{ vars.PARQUES_ADMOB_IOS_APP_ID }}
     steps:
       - uses: actions/checkout@v5
       - name: Comprobar los ajustes
@@ -77,6 +84,20 @@ jobs:
       - name: Compilar la app y copiarla al proyecto de iOS
         working-directory: parques/apps/web
         run: npm run build:mobile && npx cap sync ios
+      - name: AdMob y Google en Info.plist
+        working-directory: parques/apps/web
+        run: |
+          plist=ios/App/App/Info.plist
+          if [ -n "$ADMOB_APP_ID" ]; then /usr/libexec/PlistBuddy -c "Set :GADApplicationIdentifier $ADMOB_APP_ID" "$plist"; else echo "::notice::Sin PARQUES_ADMOB_IOS_APP_ID: anuncios de prueba."; fi
+          if [ -n "$VITE_GOOGLE_IOS_CLIENT_ID" ]; then
+            scheme="com.googleusercontent.apps.${VITE_GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$plist" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$plist"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$plist"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $scheme" "$plist"
+            /usr/libexec/PlistBuddy -c "Add :GIDClientID string $VITE_GOOGLE_IOS_CLIENT_ID" "$plist"
+          fi
+          plutil -lint "$plist"
       # Se archiva sin firmar; la exportación lo firma para la App Store con un certificado
       # y un perfil creados para esta ejecución (igual que Fitness Life y Ridge Rush).
       - name: Archivar
@@ -87,6 +108,14 @@ jobs:
           DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
           MARKETING_VERSION="$VERSION_NAME" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
           archive
+      # La exportación firma con los derechos que encuentra en la app: se aplican aquí (Iniciar sesión con Apple).
+      - name: Añadir los derechos (Iniciar sesión con Apple)
+        working-directory: parques/apps/web
+        run: |
+          app="$RUNNER_TEMP/Parques.xcarchive/Products/Applications/App.app"
+          plutil -lint ios/App/App/App.entitlements
+          codesign --force --sign - --entitlements ios/App/App/App.entitlements "$app"
+          codesign -d --entitlements - "$app" 2>&1 | grep -q 'applesignin' || { echo "::error::Falta el derecho de Iniciar sesión con Apple"; exit 1; }
       - name: Comprobar el archivo
         run: |
           app="$RUNNER_TEMP/Parques.xcarchive/Products/Applications/App.app"

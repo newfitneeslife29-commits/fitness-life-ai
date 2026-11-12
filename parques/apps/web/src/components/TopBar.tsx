@@ -4,6 +4,7 @@ import { useApp } from '../stores/appStore';
 import { Avatar } from './Avatar';
 import { CurrencyPill } from './Counter';
 import { play } from '../audio/audio';
+import { tr } from '../lib/i18n';
 
 /** Barra superior: avatar con nivel y XP, monedas, gemas y ajustes. */
 export function TopBar({ back, title }: { back?: boolean; title?: string }) {
@@ -24,6 +25,9 @@ export function TopBar({ back, title }: { back?: boolean; title?: string }) {
             <div className="xpbar">
               <motion.div className="xpbar-fill" initial={false} animate={{ width: `${lvl.max ? 100 : (lvl.into / lvl.need) * 100}%` }} />
             </div>
+            <small className="topbar-xp">
+              {tr('Nivel {n}', { n: lvl.level })} · {lvl.max ? tr('MÁXIMO') : `${lvl.into.toLocaleString()}/${lvl.need.toLocaleString()} XP`}
+            </small>
           </div>
         </motion.button>
       )}

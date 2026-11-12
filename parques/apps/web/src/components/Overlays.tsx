@@ -1,12 +1,52 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFx } from '../stores/fxStore';
 import { CoinIcon, GemIcon } from './Counter';
+import { useOnline } from '../lib/online';
+import { useApp } from '../stores/appStore';
+import { tr } from '../lib/i18n';
+import { play } from '../audio/audio';
+
+/** Invitación de un amigo a su mesa privada. */
+function InviteCard() {
+  const invite = useOnline((o) => o.invite);
+  const dismiss = useOnline((o) => o.dismissInvite);
+  return (
+    <AnimatePresence>
+      {invite ? (
+        <motion.div className="invite-card card glossy" initial={{ y: -120, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -120, opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }}>
+          <span className="invite-av">{invite.from.avatar}</span>
+          <span className="invite-text">
+            <b>{invite.from.name}</b>
+            <small>{tr('te invita a su mesa')}</small>
+          </span>
+          <button
+            className="btn3d green small"
+            onClick={async () => {
+              play('tap');
+              const code = invite.code;
+              dismiss();
+              const err = await useOnline.getState().joinPrivate(code);
+              if (err) useFx.getState().toast({ icon: '⚠️', title: tr(err) });
+              else useApp.getState().go('online');
+            }}
+          >
+            {tr('Unirme')}
+          </button>
+          <button className="btn3d ghost small" onClick={dismiss}>
+            ✕
+          </button>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
 
 /** Capa global: monedas/gemas que vuelan al contador y avisos. */
 export function Overlays() {
   const { flyers, toasts, ask } = useFx();
   return (
     <>
+      <InviteCard />
       <AnimatePresence>
         {ask ? (
           <motion.div className="modal-backdrop ask-layer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

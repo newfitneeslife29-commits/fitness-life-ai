@@ -115,7 +115,7 @@ export function OnlineScreen() {
               <button
                 className="btn3d small blue"
                 onClick={async () => {
-                  const text = t('¡Ven a jugar Parqués conmigo! Código de mesa: {code}', { code: room.code ?? '' });
+                  const text = t('¡Ven a jugar Parqués Colombia conmigo! Código de mesa: {code}', { code: room.code ?? '' });
                   try {
                     if (navigator.share) await navigator.share({ text });
                     else {

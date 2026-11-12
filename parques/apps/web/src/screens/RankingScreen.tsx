@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { RankRow } from '@parques/engine';
+import { RANK_PRIZES, type RankRewardsInfo, type RankRow } from '@parques/engine';
+import { CoinIcon, GemIcon } from '../components/Counter';
+import { centerOf, useFx } from '../stores/fxStore';
+import { play } from '../audio/audio';
 import { TopBar } from '../components/TopBar';
 import { BottomNav } from '../components/BottomNav';
 import { Avatar } from '../components/Avatar';
@@ -18,6 +21,24 @@ export function RankingScreen() {
   const [scope, setScope] = useState<Scope>('global');
   const [rows, setRows] = useState<RankRow[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rewards, setRewards] = useState<RankRewardsInfo | null>(null);
+  const fx = useFx();
+
+  useEffect(() => {
+    void o.rankRewards().then(setRewards);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const claimFriends = async (el: HTMLElement) => {
+    const c = centerOf(el);
+    const r = await p.claimFriendsPrize();
+    if (!r.ok) return fx.toast({ icon: '👥', title: t(r.error ?? 'Error') });
+    play('win');
+    fx.fly('coin', c, 10);
+    if (r.result?.gems) fx.fly('gem', c, 4);
+    void o.rankRewards().then(setRewards);
+  };
+  const mine = rewards ? rewards[scope] : null;
 
   useEffect(() => {
     let alive = true;
@@ -45,6 +66,35 @@ export function RankingScreen() {
         <button className={scope === 'country' ? 'on' : ''} onClick={() => setScope('country')}>{country?.flag} {t(country?.name ?? '')}</button>
         <button className={scope === 'friends' ? 'on' : ''} onClick={() => setScope('friends')}>👥 {t('Amigos')}</button>
       </div>
+      <motion.section key={`prize-${scope}`} className="card glossy rank-prizes" initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+        <h3>🎁 {t('Premios de cada semana')}</h3>
+        <div className="rp-bands">
+          {RANK_PRIZES[scope].map((b, i) => (
+            <span key={i} className="rp-band">
+              <b>{b.upTo === 1 ? '1º' : `${(RANK_PRIZES[scope][i - 1]?.upTo ?? 0) + 1}º–${b.upTo}º`}</b>
+              <span><CoinIcon size={13} /> {b.coins.toLocaleString('es-CO')}</span>
+              {b.gems ? <span><GemIcon size={13} /> {b.gems}</span> : null}
+            </span>
+          ))}
+        </div>
+        {scope === 'friends' ? (
+          mine && 'claimed' in mine ? (
+            mine.claimed ? (
+              <p className="rule-note">✓ {t('Ya reclamaste tu premio entre amigos esta semana ({n}º)', { n: mine.place })}</p>
+            ) : (
+              <motion.button className="btn3d green small shine" animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1, repeat: Infinity }} onClick={(e) => claimFriends(e.currentTarget)}>
+                🎁 {t('Reclamar premio de amigos ({n}º)', { n: mine.place })}
+              </motion.button>
+            )
+          ) : (
+            <p className="rule-note">{t('Queda en el top 3 entre al menos 3 amigos que jueguen y reclama tu premio cada semana.')}</p>
+          )
+        ) : mine ? (
+          <p className="rule-note won">🏅 {t('La semana pasada quedaste {n}º y ganaste {c} monedas', { n: mine.place, c: mine.coins.toLocaleString('es-CO') })}</p>
+        ) : (
+          <p className="rule-note">{t('Los premios se entregan solos cada lunes según tus trofeos.')}</p>
+        )}
+      </motion.section>
       {loading ? (
         <motion.div className="loading-dice" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>🎲</motion.div>
       ) : rows === null ? (

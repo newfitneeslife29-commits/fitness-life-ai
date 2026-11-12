@@ -30,7 +30,15 @@ const PALETTES: Record<EffectStyle, string[]> = {
   confetti: ['#ffc928', '#2f7bff', '#ff3b4e', '#22c55e', '#a855f7'],
   fireworks: ['#ffcf3f', '#ff3b4e', '#7dd3fc', '#fff'],
   snow: ['#ffffff', '#dbeafe'],
+  bubbles: ['#bae6fd', '#e0f2fe', '#a5f3fc'],
+  butterflies: ['#ffd60a', '#ffc300', '#ffe066'],
+  lightning: ['#fef08a', '#a5f3fc', '#ffffff'],
+  music: ['#f472b6', '#facc15', '#38bdf8', '#4ade80'],
 };
+
+const BUTTERFLY = 'M0 0 C-6 -10 -14 -8 -12 0 C-14 8 -6 9 0 2 C6 9 14 8 12 0 C14 -8 6 -10 0 0Z';
+const BOLT = 'M2 -12 L-6 2 L0 2 L-3 12 L7 -3 L1 -3 Z';
+const NOTE = 'M3 -11 L3 4 A4 4 0 1 1 1 1 L1 -7 L9 -9 L9 -5 L3 -4Z';
 
 function Burst({ color, effect }: { color: string; effect: EffectStyle }) {
   const pal = PALETTES[effect];
@@ -42,6 +50,24 @@ function Burst({ color, effect }: { color: string; effect: EffectStyle }) {
         const t = (i / count) * Math.PI * 2;
         const d = (effect === 'fireworks' ? 95 : 70) + (i % 3) * 18;
         const fill = effect === 'stars' ? (i % 2 ? '#ffcf3f' : color) : pal[i % pal.length]!;
+        if (effect === 'bubbles')
+          return (
+            <motion.circle key={i} r={5 + (i % 3) * 3} fill="rgba(186,230,253,.35)" stroke={fill} strokeWidth={2}
+              initial={{ x: 0, y: 0, scale: 0.3, opacity: 1 }}
+              animate={{ x: Math.cos(t) * d * 0.7, y: Math.sin(t) * d * 0.5 - 60, scale: 1.4, opacity: 0 }}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: (i % 4) * 0.05 }} />
+          );
+        if (effect === 'butterflies' || effect === 'lightning' || effect === 'music')
+          return (
+            <motion.path key={i} d={effect === 'butterflies' ? BUTTERFLY : effect === 'lightning' ? BOLT : NOTE} fill={fill} stroke="#3a2a00" strokeWidth={0.8}
+              initial={{ x: 0, y: 0, scale: 0.4, rotate: 0, opacity: 1 }}
+              animate={
+                effect === 'butterflies'
+                  ? { x: Math.cos(t) * d, y: Math.sin(t) * d - 40, scaleX: [1, 0.3, 1, 0.3, 1], scale: 1.3, opacity: 0 }
+                  : { x: Math.cos(t) * d, y: Math.sin(t) * d, scale: 1.6, rotate: effect === 'music' ? 20 : 0, opacity: 0 }
+              }
+              transition={{ duration: effect === 'butterflies' ? 1.4 : 0.8, ease: 'easeOut' }} />
+          );
         if (effect === 'confetti')
           return (
             <motion.rect key={i} x={-4} y={-7} width={8} height={14} rx={2} fill={fill}
