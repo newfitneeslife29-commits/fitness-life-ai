@@ -75,6 +75,33 @@ function Label({ cell, text, font }: { cell: Cell; text: string; font: number })
   );
 }
 
+/** Punto a lo largo del eje largo de la casilla (f = -1 un extremo, 1 el otro). */
+function alongCell(cell: Cell, f: number) {
+  const half = Math.max(...cell.pts.map((q) => Math.abs((q.x - cell.center.x) * cell.axis.x + (q.y - cell.center.y) * cell.axis.y)));
+  return { x: cell.center.x + cell.axis.x * half * f, y: cell.center.y + cell.axis.y * half * f };
+}
+
+/** Número de la casilla (1–68) en un extremo, como en los tableros de competencia. */
+function CellNumber({ cell, n, font }: { cell: Cell; n: number; font: number }) {
+  const at = alongCell(cell, 0.66);
+  return (
+    <text x={at.x} y={at.y} transform={`rotate(${cell.angle} ${at.x} ${at.y})`} textAnchor="middle" dominantBaseline="central" fontFamily="Nunito, sans-serif" fontWeight={900} fontSize={font * 0.62} fill="rgba(40,30,60,.55)" pointerEvents="none">
+      {n}
+    </text>
+  );
+}
+
+/** Estrella de los seguros. */
+function SafeStar({ cell, size }: { cell: Cell; size: number }) {
+  const at = alongCell(cell, -0.62);
+  const pts = Array.from({ length: 10 }, (_, i) => {
+    const r = i % 2 ? size * 0.42 : size;
+    const a = (i * Math.PI) / 5 - Math.PI / 2;
+    return `${(at.x + Math.cos(a) * r).toFixed(1)},${(at.y + Math.sin(a) * r).toFixed(1)}`;
+  }).join(' ');
+  return <polygon points={pts} fill="#fff" stroke="rgba(0,0,0,.35)" strokeWidth={1.5} strokeLinejoin="round" pointerEvents="none" />;
+}
+
 /** Casilla de color con relieve: brillo arriba, sombra abajo. */
 function SolidCell({ cell, color, glass = false }: { cell: Cell; color: Color; glass?: boolean }) {
   const url = useUrl();
@@ -187,6 +214,7 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
           return (
             <g key={`sq-${sq}`}>
               <SolidCell cell={cl} color={color} glass={!!art} />
+              {labels ? <SafeStar cell={cl} size={font * 0.55} /> : null}
               {labels ? <Label cell={cl} text={o === 5 ? SALIDA : SEGURO} font={font} /> : null}
             </g>
           );
@@ -195,6 +223,7 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
           <g key={`sq-${sq}`}>
             <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} fillOpacity={art ? 0.5 : 1} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
             <polygon points={cl.points} fill={url('tileGloss')} pointerEvents="none" />
+            {labels ? <CellNumber cell={cl} n={sq + 1} font={font} /> : null}
           </g>
         );
       })}

@@ -248,4 +248,7 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Tu nombre o apodo": ["Your name or nickname", "Seu nome ou apelido", "Ton nom ou surnom"],
   "Elige tu avatar": ["Pick your avatar", "Escolha seu avatar", "Choisis ton avatar"],
   "¿De dónde eres?": ["Where are you from?", "De onde você é?", "D'où viens-tu ?"],
+  "GANADORES": ["WINNERS", "VENCEDORES", "GAGNANTS"],
+  "GANADOR": ["WINNER", "VENCEDOR", "GAGNANT"],
+  "Desierto de la Tatacoa": ["Tatacoa Desert", "Deserto de Tatacoa", "Désert de la Tatacoa"],
 };

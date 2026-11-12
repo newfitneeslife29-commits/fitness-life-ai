@@ -533,7 +533,70 @@ const Navidad: SceneFn = ({ p }) => (
   </g>
 );
 
+function Cactus({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <ellipse cx={0} cy={1} rx={11} ry={3} fill="rgba(90,50,10,.35)" />
+      <path d="M-4 0 V-26 A4 4 0 0 1 4 -26 V0Z" fill="#3f9b3a" stroke="#1f5a1c" strokeWidth={1} />
+      <path d="M-4 -12 H-9 V-20 A2.6 2.6 0 0 1 -4 -20" fill="none" stroke="#3f9b3a" strokeWidth={5} strokeLinecap="round" />
+      <path d="M4 -16 H9 V-24 A2.6 2.6 0 0 1 4 -24" fill="none" stroke="#3f9b3a" strokeWidth={5} strokeLinecap="round" />
+      <path d="M-1.5 -26 V-2 M1.5 -24 V-2" stroke="#2c7a28" strokeWidth={0.8} />
+      {[-22, -15, -8].map((yy) => <path key={yy} d={`M-4 ${yy} l-2 -1 M4 ${yy + 3} l2 -1`} stroke="#e8f5c8" strokeWidth={0.6} />)}
+      <circle cx={0} cy={-29} r={2.2} fill="#ff6fb5" />
+    </g>
+  );
+}
+
+function Rock({ x, y, s = 1, c = '#b5703a' }: { x: number; y: number; s?: number; c?: string }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <path d="M-7 2 L-5 -4 L1 -6 L7 -2 L8 2 Z" fill={c} stroke="rgba(60,30,5,.45)" strokeWidth={0.8} />
+      <path d="M-5 -4 L1 -6 L1 0 Z" fill="rgba(255,255,255,.25)" />
+    </g>
+  );
+}
+
+/** Desierto de la Tatacoa (Huila): arena, cárcavas rojas, cactus y rocas. */
+const Tatacoa: SceneFn = ({ p }) => (
+  <g>
+    <defs>
+      <radialGradient id={`${p}sand`} cx="50%" cy="50%" r="70%">
+        <stop offset="0%" stopColor="#ffe9bf" />
+        <stop offset="70%" stopColor="#f1c27d" />
+        <stop offset="100%" stopColor="#d99a52" />
+      </radialGradient>
+    </defs>
+    <rect x={-100} y={-100} width={200} height={200} fill={`url(#${p}sand)`} />
+    {/* Ondas de arena */}
+    {Array.from({ length: 9 }, (_, i) => (
+      <path key={i} d={`M-100 ${-88 + i * 22} q25 -5 50 0 t50 0 t50 0 t50 0`} fill="none" stroke="rgba(170,100,40,.18)" strokeWidth={1.4} />
+    ))}
+    {/* Cárcavas rojas en las esquinas */}
+    {([[-1, -1], [1, -1], [-1, 1], [1, 1]] as [number, number][]).map(([sx, sy], i) => (
+      <g key={i} transform={`translate(${sx * 74} ${sy * 74}) scale(${sx} ${sy})`}>
+        <path d="M-26 -26 L26 -26 C14 -18 6 -6 -2 4 C-10 10 -18 18 -26 26Z" fill="#c7552c" opacity={0.55} />
+        <path d="M-26 -26 L10 -26 C2 -18 -6 -10 -14 -2 C-18 4 -22 10 -26 14Z" fill="#9c3f1e" opacity={0.5} />
+      </g>
+    ))}
+    <Cactus x={-80} y={-60} s={1.1} />
+    <Cactus x={84} y={-70} s={0.9} />
+    <Cactus x={-70} y={86} s={1} />
+    <Cactus x={78} y={80} s={1.15} />
+    <Cactus x={-90} y={20} s={0.6} />
+    <Cactus x={92} y={10} s={0.65} />
+    {([[-60, -86, 1.2], [-92, -40, 0.9], [62, -88, 1], [90, -46, 0.8], [-58, 70, 1.1], [-88, 64, 0.8], [58, 64, 1], [92, 58, 0.9], [-30, -94, 0.7], [30, 94, 0.8]] as [number, number, number][]).map(([x, y, s2], i) => (
+      <Rock key={i} x={x} y={y} s={s2} c={i % 3 ? '#b5703a' : '#8e8a84'} />
+    ))}
+    {/* Centro: rosa de los vientos tallada en la arena */}
+    <g opacity={0.35}>
+      <circle r={16} fill="none" stroke="#8a4b16" strokeWidth={1.5} />
+      <path d="M0 -20 L4 0 L0 20 L-4 0Z M-20 0 L0 -4 L20 0 L0 4Z" fill="#8a4b16" />
+    </g>
+  </g>
+);
+
 const SCENES: Record<ArtId, SceneFn> = {
+  tatacoa: Tatacoa,
   playa: Playa,
   cafetal: Cafetal,
   cartagena: Cartagena,

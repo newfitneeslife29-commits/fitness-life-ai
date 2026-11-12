@@ -5,6 +5,8 @@ import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
 import { Avatar } from '../components/Avatar';
 import { isEmote } from './phrases';
+import { DieFace } from './Dice';
+import type { DiceSkin } from '@parques/engine';
 
 interface Props {
   player: PlayerState;
@@ -25,11 +27,14 @@ interface Props {
   /** Botón de emotes pegado al avatar (solo en mi asiento). */
   onEmote?: () => void;
   emoteOpen?: boolean;
+  /** Dados del rival en turno (se muestran junto a su avatar). */
+  dice?: [number, number] | null;
+  diceSkin?: DiceSkin;
 }
 
 const RING = 2 * Math.PI * 30;
 
-export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen }: Props) {
+export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin }: Props) {
   const color = `var(--${player.color})`;
   return (
     <div className={`seat ${active ? 'active' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
@@ -40,7 +45,7 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
         </svg>
         {active && deadline ? <Countdown deadline={deadline} /> : null}
         <div className="seat-face-wrap">
-          <Avatar emoji={avatar} frameId={frameId} size={46} color={color} />
+          <Avatar emoji={avatar} frameId={frameId} size={54} color={color} />
         </div>
         <span className="seat-level">{tag}</span>
         {place ? <span className="seat-place">{place}º</span> : null}
@@ -65,6 +70,14 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
           {team !== null && team !== undefined ? <span>{tr('Pareja {n}', { n: team + 1 })}</span> : null}
         </div>
       </div>
+      <AnimatePresence>
+        {active && dice && diceSkin ? (
+          <motion.div className="seat-dice" initial={{ scale: 0.3, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.3, opacity: 0 }} transition={{ type: 'spring', stiffness: 420, damping: 18 }}>
+            <DieFace value={dice[0]} skin={diceSkin} size={26} />
+            <DieFace value={dice[1]} skin={diceSkin} size={26} />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <AnimatePresence>
         {bubble ? (
           <motion.div

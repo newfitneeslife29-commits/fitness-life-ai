@@ -131,6 +131,8 @@ export function GameScreen() {
         team={p.team}
         onEmote={i === mySeatIndex ? () => { setChatOpen((o) => !o); play('tap'); } : undefined}
         emoteOpen={chatOpen}
+        dice={i !== mySeatIndex && !s.rolling ? s.shownDice : null}
+        diceSkin={diceSkin}
       />
     );
   };
@@ -229,7 +231,14 @@ export function GameScreen() {
           onRoll={s.humanRoll}
           skin={diceSkin}
         />
-        <div className="side-actions" />
+        <div className="side-actions">
+          <button className="pill-btn" onClick={() => { setChatTab('emotes'); setChatOpen((o) => !o || chatTab !== 'emotes'); play('tap'); }}>
+            😀 EMOJI
+          </button>
+          <button className="pill-btn" onClick={() => { setChatTab('frases'); setChatOpen((o) => !o || chatTab === 'emotes'); play('tap'); }}>
+            💬 CHAT
+          </button>
+        </div>
       </div>
 
 

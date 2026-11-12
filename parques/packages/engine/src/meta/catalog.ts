@@ -12,7 +12,7 @@ export type Currency = 'coins' | 'usd' | 'pass' | 'free' | 'event';
 /** Ilustraciones de tablero (dibujos de fondo, centro y esquinas). */
 export type BoardArt =
   | 'playa' | 'cafetal' | 'cartagena' | 'selva' | 'llanos' | 'salsa' | 'silletas' | 'guatape'
-  | 'tejo' | 'cielo' | 'carnaval' | 'navidad';
+  | 'tejo' | 'cielo' | 'carnaval' | 'navidad' | 'tatacoa';
 
 export interface BoardTheme {
   frame: string;
@@ -111,6 +111,8 @@ const RAW: Raw[] = [
     board: { frame: '#2f7d32', frameDark: '#123a14', slab: '#1d5a20', sky: ['#fff4f9', '#ffc1dc', '#f06292'], circle: ['#fffde7', '#ff80ab'], line: '#2b1440', tint: 14, deco: 'flowers', art: 'silletas', page: page('#5a1a45', '#1d0818') } },
   { id: 'board-guatape', category: 'board', name: 'Peñol de Guatapé', emoji: '🪨',
     board: { frame: '#1565c0', frameDark: '#0a2a5a', slab: '#0d4690', sky: ['#e3f6ff', '#7cc7f5', '#2e86de'], circle: ['#e8f5e9', '#43a047'], line: '#0a2a5a', tint: 14, deco: 'clouds', art: 'guatape', page: page('#0d3c75', '#04122a') } },
+  { id: 'board-tatacoa', category: 'board', name: 'Desierto de la Tatacoa', coins: 20000, emoji: '🌵',
+    board: { frame: '#c9822f', frameDark: '#6b3a0e', slab: '#94561a', sky: ['#fff1cf', '#f2c98a', '#d9944a'], circle: ['#ffe1a8', '#d9944a'], line: '#5a3010', tint: 10, cell: '#fff4dc', deco: 'wood', art: 'tatacoa', page: page('#4a2a52', '#1c0f22') } },
   { id: 'board-tejo', category: 'board', name: 'Cancha de tejo (Evento)', event: 'ev-partidas', emoji: '💣',
     board: { frame: '#5d4037', frameDark: '#1e110d', slab: '#3e2723', sky: ['#efe0c8', '#c9a77c', '#8d6e4a'], circle: ['#ffcc80', '#e53935'], line: '#1e110d', tint: 18, deco: 'wood', art: 'tejo', page: page('#3e2723', '#120806') } },
   { id: 'board-cielo', category: 'board', name: 'Cielo de coronas (Evento)', event: 'ev-coronas', emoji: '☁️',
