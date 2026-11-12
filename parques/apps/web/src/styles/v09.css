@@ -152,3 +152,26 @@
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 224, 102, 0.8); } 100% { box-shadow: 0 0 0 14px rgba(255, 224, 102, 0); } }
 .pass-cell.premium.big::after { content: '✨'; position: absolute; top: 6px; right: 8px; animation: twinkle 1.8s ease-in-out infinite; }
 @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+
+/* Arreglo: en pantallas bajas el contenido no se aplasta (se desplaza). */
+.screen > * { flex-shrink: 0; }
+
+/* Temporizador de turno sobre el avatar del jugador en turno */
+.seat-timer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); z-index: 4; padding: 1px 7px; border-radius: 999px; font-size: 0.7rem; font-weight: 900; white-space: nowrap; color: #2a1600; background: linear-gradient(160deg, #fff3b0, #ffd23f); border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
+.seat-timer.hurry { background: linear-gradient(160deg, #ff8a8a, #ff3b4e); color: #fff; animation: hurry-shake 0.5s ease-in-out infinite; }
+@keyframes hurry-shake { 0%, 100% { transform: translateX(-50%) rotate(0); } 25% { transform: translateX(-50%) rotate(-6deg); } 75% { transform: translateX(-50%) rotate(6deg); } }
+.seat.active::after { content: ''; position: absolute; inset: -4px; border-radius: 999px; border: 2px solid var(--pc); animation: seat-pulse 1.2s ease-out infinite; pointer-events: none; }
+@keyframes seat-pulse { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
+
+/* Registro (primera vez) */
+.welcome-screen { justify-content: flex-start; gap: 14px; }
+.welcome-card { width: min(100%, 460px); display: flex; flex-direction: column; gap: 10px; padding: 18px; z-index: 1; }
+.welcome-card h2 { margin: 0; text-align: center; }
+.welcome-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 1.1rem; }
+.field-label { font-weight: 900; font-size: 0.85rem; margin-top: 4px; }
+.avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.wl-av { font-size: 1.7rem; border: 2px solid transparent; background: rgba(0, 0, 0, 0.25); border-radius: 14px; padding: 6px 0; cursor: pointer; }
+.wl-av.on { border-color: var(--gold); background: rgba(255, 210, 63, 0.25); }
+.country-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { border: 2px solid transparent; border-radius: 999px; padding: 6px 10px; background: var(--surface); color: inherit; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
+.chip-btn.on { border-color: var(--gold); background: rgba(255, 210, 63, 0.2); }

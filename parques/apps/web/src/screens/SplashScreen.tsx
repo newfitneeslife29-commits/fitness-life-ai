@@ -8,6 +8,7 @@ import { useApp } from '../stores/appStore';
 import { useProfile } from '../stores/profileStore';
 import { useOnline } from '../lib/online';
 import { dailyStatus, dayKey } from '@parques/engine';
+import { isOnboarded } from './WelcomeScreen';
 
 /** Pantalla de carga: logo animado, barra de progreso y tips. */
 export function SplashScreen() {
@@ -35,6 +36,11 @@ export function SplashScreen() {
         return;
       }
       setProgress(1);
+      // Primera vez: registro (nombre, avatar, país y cuenta de Apple/Google).
+      if (!isOnboarded()) {
+        setTimeout(() => go('welcome'), 350);
+        return;
+      }
       const p = useProfile.getState();
       if (dailyStatus(p.daily.lastClaim, p.daily.streak, dayKey()).canClaim) setDailyOpen(true);
       setTimeout(() => go('lobby'), 350);
