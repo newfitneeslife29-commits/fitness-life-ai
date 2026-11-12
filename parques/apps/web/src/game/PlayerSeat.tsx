@@ -1,5 +1,5 @@
 import { tr } from '../lib/i18n';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
@@ -38,6 +38,7 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
           <circle cx={34} cy={34} r={30} fill="none" stroke="rgba(255,255,255,.12)" strokeWidth={5} />
           {active && deadline ? <TimerRing key={deadline} deadline={deadline} totalMs={totalMs} /> : null}
         </svg>
+        {active && deadline ? <Countdown deadline={deadline} /> : null}
         <div className="seat-face-wrap">
           <Avatar emoji={avatar} frameId={frameId} size={46} color={color} />
         </div>
@@ -78,6 +79,21 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** Segundos que le quedan al jugador en turno (se ve sobre su avatar). */
+function Countdown({ deadline }: { deadline: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((x) => x + 1), 250);
+    return () => clearInterval(id);
+  }, []);
+  const secs = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  return (
+    <motion.span className={`seat-timer ${secs <= 5 ? 'hurry' : ''}`} key={secs <= 5 ? secs : 'n'} initial={secs <= 5 ? { scale: 1.5 } : false} animate={{ scale: 1 }}>
+      ⏱ {secs}s
+    </motion.span>
   );
 }
 

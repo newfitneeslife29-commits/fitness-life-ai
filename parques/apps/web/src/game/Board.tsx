@@ -356,6 +356,7 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
         <BoardDefs theme={theme} />
         <g transform={`rotate(${rot})`}>
           <BoardScene sides={sides} active={activeSides} theme={theme} rot={rot} />
+          {game.phase !== 'over' ? <TurnGlow sides={sides} side={game.players[game.current]!.side} color={game.players[game.current]!.color} /> : null}
 
           {targets.map((tg, i) => (
             <g key={`t-${i}`} onClick={() => onTarget(tg.move)} style={{ cursor: 'pointer' }} data-target={tg.label}>
@@ -404,5 +405,32 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
         </g>
       </svg>
     </Idp.Provider>
+  );
+}
+
+/** La casa (cárcel) del jugador en turno se ilumina y late, para saber a quién le toca. */
+function TurnGlow({ sides, side, color }: { sides: 4 | 6; side: number; color: Color }) {
+  const j = jailGeom(sides, side);
+  return (
+    <g pointerEvents="none" key={side}>
+      <motion.polygon
+        points={j.points}
+        fill={`var(--${color})`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.15, 0.45, 0.15] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.polygon
+        points={j.points}
+        fill="none"
+        stroke="#fff"
+        strokeWidth={10}
+        strokeLinejoin="round"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ filter: `drop-shadow(0 0 14px var(--${color}))` }}
+      />
+    </g>
   );
 }

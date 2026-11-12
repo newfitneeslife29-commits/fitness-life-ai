@@ -22,6 +22,7 @@ import { OnlineScreen } from './screens/OnlineScreen';
 import { TournamentScreen } from './screens/TournamentScreen';
 import { PassScreen } from './screens/PassScreen';
 import { AchievementsScreen } from './screens/AchievementsScreen';
+import { WelcomeScreen } from './screens/WelcomeScreen';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
   splash: SplashScreen,
@@ -40,6 +41,7 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   tournament: TournamentScreen,
   pass: PassScreen,
   achievements: AchievementsScreen,
+  welcome: WelcomeScreen,
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */

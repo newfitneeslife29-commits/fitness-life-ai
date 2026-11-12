@@ -17,7 +17,8 @@ export type Screen =
   | 'online'
   | 'tournament'
   | 'pass'
-  | 'achievements';
+  | 'achievements'
+  | 'welcome';
 export type SetupMode = MatchConfig['mode'];
 
 interface AppStore {
