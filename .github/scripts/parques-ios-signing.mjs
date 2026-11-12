@@ -113,15 +113,22 @@ async function prune(keep) {
 }
 
 async function newCertificate(csr) {
-    const body = { data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } } };
+    const body = type => ({ data: { type: 'certificates', attributes: { certificateType: type, csrContent: csr } } });
     try {
-        return await api('POST', '/certificates', body);
+        return await api('POST', '/certificates', body('DISTRIBUTION'));
     } catch (e) {
-        // Apple solo permite unos pocos certificados de distribución a la vez (compartidos con Fitness Life).
-        // Aquí solo se borran los de Parqués; los de Fitness Life y Ridge Rush no se tocan.
+        // Apple solo permite unos pocos certificados de distribución a la vez (compartidos con Fitness Life y Ridge Rush).
+        // Aquí solo se borran los de Parqués; los de las otras apps no se tocan.
         console.log(`::warning::${e.message}. Removing every earlier Parques CI certificate and trying again.`);
         await prune(0);
-        return api('POST', '/certificates', body);
+    }
+    try {
+        return await api('POST', '/certificates', body('DISTRIBUTION'));
+    } catch (e) {
+        // Cupo de "Apple Distribution" lleno por las otras apps: se usa "iOS Distribution", que tiene su propio cupo
+        // y también sirve para los perfiles de la App Store.
+        console.log(`::warning::${e.message}. Using an iOS Distribution certificate instead.`);
+        return api('POST', '/certificates', body('IOS_DISTRIBUTION'));
     }
 }
 
