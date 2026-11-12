@@ -1,0 +1,25 @@
+{
+  "name": "@parques/server",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.16",
+    "@parques/engine": "*",
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "socket.io-client": "^4.8.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
+  }
+}

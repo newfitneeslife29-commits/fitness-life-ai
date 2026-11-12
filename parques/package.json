@@ -1,0 +1,19 @@
+{
+  "name": "parques",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Parqués — parqués colombiano para web/PWA",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @parques/web",
+    "dev:server": "npm run dev -w @parques/server",
+    "build": "npm run build -w @parques/web",
+    "start": "npm run build && npm run start -w @parques/server",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "demo": "npm run demo -w @parques/engine"
+  }
+}
