@@ -198,7 +198,7 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 
 ## v0.9 (lo nuevo)
 - **Reglas**: capturar da otra tirada (`captureBonus`, evento `EXTRA_TURN` con `reason: 'capture'`; no cuenta para tres pares).
-  Nivel máximo **500** (XP con la misma curva, total 12.499.950). Sala Élite y Top Leyendas desde nivel **200**. Turno de 20 s en todas las mesas.
+  Nivel máximo **500** (XP con la misma curva, total 12.499.950). Sala Élite desde nivel **200** y Top Leyendas desde nivel **300** (además del top 100). Turno de 20 s en todas las mesas.
 - **Partida**: botón de emotes pegado a mi avatar (`seat-emote`), panel con pestañas Emotes / Frases / regiones (`REGIONS` en
   `game/phrases.ts`: Costa, Paisa, Bogotá, Valle, Santander, Pacífico, Llanos, Nariño y Tolima, Boyacá). Si se cierra la app en plena
   partida, al volver se sale de la mesa (la máquina juega por ti) y queda en el inicio; un corte de red con la app abierta sí retoma.
