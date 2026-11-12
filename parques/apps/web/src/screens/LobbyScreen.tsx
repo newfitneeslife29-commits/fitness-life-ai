@@ -12,7 +12,9 @@ import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
 import { BoardMini } from '../game/Board';
 import { item } from '@parques/engine';
-import { passSeasonId, tierFromXp } from '@parques/engine';
+import { passSeasonId, tierFromXp, eventAt, AD_MAX_BALANCE } from '@parques/engine';
+import { watchAdForCoins } from '../lib/ads';
+import { providers, signIn } from '../lib/auth';
 
 function countdown(ms: number): string {
   const d = Math.floor(ms / 86400000);
@@ -39,6 +41,9 @@ export function LobbyScreen() {
   const passTier = tierFromXp(p.pass.season === passSeasonId() ? p.pass.xp : 0);
   const passReady = Array.from({ length: passTier }, (_, i) => i + 1).filter((tier) => !p.pass.claimedFree.includes(tier) || (p.pass.premium && !p.pass.claimedPremium.includes(tier))).length;
   const missionsReady = [...p.missions.daily, ...p.missions.weekly].filter((m) => !m.claimed && m.progress >= missionDef(m.id).goal).length;
+  const ev = eventAt();
+  const evReady = ev.def.tiers.filter((tr, i) => p.event.points >= tr.goal && !p.event.claimed.includes(i)).length;
+  const lowCoins = p.coins < AD_MAX_BALANCE;
 
   const tile = (icon: string, title: string, sub: string, cls: string, onClick: () => void, badge?: string) => (
     <motion.button className={`mode-tile ${cls}`} whileTap={{ scale: 0.92 }} whileHover={{ y: -3 }} onClick={() => { play('tap'); onClick(); }}>
@@ -72,6 +77,41 @@ export function LobbyScreen() {
         </div>
       ) : null}
 
+      <motion.button
+        className="event-banner"
+        style={{ ['--ea' as string]: ev.def.colors[0], ['--eb' as string]: ev.def.colors[1] }}
+        whileTap={{ scale: 0.97 }}
+        initial={{ x: -30, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        onClick={() => go('events')}
+      >
+        <motion.span className="sb-emoji" animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2 }}>
+          {ev.def.emoji}
+        </motion.span>
+        <span className="sb-text">
+          <b>{t('Evento')}: {t(ev.def.name)}</b>
+          <small>{t('{p} puntos · termina en {time}', { p: p.event.points, time: countdown(ev.endsAt - Date.now()) })}</small>
+        </span>
+        {evReady ? <span className="side-dot static">{evReady}</span> : <span className="sb-go">›</span>}
+      </motion.button>
+
+      {providers().length && !p.linked.length ? (
+        <div className="save-progress card glossy">
+          <span>💾 {t('Guarda tu progreso')}</span>
+          {providers().map((pv) => (
+            <button key={pv} className={`signin-btn small ${pv}`} onClick={() => void signIn(pv)}>
+              <span className="si-logo">{pv === 'apple' ? '' : 'G'}</span> {pv === 'apple' ? 'Apple' : 'Google'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {lowCoins ? (
+        <motion.button className="free-coins" whileTap={{ scale: 0.95 }} animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 1.3, repeat: Infinity }} onClick={() => { play('tap'); void watchAdForCoins(); }}>
+          📺 {t('¿Sin monedas? Mira un anuncio y gana {n}', { n: 300 })}
+        </motion.button>
+      ) : null}
+
       <div className="lobby-hero">
         <div className="hero-side">
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => { play('tap'); setDailyOpen(true); }} animate={giftReady ? { rotate: [0, -8, 8, -4, 0] } : undefined} transition={giftReady ? { duration: 1, repeat: Infinity, repeatDelay: 1.5 } : undefined}>
@@ -94,7 +134,11 @@ export function LobbyScreen() {
         <div className="hero-side">
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('tournament')}>
             🏆
-            <small>{t('Torneo')}</small>
+            <small>{t('Torneos')}</small>
+          </motion.button>
+          <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('friends')}>
+            🫂
+            <small>{t('Amigos')}</small>
           </motion.button>
           <motion.button className="side-btn pass" whileTap={{ scale: 0.88 }} onClick={() => go('pass')}>
             🎟️

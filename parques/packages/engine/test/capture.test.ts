@@ -70,3 +70,31 @@ describe('capturas', () => {
     expect(m.state.players[0]!.pieces[0]).toBe(65);
   });
 });
+
+describe('capturar da otra tirada', () => {
+  it('al capturar, el mismo jugador vuelve a tirar (sin par)', () => {
+    const s = setup(newGame(), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    const r2 = move(r1.state, step(0, 0, 1));
+    const extra = r2.events.find((e) => e.type === 'EXTRA_TURN');
+    expect(extra).toMatchObject({ player: 0, reason: 'capture' });
+    expect(r2.state.current).toBe(0);
+    expect(r2.state.phase).toBe('roll');
+    expect(r2.state.pairStreak).toBe(0);
+  });
+
+  it('sin captura y sin par, pasa el turno', () => {
+    const s = setup(newGame(), [[2, JAIL, JAIL, JAIL], [progressAt(1, 30), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    const r2 = move(r1.state, step(0, 0, 1));
+    expect(types(r2.events)).not.toContain('EXTRA_TURN');
+    expect(r2.state.current).toBe(1);
+  });
+
+  it('se puede desactivar como regla de la casa', () => {
+    const s = setup(newGame({ captureBonus: false }), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    const r2 = move(r1.state, step(0, 0, 1));
+    expect(r2.state.current).toBe(1);
+  });
+});

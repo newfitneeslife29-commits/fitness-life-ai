@@ -78,7 +78,7 @@ export const SOPLO_WINDOW_MS = 4500;
 
 const BASE = {
   roll: 650,
-  step: 150,
+  step: 220,
   exit: 420,
   capture: 650,
   crown: 750,
@@ -232,6 +232,13 @@ export const useGame = create<GameStore>((set, get) => {
             set({ view: setPiece(get().view, e.piece, pos) });
             play('step', 1 + Math.min(0.6, k++ * 0.05));
             await sleep(BASE.step);
+          }
+          break;
+        }
+        case 'EXTRA_TURN': {
+          if (e.reason === 'capture') {
+            showBanner('info', tr('¡Tira otra vez!'), tr('Capturar te da otra tirada'), 1100);
+            await sleep(BASE.turn);
           }
           break;
         }

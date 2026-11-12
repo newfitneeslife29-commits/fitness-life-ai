@@ -21,6 +21,8 @@ export interface MatchSummary {
   table: TableId | null;
   /** Entrada que pagó el jugador (0 = gratis). */
   entry: number;
+  /** Torneo al que cuenta la partida (si es de torneo). */
+  tournament?: string | null;
 }
 
 /** Lo que deja la partida: monedas que recibe (incluye su entrada si la recupera), XP y gemas. */

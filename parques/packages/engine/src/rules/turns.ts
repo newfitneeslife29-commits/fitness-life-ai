@@ -28,13 +28,18 @@ export function endRoll(state: GameState, events: GameEvent[]): void {
   if (unused.length > 0 && state.phase !== 'over') {
     events.push({ type: 'DICE_FORFEITED', player: state.current, dice: unused });
   }
+  // Capturar a alguien da otra tirada (se lee antes de cerrar el soplo, que reinicia la marca).
+  const captured = state.capturedThisRoll && state.rules.captureBonus;
   finalizeSoplo(state, events);
   if (state.phase === 'over') return;
-  if (isPairRoll(state) && stillPlaying(state, state.current)) {
+  const pair = isPairRoll(state);
+  if ((pair || captured) && stillPlaying(state, state.current)) {
     state.phase = 'roll';
     state.diceUsed = [true, true];
     state.jailRollsUsed = 0;
-    events.push({ type: 'EXTRA_TURN', player: state.current });
+    // La tirada extra por captura no cuenta para los tres pares seguidos.
+    if (!pair) state.pairStreak = 0;
+    events.push({ type: 'EXTRA_TURN', player: state.current, reason: pair ? 'pair' : 'capture' });
   } else {
     nextPlayer(state, events);
   }

@@ -6,7 +6,7 @@ Fitness Life. Nada de esto modifica las otras apps del repositorio.
 
 | Qué | Valor |
 |---|---|
-| Nombre en las tiendas | **Parqués** |
+| Nombre en las tiendas | **Parqués Colombia** |
 | ID de paquete (Android) / Bundle ID (iOS) | **`parques.app`** |
 | Servidor | Railway: proyecto `parques`, servicio `parques-server`, **https://parques-server-production.up.railway.app** ✅ |
 | Base de datos | Supabase Postgres: esquema `parques`, usuario restringido `parques_server` ✅ |
@@ -117,3 +117,31 @@ Ya tienes de Fitness Life: variable `APPLE_TEAM_ID`, `SUPABASE_PROJECT_REF`; sec
 | GitHub (variables) | `PARQUES_SERVER_URL`, `PARQUES_RC_ANDROID_KEY`, `PARQUES_RC_IOS_KEY` |
 | GitHub (ya existentes) | `APPLE_TEAM_ID`, `SUPABASE_PROJECT_REF`, `APPSTORE_*`, `SUPABASE_ACCESS_TOKEN` |
 | Workflows | `parques-android.yml`, `parques-ios.yml`, `parques-ci.yml` (pruebas automáticas) |
+
+## 7. Anuncios con premio (AdMob) — opcional
+
+Sin configurar nada la app muestra **anuncios de prueba** de Google (funcionan, pero no pagan). Para ganar dinero:
+1. **admob.google.com** → *Apps* → agrega **Parqués Colombia** para Android y para iOS.
+2. En cada app crea un bloque de anuncios **Bonificado (Rewarded)**.
+3. GitHub → Settings → Secrets and variables → Actions → **Variables**:
+
+   | Variable | Valor |
+   |---|---|
+   | `PARQUES_ADMOB_ANDROID_APP_ID` | id de la app Android (`ca-app-pub-…~…`) |
+   | `PARQUES_ADMOB_ANDROID_REWARDED` | id del bloque bonificado Android (`ca-app-pub-…/…`) |
+   | `PARQUES_ADMOB_IOS_APP_ID` | id de la app iOS |
+   | `PARQUES_ADMOB_IOS_REWARDED` | id del bloque bonificado iOS |
+
+4. En Play Console → *Contenido de la app* → **Anuncios: Sí**. En App Store Connect → *Privacidad de la app*: datos de uso para publicidad
+   (los anuncios son no personalizados, así que la app no pide permiso de rastreo).
+
+## 8. Iniciar sesión con Apple y Google
+
+- **Apple**: ya está listo. El workflow de iPhone activa "Sign in with Apple" en el App ID y la app lo usa.
+- **Google** (opcional): en **console.cloud.google.com** (el mismo proyecto de Fitness Life sirve) → *APIs y servicios* → *Credenciales* →
+  *Crear credenciales* → *ID de cliente de OAuth*:
+  1. Tipo **Aplicación web** → copia el id → variable de GitHub `PARQUES_GOOGLE_WEB_CLIENT_ID`.
+  2. Tipo **iOS**, ID del paquete `parques.app` → variable `PARQUES_GOOGLE_IOS_CLIENT_ID`.
+  3. Tipo **Android**, paquete `parques.app` y la huella **SHA-1** de la app (Play Console → *Integridad de la app* →
+     *Firma de apps*: agrega la SHA-1 de la clave de firma de Google y la de la clave de subida).
+  4. En **Railway** → parques-server → Variables: `GOOGLE_CLIENT_IDS` = los tres ids separados por coma.

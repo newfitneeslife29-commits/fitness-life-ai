@@ -70,7 +70,54 @@ export type ProfileOp =
   | { op: 'friend_add'; friend: Friend }
   | { op: 'friend_remove'; id: string }
   | { op: 'emote'; emoteId: string }
-  | { op: 'tournament_claim' };
+  | { op: 'tournament_claim' }
+  | { op: 'ad' }
+  | { op: 'event_claim'; tier: number }
+  | { op: 'deal'; itemId: string }
+  | { op: 'chest'; chestId: string }
+  | { op: 'exchange'; gems: number }
+  | { op: 'cup_join'; tier: string }
+  | { op: 'rank_friends_claim' };
+
+/** Datos públicos de un jugador (búsqueda de amigos). */
+export interface PublicPlayer {
+  id: string;
+  name: string;
+  avatar: string;
+  country: string;
+  level: number;
+  rating: number;
+  wins: number;
+  games: number;
+  online: boolean;
+}
+
+/** Copa (torneo con inscripción) de la semana. */
+export interface CupInfo {
+  tier: string;
+  weekKey: string;
+  endsAt: number;
+  joined: boolean;
+  myGames: number;
+  players: number;
+  pool: number;
+  prizes: number[];
+  rows: { playerId: string; name: string; avatar: string; points: number; games: number }[];
+}
+
+/** Salón de la fama: más torneos ganados y más monedas ganadas en torneos. */
+export interface HallOfFame {
+  wins: { playerId: string; name: string; avatar: string; value: number }[];
+  coins: { playerId: string; name: string; avatar: string; value: number }[];
+}
+
+/** Premios del ranking de la semana pasada (ya entregados o por reclamar). */
+export interface RankRewardsInfo {
+  week: string;
+  global: { place: number; coins: number; gems: number } | null;
+  country: { place: number; coins: number; gems: number } | null;
+  friends: { place: number; coins: number; gems: number; claimed: boolean } | null;
+}
 
 export interface ProfileOpResult {
   ok: boolean;
@@ -114,6 +161,15 @@ export interface ClientToServer {
   resume: (roomId: string, ack: (r: { ok: boolean }) => void) => void;
   ranking: (q: { scope: 'global' | 'country' | 'friends'; country?: string; friends?: string[] }, ack: (rows: RankRow[]) => void) => void;
   tournament: (ack: (t: TournamentInfo) => void) => void;
+  cups: (ack: (cups: CupInfo[]) => void) => void;
+  cup_match: (tier: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  hall_of_fame: (ack: (h: HallOfFame) => void) => void;
+  rank_rewards: (ack: (r: RankRewardsInfo) => void) => void;
+  find_player: (id: string, ack: (p: PublicPlayer | null) => void) => void;
+  friends_online: (ids: string[], ack: (online: string[]) => void) => void;
+  invite: (o: { to: string; code: string }, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  /** Iniciar sesión / vincular con Apple o Google (token de identidad del proveedor). */
+  auth_provider: (o: { provider: 'apple' | 'google'; idToken: string; name?: string; link: boolean }, ack: (r: AuthResult & { linked?: boolean }) => void) => void;
 }
 
 export interface ServerToClient {
@@ -128,6 +184,8 @@ export interface ServerToClient {
   profile: (p: Profile) => void;
   /** Premios de la partida que acaba de terminar. */
   match_result: (r: { outcome: MatchOutcome; profile: Profile }) => void;
+  /** Un amigo te invita a su mesa privada. */
+  invited: (m: { from: { id: string; name: string; avatar: string }; code: string }) => void;
 }
 
 /** Id del producto en Google Play / App Store (sin ':' ni '-'). */

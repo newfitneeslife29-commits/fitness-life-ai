@@ -64,11 +64,15 @@ async function ensureBundleId() {
 // Capacidades que necesita el juego en su App ID (el perfil de firma lleva las del App ID).
 async function ensureCapabilities(bundle) {
     const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities`);
-    for (const type of ['IN_APP_PURCHASE']) {
+    // Compras dentro de la app e Iniciar sesión con Apple.
+    const settings = {
+        APPLE_ID_AUTH: [{ key: 'APPLE_ID_AUTH_APP_CONSENT', options: [{ key: 'PRIMARY_APP_CONSENT' }] }],
+    };
+    for (const type of ['IN_APP_PURCHASE', 'APPLE_ID_AUTH']) {
         if (caps.data.some(c => c.attributes.capabilityType === type)) continue;
         try {
             await api('POST', '/bundleIdCapabilities', {
-                data: { type: 'bundleIdCapabilities', attributes: { capabilityType: type },
+                data: { type: 'bundleIdCapabilities', attributes: { capabilityType: type, ...(settings[type] ? { settings: settings[type] } : {}) },
                     relationships: { bundleId: { data: { type: 'bundleIds', id: bundle.id } } } },
             });
             console.log(`Activada la capacidad ${type} en ${BUNDLE_ID}`);

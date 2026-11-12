@@ -1,4 +1,6 @@
-import { createContext, memo, useContext, useMemo } from 'react';
+import { Idp } from './idp';
+import { BoardArt } from './BoardArt';
+import { memo, useContext, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { COLORS_4, COLORS_6, homeFor, SQUARES_PER_SIDE, trackLength } from '@parques/engine';
 import type { Color, GameState, Move, PieceRef } from '@parques/engine';
@@ -44,7 +46,7 @@ const cd = (color: Color) => `var(--${color}-dark)`;
 const LINE = 'var(--board-line)';
 
 /** Prefijo de ids SVG: permite varios tableros con temas distintos en la misma pantalla. */
-const Idp = createContext('b-');
+
 const useUrl = () => {
   const p = useContext(Idp);
   return (id: string) => `url(#${p}${id})`;
@@ -74,11 +76,11 @@ function Label({ cell, text, font }: { cell: Cell; text: string; font: number })
 }
 
 /** Casilla de color con relieve: brillo arriba, sombra abajo. */
-function SolidCell({ cell, color }: { cell: Cell; color: Color }) {
+function SolidCell({ cell, color, glass = false }: { cell: Cell; color: Color; glass?: boolean }) {
   const url = useUrl();
   return (
     <g>
-      <polygon points={cell.points} fill={c(color)} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
+      <polygon points={cell.points} fill={c(color)} fillOpacity={glass ? 0.78 : 1} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
       <polygon points={cell.points} fill={url('cellGloss')} pointerEvents="none" />
     </g>
   );
@@ -96,6 +98,9 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
   const SALIDA = labels ? tr('SALIDA') : '';
   const SEGURO = labels ? tr('SEGURO') : '';
   const LLEGADA = labels ? tr('LLEGADA') : '';
+  // Tableros ilustrados: el dibujo cubre todo el tablero y las piezas del tablero quedan semitransparentes.
+  const art = theme.art ?? null;
+  const half = boardBox(sides).w;
 
   return (
     <g>
@@ -110,15 +115,27 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
       <polygon points={outlinePoints(sides, 16)} fill={theme.frame} stroke={theme.frameDark} strokeWidth={8} strokeLinejoin="round" />
       <polygon points={outlinePoints(sides, 16)} fill={url('frameGloss')} />
       <polygon points={outlinePoints(sides, 2)} fill={url('skyBg')} stroke={theme.frameDark} strokeWidth={5} strokeLinejoin="round" />
+      {art ? <BoardArt art={art} r={half} rot={rot} clipPoints={outlinePoints(sides, 2)} /> : null}
       <polygon points={outlinePoints(sides, 2)} fill="none" stroke="rgba(0,0,0,.25)" strokeWidth={14} strokeLinejoin="round" style={{ filter: 'blur(3px)' }} />
 
       {/* Cielo con volumen */}
-      <circle r={sky + 14} fill={theme.frameDark} opacity={0.35} />
-      <circle r={sky + 6} fill="#fff" />
-      <circle r={sky} fill={url('skyCircle')} />
-      <circle r={sky} fill="none" stroke="rgba(0,0,0,.22)" strokeWidth={10} style={{ filter: 'blur(2px)' }} />
-      <Deco kind={theme.deco} sky={sky} />
-      <ellipse cx={-sky * 0.25} cy={-sky * 0.45} rx={sky * 0.55} ry={sky * 0.28} fill="rgba(255,255,255,.28)" transform={`rotate(${-rot})`} />
+      {art ? (
+        <>
+          {/* Cielo de vidrio: deja ver el dibujo */}
+          <circle r={sky + 6} fill="none" stroke="#fff" strokeWidth={6} opacity={0.85} />
+          <circle r={sky} fill="rgba(255,255,255,.08)" stroke="rgba(0,0,0,.25)" strokeWidth={3} />
+          <ellipse cx={-sky * 0.25} cy={-sky * 0.45} rx={sky * 0.55} ry={sky * 0.28} fill="rgba(255,255,255,.18)" transform={`rotate(${-rot})`} />
+        </>
+      ) : (
+        <>
+          <circle r={sky + 14} fill={theme.frameDark} opacity={0.35} />
+          <circle r={sky + 6} fill="#fff" />
+          <circle r={sky} fill={url('skyCircle')} />
+          <circle r={sky} fill="none" stroke="rgba(0,0,0,.22)" strokeWidth={10} style={{ filter: 'blur(2px)' }} />
+          <Deco kind={theme.deco} sky={sky} />
+          <ellipse cx={-sky * 0.25} cy={-sky * 0.45} rx={sky * 0.55} ry={sky * 0.28} fill="rgba(255,255,255,.28)" transform={`rotate(${-rot})`} />
+        </>
+      )}
 
       {/* Cárceles hundidas con rejas */}
       {colors.map((color, side) => {
@@ -132,10 +149,10 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
             <clipPath id={clip}>
               <polygon points={j.points} />
             </clipPath>
-            <polygon points={j.points} fill={c(color)} />
+            <polygon points={j.points} fill={c(color)} opacity={art ? 0.62 : 1} />
             <g clipPath={`url(#${clip})`}>
               <polygon points={j.points} fill="none" stroke="rgba(0,0,0,.35)" strokeWidth={28} style={{ filter: 'blur(8px)' }} />
-              <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={0.3}>
+              <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={art ? 0.15 : 0.3}>
                 <rect x={-34} y={-14} width={68} height={52} rx={10} fill={cd(color)} />
                 <path d="M-20 -14 V-30 A20 20 0 0 1 20 -30 V-14" fill="none" stroke={cd(color)} strokeWidth={10} />
               </g>
@@ -169,14 +186,14 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
         if (o === 0 || o === 5 || o === 12) {
           return (
             <g key={`sq-${sq}`}>
-              <SolidCell cell={cl} color={color} />
+              <SolidCell cell={cl} color={color} glass={!!art} />
               {labels ? <Label cell={cl} text={o === 5 ? SALIDA : SEGURO} font={font} /> : null}
             </g>
           );
         }
         return (
           <g key={`sq-${sq}`}>
-            <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
+            <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} fillOpacity={art ? 0.5 : 1} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
             <polygon points={cl.points} fill={url('tileGloss')} pointerEvents="none" />
           </g>
         );
@@ -186,9 +203,9 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
       {colors.map((color, side) => (
         <g key={`cor-${side}`} opacity={active[side] ? 1 : 0.55}>
           {Array.from({ length: 7 }, (_, i) => (
-            <SolidCell key={i} cell={corridorCell(sides, side, i + 1)} color={color} />
+            <SolidCell key={i} cell={corridorCell(sides, side, i + 1)} color={color} glass={!!art} />
           ))}
-          <SolidCell cell={llegadaCell(sides, side)} color={color} />
+          <SolidCell cell={llegadaCell(sides, side)} color={color} glass={!!art} />
           {labels ? <Label cell={llegadaCell(sides, side)} text={LLEGADA} font={font} /> : null}
         </g>
       ))}

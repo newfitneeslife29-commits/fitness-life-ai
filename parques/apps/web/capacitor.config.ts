@@ -7,7 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  */
 const config: CapacitorConfig = {
   appId: 'parques.app',
-  appName: 'Parqués',
+  appName: 'Parqués Colombia',
   webDir: 'dist',
   backgroundColor: '#120c2e',
   android: {

@@ -4,16 +4,22 @@ import { App } from './App';
 import './styles/global.css';
 import './styles/screens.css';
 import './styles/ui.css';
+import './styles/v09.css';
 import { initNative, isNative } from './lib/native';
 
 if (isNative()) void initNative();
 else void import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true }));
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const root = createRoot(document.getElementById('root')!);
+if (import.meta.env.DEV && location.hash === '#galeria') {
+  void import('./dev/Gallery').then(({ Gallery }) => root.render(<Gallery />));
+} else {
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
 
 // Acceso de depuración solo en desarrollo.
 if (import.meta.env.DEV) {

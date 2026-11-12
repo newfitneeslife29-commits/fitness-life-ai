@@ -1,5 +1,8 @@
+import { LOCALES_2 } from './locales2';
+
 /** Traducciones: clave = texto en español → [inglés, portugués, francés]. */
 export const LOCALES: Record<string, [string, string, string]> = {
+  ...LOCALES_2,
   // ---------------- General / navegación
   "Inicio": ["Home", "Início", "Accueil"],
   "Tienda": ["Shop", "Loja", "Boutique"],

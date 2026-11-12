@@ -38,6 +38,8 @@ export interface HouseRules {
   teams: boolean;
   /** Fichas por jugador (4 normal, 2 en Modo Rápido). */
   piecesPerPlayer: number;
+  /** Capturar a un rival da otra tirada. */
+  captureBonus: boolean;
 }
 
 export const DEFAULT_RULES: HouseRules = {
@@ -48,6 +50,7 @@ export const DEFAULT_RULES: HouseRules = {
   pairExitMax: 2,
   teams: false,
   piecesPerPlayer: 4,
+  captureBonus: true,
 };
 
 export interface PlayerSetup {
@@ -158,7 +161,7 @@ export type GameEvent =
   | { type: 'SOPLO_AVAILABLE'; offender: number; piece: PieceRef }
   | { type: 'SOPLADO'; by: number; offender: number; piece: PieceRef }
   | { type: 'SOPLO_EXPIRED' }
-  | { type: 'EXTRA_TURN'; player: number }
+  | { type: 'EXTRA_TURN'; player: number; reason?: 'pair' | 'capture' }
   | { type: 'TURN_CHANGED'; player: number }
   | { type: 'PLAYER_FINISHED'; player: number; place: number }
   | { type: 'GAME_OVER'; ranking: number[] };

@@ -36,6 +36,13 @@ interface ProfileState extends Profile {
   removeFriend: (id: string) => Promise<OpReply>;
   emote: (emoteId: string) => Promise<OpReply<{ glyph: string }>>;
   claimTournament: () => Promise<OpReply<{ coins: number; gems: number; place: number }>>;
+  watchedAd: () => Promise<OpReply<{ coins: number; left: number }>>;
+  claimEvent: (tier: number) => Promise<OpReply<{ coins: number; gems: number; itemId: string | null }>>;
+  buyDeal: (itemId: string) => Promise<OpReply<{ price: number }>>;
+  openChest: (chestId: string) => Promise<OpReply<{ itemId: string | null; coins: number }>>;
+  exchangeGems: (gems: number) => Promise<OpReply<{ coins: number }>>;
+  joinCup: (tier: string) => Promise<OpReply>;
+  claimFriendsPrize: () => Promise<OpReply<{ coins: number; gems: number; place: number }>>;
 }
 
 export const useProfile = create<ProfileState>()((set, get) => {
@@ -65,6 +72,13 @@ export const useProfile = create<ProfileState>()((set, get) => {
     removeFriend: (id) => op({ op: 'friend_remove', id }),
     emote: (emoteId) => op({ op: 'emote', emoteId }),
     claimTournament: () => op({ op: 'tournament_claim' }),
+    watchedAd: () => op({ op: 'ad' }),
+    claimEvent: (tier) => op({ op: 'event_claim', tier }),
+    buyDeal: (itemId) => op({ op: 'deal', itemId }),
+    openChest: (chestId) => op({ op: 'chest', chestId }),
+    exchangeGems: (gems) => op({ op: 'exchange', gems }),
+    joinCup: (tier) => op({ op: 'cup_join', tier }),
+    claimFriendsPrize: () => op({ op: 'rank_friends_claim' }),
   };
 });
 

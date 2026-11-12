@@ -15,7 +15,13 @@ const fakeRc = new StorePurchases('sk_rc_test_123456', (async () => ({
 })) as unknown as typeof fetch);
 
 beforeAll(async () => {
-  srv = startServer({ matchWaitMs: 200, timing: { turnMs: 30, soploMs: 20, botDelayMs: 2, graceMs: 100 }, storePurchases: fakeRc });
+  srv = startServer({
+    matchWaitMs: 200,
+    timing: { turnMs: 30, soploMs: 20, botDelayMs: 2, graceMs: 100 },
+    storePurchases: fakeRc,
+    // Apple / Google simulados: el token "apple:<sub>" es válido.
+    verifyIdentity: async (provider, token) => (token.startsWith(`${provider}:`) ? { sub: token.slice(provider.length + 1), email: null } : null),
+  });
   await new Promise<void>((r) => srv.http.listen(0, r));
   url = `http://localhost:${(srv.http.address() as AddressInfo).port}`;
 });
@@ -61,7 +67,7 @@ describe('servidor online (autoridad)', () => {
     expect((await op(a, { op: 'buy', itemId: 'board-oro' })).ok).toBe(false); // es de dinero real
     const d = await op(a, { op: 'daily' });
     expect(d.ok).toBe(true);
-    expect(d.profile.coins).toBe(1100);
+    expect(d.profile.coins).toBe(1100 + 50); // + logro "Constante I"
     expect((await op(a, { op: 'daily' })).ok).toBe(false);
     const e = await op(a, { op: 'emote', emoteId: 'e-risa' });
     expect(e.profile.gems).toBe(9);
@@ -129,9 +135,93 @@ describe('servidor online (autoridad)', () => {
     expect((await post({ id: a.id, token: 'falso' })).ok).toBe(false);
     const r1 = await post({ id: a.id, token: a.token });
     expect(r1.granted).toEqual(['coins-m']);
-    expect(r1.profile.coins).toBe(31000);
+    expect(r1.profile.coins).toBe(31000 + 50) // + logro "Mecenas I";
     const r2 = await post({ id: a.id, token: a.token });
     expect(r2.granted).toEqual([]);
-    expect(r2.profile.coins).toBe(31000);
+    expect(r2.profile.coins).toBe(31000 + 50);
+  });
+});
+
+describe('v0.9 en el servidor', () => {
+  it('buscar un jugador por su código, ver si está conectado e invitarlo a una mesa', async () => {
+    const a = await client();
+    const b = await client();
+    const found = await new Promise<any>((r) => a.s.emit('find_player', b.id.toLowerCase(), r));
+    expect(found).toMatchObject({ id: b.id, online: true, level: 1 });
+    expect(await new Promise<any>((r) => a.s.emit('find_player', 'NOEXISTE', r))).toBeNull();
+    const online = await new Promise<string[]>((r) => a.s.emit('friends_online', [b.id, 'NOEXISTE'], r));
+    expect(online).toEqual([b.id]);
+    const got = once<any>(b.s, 'invited');
+    expect((await new Promise<any>((r) => a.s.emit('invite', { to: b.id, code: 'ABCDE' }, r))).ok).toBe(true);
+    expect(await got).toMatchObject({ code: 'ABCDE', from: { id: a.id } });
+  });
+
+  it('anuncios con premio solo sin monedas; ofertas del día y cofres', async () => {
+    const a = await client();
+    expect((await op(a, { op: 'ad' })).ok).toBe(false); // tiene 1.000 monedas
+    const chest = await op(a, { op: 'chest', chestId: 'cofre-bronce' });
+    expect(chest.error).toBe('Te faltan gemas');
+    const ex = await op(a, { op: 'exchange', gems: 10 });
+    expect(ex.ok).toBe(true);
+    expect(ex.profile.coins).toBe(3000);
+  });
+
+  it('copas: inscribirse cobra la inscripción una vez; el cierre de semana paga el bote', async () => {
+    const a = await client();
+    expect((await op(a, { op: 'cup_join', tier: 'oro' })).error).toBe('Necesitas nivel 40');
+    const j = await op(a, { op: 'cup_join', tier: 'bronce' });
+    expect(j.error).toBe('Necesitas nivel 3');
+    // Nivel suficiente: se sube el nivel en la base para la prueba.
+    await srv.store.update(a.id, (p) => ({ ok: true, profile: { ...p, xp: 1000, coins: 5000 } }));
+    const ok = await op(a, { op: 'cup_join', tier: 'bronce' });
+    expect(ok.ok).toBe(true);
+    expect(ok.profile.coins).toBeLessThan(5000); // pagó la inscripción (y ganó el logro "Competidor I")
+    expect((await op(a, { op: 'cup_join', tier: 'bronce' })).error).toBe('Ya estás inscrito');
+    const cups = await new Promise<any[]>((r) => a.s.emit('cups', r));
+    const bronce = cups.find((c) => c.tier === 'bronce');
+    expect(bronce).toMatchObject({ joined: true, players: 1 });
+    expect(bronce.pool).toBeGreaterThan(10000);
+    // Una partida de copa suma puntos.
+    await srv.store.recordCup('bronce', [a.id]);
+    const before = (await srv.store.getProfile(a.id))!.coins;
+    const { weekKey } = await import('@parques/engine');
+    const paid = await srv.store.settleCups(weekKey(new Date()));
+    expect(paid.find((x) => x.playerId === a.id && x.tier === 'bronce')).toMatchObject({ place: 1 });
+    expect((await srv.store.getProfile(a.id))!.coins).toBeGreaterThan(before);
+    expect(await srv.store.settleCups(weekKey(new Date()))).toEqual([]); // una sola vez
+    const hall = await new Promise<any>((r) => a.s.emit('hall_of_fame', r));
+    expect(hall.wins.some((w: any) => w.playerId === a.id)).toBe(true);
+  });
+
+  it('premios del ranking: el cierre paga al top una sola vez', async () => {
+    const { weekKey } = await import('@parques/engine');
+    const wk = `${weekKey(new Date())}-test`;
+    const paid = await srv.store.settleRanking(wk);
+    expect(paid.length).toBeGreaterThan(0);
+    expect(paid[0]).toMatchObject({ scope: 'global', place: 1 });
+    expect(await srv.store.settleRanking(wk)).toEqual([]);
+  });
+
+  it('Apple / Google: vincula la cuenta actual y luego entra a ella desde otro celular', async () => {
+    const a = await client();
+    const bad = await new Promise<any>((r) => a.s.emit('auth_provider', { provider: 'apple', idToken: 'malo', link: true }, r));
+    expect(bad.ok).toBe(false);
+    const link = await new Promise<any>((r) => a.s.emit('auth_provider', { provider: 'apple', idToken: 'apple:sub-1', link: true }, r));
+    expect(link).toMatchObject({ ok: true, id: a.id, linked: true });
+    expect(link.profile.linked).toContain('apple');
+    // Otro celular (cuenta de invitado nueva) entra con la misma cuenta de Apple → recibe la cuenta original.
+    const b = await client();
+    const login = await new Promise<any>((r) => b.s.emit('auth_provider', { provider: 'apple', idToken: 'apple:sub-1', link: false }, r));
+    expect(login).toMatchObject({ ok: true, id: a.id });
+    expect(login.token).toBeTruthy();
+    const again = await client({ id: a.id, token: login.token });
+    expect(again.id).toBe(a.id);
+    // Una cuenta de Google nueva sin sesión crea su propia cuenta.
+    const s = connect(url, { transports: ['websocket'], forceNew: true });
+    sockets.push(s);
+    await new Promise<void>((r) => s.on('connect', () => r()));
+    const g = await new Promise<any>((r) => s.emit('auth_provider', { provider: 'google', idToken: 'google:g-1', name: 'Ana', link: false }, r));
+    expect(g.ok).toBe(true);
+    expect(g.profile.name).toBe('Ana');
   });
 });

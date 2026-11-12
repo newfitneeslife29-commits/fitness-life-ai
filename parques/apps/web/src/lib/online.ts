@@ -6,7 +6,7 @@
  */
 import { create } from 'zustand';
 import { io, type Socket } from 'socket.io-client';
-import type { ClientToServer, HouseRules, PlayAiOpts, RankRow, RoomInfo, ServerToClient, TableId, TournamentInfo, UpdateMsg } from '@parques/engine';
+import type { ClientToServer, CupInfo, HallOfFame, HouseRules, PlayAiOpts, PublicPlayer, RankRewardsInfo, RankRow, RoomInfo, ServerToClient, TableId, TournamentInfo, UpdateMsg } from '@parques/engine';
 import { tr } from './i18n';
 import { useGame, type MatchConfig } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
@@ -36,6 +36,19 @@ interface OnlineState {
   tournament: () => Promise<TournamentInfo | null>;
   /** Entrar con otra cuenta (código de recuperación). */
   restore: (id: string, token: string) => Promise<string | null>;
+  cups: () => Promise<CupInfo[] | null>;
+  cupMatch: (tier: string) => Promise<string | null>;
+  hallOfFame: () => Promise<HallOfFame | null>;
+  rankRewards: () => Promise<RankRewardsInfo | null>;
+  findPlayer: (id: string) => Promise<PublicPlayer | null>;
+  friendsOnline: (ids: string[]) => Promise<string[]>;
+  /** Crea una mesa privada e invita a un amigo conectado. */
+  inviteFriend: (friendId: string) => Promise<string | null>;
+  /** Apple / Google: entra a la cuenta vinculada o vincula la actual. */
+  signInWith: (provider: 'apple' | 'google', idToken: string, name?: string) => Promise<{ error: string | null; switched: boolean }>;
+  /** Invitación recibida de un amigo. */
+  invite: { from: { id: string; name: string; avatar: string }; code: string } | null;
+  dismissInvite: () => void;
 }
 
 let socket: S | null = null;
@@ -107,6 +120,9 @@ function configFrom(room: RoomInfo, mySeat: number): MatchConfig {
     })),
   };
 }
+
+/** Primera conexión desde que se abrió la app. */
+let freshLaunch = true;
 
 const link = {
   sendAction: (a: Parameters<ClientToServer['action']>[0]) =>
@@ -182,7 +198,22 @@ export const useOnline = create<OnlineState>((set, get) => ({
           if (r.profile) useProfile.getState().setFromServer(r.profile);
           set({ status: 'online' });
           const roomId = remembered();
-          if (roomId) s.emit('resume', roomId, (x) => x.ok || remember(null));
+          if (roomId && freshLaunch) {
+            // Se cerró la app en plena partida = abandono: se sale de la mesa (la máquina juega por ti) y se queda en el inicio.
+            s.emit('leave');
+            remember(null);
+          } else if (roomId) {
+            // Corte de conexión con la app abierta: se vuelve a la misma partida.
+            s.emit('resume', roomId, (x) => {
+              if (x.ok) return;
+              remember(null);
+              if (useApp.getState().screen === 'game' && useGame.getState().online) {
+                useGame.getState().quit();
+                useApp.getState().go('lobby');
+              }
+            });
+          }
+          freshLaunch = false;
           done(true);
         });
       };
@@ -212,6 +243,7 @@ export const useOnline = create<OnlineState>((set, get) => ({
         useGame.getState().setOutcome(r.outcome);
       });
       s.on('chat', (m) => useGame.getState().say(m.seat, m.text));
+      s.on('invited', (m) => set({ invite: m }));
       s.on('notice', (m) => useFx.getState().toast({ icon: '📣', title: tr(m.text) }));
       setTimeout(() => {
         if (first) {
@@ -275,6 +307,72 @@ export const useOnline = create<OnlineState>((set, get) => ({
   tournament: async () => {
     if (!(await get().connect())) return null;
     return ack((cb) => socket!.emit('tournament', cb));
+  },
+
+  invite: null,
+  dismissInvite: () => set({ invite: null }),
+
+  cups: async () => {
+    if (!(await get().connect())) return null;
+    return ack((cb) => socket!.emit('cups', cb));
+  },
+
+  cupMatch: async (tier) => {
+    if (!(await get().connect())) return get().error ?? 'Sin conexión';
+    set({ searching: { waiting: 1, startsAt: Date.now() + 10000 }, error: null });
+    const r = await ack<{ ok: boolean; error?: string }>((cb) => socket!.emit('cup_match', tier, cb));
+    if (!r?.ok) set({ searching: null });
+    return r?.ok ? null : (r?.error ?? 'Error');
+  },
+
+  hallOfFame: async () => {
+    if (!(await get().connect())) return null;
+    return ack((cb) => socket!.emit('hall_of_fame', cb));
+  },
+
+  rankRewards: async () => {
+    if (!(await get().connect())) return null;
+    return ack((cb) => socket!.emit('rank_rewards', cb));
+  },
+
+  findPlayer: async (id) => {
+    if (!(await get().connect())) return null;
+    return (await ack<PublicPlayer | null>((cb) => socket!.emit('find_player', id.trim().toUpperCase(), cb))) ?? null;
+  },
+
+  friendsOnline: async (ids) => {
+    if (!ids.length || !(await get().connect())) return [];
+    return (await ack<string[]>((cb) => socket!.emit('friends_online', ids, cb))) ?? [];
+  },
+
+  inviteFriend: async (friendId) => {
+    if (!(await get().connect())) return get().error ?? 'Sin conexión';
+    const room = get().room;
+    let code = room?.kind === 'private' && room.status === 'waiting' ? room.code : null;
+    if (!code) {
+      const err = await get().createPrivate(4, {}, 'barrio');
+      if (err) return err;
+      code = get().room?.code ?? null;
+      for (let i = 0; !code && i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        code = get().room?.code ?? null;
+      }
+    }
+    if (!code) return 'No se pudo crear la mesa';
+    const r = await ack<{ ok: boolean; error?: string }>((cb) => socket!.emit('invite', { to: friendId, code: code! }, cb));
+    return r?.ok ? null : (r?.error ?? 'Error');
+  },
+
+  signInWith: async (provider, idToken, name) => {
+    if (!(await get().connect())) return { error: get().error ?? 'Sin conexión', switched: false };
+    const before = getSession()?.id;
+    const r = await ack<{ ok: boolean; error?: string; id?: string; token?: string; profile?: import('@parques/engine').Profile }>((cb) =>
+      socket!.emit('auth_provider', { provider, idToken, name, link: true }, cb),
+    );
+    if (!r?.ok || !r.id) return { error: r?.error ?? 'No se pudo iniciar sesión', switched: false };
+    if (r.token) saveSession({ id: r.id, token: r.token });
+    if (r.profile) useProfile.getState().setFromServer(r.profile);
+    return { error: null, switched: !!before && before !== r.id };
   },
 
   restore: async (id, token) => {

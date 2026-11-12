@@ -17,11 +17,13 @@
     "assets:mobile": "node scripts/gen-mobile-assets.mjs"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.3.0",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.6.0",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.4",
+    "@capgo/capacitor-social-login": "^8.7.9",
     "@parques/engine": "*",
     "@revenuecat/purchases-capacitor": "^13.8.0",
     "framer-motion": "^11.11.17",

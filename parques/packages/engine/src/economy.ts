@@ -5,18 +5,17 @@
 
 // ---------------------------------------------------------------- Niveles
 
-export const MAX_LEVEL = 2000;
-/** XP total necesaria para llegar al nivel máximo. */
-export const TOTAL_XP = 200_000_000;
+export const MAX_LEVEL = 500;
+/** XP total necesaria para llegar al nivel máximo (100·499 + 50·499² = 12.499.950). */
+export const TOTAL_XP = 100 * (MAX_LEVEL - 1) + 50 * (MAX_LEVEL - 1) ** 2;
 
 /**
  * XP acumulada para ESTAR en el nivel `level` (nivel 1 = 0).
  * cum(L) = 100·(L−1) + 50·(L−1)²  → del 1 al 2 se necesitan 150 XP (3 partidas de 50)
- * y cada nivel pide 100 XP más que el anterior. El nivel 2000 exige exactamente 200 millones.
+ * y cada nivel pide 100 XP más que el anterior. El nivel máximo es el 500.
  */
 export function xpToReach(level: number): number {
   const L = Math.max(1, Math.min(MAX_LEVEL, Math.floor(level)));
-  if (L === MAX_LEVEL) return TOTAL_XP;
   const n = L - 1;
   return 100 * n + 50 * n * n;
 }
@@ -64,12 +63,12 @@ export interface TableTier {
 }
 
 export const TABLES: TableTier[] = [
-  { id: 'barrio', name: 'Barrio', entry: 200, minLevel: 1, ai: 'easy', turnSeconds: 25, emoji: '🏘️', blurb: 'La mesa de la cuadra, pa\' calentar.' },
+  { id: 'barrio', name: 'Barrio', entry: 200, minLevel: 1, ai: 'easy', turnSeconds: 20, emoji: '🏘️', blurb: 'La mesa de la cuadra, pa\' calentar.' },
   { id: 'ciudad', name: 'Ciudad', entry: 1000, minLevel: 5, ai: 'normal', turnSeconds: 20, emoji: '🏙️', blurb: 'Aquí ya se juega en serio.' },
-  { id: 'capital', name: 'Capital', entry: 5000, minLevel: 20, ai: 'expert', turnSeconds: 18, emoji: '🏛️', blurb: 'Solo pa\' los berracos.' },
-  { id: 'leyenda', name: 'Leyenda', entry: 25000, minLevel: 50, ai: 'expert', turnSeconds: 15, emoji: '👑', blurb: 'Donde se coronan las leyendas.' },
-  { id: 'elite', name: 'Sala Élite', entry: 100000, minLevel: 100, ai: 'expert', turnSeconds: 15, emoji: '💎', blurb: 'Solo jugadores de nivel 100 o más.' },
-  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 100, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 15, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking.' },
+  { id: 'capital', name: 'Capital', entry: 5000, minLevel: 20, ai: 'expert', turnSeconds: 20, emoji: '🏛️', blurb: 'Solo pa\' los berracos.' },
+  { id: 'leyenda', name: 'Leyenda', entry: 25000, minLevel: 50, ai: 'expert', turnSeconds: 20, emoji: '👑', blurb: 'Donde se coronan las leyendas.' },
+  { id: 'elite', name: 'Sala Élite', entry: 100000, minLevel: 200, ai: 'expert', turnSeconds: 20, emoji: '💎', blurb: 'Solo jugadores de nivel 200 o más.' },
+  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 200, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 20, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking.' },
 ];
 
 /** Cupos de la sala Top Leyendas (puestos del ranking global). */
@@ -122,7 +121,7 @@ export function matchXp(entry: number, place: number): number {
 
 // ---------------------------------------------------------------- Productos con dinero real
 
-export type ProductKind = 'coins' | 'gems' | 'item' | 'pass';
+export type ProductKind = 'coins' | 'gems' | 'item' | 'pass' | 'bundle';
 
 export interface Product {
   id: string;
@@ -136,6 +135,12 @@ export interface Product {
   itemId?: string;
   /** Pase de batalla: niveles extra incluidos. */
   passTiers?: number;
+  /** Paquete: objetos incluidos. */
+  itemIds?: string[];
+  /** Solo se ofrece una vez por cuenta. */
+  once?: boolean;
+  /** Texto destacado ("Más vendido", "-70 %"…). */
+  badge?: string;
 }
 
 export const PRODUCTS: Product[] = [
@@ -147,6 +152,10 @@ export const PRODUCTS: Product[] = [
   { id: 'gems-s', kind: 'gems', usdCents: 99, name: '20 gemas', gems: 20 },
   { id: 'gems-m', kind: 'gems', usdCents: 499, name: '120 gemas', gems: 120 },
   { id: 'gems-l', kind: 'gems', usdCents: 999, name: '260 gemas', gems: 260 },
+  { id: 'gems-xl', kind: 'gems', usdCents: 1999, name: '600 gemas', gems: 600, badge: 'Mejor precio' },
+  { id: 'bundle-inicio', kind: 'bundle', usdCents: 199, name: 'Paquete de bienvenida', coins: 25000, gems: 60, itemIds: ['board-playa'], once: true, badge: '-80 %' },
+  { id: 'bundle-semana', kind: 'bundle', usdCents: 499, name: 'Combo parcero', coins: 60000, gems: 80, itemIds: ['dice-galaxia'], badge: 'Más vendido' },
+  { id: 'bundle-leyenda', kind: 'bundle', usdCents: 1499, name: 'Paquete Leyenda', coins: 250000, gems: 300, itemIds: ['board-guatape', 'pieces-tricolor', 'frame-neon'], badge: 'Todo incluido' },
   { id: 'pass-premium', kind: 'pass', usdCents: 499, name: 'Pase Premium', passTiers: 0 },
   { id: 'pass-elite', kind: 'pass', usdCents: 999, name: 'Pase Élite (+10 niveles)', passTiers: 10 },
 ];
@@ -178,6 +187,17 @@ export const ITEM_PRICES_USD: Record<string, number> = {
   'effect-confeti': 99,
   'effect-pólvora': 199,
   'effect-nieve': 99,
+  'board-playa': 299,
+  'board-cartagena': 399,
+  'board-selva': 399,
+  'board-salsa': 299,
+  'board-guatape': 499,
+  'dice-galaxia': 199,
+  'dice-lava': 149,
+  'pieces-tricolor': 199,
+  'frame-arcoiris': 149,
+  'frame-neon': 199,
+  'effect-rayos': 199,
 };
 
 export function productFor(id: string): Product | undefined {

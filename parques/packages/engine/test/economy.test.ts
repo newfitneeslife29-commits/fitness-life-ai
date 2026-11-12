@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_LEVEL, TOTAL_XP, levelFromXp, matchXp, payouts, productFor, TABLES, xpForLevel, xpToReach } from '../src';
 
-describe('niveles hasta 2000', () => {
-  it('el nivel 2000 exige exactamente 200 millones de XP', () => {
-    expect(MAX_LEVEL).toBe(2000);
-    expect(xpToReach(2000)).toBe(TOTAL_XP);
-    expect(TOTAL_XP).toBe(200_000_000);
-    expect(levelFromXp(TOTAL_XP)).toMatchObject({ level: 2000, max: true });
-    expect(levelFromXp(TOTAL_XP - 1).level).toBe(1999);
+describe('niveles hasta 500', () => {
+  it('el nivel 500 es el máximo', () => {
+    expect(MAX_LEVEL).toBe(500);
+    expect(xpToReach(500)).toBe(TOTAL_XP);
+    expect(TOTAL_XP).toBe(12_499_950);
+    expect(levelFromXp(TOTAL_XP)).toMatchObject({ level: 500, max: true });
+    expect(levelFromXp(TOTAL_XP * 3)).toMatchObject({ level: 500, max: true });
+    expect(levelFromXp(TOTAL_XP - 1).level).toBe(499);
   });
   it('del 1 al 2 son 150 XP y cada nivel pide 100 más', () => {
     expect(xpForLevel(1)).toBe(150);
@@ -17,7 +18,7 @@ describe('niveles hasta 2000', () => {
     expect(levelFromXp(399)).toMatchObject({ level: 2, into: 249 });
   });
   it('levelFromXp es consistente en todo el rango', () => {
-    for (const L of [1, 2, 10, 99, 500, 1234, 1998, 1999]) {
+    for (const L of [1, 2, 10, 99, 200, 498, 499, 500]) {
       expect(levelFromXp(xpToReach(L)).level).toBe(L);
       expect(levelFromXp(xpToReach(L) - 1).level).toBe(Math.max(1, L - 1));
     }
