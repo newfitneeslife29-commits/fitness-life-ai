@@ -2,6 +2,7 @@ import { useT } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo } from '../components/Logo';
+import { Mascot } from '../components/Mascot';
 import { TIPS } from '../game/phrases';
 import { loadAudio } from '../audio/audio';
 import { useApp } from '../stores/appStore';
@@ -71,6 +72,7 @@ export function SplashScreen() {
     <div className="screen splash-screen">
       <div className="splash-glow" />
       <Logo size={1.15} />
+      <Mascot size={150} className="splash-mascot" />
       <div className="splash-bottom">
         <div className="loadbar">
           <motion.div className="loadbar-fill" animate={{ width: `${progress * 100}%` }} transition={{ ease: 'easeOut' }} />

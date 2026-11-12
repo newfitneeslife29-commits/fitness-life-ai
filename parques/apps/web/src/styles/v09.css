@@ -213,3 +213,12 @@
 .pc-prize { display: flex; align-items: center; gap: 4px; font-weight: 900; font-size: 1.15rem; color: #fde68a; }
 .pc-nm { display: block; font-size: 1.05rem; color: #fff; line-height: 1.2; }
 .place-cards, .winner-show { position: relative; z-index: 2; }
+
+/* Dadito, la mascota */
+.mascot { pointer-events: none; user-select: none; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35)); }
+.splash-mascot { margin-top: -6px; z-index: 1; }
+.welcome-mascot { align-self: center; margin-top: -60px; }
+.welcome-card { margin-top: 50px; }
+.victory-mascot { position: absolute; right: 2px; bottom: -6px; z-index: 4; }
+.hero-3d { position: relative; }
+.lobby-mascot { position: absolute; right: -10px; bottom: -14px; z-index: 3; }
