@@ -6,7 +6,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * definido en VITE_SERVER_URL al compilar (ver README / CLAUDE.md).
  */
 const config: CapacitorConfig = {
-  appId: 'co.parques.app',
+  appId: 'parques.app',
   appName: 'Parqués',
   webDir: 'dist',
   backgroundColor: '#120c2e',

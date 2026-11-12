@@ -1,0 +1,208 @@
+// Parqués (juego): firma para la App Store a través de la API de App Store Connect.
+// Copia adaptada de ridge-rush-ios-signing.mjs para no tocar la publicación de las otras apps:
+// usa su propio prefijo de nombres ("Parques CI "), así solo borra sus propios perfiles y certificados.
+//
+//   node parques-ios-signing.mjs check | setup | cleanup
+//
+// check: registra el App ID si falta y comprueba que la app existe en App Store Connect
+//        (se ejecuta antes de compilar, para no gastar tiempo si falta algo).
+// setup / cleanup: como en ios-signing.mjs (certificado de distribución + perfil App Store por ejecución).
+//
+// Lee KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH (el .p8), SIGNING_DIR (con csr.pem), RUN y UPLOADED del entorno.
+import { createHash, createPrivateKey, sign } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+const BUNDLE_ID = 'parques.app';
+const APP_NAME = 'Parqués';
+const BUNDLES = [BUNDLE_ID];
+const API = 'https://api.appstoreconnect.apple.com/v1';
+const { KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH, SIGNING_DIR, RUN = 'ci', UPLOADED } = process.env;
+const PREFIX = 'Parques CI ';
+const statePath = join(SIGNING_DIR ?? '.', 'state.json');
+
+function token() {
+    const now = Math.floor(Date.now() / 1000);
+    const part = value => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const unsigned = `${part({ alg: 'ES256', kid: KEY_ID, typ: 'JWT' })}.${part({
+        iss: ISSUER_ID, iat: now, exp: now + 15 * 60, aud: 'appstoreconnect-v1',
+    })}`;
+    const key = createPrivateKey(readFileSync(KEY_PATH, 'utf8'));
+    return `${unsigned}.${sign('sha256', Buffer.from(unsigned), { key, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
+}
+
+async function api(method, path, body) {
+    const res = await fetch(`${API}${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        body: body && JSON.stringify(body),
+    });
+    if (method === 'DELETE' && (res.ok || res.status === 404)) return null;
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const why = (json.errors ?? []).map(e => `${e.title}: ${e.detail ?? ''}`).join('; ');
+        throw new Error(`${method} ${path} → ${res.status} ${why}`);
+    }
+    return json;
+}
+
+const xml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+// Registra el App ID del juego si todavía no existe (sin capacidades especiales).
+async function ensureBundleId() {
+    const found = await api('GET', `/bundleIds?filter[identifier]=${encodeURIComponent(BUNDLE_ID)}&limit=200`);
+    const bundle = found.data.find(b => b.attributes.identifier === BUNDLE_ID);
+    if (bundle) return bundle;
+    const created = await api('POST', '/bundleIds', {
+        data: { type: 'bundleIds', attributes: { identifier: BUNDLE_ID, name: 'Parques', platform: 'IOS' } },
+    });
+    console.log(`Registrado el App ID ${BUNDLE_ID}`);
+    return created.data;
+}
+
+// Capacidades que necesita el juego en su App ID (el perfil de firma lleva las del App ID).
+async function ensureCapabilities(bundle) {
+    const caps = await api('GET', `/bundleIds/${bundle.id}/bundleIdCapabilities`);
+    for (const type of ['IN_APP_PURCHASE']) {
+        if (caps.data.some(c => c.attributes.capabilityType === type)) continue;
+        try {
+            await api('POST', '/bundleIdCapabilities', {
+                data: { type: 'bundleIdCapabilities', attributes: { capabilityType: type },
+                    relationships: { bundleId: { data: { type: 'bundleIds', id: bundle.id } } } },
+            });
+            console.log(`Activada la capacidad ${type} en ${BUNDLE_ID}`);
+        } catch (e) {
+            console.log(`::warning::No se pudo activar ${type}: ${e.message}`);
+        }
+    }
+}
+
+// Antes de compilar: App ID registrado y app creada en App Store Connect (la API no permite crear apps).
+async function check() {
+    await ensureCapabilities(await ensureBundleId());
+    const apps = await api('GET', `/apps?filter[bundleId]=${encodeURIComponent(BUNDLE_ID)}&limit=10`);
+    if (!apps.data.some(a => a.attributes.bundleId === BUNDLE_ID)) {
+        throw new Error(`Falta crear la app en App Store Connect: Apps → "+" → Nueva app → plataforma iOS, nombre "${APP_NAME}", ` +
+            `ID de paquete ${BUNDLE_ID} (ya está registrado), SKU por ejemplo parques. Después vuelve a lanzar este workflow.`);
+    }
+    console.log(`App encontrada en App Store Connect para ${BUNDLE_ID}`);
+}
+
+// Removes the profiles and certificates of earlier runs, except the newest `keep` runs.
+async function prune(keep) {
+    const list = await api('GET', '/profiles?limit=200&include=certificates');
+    const runs = new Map();
+    for (const p of list.data) {
+        const m = p.attributes.name.startsWith(PREFIX) && p.attributes.name.slice(PREFIX.length).match(/^(\d+)-(\d+) /);
+        if (!m) continue;
+        const run = Number(m[1]) * 1000 + Number(m[2]);
+        const certs = (p.relationships?.certificates?.data ?? []).map(c => c.id);
+        const entry = runs.get(run) ?? { profiles: [], certs: new Set() };
+        entry.profiles.push(p.id);
+        certs.forEach(c => entry.certs.add(c));
+        runs.set(run, entry);
+    }
+    const ordered = [...runs.entries()].sort((a, b) => b[0] - a[0]);
+    const kept = new Set(ordered.slice(0, keep).flatMap(([, e]) => [...e.certs]));
+    for (const [run, e] of ordered.slice(keep)) {
+        for (const id of e.profiles) await api('DELETE', `/profiles/${id}`);
+        for (const id of e.certs) if (!kept.has(id)) await api('DELETE', `/certificates/${id}`);
+        console.log(`Removed the signing of CI run ${Math.floor(run / 1000)}`);
+    }
+}
+
+async function newCertificate(csr) {
+    const body = { data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } } };
+    try {
+        return await api('POST', '/certificates', body);
+    } catch (e) {
+        // Apple solo permite unos pocos certificados de distribución a la vez (compartidos con Fitness Life).
+        // Aquí solo se borran los de Parqués; los de Fitness Life y Ridge Rush no se tocan.
+        console.log(`::warning::${e.message}. Removing every earlier Parques CI certificate and trying again.`);
+        await prune(0);
+        return api('POST', '/certificates', body);
+    }
+}
+
+async function setup() {
+    const state = { certificateId: null, profileIds: [] };
+    const save = () => writeFileSync(statePath, JSON.stringify(state));
+
+    await prune(1);
+    const csr = readFileSync(join(SIGNING_DIR, 'csr.pem'), 'utf8');
+    const cert = await newCertificate(csr);
+    state.certificateId = cert.data.id;
+    save();
+    const der = Buffer.from(cert.data.attributes.certificateContent, 'base64');
+    writeFileSync(join(SIGNING_DIR, 'cert.cer'), der);
+    const sha1 = createHash('sha1').update(der).digest('hex').toUpperCase();
+
+    const folders = [
+        join(homedir(), 'Library/MobileDevice/Provisioning Profiles'),
+        join(homedir(), 'Library/Developer/Xcode/UserData/Provisioning Profiles'),
+    ];
+    folders.forEach(f => mkdirSync(f, { recursive: true }));
+    const names = {};
+    for (const identifier of BUNDLES) {
+        const bundle = await ensureBundleId();
+        const profile = await api('POST', '/profiles', {
+            data: {
+                type: 'profiles',
+                attributes: { name: `${PREFIX}${RUN} ${identifier}`, profileType: 'IOS_APP_STORE' },
+                relationships: {
+                    bundleId: { data: { type: 'bundleIds', id: bundle.id } },
+                    certificates: { data: [{ type: 'certificates', id: state.certificateId }] },
+                },
+            },
+        });
+        state.profileIds.push(profile.data.id);
+        save();
+        const { name, uuid, profileContent } = profile.data.attributes;
+        for (const f of folders) writeFileSync(join(f, `${uuid}.mobileprovision`), Buffer.from(profileContent, 'base64'));
+        names[identifier] = name;
+        console.log(`Profile for ${identifier}: ${name}`);
+    }
+
+    const profiles = Object.entries(names)
+        .map(([id, name]) => `      <key>${xml(id)}</key><string>${xml(name)}</string>`).join('\n');
+    writeFileSync(join(SIGNING_DIR, 'export.plist'), `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>upload</string>
+  <key>teamID</key><string>${xml(TEAM_ID)}</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>${sha1}</string>
+  <key>provisioningProfiles</key>
+    <dict>
+${profiles}
+    </dict>
+  <key>manageAppVersionAndBuildNumber</key><false/>
+</dict></plist>
+`);
+}
+
+async function cleanup() {
+    if (UPLOADED === 'true') {
+        console.log('Keeping the CI certificate and profiles: the uploaded build is signed with them');
+        return;
+    }
+    let state;
+    try {
+        state = JSON.parse(readFileSync(statePath, 'utf8'));
+    } catch {
+        return;
+    }
+    for (const id of state.profileIds) await api('DELETE', `/profiles/${id}`);
+    if (state.certificateId) await api('DELETE', `/certificates/${state.certificateId}`);
+    console.log('Removed the CI certificate and profiles');
+}
+
+const command = process.argv[2];
+const run = { check, setup, cleanup }[command];
+if (!run) { console.log('Uso: node parques-ios-signing.mjs check | setup | cleanup'); process.exit(2); }
+await run().catch(e => {
+    console.log(`::error::${e.message}`);
+    process.exit(1);
+});

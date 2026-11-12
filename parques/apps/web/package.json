@@ -17,13 +17,13 @@
     "assets:mobile": "node scripts/gen-mobile-assets.mjs"
   },
   "dependencies": {
-    "@capacitor/app": "^7.1.0",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/haptics": "^7.0.2",
-    "@capacitor/splash-screen": "^7.0.3",
-    "@capacitor/status-bar": "^7.0.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@parques/engine": "*",
-    "@revenuecat/purchases-capacitor": "^11.2.6",
+    "@revenuecat/purchases-capacitor": "^13.8.0",
     "framer-motion": "^11.11.17",
     "howler": "^2.2.4",
     "react": "^18.3.1",
@@ -32,9 +32,9 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/cli": "^7.4.3",
-    "@capacitor/ios": "^7.4.3",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
     "@types/howler": "^2.2.12",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

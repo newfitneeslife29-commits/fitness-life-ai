@@ -20,14 +20,17 @@ cp .env.mobile.example .env.mobile   # pon la URL HTTPS de tu servidor y las lla
 npm run android      # abre Android Studio  → Run ▶ (emulador o celular)
 npm run ios          # abre Xcode (solo en Mac) → Run ▶
 ```
-Para publicar: en Android Studio *Build → Generate Signed Bundle* (Google Play) y en Xcode *Product → Archive* (App Store).
+Para publicar se usan GitHub Actions (como Fitness Life): ver [PUBLICAR.md](./PUBLICAR.md).
 
-## Servidor en producción
+## Servidor en producción (Railway + Supabase)
 ```bash
 cd parques && npm start             # compila la web y sirve todo en el puerto 3001 (PORT para cambiarlo)
 ```
-Variables: `PARQUES_DATA` (archivo de la base SQLite), `STRIPE_SECRET_KEY` (pagos web), `REVENUECAT_SECRET_KEY`
-(compras en Google Play / App Store), `PARQUES_DEMO_PURCHASES=off` (apaga las compras de prueba). Debe ir detrás de HTTPS.
+Variables: `DATABASE_URL` (Postgres de Supabase; sin ella usa PGlite local en `apps/server/data`), `STRIPE_SECRET_KEY`
+(pagos web), `REVENUECAT_SECRET_KEY` (compras en Google Play / App Store), `PARQUES_DEMO_PURCHASES=off` (apaga las compras de prueba).
+Debe ir detrás de HTTPS. En Railway se publica con el `Dockerfile` de esta carpeta.
+
+**Publicar en Google Play, App Store y Railway: [PUBLICAR.md](./PUBLICAR.md).**
 
 ## Pruebas
 ```bash

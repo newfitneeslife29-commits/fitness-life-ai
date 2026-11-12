@@ -115,8 +115,11 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 ## Juego ONLINE (v0.7): el servidor es la autoridad
 - **Cuentas**: al abrir la app el cliente hace `auth` (Socket.IO). Sin sesión, el servidor crea una cuenta de invitado y devuelve
   `{id, token}` (se guarda en localStorage como `parques-session`; `id-token` es el **código de recuperación** en Ajustes → Cuenta).
-- **Base de datos**: SQLite incluido en Node (`node:sqlite`, `apps/server/src/store.ts`), archivo `apps/server/data/parques.db`
-  (o `PARQUES_DATA`). Tablas: accounts (perfil JSON + rating), tournaments, claims, purchases.
+- **Base de datos**: PostgreSQL (`apps/server/src/store.ts`, API asíncrona). Producción: Supabase vía `DATABASE_URL`, esquema
+  propio `parques` (accounts con perfil JSONB + rating, tournaments, claims, purchases; RLS activo sin políticas = solo el servidor).
+  Desarrollo: PGlite (Postgres embebido) en `apps/server/data/pglite` (o `PARQUES_DATA`); pruebas: PGlite en memoria.
+  El esquema se aplica al arrancar (`SCHEMA`, idempotente). `update()` usa `SELECT … FOR UPDATE` en una transacción;
+  `creditPurchase()` registra y entrega la compra en la misma transacción (nunca dos veces).
 - **Perfil = datos + operaciones puras** en `packages/engine/src/meta/profile.ts` (applyMatch, payEntry, buyWithCoins, equip,
   spendEmote, grantProduct, claimDaily, spin, claimMission, claimPass, setIdentity, amigos). El servidor las ejecuta (`profile_op`)
   dentro de una transacción; el cliente (`stores/profileStore.ts`) es solo un espejo que recibe `profile`.
@@ -127,8 +130,15 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 - Datos del juego compartidos (catálogo, logros, misiones, pase, temporadas, premios) en `packages/engine/src/meta/`.
 - Tiempos de prueba del servidor: `PARQUES_TURN_MS`, `PARQUES_BOT_MS`. URL del servidor en el cliente: Ajustes, o `VITE_SERVER_URL`.
 
-## Apps iOS y Android (Capacitor 7)
-- Proyectos nativos en `apps/web/android` (Gradle) y `apps/web/ios` (Xcode, Swift Package Manager). Id: `co.parques.app`.
+## Publicación (ver PUBLICAR.md)
+- **No tocar las otras apps del repo** (Fitness Life en `app/`, Ridge Rush): Parqués usa solo archivos propios
+  (`parques/**`, `.github/workflows/parques-*.yml`, `.github/scripts/parques-ios-signing.mjs`). Scripts compartidos como
+  `android-upload-key.sh` se usan sin modificarlos (con `UPLOAD_KEY_NAME=parques_upload_key`).
+- Servidor: Railway (raíz `parques`, `Dockerfile`, 1 réplica, healthcheck `/health`). Sin `DATABASE_URL` en Railway no arranca.
+- Variables de GitHub: `PARQUES_SERVER_URL`, `PARQUES_RC_ANDROID_KEY`, `PARQUES_RC_IOS_KEY` (+ las de Apple/Supabase ya existentes).
+
+## Apps iOS y Android (Capacitor 8, como Fitness Life)
+- Proyectos nativos en `apps/web/android` (Gradle) y `apps/web/ios` (Xcode, Swift Package Manager). Id: `parques.app`, nombre "Parqués".
 - `cp apps/web/.env.mobile.example apps/web/.env.mobile` y llenar `VITE_SERVER_URL` (HTTPS público) y llaves de RevenueCat.
 - `npm run android -w @parques/web` / `npm run ios -w @parques/web`: compila (`vite build --mode mobile`), `cap sync` y abre el IDE.
 - Íconos y pantallas de inicio: `npm run assets:mobile -w @parques/web` (desde `public/icon.svg`).
@@ -175,11 +185,13 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 4. ✅ Monedas y gemas, mesas con apuesta, tienda de skins, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
 5. ✅ Online: Node + Socket.IO, partida rápida, mesas privadas, reconexión, la IA reemplaza a quien abandona.
 6. ✅ Torneo semanal con tabla, ranking (global, país, amigos) y temporadas con skins.
+9. ✅ v0.8: publicación — servidor en Railway (Dockerfile + railway.json) con Postgres de Supabase; workflows
+   `parques-android.yml` (Google Play), `parques-ios.yml` (TestFlight), `parques-ci.yml`. Guía en `PUBLICAR.md`.
 8. ✅ v0.7: juego 100 % online (cuentas y monedero en el servidor, partidas contra la máquina en el servidor), apps iOS/Android con Capacitor y compras en tiendas (RevenueCat).
 7. ✅ v0.6: economía con entradas y reparto, nivel 2000, pagos reales (Stripe), gemas para emotes, pase de batalla,
    1.205 logros, foto de perfil, 4 idiomas, Sala Élite y Top Leyendas, gráficos 3D.
 
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
-- Para muchos jugadores a la vez: Postgres en lugar de SQLite y varias instancias del servidor (Socket.IO adapter).
+- Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).
 - Online solo en tablero de 4 (6 jugadores es local/IA).

@@ -67,7 +67,7 @@ export interface RoomOptions {
   /** Límite de la partida en ms (Modo Rápido). */
   timeLimitMs?: number;
   /** Cobra la entrada de un jugador al empezar; devuelve false si no le alcanza. */
-  charge?: (playerId: string, entry: number) => boolean;
+  charge?: (playerId: string, entry: number) => boolean | Promise<boolean>;
   onEnd?: (room: Room, results: HumanResult[]) => void;
 }
 
@@ -86,7 +86,7 @@ export class Room {
   private timeLimitMs: number;
   private charge?: RoomOptions['charge'];
   private endTimer: ReturnType<typeof setTimeout> | null = null;
-  status: 'waiting' | 'playing' | 'over' = 'waiting';
+  status: 'waiting' | 'starting' | 'playing' | 'over' = 'waiting';
   state: GameState | null = null;
   lastActivity = Date.now();
 
@@ -133,7 +133,7 @@ export class Room {
       hostId: this.hostId,
       seats: this.seats.map(({ level: _l, ...s }) => s),
       rules: this.rules,
-      status: this.status,
+      status: this.status === 'starting' ? 'waiting' : this.status,
       kind: this.kind,
       table: this.table,
       entry: this.entry,
@@ -229,7 +229,7 @@ export class Room {
     return true;
   }
 
-  start(): void {
+  start(): void | Promise<void> {
     if (this.status !== 'waiting') return;
     let b = 0;
     const names = [...BOT_NAMES].sort(() => Math.random() - 0.5);
@@ -244,14 +244,25 @@ export class Room {
     }
     // Cobro de la entrada (en el servidor): quien no tenga monedas queda reemplazado por la máquina.
     if (this.entry > 0 && this.charge) {
-      for (const s of this.seats) {
-        if (s.playerId && !this.charge(s.playerId, this.entry)) {
-          this.conns.get(s.playerId)?.emit('notice', { text: 'Te faltan monedas' });
-          this.conns.delete(s.playerId);
-          Object.assign(s, { playerId: null, kind: 'bot', name: names[b++ % names.length]!, level: this.botLevel ?? 'normal' });
-        }
-      }
+      const charge = this.charge;
+      this.status = 'starting';
+      return Promise.all(this.seats.map((s) => (s.playerId ? Promise.resolve(charge(s.playerId, this.entry)).catch(() => false) : true))).then((paid) => {
+        if (this.status !== 'starting') return;
+        this.seats.forEach((s, i) => {
+          if (s.playerId && !paid[i]) {
+            this.conns.get(s.playerId)?.emit('notice', { text: 'Te faltan monedas' });
+            this.conns.delete(s.playerId);
+            Object.assign(s, { playerId: null, kind: 'bot', name: names[b++ % names.length]!, level: this.botLevel ?? 'normal' });
+          }
+        });
+        this.begin();
+      });
     }
+    this.begin();
+  }
+
+  /** Reparte y empieza la partida (después del cobro). */
+  private begin(): void {
     this.state = createGame({
       sides: this.sides,
       rules: this.rules,

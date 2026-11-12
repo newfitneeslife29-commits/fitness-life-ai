@@ -39,3 +39,17 @@ describe('pagos', () => {
     expect((await paid.verify('../hack')).ok).toBe(false);
   });
 });
+
+describe('ids de las tiendas', () => {
+  it('todos los productos tienen un id válido para Google Play / App Store y se puede volver al id interno', async () => {
+    const { ITEMS, PRODUCTS, storeProductId } = await import('@parques/engine');
+    const { fromStoreId } = await import('../src/payments');
+    const ids = [...PRODUCTS.map((p) => p.id), ...ITEMS.filter((i) => i.currency === 'usd').map((i) => `item:${i.id}`)];
+    for (const id of ids) {
+      const sid = storeProductId(id);
+      expect(sid).toMatch(/^[a-z0-9_]+$/);
+      expect(fromStoreId(sid)).toBe(id);
+    }
+    expect(storeProductId('item:effect-pólvora')).toBe('item_effect_polvora');
+  });
+});

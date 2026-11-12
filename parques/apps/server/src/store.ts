@@ -1,16 +1,13 @@
 /**
- * Base de datos del servidor (SQLite incluido en Node, sin dependencias).
- * Guarda cuentas con su perfil (monedas, gemas, compras, progreso), ranking,
- * torneos semanales y compras con dinero real. El servidor es la autoridad.
+ * Base de datos del servidor: PostgreSQL.
+ *  - Producción: la base de Supabase (DATABASE_URL), en su propio esquema `parques`,
+ *    separado de las tablas de Fitness Life.
+ *  - Desarrollo y pruebas: PGlite (Postgres embebido, sin instalar nada), en una carpeta o en memoria.
+ * Guarda cuentas con su perfil (monedas, gemas, compras, progreso), ranking, torneos semanales
+ * y compras con dinero real. El servidor es la autoridad: los clientes nunca escriben aquí.
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { createRequire } from 'node:module';
-import type { DatabaseSync as DB } from 'node:sqlite';
-
-// node:sqlite se carga con require para que también funcione dentro de Vitest.
-const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 import { levelFromXp, newProfile, normalizeProfile, RATING_DELTA, TOURNAMENT_POINTS, weekEnd, weekKey } from '@parques/engine';
 import type { Profile, RankRow, TournamentInfo } from '@parques/engine';
 
@@ -20,6 +17,104 @@ export const PRIZES = [
   { place: 3, coins: 1000, gems: 10 },
 ];
 
+/** Esquema de la base (idempotente: se aplica al arrancar). */
+export const SCHEMA = `
+CREATE SCHEMA IF NOT EXISTS parques;
+CREATE TABLE IF NOT EXISTS parques.accounts (
+  id TEXT PRIMARY KEY,
+  token_hash TEXT NOT NULL,
+  profile JSONB NOT NULL,
+  name TEXT NOT NULL,
+  avatar TEXT NOT NULL,
+  country TEXT NOT NULL,
+  level INTEGER NOT NULL DEFAULT 1,
+  rating INTEGER NOT NULL DEFAULT 1000,
+  wins INTEGER NOT NULL DEFAULT 0,
+  games INTEGER NOT NULL DEFAULT 0,
+  created TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS accounts_rating ON parques.accounts (rating DESC, wins DESC) WHERE games > 0;
+CREATE TABLE IF NOT EXISTS parques.tournaments (
+  week TEXT NOT NULL, player TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
+  points INTEGER NOT NULL, games INTEGER NOT NULL, PRIMARY KEY (week, player)
+);
+CREATE TABLE IF NOT EXISTS parques.claims (week TEXT NOT NULL, player TEXT NOT NULL, PRIMARY KEY (week, player));
+CREATE TABLE IF NOT EXISTS parques.purchases (
+  grant_id TEXT PRIMARY KEY, player TEXT NOT NULL, product TEXT NOT NULL, source TEXT NOT NULL,
+  at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Solo el servidor (rol dueño) lee y escribe: con RLS activo y sin políticas, la API pública de Supabase no ve nada.
+ALTER TABLE parques.accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.tournaments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.purchases ENABLE ROW LEVEL SECURITY;
+`;
+
+// ------------------------------------------------------------ Conexión (pg o PGlite)
+interface Sql {
+  query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
+}
+interface Db extends Sql {
+  tx<T>(fn: (q: Sql) => Promise<T>): Promise<T>;
+  /** Varias sentencias sin parámetros (el esquema). */
+  exec(text: string): Promise<void>;
+  close(): Promise<void>;
+}
+
+async function openPostgres(url: string): Promise<Db> {
+  const { default: pg } = await import('pg');
+  const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url) || /sslmode=disable/.test(url);
+  // Supabase exige TLS; su certificado no está en el almacén de Node, así que no se verifica la cadena.
+  const pool = new pg.Pool({ connectionString: url, max: 10, ssl: local ? undefined : { rejectUnauthorized: false } });
+  pool.on('error', (e) => console.error('[db]', e.message));
+  return {
+    query: async (text, params) => (await pool.query(text, params as unknown[])).rows,
+    tx: async (fn) => {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const r = await fn({ query: async (text, params) => (await client.query(text, params as unknown[])).rows });
+        await client.query('COMMIT');
+        return r;
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw e;
+      } finally {
+        client.release();
+      }
+    },
+    exec: async (text) => {
+      await pool.query(text);
+    },
+    close: () => pool.end(),
+  };
+}
+
+async function openPglite(dir: string | null): Promise<Db> {
+  const { PGlite } = await import('@electric-sql/pglite');
+  if (dir) mkdirSync(dir, { recursive: true });
+  const db = new PGlite(dir ?? undefined);
+  const wrap = (q: { query: (t: string, p?: unknown[]) => Promise<{ rows: unknown[] }> }): Sql => ({
+    query: async <T>(text: string, params?: unknown[]) => (await q.query(text, params)).rows as T[],
+  });
+  return {
+    ...wrap(db),
+    tx: (fn) => db.transaction((t) => fn(wrap(t))),
+    exec: async (text) => {
+      await db.exec(text);
+    },
+    close: () => db.close(),
+  };
+}
+
+export interface StoreOptions {
+  /** URL de Postgres (Supabase). Si falta se usa PGlite. */
+  url?: string | null;
+  /** Carpeta de PGlite (desarrollo); null = en memoria (pruebas). */
+  dir?: string | null;
+}
+
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 
 function randomId(): string {
@@ -28,164 +123,173 @@ function randomId(): string {
   return Array.from(b, (x) => chars[x % chars.length]).join('');
 }
 
-export class Store {
-  private db: DB;
+type UpdateResult<T> = T | { ok: false; error: string };
 
-  /** `file` = ruta del archivo .db, o null para una base en memoria (pruebas). */
-  constructor(file: string | null) {
-    if (file) mkdirSync(dirname(file), { recursive: true });
-    this.db = new DatabaseSync(file ?? ':memory:');
-    this.db.exec(`
-      PRAGMA journal_mode = WAL;
-      CREATE TABLE IF NOT EXISTS accounts (
-        id TEXT PRIMARY KEY,
-        token_hash TEXT NOT NULL,
-        profile TEXT NOT NULL,
-        name TEXT NOT NULL,
-        avatar TEXT NOT NULL,
-        country TEXT NOT NULL,
-        level INTEGER NOT NULL DEFAULT 1,
-        rating INTEGER NOT NULL DEFAULT 1000,
-        wins INTEGER NOT NULL DEFAULT 0,
-        games INTEGER NOT NULL DEFAULT 0,
-        created INTEGER NOT NULL,
-        updated INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS accounts_rating ON accounts(rating DESC);
-      CREATE TABLE IF NOT EXISTS tournaments (week TEXT, player TEXT, points INTEGER, games INTEGER, PRIMARY KEY (week, player));
-      CREATE TABLE IF NOT EXISTS claims (week TEXT, player TEXT, PRIMARY KEY (week, player));
-      CREATE TABLE IF NOT EXISTS purchases (grant_id TEXT PRIMARY KEY, player TEXT, product TEXT, source TEXT, at INTEGER);
-    `);
+export class Store {
+  private db: Promise<Db>;
+
+  constructor(opts: StoreOptions = {}) {
+    this.db = (async () => {
+      const db = opts.url ? await openPostgres(opts.url) : await openPglite(opts.dir ?? null);
+      await db.exec(SCHEMA);
+      return db;
+    })();
   }
 
-  close() {
-    this.db.close();
+  /** Espera a que la base esté lista (falla si no se puede conectar). */
+  async ready(): Promise<void> {
+    await this.db;
+  }
+
+  async close() {
+    await (await this.db).close();
   }
 
   // ------------------------------------------------------------ Cuentas
 
   /** Crea una cuenta de invitado. El token es secreto (sirve también como código de recuperación). */
-  createAccount(now = new Date()): { id: string; token: string; profile: Profile } {
-    let id = randomId();
-    while (this.db.prepare('SELECT 1 FROM accounts WHERE id = ?').get(id)) id = randomId();
+  async createAccount(now = new Date()): Promise<{ id: string; token: string; profile: Profile }> {
+    const db = await this.db;
     const token = randomBytes(24).toString('base64url');
-    const profile = newProfile(id, now);
-    const t = now.getTime();
-    this.db
-      .prepare('INSERT INTO accounts (id, token_hash, profile, name, avatar, country, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(id, hash(token), JSON.stringify(profile), profile.name, profile.avatar, profile.country, t, t);
-    return { id, token, profile };
-  }
-
-  /** Verifica id + token y devuelve el perfil (o null). */
-  auth(id: string, token: string): Profile | null {
-    const row = this.db.prepare('SELECT token_hash, profile FROM accounts WHERE id = ?').get(String(id)) as { token_hash: string; profile: string } | undefined;
-    if (!row || row.token_hash !== hash(String(token))) return null;
-    return normalizeProfile(JSON.parse(row.profile));
-  }
-
-  getProfile(id: string): Profile | null {
-    const row = this.db.prepare('SELECT profile FROM accounts WHERE id = ?').get(id) as { profile: string } | undefined;
-    return row ? normalizeProfile(JSON.parse(row.profile)) : null;
-  }
-
-  saveProfile(p: Profile) {
-    this.db
-      .prepare('UPDATE accounts SET profile = ?, name = ?, avatar = ?, country = ?, level = ?, updated = ? WHERE id = ?')
-      .run(JSON.stringify(p), p.name, p.photo ?? p.avatar, p.country, levelFromXp(p.xp).level, Date.now(), p.id);
-  }
-
-  /** Lee, modifica y guarda un perfil en una transacción. */
-  update<T extends { ok: boolean; profile?: Profile }>(id: string, fn: (p: Profile) => T): T | { ok: false; error: string } {
-    this.db.exec('BEGIN IMMEDIATE');
-    try {
-      const p = this.getProfile(id);
-      if (!p) {
-        this.db.exec('ROLLBACK');
-        return { ok: false, error: 'Cuenta no encontrada' };
-      }
-      const r = fn(p);
-      if (r.ok && r.profile) this.saveProfile(r.profile);
-      this.db.exec('COMMIT');
-      return r;
-    } catch (e) {
-      this.db.exec('ROLLBACK');
-      throw e;
+    for (;;) {
+      const id = randomId();
+      const profile = newProfile(id, now);
+      const rows = await db.query(
+        'INSERT INTO parques.accounts (id, token_hash, profile, name, avatar, country, created, updated) VALUES ($1, $2, $3, $4, $5, $6, $7, $7) ON CONFLICT (id) DO NOTHING RETURNING id',
+        [id, hash(token), JSON.stringify(profile), profile.name, profile.avatar, profile.country, now],
+      );
+      if (rows.length) return { id, token, profile };
     }
   }
 
-  levelOf(id: string): number {
-    const row = this.db.prepare('SELECT level FROM accounts WHERE id = ?').get(id) as { level: number } | undefined;
-    return row?.level ?? 1;
+  /** Verifica id + token y devuelve el perfil (o null). */
+  async auth(id: string, token: string): Promise<Profile | null> {
+    const db = await this.db;
+    const [row] = await db.query<{ token_hash: string; profile: Profile }>('SELECT token_hash, profile FROM parques.accounts WHERE id = $1', [String(id)]);
+    if (!row || row.token_hash !== hash(String(token))) return null;
+    return normalizeProfile(row.profile);
+  }
+
+  async getProfile(id: string): Promise<Profile | null> {
+    const db = await this.db;
+    const [row] = await db.query<{ profile: Profile }>('SELECT profile FROM parques.accounts WHERE id = $1', [String(id)]);
+    return row ? normalizeProfile(row.profile) : null;
+  }
+
+  private async updateIn<T extends { ok: boolean; profile?: Profile }>(q: Sql, id: string, fn: (p: Profile) => T): Promise<UpdateResult<T>> {
+    const [row] = await q.query<{ profile: Profile }>('SELECT profile FROM parques.accounts WHERE id = $1 FOR UPDATE', [String(id)]);
+    if (!row) return { ok: false, error: 'Cuenta no encontrada' };
+    const r = fn(normalizeProfile(row.profile));
+    if (r.ok && r.profile) {
+      const p = r.profile;
+      await q.query('UPDATE parques.accounts SET profile = $1, name = $2, avatar = $3, country = $4, level = $5, updated = now() WHERE id = $6', [
+        JSON.stringify(p),
+        p.name,
+        p.photo ?? p.avatar,
+        p.country,
+        levelFromXp(p.xp).level,
+        p.id,
+      ]);
+    }
+    return r;
+  }
+
+  /** Lee, modifica y guarda un perfil en una transacción (bloquea la fila mientras tanto). */
+  async update<T extends { ok: boolean; profile?: Profile }>(id: string, fn: (p: Profile) => T): Promise<UpdateResult<T>> {
+    return (await this.db).tx((q) => this.updateIn(q, id, fn));
   }
 
   // ------------------------------------------------------------ Ranking y torneo
 
   /** Registra el resultado de una partida online entre personas (trofeos y torneo). */
-  recordMatch(ranking: string[], now = new Date()) {
+  async recordMatch(ranking: string[], now = new Date()) {
     const wk = weekKey(now);
-    ranking.forEach((id, place) => {
-      this.db
-        .prepare('UPDATE accounts SET games = games + 1, wins = wins + ?, rating = MAX(0, rating + ?) WHERE id = ?')
-        .run(place === 0 ? 1 : 0, RATING_DELTA[place] ?? -12, id);
-      this.db
-        .prepare('INSERT INTO tournaments (week, player, points, games) VALUES (?, ?, ?, 1) ON CONFLICT(week, player) DO UPDATE SET points = points + excluded.points, games = games + 1')
-        .run(wk, id, TOURNAMENT_POINTS[place] ?? 1);
+    await (await this.db).tx(async (q) => {
+      for (const [place, id] of ranking.entries()) {
+        await q.query('UPDATE parques.accounts SET games = games + 1, wins = wins + $1, rating = GREATEST(0, rating + $2) WHERE id = $3', [
+          place === 0 ? 1 : 0,
+          RATING_DELTA[place] ?? -12,
+          id,
+        ]);
+        await q.query(
+          'INSERT INTO parques.tournaments (week, player, points, games) VALUES ($1, $2, $3, 1) ON CONFLICT (week, player) DO UPDATE SET points = parques.tournaments.points + excluded.points, games = parques.tournaments.games + 1',
+          [wk, id, TOURNAMENT_POINTS[place] ?? 1],
+        );
+      }
     });
   }
 
-  rankOf(playerId: string): number {
-    const me = this.db.prepare('SELECT rating, wins, games FROM accounts WHERE id = ?').get(playerId) as { rating: number; wins: number; games: number } | undefined;
+  async rankOf(playerId: string): Promise<number> {
+    const db = await this.db;
+    const [me] = await db.query<{ rating: number; wins: number; games: number }>('SELECT rating, wins, games FROM parques.accounts WHERE id = $1', [playerId]);
     if (!me || me.games === 0) return Infinity;
-    const better = this.db
-      .prepare('SELECT COUNT(*) AS n FROM accounts WHERE games > 0 AND (rating > ? OR (rating = ? AND wins > ?))')
-      .get(me.rating, me.rating, me.wins) as { n: number };
-    return better.n + 1;
+    const [better] = await db.query<{ n: number }>(
+      'SELECT COUNT(*)::int AS n FROM parques.accounts WHERE games > 0 AND (rating > $1 OR (rating = $1 AND wins > $2))',
+      [me.rating, me.wins],
+    );
+    return better!.n + 1;
   }
 
-  ranking(scope: 'global' | 'country' | 'friends', country?: string, friends?: string[]): RankRow[] {
-    const cols = 'id AS playerId, name, avatar, country, rating, wins, games';
+  async ranking(scope: 'global' | 'country' | 'friends', country?: string, friends?: string[]): Promise<RankRow[]> {
+    const db = await this.db;
+    const cols = 'id AS "playerId", name, avatar, country, rating, wins, games';
     let rows: RankRow[];
     if (scope === 'friends') {
-      const ids = (friends ?? []).slice(0, 200);
+      const ids = (friends ?? []).slice(0, 200).map(String);
       if (!ids.length) return [];
-      rows = this.db.prepare(`SELECT ${cols} FROM accounts WHERE id IN (${ids.map(() => '?').join(',')})`).all(...ids) as unknown as RankRow[];
+      rows = await db.query<RankRow>(`SELECT ${cols} FROM parques.accounts WHERE id = ANY($1::text[])`, [ids]);
     } else if (scope === 'country') {
-      rows = this.db.prepare(`SELECT ${cols} FROM accounts WHERE games > 0 AND country = ? ORDER BY rating DESC, wins DESC LIMIT 100`).all(String(country ?? '')) as unknown as RankRow[];
+      rows = await db.query<RankRow>(`SELECT ${cols} FROM parques.accounts WHERE games > 0 AND country = $1 ORDER BY rating DESC, wins DESC LIMIT 100`, [String(country ?? '')]);
     } else {
-      rows = this.db.prepare(`SELECT ${cols} FROM accounts WHERE games > 0 ORDER BY rating DESC, wins DESC LIMIT 100`).all() as unknown as RankRow[];
+      rows = await db.query<RankRow>(`SELECT ${cols} FROM parques.accounts WHERE games > 0 ORDER BY rating DESC, wins DESC LIMIT 100`);
     }
     return rows.sort((a, b) => b.rating - a.rating || b.wins - a.wins);
   }
 
-  tournament(now = new Date()): TournamentInfo {
+  async tournament(now = new Date()): Promise<TournamentInfo> {
     const wk = weekKey(now);
-    const rows = this.db
-      .prepare('SELECT t.player AS playerId, a.name AS name, a.avatar AS avatar, t.points AS points, t.games AS games FROM tournaments t JOIN accounts a ON a.id = t.player WHERE t.week = ? ORDER BY t.points DESC, t.games ASC LIMIT 100')
-      .all(wk) as unknown as TournamentInfo['rows'];
+    const rows = await (await this.db).query<TournamentInfo['rows'][number]>(
+      'SELECT t.player AS "playerId", a.name AS name, a.avatar AS avatar, t.points AS points, t.games AS games FROM parques.tournaments t JOIN parques.accounts a ON a.id = t.player WHERE t.week = $1 ORDER BY t.points DESC, t.games ASC LIMIT 100',
+      [wk],
+    );
     return { weekKey: wk, endsAt: weekEnd(now), rows, prizes: PRIZES };
   }
 
   /** Premio del torneo de la semana pasada (se entrega al perfil en el servidor, una sola vez). */
-  claimLastWeek(playerId: string, now = new Date()): { ok: boolean; coins?: number; gems?: number; place?: number; error?: string } {
+  async claimLastWeek(playerId: string, now = new Date()): Promise<{ ok: boolean; coins?: number; gems?: number; place?: number; error?: string }> {
     const last = weekKey(new Date(now.getTime() - 7 * 86400000));
-    const order = this.db.prepare('SELECT player FROM tournaments WHERE week = ? ORDER BY points DESC, games ASC').all(last) as { player: string }[];
-    if (!order.length) return { ok: false, error: 'La semana pasada no hubo torneo' };
-    const place = order.findIndex((r) => r.player === playerId) + 1;
-    const prize = PRIZES.find((p) => p.place === place);
-    if (!prize) return { ok: false, error: place > 0 ? `Quedaste ${place}º: premios solo para el top 3` : 'No jugaste la semana pasada' };
-    if (this.db.prepare('SELECT 1 FROM claims WHERE week = ? AND player = ?').get(last, playerId)) return { ok: false, error: 'Ya reclamaste ese premio' };
-    this.db.prepare('INSERT INTO claims (week, player) VALUES (?, ?)').run(last, playerId);
-    const r = this.update(playerId, (p) => ({ ok: true, profile: { ...p, coins: p.coins + prize.coins, gems: p.gems + prize.gems } }));
-    if (!r.ok) return { ok: false, error: 'Cuenta no encontrada' };
-    return { ok: true, coins: prize.coins, gems: prize.gems, place };
+    return (await this.db).tx(async (q) => {
+      const order = await q.query<{ player: string }>('SELECT player FROM parques.tournaments WHERE week = $1 ORDER BY points DESC, games ASC LIMIT 3', [last]);
+      if (!order.length) return { ok: false, error: 'La semana pasada no hubo torneo' };
+      const place = order.findIndex((r) => r.player === playerId) + 1;
+      const prize = PRIZES.find((p) => p.place === place);
+      if (!prize) return { ok: false, error: 'Premios solo para el top 3' };
+      const ins = await q.query('INSERT INTO parques.claims (week, player) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING player', [last, playerId]);
+      if (!ins.length) return { ok: false, error: 'Ya reclamaste ese premio' };
+      const r = await this.updateIn(q, playerId, (p) => ({ ok: true, profile: { ...p, coins: p.coins + prize.coins, gems: p.gems + prize.gems } }));
+      if (!r.ok) throw new Error('Cuenta no encontrada');
+      return { ok: true, coins: prize.coins, gems: prize.gems, place };
+    });
   }
 
   // ------------------------------------------------------------ Compras
 
-  /** Registra una compra verificada. Devuelve false si ya se había registrado (no se entrega dos veces). */
-  recordPurchase(grantId: string, playerId: string, productId: string, source = 'stripe'): boolean {
-    const r = this.db.prepare('INSERT OR IGNORE INTO purchases (grant_id, player, product, source, at) VALUES (?, ?, ?, ?, ?)').run(grantId, playerId, productId, source, Date.now());
-    return Number(r.changes) > 0;
+  /**
+   * Registra una compra verificada y la entrega en la misma transacción.
+   * Devuelve false si ya se había entregado (nunca se entrega dos veces) o si la entrega falla.
+   */
+  async creditPurchase(grantId: string, playerId: string, productId: string, source: string, grant: (p: Profile) => { ok: boolean; profile?: Profile }): Promise<boolean> {
+    return (await this.db).tx(async (q) => {
+      const ins = await q.query('INSERT INTO parques.purchases (grant_id, player, product, source) VALUES ($1, $2, $3, $4) ON CONFLICT (grant_id) DO NOTHING RETURNING grant_id', [
+        grantId,
+        playerId,
+        productId,
+        source,
+      ]);
+      if (!ins.length) return false;
+      const r = await this.updateIn(q, playerId, grant);
+      if (!r.ok) throw new Error('No se pudo entregar la compra');
+      return true;
+    }).catch(() => false);
   }
 }

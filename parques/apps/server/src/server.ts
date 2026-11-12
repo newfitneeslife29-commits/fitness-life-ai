@@ -37,7 +37,10 @@ interface SocketData {
 
 export interface ServerOptions {
   port?: number;
-  dataFile?: string | null;
+  /** Postgres (Supabase) en producción. */
+  databaseUrl?: string | null;
+  /** Carpeta de PGlite para desarrollo; sin url ni carpeta = base en memoria (pruebas). */
+  dataDir?: string | null;
   staticDir?: string | null;
   /** Espera máxima en la fila antes de completar la mesa con bots. */
   matchWaitMs?: number;
@@ -83,6 +86,8 @@ function readBody(req: Req): Promise<Record<string, unknown>> {
   });
 }
 
+const logErr = (e: unknown) => console.error('[parques]', e instanceof Error ? e.message : e);
+
 /** Datos públicos del jugador que ven los demás en la mesa. */
 function helloOf(p: Profile): Hello {
   return { playerId: p.id, name: p.name, avatar: p.photo ?? p.avatar, country: p.country, level: levelFromXp(p.xp).level };
@@ -95,11 +100,10 @@ function helloOf(p: Profile): Hello {
  *  - POST /api/iap/verify {id, token} → revisa compras de Google Play / App Store (RevenueCat) y las acredita.
  */
 function apiHandler(payments: Payments, storePurchases: StorePurchases, store: Store, pushProfile: (id: string) => void) {
-  const credit = (playerId: string, productId: string, grantId: string, source: string): boolean => {
-    if (!store.recordPurchase(grantId, playerId, productId, source)) return false;
-    const r = store.update(playerId, (p) => grantProduct(p, productId, grantId));
-    if (r.ok) pushProfile(playerId);
-    return r.ok;
+  const credit = async (playerId: string, productId: string, grantId: string, source: string): Promise<boolean> => {
+    const ok = await store.creditPurchase(grantId, playerId, productId, source, (p) => grantProduct(p, productId, grantId));
+    if (ok) pushProfile(playerId);
+    return ok;
   };
   return async (req: Req, res: Res): Promise<boolean> => {
     const url = new URL(req.url ?? '/', 'http://x');
@@ -118,14 +122,14 @@ function apiHandler(payments: Payments, storePurchases: StorePurchases, store: S
       }
       if (url.pathname === '/api/purchase/verify' && req.method === 'GET') {
         const r = await payments.verify(url.searchParams.get('session_id') ?? '');
-        if (r.ok && r.grantId && r.playerId) credit(r.playerId, r.productId!, r.grantId, 'stripe');
-        sendJson(res, r.ok ? 200 : 400, { ok: r.ok, productId: r.productId, error: r.error, profile: r.playerId ? store.getProfile(r.playerId) : undefined });
+        if (r.ok && r.grantId && r.playerId) await credit(r.playerId, r.productId!, r.grantId, 'stripe');
+        sendJson(res, r.ok ? 200 : 400, { ok: r.ok, productId: r.productId, error: r.error, profile: r.playerId ? await store.getProfile(r.playerId) : undefined });
         return true;
       }
       if (url.pathname === '/api/iap/verify' && req.method === 'POST') {
         const b = await readBody(req);
         const id = String(b.id ?? '');
-        if (!store.auth(id, String(b.token ?? ''))) {
+        if (!(await store.auth(id, String(b.token ?? '')))) {
           sendJson(res, 401, { ok: false, error: 'Cuenta no válida' });
           return true;
         }
@@ -134,8 +138,8 @@ function apiHandler(payments: Payments, storePurchases: StorePurchases, store: S
           return true;
         }
         const granted: string[] = [];
-        for (const tx of await storePurchases.transactions(id)) if (credit(id, tx.productId, tx.grantId, tx.store)) granted.push(tx.productId);
-        sendJson(res, 200, { ok: true, granted, profile: store.getProfile(id) });
+        for (const tx of await storePurchases.transactions(id)) if (await credit(id, tx.productId, tx.grantId, tx.store)) granted.push(tx.productId);
+        sendJson(res, 200, { ok: true, granted, profile: await store.getProfile(id) });
         return true;
       }
       if (url.pathname === '/api/demo/grant' && req.method === 'POST') {
@@ -146,12 +150,12 @@ function apiHandler(payments: Payments, storePurchases: StorePurchases, store: S
         }
         const b = await readBody(req);
         const id = String(b.id ?? '');
-        if (!store.auth(id, String(b.token ?? ''))) {
+        if (!(await store.auth(id, String(b.token ?? '')))) {
           sendJson(res, 401, { ok: false, error: 'Cuenta no válida' });
           return true;
         }
-        const ok = credit(id, String(b.productId ?? ''), `demo_${Date.now()}_${Math.random().toString(36).slice(2)}`, 'demo');
-        sendJson(res, ok ? 200 : 400, { ok, error: ok ? undefined : 'No se pudo comprar', profile: store.getProfile(id) });
+        const ok = await credit(id, String(b.productId ?? ''), `demo_${Date.now()}_${Math.random().toString(36).slice(2)}`, 'demo');
+        sendJson(res, ok ? 200 : 400, { ok, error: ok ? undefined : 'No se pudo comprar', profile: await store.getProfile(id) });
         return true;
       }
       sendJson(res, 404, { error: 'No existe' });
@@ -162,12 +166,13 @@ function apiHandler(payments: Payments, storePurchases: StorePurchases, store: S
   };
 }
 
-function staticHandler(dir: string | null, api: (req: Req, res: Res) => Promise<boolean>) {
+function staticHandler(dir: string | null, api: (req: Req, res: Res) => Promise<boolean>, health: () => Promise<boolean>) {
   return async (req: Req, res: Res) => {
     if (await api(req, res)) return;
     if (req.url === '/health') {
-      res.writeHead(200, { 'content-type': 'application/json' });
-      res.end('{"ok":true}');
+      const ok = await health();
+      res.writeHead(ok ? 200 : 503, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok }));
       return;
     }
     if (!dir || !existsSync(dir)) {
@@ -188,7 +193,7 @@ function staticHandler(dir: string | null, api: (req: Req, res: Res) => Promise<
 }
 
 export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: Server; store: Store; close: () => Promise<void> } {
-  const store = new Store(opts.dataFile ?? null);
+  const store = new Store({ url: opts.databaseUrl ?? null, dir: opts.dataDir ?? null });
   const payments = opts.payments ?? new Payments();
   const storePurchases = opts.storePurchases ?? new StorePurchases();
   const matchWait = opts.matchWaitMs ?? 10000;
@@ -204,27 +209,28 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
   };
   const connFor = (playerId: string): Conn => ({ emit: (event, ...args) => emitTo(playerId, event, ...args) });
   const pushProfile = (id: string) => {
-    const p = store.getProfile(id);
-    if (p) emitTo(id, 'profile', p);
+    store.getProfile(id).then((p) => p && emitTo(id, 'profile', p), logErr);
   };
 
-  const http = createServer(staticHandler(opts.staticDir ?? null, apiHandler(payments, storePurchases, store, pushProfile)));
+  const http = createServer(staticHandler(opts.staticDir ?? null, apiHandler(payments, storePurchases, store, pushProfile), () => store.ready().then(() => true, () => false)));
   const io = new Server<ClientToServer, ServerToClient, Record<string, never>, SocketData>(http, { cors: { origin: '*' }, maxHttpBufferSize: 200_000 });
 
   /** Cobro de la entrada en la cuenta (lo llama la sala al empezar). */
-  const charge = (playerId: string, entry: number) => store.update(playerId, (p) => payEntry(p, entry)).ok;
+  const charge = async (playerId: string, entry: number) => (await store.update(playerId, (p) => payEntry(p, entry))).ok;
 
   /** Al terminar: premios en la cuenta de cada humano y, si es online entre personas, ranking y torneo. */
-  const onEnd = (room: Room, results: HumanResult[]) => {
+  const settle = async (room: Room, results: HumanResult[]) => {
     const g = room.state;
-    if (g && results.length) {
-      for (const r of results) {
-        const summary = summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry });
-        const out = store.update(r.playerId, (p) => applyMatch(p, summary));
-        if (out.ok && 'outcome' in out) emitTo(r.playerId, 'match_result', { outcome: out.outcome, profile: out.profile });
-      }
-      if (room.mode === 'online') store.recordMatch(results.map((r) => r.playerId));
+    if (!g || !results.length) return;
+    for (const r of results) {
+      const summary = summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry });
+      const out = await store.update(r.playerId, (p) => applyMatch(p, summary));
+      if (out.ok && 'outcome' in out) emitTo(r.playerId, 'match_result', { outcome: out.outcome, profile: out.profile });
     }
+    if (room.mode === 'online') await store.recordMatch(results.map((r) => r.playerId));
+  };
+  const onEnd = (room: Room, results: HumanResult[]) => {
+    settle(room, results).catch(logErr);
     setTimeout(() => {
       room.destroy();
       rooms.delete(room.id);
@@ -253,12 +259,12 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
   }
 
   /** ¿Puede entrar a esa mesa? (nivel, monedas y sala Top Leyendas). */
-  function eligible(p: Profile, t: TableId | null): string | null {
+  async function eligible(p: Profile, t: TableId | null): Promise<string | null> {
     if (!t) return null;
     const tier = tableOf(t);
     if (!tier) return 'Mesa desconocida';
     if (levelFromXp(p.xp).level < tier.minLevel) return `Necesitas nivel ${tier.minLevel}`;
-    if (tier.topOnly && store.rankOf(p.id) > TOP_ROOM_SIZE) return `Solo para el top ${TOP_ROOM_SIZE} del ranking`;
+    if (tier.topOnly && (await store.rankOf(p.id)) > TOP_ROOM_SIZE) return `Solo para el top ${TOP_ROOM_SIZE} del ranking`;
     if (p.coins < tier.entry) return 'Te faltan monedas';
     return null;
   }
@@ -285,7 +291,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     }
   };
 
-  function launchQuick(t: TableId) {
+  async function launchQuick(t: TableId) {
     const q = queueOf(t);
     if (q.timer) clearTimeout(q.timer);
     q.timer = null;
@@ -294,7 +300,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     if (!group.length) return;
     const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, t, { mode: 'online' });
     for (const id of group) {
-      const p = store.getProfile(id);
+      const p = await store.getProfile(id);
       if (!p) continue;
       room.addPlayer(helloOf(p), connFor(id));
       playerRoom.set(id, room);
@@ -305,16 +311,16 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
   function armQueue(t: TableId) {
     const q = queueOf(t);
-    if (q.ids.length >= 4) return launchQuick(t);
+    if (q.ids.length >= 4) return void launchQuick(t).catch(logErr);
     if (!q.timer) {
       q.startsAt = Date.now() + matchWait;
-      q.timer = setTimeout(() => launchQuick(t), matchWait);
+      q.timer = setTimeout(() => void launchQuick(t).catch(logErr), matchWait);
     }
     for (const id of q.ids) connFor(id).emit('searching', { waiting: q.ids.length, startsInMs: Math.max(0, q.startsAt - Date.now()) });
   }
 
   // ------------------------------------------------ Operaciones de perfil
-  function runOp(uid: string, op: ProfileOp): ProfileOpResult {
+  async function runOp(uid: string, op: ProfileOp): Promise<ProfileOpResult> {
     const wrap = (r: { ok: boolean; error?: string; profile?: Profile } & Record<string, unknown>): ProfileOpResult => {
       if (!r.ok) return { ok: false, error: r.error };
       const { ok: _ok, profile, error: _e, ...result } = r;
@@ -322,36 +328,36 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     };
     switch (op?.op) {
       case 'get':
-        return { ok: true, profile: store.getProfile(uid) ?? undefined };
+        return { ok: true, profile: (await store.getProfile(uid)) ?? undefined };
       case 'identity':
-        return wrap(store.update(uid, (p) => setIdentity(p, op.patch ?? {})));
+        return wrap(await store.update(uid, (p) => setIdentity(p, op.patch ?? {})));
       case 'buy':
-        return wrap(store.update(uid, (p) => buyWithCoins(p, String(op.itemId))));
+        return wrap(await store.update(uid, (p) => buyWithCoins(p, String(op.itemId))));
       case 'equip':
-        return wrap(store.update(uid, (p) => equip(p, String(op.itemId))));
+        return wrap(await store.update(uid, (p) => equip(p, String(op.itemId))));
       case 'daily':
-        return wrap(store.update(uid, (p) => claimDaily(p)));
+        return wrap(await store.update(uid, (p) => claimDaily(p)));
       case 'spin':
-        return wrap(store.update(uid, (p) => spin(p)));
+        return wrap(await store.update(uid, (p) => spin(p)));
       case 'mission':
-        return wrap(store.update(uid, (p) => claimMission(p, String(op.id))));
+        return wrap(await store.update(uid, (p) => claimMission(p, String(op.id))));
       case 'pass':
-        return wrap(store.update(uid, (p) => claimPass(p, Number(op.tier), op.track === 'premium' ? 'premium' : 'free')));
+        return wrap(await store.update(uid, (p) => claimPass(p, Number(op.tier), op.track === 'premium' ? 'premium' : 'free')));
       case 'friend_add': {
-        const f = store.getProfile(String(op.friend?.id ?? '').toUpperCase());
+        const f = await store.getProfile(String(op.friend?.id ?? '').toUpperCase());
         const friend = f ? { id: f.id, name: f.name, avatar: f.avatar } : { id: String(op.friend?.id ?? ''), name: String(op.friend?.name ?? ''), avatar: '🙂' };
-        return wrap(store.update(uid, (p) => addFriend(p, friend)));
+        return wrap(await store.update(uid, (p) => addFriend(p, friend)));
       }
       case 'friend_remove':
-        return wrap(store.update(uid, (p) => removeFriend(p, String(op.id))));
+        return wrap(await store.update(uid, (p) => removeFriend(p, String(op.id))));
       case 'emote': {
-        const r = store.update(uid, (p) => spendEmote(p, String(op.emoteId)));
+        const r = await store.update(uid, (p) => spendEmote(p, String(op.emoteId)));
         if (r.ok && 'glyph' in r) playerRoom.get(uid)?.chat(uid, String(r.glyph));
         return wrap(r);
       }
       case 'tournament_claim': {
-        const r = store.claimLastWeek(uid);
-        return r.ok ? { ok: true, profile: store.getProfile(uid) ?? undefined, result: { coins: r.coins, gems: r.gems, place: r.place } } : { ok: false, error: r.error };
+        const r = await store.claimLastWeek(uid);
+        return r.ok ? { ok: true, profile: (await store.getProfile(uid)) ?? undefined, result: { coins: r.coins, gems: r.gems, place: r.place } } : { ok: false, error: r.error };
       }
       default:
         return { ok: false, error: 'Operación desconocida' };
@@ -360,19 +366,19 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
   io.on('connection', (socket) => {
     const me = () => socket.data.uid;
-    const profileOf = () => (me() ? store.getProfile(me()!) : null);
+    const profileOf = async () => (me() ? await store.getProfile(me()!) : null);
 
     /** Entrar: con id+token existentes, o crear una cuenta nueva de invitado. */
-    socket.on('auth', (a, ack) => {
+    socket.on('auth', async (a, ack) => {
       let id: string | undefined;
       let token: string | undefined;
       let profile: Profile | null = null;
       if (a?.id && a?.token) {
-        profile = store.auth(String(a.id), String(a.token));
+        profile = await store.auth(String(a.id), String(a.token));
         if (!profile) return ack?.({ ok: false, error: 'Cuenta no válida' });
         id = profile.id;
       } else {
-        const acc = store.createAccount();
+        const acc = await store.createAccount();
         ({ id, token, profile } = acc);
       }
       socket.data.uid = id;
@@ -380,17 +386,17 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       ack?.({ ok: true, id, token, profile: profile! });
     });
 
-    socket.on('profile_op', (op, ack) => {
+    socket.on('profile_op', async (op, ack) => {
       const uid = me();
       if (!uid) return ack?.({ ok: false, error: 'Primero inicia sesión' });
-      ack?.(runOp(uid, op));
+      ack?.(await runOp(uid, op));
     });
 
-    socket.on('play_ai', (o, ack) => {
-      const p = profileOf();
+    socket.on('play_ai', async (o, ack) => {
+      const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const t: TableId | null = o?.table && tableOf(o.table) && !tableOf(o.table)!.onlineOnly ? o.table : null;
-      const err = eligible(p, t);
+      const err = await eligible(p, t);
       if (err) return ack?.({ ok: false, error: err });
       leaveCurrent(p.id);
       dequeue(p.id);
@@ -412,11 +418,11 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       ack?.({ ok: true });
     });
 
-    socket.on('quick_match', (t, ack) => {
-      const p = profileOf();
+    socket.on('quick_match', async (t, ack) => {
+      const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const tier: TableId = tableOf(t) ? t : 'barrio';
-      const err = eligible(p, tier);
+      const err = await eligible(p, tier);
       if (err) return ack?.({ ok: false, error: err });
       leaveCurrent(p.id);
       dequeue(p.id);
@@ -430,11 +436,11 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       if (id) dequeue(id);
     });
 
-    socket.on('create_private', (o, ack) => {
-      const p = profileOf();
+    socket.on('create_private', async (o, ack) => {
+      const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const tier: TableId = o?.table && tableOf(o.table) ? o.table : 'barrio';
-      const err = eligible(p, tier);
+      const err = await eligible(p, tier);
       if (err) return ack?.({ ok: false, error: err });
       leaveCurrent(p.id);
       const seats = Math.max(2, Math.min(4, Number(o?.seats) || 4));
@@ -445,12 +451,12 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       ack?.({ ok: true, code: room.code! });
     });
 
-    socket.on('join_private', (code, ack) => {
-      const p = profileOf();
+    socket.on('join_private', async (code, ack) => {
+      const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const room = byCode.get(String(code).toUpperCase());
       if (!room) return ack?.({ ok: false, error: 'No existe una mesa con ese código' });
-      const err = eligible(p, room.table);
+      const err = await eligible(p, room.table);
       if (err) return ack?.({ ok: false, error: err });
       if (playerRoom.get(p.id) !== room) leaveCurrent(p.id);
       const r = room.addPlayer(helloOf(p), connFor(p.id));
@@ -493,12 +499,12 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       ack?.({ ok: room.attach(id, connFor(id)) });
     });
 
-    socket.on('ranking', (q, ack) => {
+    socket.on('ranking', async (q, ack) => {
       const friends = Array.isArray(q?.friends) ? q.friends.slice(0, 200).map(String) : [];
-      ack?.(store.ranking(q?.scope ?? 'global', q?.country, friends));
+      ack?.(await store.ranking(q?.scope ?? 'global', q?.country, friends));
     });
 
-    socket.on('tournament', (ack) => ack?.(store.tournament()));
+    socket.on('tournament', async (ack) => ack?.(await store.tournament()));
 
     socket.on('disconnect', () => {
       const id = me();
@@ -533,8 +539,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         for (const q of queues.values()) if (q.timer) clearTimeout(q.timer);
         for (const r of rooms.values()) r.destroy();
         io.close(() => {
-          store.close();
-          resolve();
+          store.close().then(() => resolve(), () => resolve());
         });
       }),
   };

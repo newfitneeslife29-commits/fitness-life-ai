@@ -132,7 +132,8 @@ export interface ServerToClient {
 
 /** Id del producto en Google Play / App Store (sin ':' ni '-'). */
 export function storeProductId(productId: string): string {
-  return productId.replace(/[:-]/g, '_');
+  // Las tiendas solo aceptan letras sin tilde, números y "_" (p. ej. item:effect-pólvora → item_effect_polvora).
+  return productId.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[:-]/g, '_').toLowerCase();
 }
 
 export interface RankRow {

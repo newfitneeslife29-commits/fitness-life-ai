@@ -1,0 +1,154 @@
+name: Parqués for TestFlight
+
+# Compila Parqués (parques/apps/web, Capacitor) para iPhone y lo sube a App Store Connect,
+# donde aparece en TestFlight cuando Apple termina de procesarlo (unos 15 minutos).
+# Lánzalo desde Actions → "Parqués for TestFlight" → Run workflow. Cada ejecución lleva un número de build mayor.
+#
+# Necesita, en Settings → Secrets and variables → Actions:
+# - Lo mismo que ios-release.yml (Fitness Life): variable APPLE_TEAM_ID y secretos
+#   APPSTORE_KEY_ID, APPSTORE_ISSUER_ID y APPSTORE_PRIVATE_KEY.
+# - Variable PARQUES_SERVER_URL: la dirección HTTPS del servidor en Railway.
+# - Variable PARQUES_RC_IOS_KEY: la clave pública de App Store del proyecto de Parqués en RevenueCat (appl_…).
+# - La app creada en App Store Connect con el ID de paquete parques.app
+#   (el primer paso registra el ID si falta y avisa si la app no existe todavía).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: parques-ios
+
+jobs:
+  testflight:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: parques
+    env:
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL }}
+      VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
+      VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Comprobar los ajustes
+        env:
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          missing=""
+          [ -n "$TEAM_ID" ] || missing="$missing APPLE_TEAM_ID(variable)"
+          [ -n "$KEY_ID" ] || missing="$missing APPSTORE_KEY_ID"
+          [ -n "$ISSUER_ID" ] || missing="$missing APPSTORE_ISSUER_ID"
+          [ -n "$PRIVATE_KEY" ] || missing="$missing APPSTORE_PRIVATE_KEY"
+          [ -n "$VITE_SERVER_URL" ] || missing="$missing PARQUES_SERVER_URL(variable)"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan ajustes:$missing. Mira el comentario al principio de parques-ios.yml."
+            exit 1
+          fi
+          case "$VITE_SERVER_URL" in
+            https://*) ;;
+            *) echo "::error::PARQUES_SERVER_URL debe empezar por https://"; exit 1 ;;
+          esac
+          [ -n "$VITE_REVENUECAT_IOS_KEY" ] || echo "::warning::Sin PARQUES_RC_IOS_KEY: esta versión no podrá vender en la App Store."
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$PRIVATE_KEY" > "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: parques/package-lock.json
+      - name: App ID y app en App Store Connect
+        working-directory: .
+        env:
+          KEY_PATH: ${{ runner.temp }}/keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+        run: node .github/scripts/parques-ios-signing.mjs check
+      # App Store Connect solo acepta apps compiladas con el SDK más reciente.
+      - name: Usar el Xcode más nuevo
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+      - run: npm ci
+      - name: Pruebas
+        run: npm test
+      - name: Compilar la app y copiarla al proyecto de iOS
+        working-directory: parques/apps/web
+        run: npm run build:mobile && npx cap sync ios
+      # Se archiva sin firmar; la exportación lo firma para la App Store con un certificado
+      # y un perfil creados para esta ejecución (igual que Fitness Life y Ridge Rush).
+      - name: Archivar
+        working-directory: parques/apps/web
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
+          -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Parques.xcarchive"
+          DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          MARKETING_VERSION="$VERSION_NAME" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+          archive
+      - name: Comprobar el archivo
+        run: |
+          app="$RUNNER_TEMP/Parques.xcarchive/Products/Applications/App.app"
+          [ -d "$app" ] || { echo "::error::El archivo no contiene la app"; exit 1; }
+          id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+          echo "Bundle ID: $id"; [ "$id" = "parques.app" ] || { echo "::error::Bundle ID inesperado: $id"; exit 1; }
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$app/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist"
+          [ -f "$app/public/index.html" ] || { echo "::error::Falta la web compilada dentro de la app"; exit 1; }
+      - name: Crear el certificado y el perfil de firma
+        working-directory: .
+        env:
+          SIGNING_DIR: ${{ runner.temp }}/signing
+          KEY_PATH: ${{ runner.temp }}/keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+          RUN: ${{ github.run_number }}-${{ github.run_attempt }}
+        run: |
+          mkdir -p "$SIGNING_DIR"
+          /usr/bin/openssl req -new -newkey rsa:2048 -nodes -keyout "$SIGNING_DIR/key.pem" \
+            -out "$SIGNING_DIR/csr.pem" -subj "/CN=Parques CI/OU=$TEAM_ID" 2>/dev/null
+          node .github/scripts/parques-ios-signing.mjs setup
+          /usr/bin/openssl x509 -inform der -in "$SIGNING_DIR/cert.cer" -out "$SIGNING_DIR/cert.pem"
+          pass=$(uuidgen)
+          /usr/bin/openssl pkcs12 -export -inkey "$SIGNING_DIR/key.pem" -in "$SIGNING_DIR/cert.pem" \
+            -out "$SIGNING_DIR/dist.p12" -passout "pass:$pass"
+          keychain="$SIGNING_DIR/signing.keychain-db"
+          security create-keychain -p "$pass" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$pass" "$keychain"
+          security import "$SIGNING_DIR/dist.p12" -k "$keychain" -P "$pass" -f pkcs12 -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$pass" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$keychain"
+          rm -f "$SIGNING_DIR/key.pem" "$SIGNING_DIR/dist.p12"
+      - name: Subir a App Store Connect
+        id: upload
+        run: |
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Parques.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/signing/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
+      - name: Mostrar los errores de firma
+        if: failure()
+        run: |
+          for log in $(find "${TMPDIR:-/tmp}" /var/folders -name 'IDEDistribution*.log' -path '*xcdistributionlogs*' 2>/dev/null); do
+            echo "== $log"
+            grep -v -i -E 'bearer|authorization|eyJ' "$log" | grep -i -E -B2 -A8 'error|fail|denied|forbidden|unauthori|401|403|409|profile|capabilit' | tail -150
+          done
+      # Solo si no se subió nada: una build subida necesita su certificado.
+      - name: Quitar el certificado y el perfil de CI
+        if: always()
+        working-directory: .
+        env:
+          UPLOADED: ${{ steps.upload.outcome == 'success' }}
+          SIGNING_DIR: ${{ runner.temp }}/signing
+          KEY_PATH: ${{ runner.temp }}/keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+        run: |
+          [ -f "$KEY_PATH" ] && node .github/scripts/parques-ios-signing.mjs cleanup || true
+          security delete-keychain "$SIGNING_DIR/signing.keychain-db" 2>/dev/null || true
+          rm -rf "$SIGNING_DIR"
+      - name: Quitar la clave
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
+      - name: Resumen
+        if: success()
+        run: echo "### Parqués $VERSION_NAME (build $BUILD_NUMBER) subido; aparecerá en TestFlight en unos 15 minutos." >> "$GITHUB_STEP_SUMMARY"

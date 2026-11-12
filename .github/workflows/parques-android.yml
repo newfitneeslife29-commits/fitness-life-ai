@@ -1,0 +1,96 @@
+name: Parqués for Google Play
+
+# Compila Parqués (parques/apps/web, Capacitor) como Android App Bundle (.aab) firmado para Google Play.
+# Lánzalo desde Actions → "Parqués for Google Play" → Run workflow y descarga el .aab de la página
+# de la ejecución (Artifacts). La primera vez hay que subirlo a mano en Play Console (crear la app
+# "Parqués" con el paquete parques.app); Google Play exige esa primera subida manual.
+#
+# Necesita, en Settings → Secrets and variables → Actions:
+# - Variable PARQUES_SERVER_URL: la dirección HTTPS del servidor en Railway (p. ej. https://parques-production.up.railway.app).
+# - Variable PARQUES_RC_ANDROID_KEY: la clave pública de Google Play del proyecto de Parqués en RevenueCat (goog_…).
+# - Los del Supabase de Fitness Life (variable SUPABASE_PROJECT_REF, secreto SUPABASE_ACCESS_TOKEN): ahí se guarda
+#   la clave de subida de Parqués (parques_upload_key), distinta de las de Fitness Life y Ridge Rush.
+# Cada ejecución lleva un version code mayor, como exige Google Play.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: parques-android
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: parques
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+      VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL }}
+      VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
+      VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Comprobar los ajustes
+        env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          missing=""
+          [ -n "$SUPABASE_PROJECT_REF" ] || missing="$missing SUPABASE_PROJECT_REF(variable)"
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -n "$VITE_SERVER_URL" ] || missing="$missing PARQUES_SERVER_URL(variable)"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan ajustes:$missing. Mira el comentario al principio de parques-android.yml."
+            exit 1
+          fi
+          case "$VITE_SERVER_URL" in
+            https://*) ;;
+            *) echo "::error::PARQUES_SERVER_URL debe empezar por https://"; exit 1 ;;
+          esac
+          [ -n "$VITE_REVENUECAT_ANDROID_KEY" ] || echo "::warning::Sin PARQUES_RC_ANDROID_KEY: esta versión no podrá vender en Google Play."
+      - name: El servidor responde
+        run: curl -fsS --max-time 20 "$VITE_SERVER_URL/health" || echo "::warning::El servidor $VITE_SERVER_URL no respondió en /health; la app no podrá conectarse hasta que funcione."
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: parques/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Pruebas
+        run: npm test
+      - name: Compilar la app y copiarla al proyecto Android
+        working-directory: parques/apps/web
+        run: npm run build:mobile && npx cap sync android
+      - name: Clave de subida de Google Play (Supabase Vault)
+        working-directory: .
+        env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          UPLOAD_KEY_NAME: parques_upload_key
+          UPLOAD_KEY_LABEL: Parques
+        run: .github/scripts/android-upload-key.sh
+      - name: Generar el App Bundle firmado
+        working-directory: parques/apps/web/android
+        run: ./gradlew bundleRelease --no-daemon
+      - name: Comprobar la firma
+        working-directory: parques/apps/web/android/app/build/outputs/bundle/release
+        run: |
+          jarsigner -verify app-release.aab | grep -q 'jar verified' || { echo "::error::El bundle no está firmado."; exit 1; }
+          mv app-release.aab "parques-$VERSION_NAME.aab"
+          rm -f "$ANDROID_KEYSTORE_PATH"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parques-${{ env.VERSION_NAME }}
+          path: parques/apps/web/android/app/build/outputs/bundle/release/parques-${{ env.VERSION_NAME }}.aab
+          if-no-files-found: error
+      - name: Resumen
+        run: |
+          {
+            echo "### Parqués $VERSION_NAME (version code $VERSION_CODE)"
+            echo "Descarga **parques-$VERSION_NAME** en Artifacts, descomprímelo y sube el .aab en Play Console."
+          } >> "$GITHUB_STEP_SUMMARY"

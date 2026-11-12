@@ -1,0 +1,26 @@
+name: Parqués CI
+
+# Pruebas y compilación de Parqués cuando cambia algo dentro de parques/ (no afecta a las otras apps).
+on:
+  push:
+    paths: ['parques/**', '.github/workflows/parques-*.yml', '.github/scripts/parques-*']
+  pull_request:
+    paths: ['parques/**', '.github/workflows/parques-*.yml', '.github/scripts/parques-*']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: parques
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: parques/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

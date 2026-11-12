@@ -4,7 +4,7 @@
  * - La compra solo se entrega cuando Stripe confirma `payment_status = paid`.
  * - Sin STRIPE_SECRET_KEY el servidor responde `mode: 'demo'` (compras de prueba sin cobro).
  */
-import { productFor } from '@parques/engine';
+import { ITEMS, productFor, storeProductId } from '@parques/engine';
 
 export interface CheckoutResult {
   mode: 'stripe' | 'demo';
@@ -125,5 +125,9 @@ export function fromStoreId(storeId: string): string | null {
     storeId.replace(/_/g, '-'),
     storeId.startsWith('item_') ? `item:${storeId.slice(5).replace(/_/g, '-')}` : '',
   ];
-  return candidates.find((c) => c && productFor(c)) ?? null;
+  const direct = candidates.find((c) => c && productFor(c) && storeProductId(c) === storeId);
+  if (direct) return direct;
+  // Ids con tilde (item:effect-pólvora): se busca entre los artículos que se venden con dinero real.
+  const item = ITEMS.find((i) => i.currency === 'usd' && storeProductId(`item:${i.id}`) === storeId);
+  return item ? `item:${item.id}` : null;
 }
