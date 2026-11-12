@@ -18,7 +18,7 @@ import { PieceGlyph } from '../game/Piece';
 import { BoardMini } from '../game/Board';
 
 type Tab = 'offers' | Category | 'coins' | 'gems';
-const TABS: Tab[] = ['offers', 'board', 'pieces', 'dice', 'frame', 'effect', 'coins', 'gems'];
+const TABS: Tab[] = ['offers', 'board', 'avatar', 'pieces', 'dice', 'frame', 'effect', 'coins', 'gems'];
 
 function untilMidnight(): string {
   const now = new Date();
@@ -38,12 +38,13 @@ function Preview({ it }: { it: Item }) {
       {(['amarillo', 'rojo', 'azul'] as const).map((c, i) => (
         <g key={c} transform={`translate(${(i - 1) * 42} ${i === 1 ? 8 : 0})`}>
           <ellipse cx={3} cy={7} rx={19} ry={8} fill="rgba(0,0,0,.35)" />
-          <PieceGlyph color={c} style={it.pieces!} r={17} />
+          <PieceGlyph color={c} style={it.pieces!} r={17} img={it.piecesImg} />
         </g>
       ))}
     </svg>
   );
   if (it.frame) return <Avatar emoji={p.avatar} photo={p.photo} frameId={it.id} size={70} />;
+  if (it.category === 'avatar') return <Avatar emoji={`av:${it.id}`} size={84} />;
   return <span className="prev-emoji">{it.emoji}</span>;
 }
 
@@ -206,7 +207,7 @@ export function ShopScreen() {
         <motion.div key={tab} className={`shop-grid ${tab === 'board' ? 'boards' : ''}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
           {tab === 'coins' || tab === 'gems'
             ? PRODUCTS.filter((x) => x.kind === tab).map((pack, i) => (
-                <motion.div key={pack.id} className={`shop-item card glossy pack ${i === 2 ? 'best' : ''}`} whileHover={{ y: -4 }}>
+                <motion.div key={pack.id} className={`shop-item card glossy pack ${i === 2 ? 'best' : ''}`} initial={{ y: 26, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.06 }} whileHover={{ y: -4 }}>
                   {i === 2 ? <span className="si-tag" style={{ background: '#e11d48' }}>{t('Más popular')}</span> : null}
                   <span className="pack-icon">{tab === 'coins' ? <span className="coin-stack">{Array.from({ length: Math.min(4, i + 1) }, (_, k) => <CoinIcon key={k} size={30 + i * 3} />)}</span> : <GemIcon size={48 + i * 8} />}</span>
                   <span className="si-name">{(pack.coins ?? pack.gems)!.toLocaleString()} {tab === 'coins' ? t('monedas') : t('gemas')}</span>
@@ -215,14 +216,23 @@ export function ShopScreen() {
                   </button>
                 </motion.div>
               ))
-            : items.map((it) => {
+            : items.map((it, idx) => {
                 const owned = p.owned.includes(it.id);
                 const equipped = p.equipped[it.category] === it.id;
                 const seasonItem = it.season ? SEASONS.find((s) => s.id === it.season) : null;
                 const unavailable = !!it.season && season?.id !== it.season && !owned;
                 const usd = ITEM_PRICES_USD[it.id];
                 return (
-                  <motion.div key={it.id} className={`shop-item card glossy ${equipped ? 'equipped' : ''}`} whileHover={{ y: -4 }} layout>
+                  <motion.div
+                    key={it.id}
+                    className={`shop-item card glossy ${equipped ? 'equipped' : ''}`}
+                    initial={{ y: 26, opacity: 0, scale: 0.92 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    transition={{ delay: Math.min(idx, 12) * 0.04, type: 'spring', stiffness: 260, damping: 20 }}
+                    whileHover={{ y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    layout
+                  >
                     {seasonItem ? <span className="si-tag" style={{ background: seasonItem.colors[0] }}>{seasonItem.emoji} {t('Temporada')}</span> : null}
                     {it.currency === 'pass' ? <span className="si-tag" style={{ background: '#7c3aed' }}>🎟️ {t('Pase')}</span> : null}
                     {it.currency === 'event' ? <span className="si-tag" style={{ background: '#0ea5e9' }}>🎉 {t('Evento')}</span> : null}

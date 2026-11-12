@@ -301,7 +301,10 @@ export const useGame = create<GameStore>((set, get) => {
           await sleep(500);
           break;
         case 'TURN_CHANGED':
-          if (isHuman(e.player)) play('turn');
+          if (isHuman(e.player)) {
+            play('turn');
+            showBanner('info', tr('¡Tu turno!'), undefined, 700);
+          }
           await sleep(BASE.turn);
           break;
         default:

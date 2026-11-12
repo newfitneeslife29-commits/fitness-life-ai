@@ -23,7 +23,7 @@ export function Gallery() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
         {pieces.map((p) => (
           <svg key={p.id} viewBox="-30 -60 60 70" width={70} height={80}>
-            <PieceGlyph color={['rojo', 'azul', 'verde', 'amarillo'][p.id.length % 4] as 'rojo'} style={p.pieces!} />
+            <PieceGlyph color={['rojo', 'azul', 'verde', 'amarillo'][p.id.length % 4] as 'rojo'} style={p.pieces!} img={p.piecesImg} />
           </svg>
         ))}
       </div>

@@ -75,7 +75,9 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
               width: size,
               height: size,
               transform: f.t(h),
-              background: `radial-gradient(circle at 30% 25%, ${skin.face[0]}, ${skin.face[1]})`,
+              background: skin.texture
+                ? `radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), rgba(0,0,0,.12)), url(art/dice/${skin.texture}.webp) center / cover`
+                : `radial-gradient(circle at 30% 25%, ${skin.face[0]}, ${skin.face[1]})`,
               boxShadow: `inset 0 0 0 2px ${edge}, inset 0 -5px 8px rgba(0,0,0,.1), inset 0 4px 8px rgba(255,255,255,.6)`,
             }}
           >

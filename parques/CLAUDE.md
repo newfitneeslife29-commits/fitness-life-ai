@@ -215,6 +215,13 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
   `lib/ads.ts` (@capacitor-community/admob, anuncios no personalizados; sin ids propios usa los de prueba de Google).
   Tableros ilustrados (`game/BoardArt.tsx`, `BoardTheme.art`): el dibujo cubre todo el tablero y las casillas quedan semitransparentes.
   Fichas con salto 3D (`HOP_S`), acabados perla/mate/obsidiana/tricolor/fuego/viento; efectos burbujas/mariposas/rayos/cumbia.
+  **Arte (v0.9.2)**: escenarios pintados en `public/art/boards/*.webp` (`BoardTheme.image`): la IA solo pinta el paisaje
+  (esquinas y bordes) y la app dibuja encima el recorrido EXACTO del tablero clásico; las cárceles quedan transparentes.
+  Texturas de dados `public/art/dice/*.webp` (`DiceSkin.texture`, generadas con código). Avatares de la tienda
+  (`category: 'avatar'`, equipados como `av:<id>`): con `avatarImg` muestran la ilustración, si no un medallón de color con su emoji.
+  Fichas nuevas dibujadas en SVG (cerámica, muisca, grano, vueltiao, chiva, esmeralda). `src/lib/art.test.ts` falla si una
+  skin apunta a una imagen que no existe. Animaciones: entrada del tablero, aviso "¡Tu turno!", ficha capturada vuela en arco
+  a la cárcel, entradas escalonadas en lobby y tienda.
   Galería de gráficos solo en desarrollo: `http://localhost:5173/#galeria`. Textos nuevos en `lib/locales2.ts`.
 
 ## Pendiente / ideas

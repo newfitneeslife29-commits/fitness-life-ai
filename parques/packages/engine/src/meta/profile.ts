@@ -267,7 +267,10 @@ export function buyWithCoins(p: Profile, itemId: string, now = new Date()): OpRe
 
 export function equip(p: Profile, itemId: string): OpResult | OpFail {
   if (!p.owned.includes(itemId)) return fail('No tienes ese objeto');
-  return { ok: true, profile: { ...p, equipped: { ...p.equipped, [item(itemId).category]: itemId } } };
+  const it = item(itemId);
+  // Los avatares con arte se usan como avatar del perfil (se ven en todas las mesas).
+  const avatar = it.category === 'avatar' ? `av:${it.id}` : p.avatar;
+  return { ok: true, profile: { ...p, avatar, photo: it.category === 'avatar' ? null : p.photo, equipped: { ...p.equipped, [it.category]: itemId } } };
 }
 
 /** Emote pagado con gemas. */
@@ -356,7 +359,14 @@ const PHOTO_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 export function setIdentity(p: Profile, patch: { name?: string; avatar?: string; photo?: string | null; country?: string }): OpResult | OpFail {
   const out = { ...p };
   if (patch.name !== undefined) out.name = String(patch.name).trim().slice(0, 14) || 'Jugador';
-  if (patch.avatar !== undefined) out.avatar = String(patch.avatar).slice(0, 8) || DEFAULT_AVATAR;
+  if (patch.avatar !== undefined) {
+    const a = String(patch.avatar);
+    // Avatar con arte: solo si lo tiene.
+    if (a.startsWith('av:')) {
+      if (!p.owned.includes(a.slice(3))) return fail('No tienes ese objeto');
+      out.avatar = a.slice(0, 40);
+    } else out.avatar = a.slice(0, 8) || DEFAULT_AVATAR;
+  }
   if (patch.photo !== undefined) {
     if (patch.photo !== null && (!PHOTO_RE.test(patch.photo) || patch.photo.length > 40000)) return fail('Foto inválida o muy grande');
     out.photo = patch.photo;
@@ -369,7 +379,7 @@ export function addFriend(p: Profile, f: Friend): OpResult | OpFail {
   if (f.id === p.id) return fail('Ese es tu propio código');
   if (p.friends.some((x) => x.id === f.id)) return fail('Ya es tu amigo');
   if (p.friends.length >= 200) return fail('Tienes demasiados amigos');
-  return { ok: true, profile: unlock({ ...p, friends: [...p.friends, { id: String(f.id).slice(0, 16), name: String(f.name).slice(0, 14), avatar: String(f.avatar).slice(0, 8) }] }).profile };
+  return { ok: true, profile: unlock({ ...p, friends: [...p.friends, { id: String(f.id).slice(0, 16), name: String(f.name).slice(0, 14), avatar: String(f.avatar).slice(0, 40) }] }).profile };
 }
 
 export function removeFriend(p: Profile, id: string): OpResult {

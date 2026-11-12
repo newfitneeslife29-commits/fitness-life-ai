@@ -6,7 +6,7 @@
 import { ITEM_PRICES_USD } from '../economy';
 import type { Season } from './seasons';
 
-export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect';
+export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect' | 'avatar';
 export type Currency = 'coins' | 'usd' | 'pass' | 'free' | 'event';
 
 /** Ilustraciones de tablero (dibujos de fondo, centro y esquinas). */
@@ -28,18 +28,22 @@ export interface BoardTheme {
   deco: 'clouds' | 'flowers' | 'snow' | 'coffee' | 'confetti' | 'stars' | 'gold' | 'marble' | 'wood';
   /** Dibujos del tablero (tableros ilustrados). */
   art?: BoardArt;
+  /** Escenario pintado (imagen en public/art/boards/<image>.webp): el recorrido lo dibuja la app encima. */
+  image?: string;
   /** Fondo de la pantalla de juego. */
   page: [string, string];
 }
 
 export interface DiceSkin {
+  /** Textura de las caras (imagen en public/art/dice/<texture>.webp); los puntos los dibuja la app. */
+  texture?: string;
   face: [string, string];
   pip: string;
   one: string;
   edge?: string;
 }
 
-export type PieceStyle = 'clasica' | 'gema' | 'brillante' | 'moneda' | 'estrella' | 'cristal' | 'corona' | 'perla' | 'mate' | 'obsidiana' | 'tricolor' | 'fuego' | 'viento';
+export type PieceStyle = 'clasica' | 'gema' | 'brillante' | 'moneda' | 'estrella' | 'cristal' | 'corona' | 'perla' | 'mate' | 'obsidiana' | 'tricolor' | 'fuego' | 'viento' | 'ceramica' | 'muisca' | 'grano' | 'vueltiao' | 'chiva' | 'esmeralda';
 export type EffectStyle = 'stars' | 'flowers' | 'confetti' | 'fireworks' | 'snow' | 'bubbles' | 'butterflies' | 'lightning' | 'music';
 
 export interface FrameSkin {
@@ -62,6 +66,10 @@ export interface Item {
   pieces?: PieceStyle;
   frame?: FrameSkin;
   effect?: EffectStyle;
+  /** Fichas con arte (public/art/pieces/<piecesImg>-<color>.webp). */
+  piecesImg?: string;
+  /** Avatar con arte (public/art/avatars/<avatarImg>.webp). */
+  avatarImg?: string;
   emoji: string;
 }
 
@@ -74,7 +82,7 @@ const RAW: Raw[] = [
   { id: 'board-clasico', category: 'board', name: 'Clásico', emoji: '☁️',
     board: { frame: '#1446b8', frameDark: '#071a4d', slab: '#0b2a75', sky: ['#c9ecff', '#5fb4f2', '#2f86e0'], circle: ['#9adaff', '#1e88e5'], line: '#13254f', tint: 16, deco: 'clouds', page: ['#2a1660', '#120c2e'] } },
   { id: 'board-cafetero', category: 'board', name: 'Eje Cafetero', coins: 15000, emoji: '☕',
-    board: { frame: '#6b4423', frameDark: '#2e1b0b', slab: '#3d2512', sky: ['#f6e7c8', '#c8a273', '#8a5a2b'], circle: ['#d9b48a', '#7a4a22'], line: '#3b2412', tint: 20, deco: 'coffee', art: 'cafetal', page: ['#4a2c16', '#1e1008'] } },
+    board: { image: 'cafetal', frame: '#6b4423', frameDark: '#2e1b0b', slab: '#3d2512', sky: ['#f6e7c8', '#c8a273', '#8a5a2b'], circle: ['#d9b48a', '#7a4a22'], line: '#3b2412', tint: 20, deco: 'coffee', art: 'cafetal', page: ['#4a2c16', '#1e1008'] } },
   { id: 'board-caribe', category: 'board', name: 'Caribe', emoji: '🏝️',
     board: { frame: '#0e8c96', frameDark: '#064a50', slab: '#075a62', sky: ['#c9fbff', '#42d6df', '#0aa6b5'], circle: ['#ffe7a3', '#ffb347'], line: '#0b3d44', tint: 14, deco: 'stars', page: ['#0b5560', '#06222a'] } },
   { id: 'board-madera', category: 'board', name: 'Madera fina', emoji: '🪵',
@@ -86,11 +94,11 @@ const RAW: Raw[] = [
   { id: 'board-oro', category: 'board', name: 'Oro 24K', emoji: '🏆',
     board: { frame: '#e0a400', frameDark: '#7a5200', slab: '#a87400', sky: ['#fff6c8', '#ffd54a', '#e09b00'], circle: ['#fff3b0', '#d48a00'], line: '#5a3a00', tint: 14, cell: '#fffaf0', deco: 'gold', page: ['#3a2600', '#120b00'] } },
   { id: 'board-feria', category: 'board', name: 'Feria de las Flores', season: 'feria', emoji: '🌸',
-    board: { frame: '#1f7a3a', frameDark: '#0f4720', slab: '#145a2b', sky: ['#ffe3f1', '#ff9fcf', '#e8559b'], circle: ['#fff1a8', '#ff8ac6'], line: '#2b1440', tint: 16, deco: 'flowers', art: 'silletas', page: ['#5a1a45', '#1d0818'] } },
+    board: { image: 'flores', frame: '#1f7a3a', frameDark: '#0f4720', slab: '#145a2b', sky: ['#ffe3f1', '#ff9fcf', '#e8559b'], circle: ['#fff1a8', '#ff8ac6'], line: '#2b1440', tint: 16, deco: 'flowers', art: 'silletas', page: ['#5a1a45', '#1d0818'] } },
   { id: 'board-carnaval', category: 'board', name: 'Carnaval', season: 'carnaval', emoji: '🎭',
-    board: { frame: '#c2185b', frameDark: '#6b0d33', slab: '#8a1043', sky: ['#fff3b0', '#ffcc33', '#ff7a00'], circle: ['#5ee7ff', '#7b2ff7'], line: '#2b1440', tint: 18, deco: 'confetti', art: 'carnaval', page: ['#5a0a3a', '#1a0412'] } },
+    board: { image: 'carnaval', frame: '#c2185b', frameDark: '#6b0d33', slab: '#8a1043', sky: ['#fff3b0', '#ffcc33', '#ff7a00'], circle: ['#5ee7ff', '#7b2ff7'], line: '#2b1440', tint: 18, deco: 'confetti', art: 'carnaval', page: ['#5a0a3a', '#1a0412'] } },
   { id: 'board-navidad', category: 'board', name: 'Navidad colombiana', season: 'navidad', emoji: '🎄',
-    board: { frame: '#b3123f', frameDark: '#4c0519', slab: '#7a0b2a', sky: ['#e0f2fe', '#7dc3f0', '#1e5fa8'], circle: ['#dbeafe', '#3b82f6'], line: '#1f2937', tint: 14, deco: 'snow', art: 'navidad', page: ['#4c0519', '#0b1a2e'] } },
+    board: { image: 'navidad', frame: '#b3123f', frameDark: '#4c0519', slab: '#7a0b2a', sky: ['#e0f2fe', '#7dc3f0', '#1e5fa8'], circle: ['#dbeafe', '#3b82f6'], line: '#1f2937', tint: 14, deco: 'snow', art: 'navidad', page: ['#4c0519', '#0b1a2e'] } },
   { id: 'board-esmeralda', category: 'board', name: 'Esmeralda (Pase)', passOnly: true, emoji: '💚',
     board: { frame: '#047857', frameDark: '#022c22', slab: '#064e3b', sky: ['#d1fae5', '#34d399', '#047857'], circle: ['#a7f3d0', '#059669'], line: '#022c22', tint: 16, deco: 'stars', page: ['#064e3b', '#011410'] } },
   { id: 'board-galaxia', category: 'board', name: 'Galaxia (Pase)', passOnly: true, emoji: '🌌',
@@ -98,25 +106,47 @@ const RAW: Raw[] = [
 
   // Tableros ilustrados (v0.9)
   { id: 'board-playa', category: 'board', name: 'Playa caribeña', emoji: '🏖️',
-    board: { frame: '#f2c14e', frameDark: '#8a5a00', slab: '#b07a10', sky: ['#bff6ff', '#4fd1e8', '#1597c7'], circle: ['#fff3c4', '#ffb347'], line: '#0b3d44', tint: 12, deco: 'stars', art: 'playa', page: page('#0a6b80', '#06222a') } },
+    board: { image: 'sanandres', frame: '#f2c14e', frameDark: '#8a5a00', slab: '#b07a10', sky: ['#bff6ff', '#4fd1e8', '#1597c7'], circle: ['#fff3c4', '#ffb347'], line: '#0b3d44', tint: 12, deco: 'stars', art: 'playa', page: page('#0a6b80', '#06222a') } },
   { id: 'board-cartagena', category: 'board', name: 'Cartagena amurallada', emoji: '🏰',
-    board: { frame: '#d9822b', frameDark: '#7a3c0a', slab: '#a65412', sky: ['#ffe8c2', '#ffb36b', '#e8643c'], circle: ['#fff1d6', '#f59e0b'], line: '#3b1a05', tint: 14, deco: 'flowers', art: 'cartagena', page: page('#7a2e0c', '#220a02') } },
+    board: { image: 'cartagena', frame: '#d9822b', frameDark: '#7a3c0a', slab: '#a65412', sky: ['#ffe8c2', '#ffb36b', '#e8643c'], circle: ['#fff1d6', '#f59e0b'], line: '#3b1a05', tint: 14, deco: 'flowers', art: 'cartagena', page: page('#7a2e0c', '#220a02') } },
   { id: 'board-selva', category: 'board', name: 'Selva amazónica', emoji: '🦜',
-    board: { frame: '#1f6b2e', frameDark: '#0a2e12', slab: '#134a1f', sky: ['#d8f5c9', '#6fcf6a', '#1f8a3a'], circle: ['#fff59d', '#2e7d32'], line: '#08260f', tint: 16, deco: 'flowers', art: 'selva', page: page('#0f3d1a', '#041207') } },
+    board: { image: 'amazonas', frame: '#1f6b2e', frameDark: '#0a2e12', slab: '#134a1f', sky: ['#d8f5c9', '#6fcf6a', '#1f8a3a'], circle: ['#fff59d', '#2e7d32'], line: '#08260f', tint: 16, deco: 'flowers', art: 'selva', page: page('#0f3d1a', '#041207') } },
   { id: 'board-llanos', category: 'board', name: 'Atardecer llanero', coins: 30000, emoji: '🐎',
-    board: { frame: '#a0522d', frameDark: '#4a200c', slab: '#6e3417', sky: ['#ffe29a', '#ff9a5a', '#d9435a'], circle: ['#ffd27a', '#c2410c'], line: '#3a1406', tint: 16, deco: 'stars', art: 'llanos', page: page('#5a1e22', '#1a0608') } },
+    board: { image: 'llanos', frame: '#a0522d', frameDark: '#4a200c', slab: '#6e3417', sky: ['#ffe29a', '#ff9a5a', '#d9435a'], circle: ['#ffd27a', '#c2410c'], line: '#3a1406', tint: 16, deco: 'stars', art: 'llanos', page: page('#5a1e22', '#1a0608') } },
   { id: 'board-salsa', category: 'board', name: 'Cali salsera', emoji: '💃',
-    board: { frame: '#b0124b', frameDark: '#4a0520', slab: '#7a0c33', sky: ['#ffd6e7', '#ff5fa2', '#8a1a8f'], circle: ['#ffe066', '#e11d74'], line: '#2a0414', tint: 20, deco: 'stars', art: 'salsa', page: page('#4a0a3a', '#14020f') } },
+    board: { image: 'salsa', frame: '#b0124b', frameDark: '#4a0520', slab: '#7a0c33', sky: ['#ffd6e7', '#ff5fa2', '#8a1a8f'], circle: ['#ffe066', '#e11d74'], line: '#2a0414', tint: 20, deco: 'stars', art: 'salsa', page: page('#4a0a3a', '#14020f') } },
   { id: 'board-silleta', category: 'board', name: 'Silletas de flores', coins: 45000, emoji: '💐',
     board: { frame: '#2f7d32', frameDark: '#123a14', slab: '#1d5a20', sky: ['#fff4f9', '#ffc1dc', '#f06292'], circle: ['#fffde7', '#ff80ab'], line: '#2b1440', tint: 14, deco: 'flowers', art: 'silletas', page: page('#5a1a45', '#1d0818') } },
   { id: 'board-guatape', category: 'board', name: 'Peñol de Guatapé', emoji: '🪨',
-    board: { frame: '#1565c0', frameDark: '#0a2a5a', slab: '#0d4690', sky: ['#e3f6ff', '#7cc7f5', '#2e86de'], circle: ['#e8f5e9', '#43a047'], line: '#0a2a5a', tint: 14, deco: 'clouds', art: 'guatape', page: page('#0d3c75', '#04122a') } },
+    board: { image: 'guatape', frame: '#1565c0', frameDark: '#0a2a5a', slab: '#0d4690', sky: ['#e3f6ff', '#7cc7f5', '#2e86de'], circle: ['#e8f5e9', '#43a047'], line: '#0a2a5a', tint: 14, deco: 'clouds', art: 'guatape', page: page('#0d3c75', '#04122a') } },
   { id: 'board-tatacoa', category: 'board', name: 'Desierto de la Tatacoa', coins: 20000, emoji: '🌵',
-    board: { frame: '#c9822f', frameDark: '#6b3a0e', slab: '#94561a', sky: ['#fff1cf', '#f2c98a', '#d9944a'], circle: ['#ffe1a8', '#d9944a'], line: '#5a3010', tint: 10, cell: '#fff4dc', deco: 'wood', art: 'tatacoa', page: page('#4a2a52', '#1c0f22') } },
+    board: { image: 'tatacoa', frame: '#c9822f', frameDark: '#6b3a0e', slab: '#94561a', sky: ['#fff1cf', '#f2c98a', '#d9944a'], circle: ['#ffe1a8', '#d9944a'], line: '#5a3010', tint: 10, cell: '#fff4dc', deco: 'wood', art: 'tatacoa', page: page('#4a2a52', '#1c0f22') } },
   { id: 'board-tejo', category: 'board', name: 'Cancha de tejo (Evento)', event: 'ev-partidas', emoji: '💣',
     board: { frame: '#5d4037', frameDark: '#1e110d', slab: '#3e2723', sky: ['#efe0c8', '#c9a77c', '#8d6e4a'], circle: ['#ffcc80', '#e53935'], line: '#1e110d', tint: 18, deco: 'wood', art: 'tejo', page: page('#3e2723', '#120806') } },
   { id: 'board-cielo', category: 'board', name: 'Cielo de coronas (Evento)', event: 'ev-coronas', emoji: '☁️',
     board: { frame: '#5c6bc0', frameDark: '#1a237e', slab: '#3949ab', sky: ['#ffffff', '#c5cae9', '#7986cb'], circle: ['#fff8e1', '#ffca28'], line: '#1a237e', tint: 12, deco: 'clouds', art: 'cielo', page: page('#283593', '#0a0f3a') } },
+
+  // Tableros con escenario pintado (v1.0)
+  { id: 'board-teyuna', category: 'board', name: 'Ciudad Perdida', emoji: '🗿',
+    board: { image: 'teyuna', frame: '#4a6b2a', frameDark: '#1d2e0e', slab: '#2f4718', sky: ['#e8f5d0', '#9ccc65', '#558b2f'], circle: ['#dcedc8', '#689f38'], line: '#1d2e0e', tint: 10, deco: 'clouds', page: page('#1d3a12', '#081405') } },
+  { id: 'board-cano', category: 'board', name: 'Caño Cristales', emoji: '🌈',
+    board: { image: 'cano', frame: '#c2185b', frameDark: '#5c0a2b', slab: '#8a1043', sky: ['#ffe0ec', '#ff6f9f', '#c2185b'], circle: ['#fff59d', '#e91e63'], line: '#3a0418', tint: 10, deco: 'flowers', page: page('#5a0a35', '#1a0310') } },
+  { id: 'board-candelaria', category: 'board', name: 'La Candelaria', coins: 40000, emoji: '⛪',
+    board: { image: 'candelaria', frame: '#8d5524', frameDark: '#3e2108', slab: '#5d3612', sky: ['#fff3e0', '#ffcc80', '#e65100'], circle: ['#ffe0b2', '#bf360c'], line: '#3e2108', tint: 10, deco: 'clouds', page: page('#3e2723', '#140b08') } },
+  { id: 'board-ballenas', category: 'board', name: 'Ballenas del Pacífico', emoji: '🐋',
+    board: { image: 'ballenas', frame: '#0d47a1', frameDark: '#041d45', slab: '#0a3270', sky: ['#e1f5fe', '#4fc3f7', '#0277bd'], circle: ['#b3e5fc', '#01579b'], line: '#041d45', tint: 10, deco: 'stars', page: page('#0a2a5a', '#020c1c') } },
+  { id: 'board-guajira', category: 'board', name: 'La Guajira', coins: 50000, emoji: '🦩',
+    board: { image: 'guajira', frame: '#e65100', frameDark: '#5a1f00', slab: '#a33a00', sky: ['#fff8e1', '#ffcc80', '#ff7043'], circle: ['#ffe0b2', '#f4511e'], line: '#4a1a00', tint: 10, deco: 'stars', page: page('#5a1f00', '#1c0a00') } },
+  { id: 'board-tayrona', category: 'board', name: 'Parque Tayrona', emoji: '🏝️',
+    board: { art: 'playa', frame: '#00897b', frameDark: '#003d36', slab: '#00695c', sky: ['#e0f7fa', '#4dd0e1', '#00838f'], circle: ['#fff9c4', '#26a69a'], line: '#003d36', tint: 10, deco: 'stars', page: page('#004d40', '#001512') } },
+  { id: 'board-leyva', category: 'board', name: 'Villa de Leyva', coins: 35000, emoji: '🦕',
+    board: { image: 'leyva', frame: '#a1887f', frameDark: '#3e2723', slab: '#6d4c41', sky: ['#fbe9e7', '#d7ccc8', '#8d6e63'], circle: ['#efebe9', '#795548'], line: '#3e2723', tint: 10, deco: 'clouds', page: page('#3e2723', '#120b09') } },
+  { id: 'board-paramo', category: 'board', name: 'Páramo y frailejones', emoji: '🏔️',
+    board: { image: 'paramo', frame: '#546e7a', frameDark: '#1c262b', slab: '#37474f', sky: ['#eceff1', '#b0bec5', '#607d8b'], circle: ['#ffffff', '#78909c'], line: '#1c262b', tint: 10, deco: 'snow', page: page('#263238', '#0b1013') } },
+  { id: 'board-mompox', category: 'board', name: 'Mompox de noche', emoji: '🏮',
+    board: { art: 'cartagena', frame: '#4527a0', frameDark: '#1a0b45', slab: '#311b92', sky: ['#ede7f6', '#b39ddb', '#5e35b1'], circle: ['#fff59d', '#7e57c2'], line: '#1a0b45', tint: 10, deco: 'stars', page: page('#1a0b45', '#070214') } },
+  { id: 'board-sal', category: 'board', name: 'Catedral de Sal', emoji: '💎',
+    board: { frame: '#37474f', frameDark: '#0f1518', slab: '#263238', sky: ['#e0f7fa', '#80deea', '#00838f'], circle: ['#e1f5fe', '#0097a7'], line: '#0f1518', tint: 10, deco: 'stars', page: page('#0f1f24', '#03080a') } },
 
   // Dados
   { id: 'dice-clasico', category: 'dice', name: 'Clásicos', emoji: '🎲', dice: { face: ['#ffffff', '#efe3c8'], pip: '#2a1400', one: '#e8112d' } },
@@ -137,6 +167,17 @@ const RAW: Raw[] = [
   { id: 'dice-lava', category: 'dice', name: 'Lava del Galeras', emoji: '🌋', dice: { face: ['#fb923c', '#7f1d1d'], pip: '#fff7ed', one: '#fde047', edge: '#450a0a' } },
   { id: 'dice-locos', category: 'dice', name: 'Pares locos (Evento)', event: 'ev-pares', emoji: '🎯', dice: { face: ['#fef08a', '#22d3ee'], pip: '#7c3aed', one: '#e11d48', edge: '#0e7490' } },
 
+  { id: 'dice-guadua', category: 'dice', name: 'Guadua', coins: 7000, emoji: '🎋', dice: { texture: 'guadua', face: ['#e6d48a', '#a8913e'], pip: '#3a2f0a', one: '#b71c1c', edge: '#6b5a1a' } },
+  { id: 'dice-mochila', category: 'dice', name: 'Mochila wayuu', emoji: '🧶', dice: { texture: 'mochila', face: ['#ffffff', '#f0e0d0'], pip: '#1a1a1a', one: '#d50000', edge: '#7a2e8a' } },
+  { id: 'dice-cafe3d', category: 'dice', name: 'Grano de café', coins: 9000, emoji: '☕', dice: { texture: 'cafe', face: ['#7a4a22', '#3e2108'], pip: '#fff3e0', one: '#ffd54f', edge: '#2a1404' } },
+  { id: 'dice-oro3d', category: 'dice', name: 'Oro muisca', emoji: '🪙', dice: { texture: 'oro', face: ['#ffe082', '#c79100'], pip: '#4a2f00', one: '#b71c1c', edge: '#8a5a00' } },
+  { id: 'dice-flores', category: 'dice', name: 'Silleta de flores', coins: 12000, emoji: '🌺', dice: { texture: 'flores', face: ['#ffffff', '#ffe4ef'], pip: '#1b5e20', one: '#c2185b', edge: '#2e7d32' } },
+  { id: 'dice-marmol3d', category: 'dice', name: 'Mármol', emoji: '🏛️', dice: { texture: 'marmol', face: ['#ffffff', '#e0e0e0'], pip: '#263238', one: '#b8860b', edge: '#9e9e9e' } },
+  { id: 'dice-hielo', category: 'dice', name: 'Nevado', emoji: '🧊', dice: { texture: 'hielo', face: ['#e1f5fe', '#81d4fa'], pip: '#01579b', one: '#e91e63', edge: '#4fc3f7' } },
+  { id: 'dice-arena', category: 'dice', name: 'Arena del desierto', coins: 5000, emoji: '🏜️', dice: { texture: 'arena', face: ['#ffe0b2', '#d99a52'], pip: '#4e2a0a', one: '#c62828', edge: '#a1662f' } },
+  { id: 'dice-mola', category: 'dice', name: 'Mola', emoji: '🎨', dice: { texture: 'mola', face: ['#ff7043', '#c62828'], pip: '#ffffff', one: '#ffeb3b', edge: '#4a0a0a' } },
+  { id: 'dice-volcan', category: 'dice', name: 'Volcán', emoji: '🌋', dice: { texture: 'volcan', face: ['#ff7043', '#3e0a0a'], pip: '#fff8e1', one: '#ffeb3b', edge: '#1a0303' } },
+
   // Fichas
   { id: 'pieces-clasica', category: 'pieces', name: 'Clásicas', emoji: '⚪', pieces: 'clasica' },
   { id: 'pieces-moneda', category: 'pieces', name: 'Moneda de oro', coins: 10000, emoji: '🪙', pieces: 'moneda' },
@@ -152,6 +193,13 @@ const RAW: Raw[] = [
   { id: 'pieces-tricolor', category: 'pieces', name: 'Tricolor', emoji: '🇨🇴', pieces: 'tricolor' },
   { id: 'pieces-fuego', category: 'pieces', name: 'Fuego (Evento)', event: 'ev-capturas', emoji: '🔥', pieces: 'fuego' },
   { id: 'pieces-viento', category: 'pieces', name: 'Viento (Evento)', event: 'ev-soplos', emoji: '🌬️', pieces: 'viento' },
+
+  { id: 'pieces-raquira', category: 'pieces', name: 'Cerámica de Ráquira', coins: 25000, emoji: '🏺', pieces: 'ceramica' },
+  { id: 'pieces-muisca', category: 'pieces', name: 'Oro muisca', emoji: '🗿', pieces: 'muisca' },
+  { id: 'pieces-grano', category: 'pieces', name: 'Granos de café', coins: 18000, emoji: '☕', pieces: 'grano' },
+  { id: 'pieces-vueltiao', category: 'pieces', name: 'Sombrero vueltiao', emoji: '🤠', pieces: 'vueltiao' },
+  { id: 'pieces-chiva', category: 'pieces', name: 'Chivas', emoji: '🚌', pieces: 'chiva' },
+  { id: 'pieces-gema3d', category: 'pieces', name: 'Esmeraldas talladas', emoji: '💎', pieces: 'esmeralda' },
 
   // Marcos de avatar
   { id: 'frame-ninguno', category: 'frame', name: 'Sencillo', emoji: '⭕', frame: { ring: ['#ffffff55', '#ffffff22'], ornament: null } },
@@ -170,6 +218,32 @@ const RAW: Raw[] = [
   { id: 'frame-neon', category: 'frame', name: 'Neón', emoji: '💡', frame: { ring: ['#22d3ee', '#d946ef'], ornament: '⚡' } },
   { id: 'frame-rey', category: 'frame', name: 'Rey de la mesa (Evento)', event: 'ev-ganadores', emoji: '🤴', frame: { ring: ['#fde68a', '#7c3aed'], ornament: '👑' } },
   { id: 'frame-podio', category: 'frame', name: 'Podio (Evento)', event: 'ev-podio', emoji: '🥇', frame: { ring: ['#fef3c7', '#b45309'], ornament: '🥇' } },
+
+  // Avatares con arte (personajes colombianos)
+  { id: 'avatar-dadito', category: 'avatar', name: 'Dadito', emoji: '🎲', avatarImg: 'dadito' },
+  { id: 'avatar-titi', category: 'avatar', name: 'Mono tití', emoji: '🐒' },
+  { id: 'avatar-guacamaya', category: 'avatar', name: 'Guacamaya', coins: 3000, emoji: '🦜' },
+  { id: 'avatar-rana', category: 'avatar', name: 'Rana dorada', coins: 3000, emoji: '🐸' },
+  { id: 'avatar-oso', category: 'avatar', name: 'Oso de anteojos', coins: 5000, emoji: '🐻' },
+  { id: 'avatar-condor', category: 'avatar', name: 'Cóndor', coins: 8000, emoji: '🦅' },
+  { id: 'avatar-arepa', category: 'avatar', name: 'Arepita', coins: 4000, emoji: '🫓' },
+  { id: 'avatar-tinto', category: 'avatar', name: 'Tintico', coins: 4000, emoji: '☕' },
+  { id: 'avatar-cafetero', category: 'avatar', name: 'Cafetero', coins: 10000, emoji: '👨‍🌾' },
+  { id: 'avatar-llanero', category: 'avatar', name: 'Llanero', coins: 10000, emoji: '🤠' },
+  { id: 'avatar-silletero', category: 'avatar', name: 'Silletero', coins: 12000, emoji: '💐' },
+  { id: 'avatar-ciclista', category: 'avatar', name: 'Escarabajo ciclista', coins: 15000, emoji: '🚴' },
+  { id: 'avatar-palenquera', category: 'avatar', name: 'Palenquera', emoji: '🍉' },
+  { id: 'avatar-marimonda', category: 'avatar', name: 'Marimonda', emoji: '🎭' },
+  { id: 'avatar-vallenatero', category: 'avatar', name: 'Vallenatero', emoji: '🪗' },
+  { id: 'avatar-cumbiambera', category: 'avatar', name: 'Cumbiambera', emoji: '💃' },
+  { id: 'avatar-wayuu', category: 'avatar', name: 'Tejedora wayuu', emoji: '🧶' },
+  { id: 'avatar-pescador', category: 'avatar', name: 'Pescador del Pacífico', emoji: '🎣' },
+  { id: 'avatar-futbolista', category: 'avatar', name: 'Crack del fútbol', emoji: '⚽' },
+  { id: 'avatar-abuela', category: 'avatar', name: 'Abuela costeña', emoji: '👵' },
+  { id: 'avatar-chivero', category: 'avatar', name: 'Chivero', emoji: '🚌' },
+  { id: 'avatar-salsero', category: 'avatar', name: 'Salsero caleño', emoji: '🕺' },
+  { id: 'avatar-tejo', category: 'avatar', name: 'Tejista', emoji: '💥' },
+  { id: 'avatar-congo', category: 'avatar', name: 'Congo de carnaval', emoji: '🪅' },
 
   // Efectos de captura
   { id: 'effect-estrellas', category: 'effect', name: 'Estrellas', emoji: '⭐', effect: 'stars' },
@@ -199,6 +273,7 @@ export const DEFAULT_EQUIPPED: Record<Category, string> = {
   pieces: 'pieces-clasica',
   frame: 'frame-ninguno',
   effect: 'effect-estrellas',
+  avatar: 'avatar-dadito',
 };
 
 export const FREE_ITEMS = ITEMS.filter((i) => i.currency === 'free').map((i) => i.id);
@@ -213,6 +288,7 @@ export const CATEGORY_NAMES: Record<Category, string> = {
   pieces: 'Fichas',
   frame: 'Marcos',
   effect: 'Efectos',
+  avatar: 'Avatares',
 };
 
 /** Emotes que se envían en partida pagando gemas. */

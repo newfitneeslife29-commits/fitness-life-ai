@@ -124,7 +124,7 @@ export const CATEGORIES: AchievementCategory[] = [
   { key: 'streak', name: 'En racha', desc: 'Gana {n} partidas seguidas', emoji: '🔥', value: (c) => c.stats.bestWinStreak, thresholds: ladder(2, 100) },
   { key: 'daily', name: 'Juiciosito', desc: 'Entra {n} días seguidos', emoji: '📅', value: (c) => c.stats.maxDailyStreak, thresholds: ladder(2, 365) },
   { key: 'pass', name: 'Pasajero', desc: 'Sube {n} niveles del pase', emoji: '🎟️', value: (c) => c.passTiers, thresholds: ladder(1, 2000) },
-  { key: 'owned', name: 'Coleccionista', desc: 'Ten {n} objetos de la tienda', emoji: '🛍️', value: (c) => c.owned, thresholds: ladder(6, 45, 20) },
+  { key: 'owned', name: 'Coleccionista', desc: 'Ten {n} objetos de la tienda', emoji: '🛍️', value: (c) => c.owned, thresholds: ladder(10, 140, 30) },
   { key: 'triple', name: '¡Uy, qué boleta!', desc: 'Saca tres pares seguidos {n} veces', emoji: '🚨', value: (c) => c.stats.triplePenalties, thresholds: ladder(1, 1000) },
   { key: 'captured', name: 'Cliente de la cárcel', desc: 'Te capturan {n} veces', emoji: '🚔', value: (c) => c.stats.captured, thresholds: ladder(1, 100000) },
   { key: 'w-barrio', name: 'Rey del barrio', desc: 'Gana {n} veces en la mesa Barrio', emoji: '🏘️', value: tw('barrio'), thresholds: ladder(1, 10000) },
