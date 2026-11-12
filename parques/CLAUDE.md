@@ -135,6 +135,9 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
   (`parques/**`, `.github/workflows/parques-*.yml`, `.github/scripts/parques-ios-signing.mjs`). Scripts compartidos como
   `android-upload-key.sh` se usan sin modificarlos (con `UPLOAD_KEY_NAME=parques_upload_key`).
 - Servidor: Railway (raíz `parques`, `Dockerfile`, 1 réplica, healthcheck `/health`). Sin `DATABASE_URL` en Railway no arranca.
+- Supabase (proyecto pmnsdovmbitqjdtxbeuo): usuario `parques_server` (sin superusuario, dueño solo del esquema `parques`,
+  sin acceso a public/auth/vault/storage). Conexión: Session pooler `aws-1-ca-central-1.pooler.supabase.com:5432`,
+  usuario `parques_server.pmnsdovmbitqjdtxbeuo`. La contraseña solo vive en la variable `DATABASE_URL` de Railway.
 - Variables de GitHub: `PARQUES_SERVER_URL`, `PARQUES_RC_ANDROID_KEY`, `PARQUES_RC_IOS_KEY` (+ las de Apple/Supabase ya existentes).
 
 ## Apps iOS y Android (Capacitor 8, como Fitness Life)

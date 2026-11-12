@@ -19,7 +19,10 @@ export const PRIZES = [
 
 /** Esquema de la base (idempotente: se aplica al arrancar). */
 export const SCHEMA = `
-CREATE SCHEMA IF NOT EXISTS parques;
+-- En Supabase el esquema ya existe (creado para el usuario parques_server, que no puede crear esquemas).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'parques') THEN CREATE SCHEMA parques; END IF;
+END $$;
 CREATE TABLE IF NOT EXISTS parques.accounts (
   id TEXT PRIMARY KEY,
   token_hash TEXT NOT NULL,
