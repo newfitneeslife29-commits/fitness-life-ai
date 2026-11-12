@@ -2,7 +2,7 @@
 
 Parqués colombiano moderno (web + PWA instalable), con identidad 100 % colombiana y diseño original
 (no copiar logos, nombres ni gráficos de otras apps). Público: familias y jóvenes adultos.
-Nombre de la app: **Parqués** (decidido por el usuario).
+Nombre de la app: **Parqués Colombia** (decidido por el usuario; en el ícono y la tienda).
 
 Vive en `parques/` dentro del monorepo `fitness-life-ai` (no tocar `app/`, `ridge-rush/`, `store/`, `supabase/`).
 Rama de trabajo: `claude/parques-colombiano-plan-y4l8bo`.
@@ -195,6 +195,27 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 8. ✅ v0.7: juego 100 % online (cuentas y monedero en el servidor, partidas contra la máquina en el servidor), apps iOS/Android con Capacitor y compras en tiendas (RevenueCat).
 7. ✅ v0.6: economía con entradas y reparto, nivel 2000, pagos reales (Stripe), gemas para emotes, pase de batalla,
    1.205 logros, foto de perfil, 4 idiomas, Sala Élite y Top Leyendas, gráficos 3D.
+
+## v0.9 (lo nuevo)
+- **Reglas**: capturar da otra tirada (`captureBonus`, evento `EXTRA_TURN` con `reason: 'capture'`; no cuenta para tres pares).
+  Nivel máximo **500** (XP con la misma curva, total 12.499.950). Sala Élite y Top Leyendas desde nivel **200**. Turno de 20 s en todas las mesas.
+- **Partida**: botón de emotes pegado a mi avatar (`seat-emote`), panel con pestañas Emotes / Frases / regiones (`REGIONS` en
+  `game/phrases.ts`: Costa, Paisa, Bogotá, Valle, Santander, Pacífico, Llanos, Nariño y Tolima, Boyacá). Si se cierra la app en plena
+  partida, al volver se sale de la mesa (la máquina juega por ti) y queda en el inicio; un corte de red con la app abierta sí retoma.
+- **Motor `meta/`**: `ads.ts` (300 monedas por anuncio, 8/día, espera 25 s, solo con < 1.000 monedas), `events.ts` (evento de 15 días
+  rotando 8 retos; 7 niveles de premio y objeto exclusivo `currency: 'event'`), `shop.ts` (3 ofertas del día −40 %, cofres con gemas,
+  cambio de gemas), `competition.ts` (premios semanales del ranking global/país/amigos; copas Libre/Bronce/Plata/Oro/Diamante con
+  inscripción, bote = inscripciones + casa, reparto al top 10). Paquetes con dinero real (`kind: 'bundle'`). 37 misiones (4 diarias
+  y 4 semanales visibles, dan gemas). **2.400+ logros**.
+- **Servidor**: tablas `cups`, `cup_results`, `settled`, `rank_results`, `identities`, `sessions`. Cierre semanal automático cada 10 min
+  (`settleCups` / `settleRanking`, una sola vez por semana gracias a `settled`). Sockets: `cups`, `cup_match` (fila `cup:<tier>`),
+  `hall_of_fame`, `rank_rewards`, `find_player`, `friends_online`, `invite` → `invited`, `auth_provider` (Apple/Google con `jose`;
+  `APPLE_CLIENT_IDS` = parques.app, `GOOGLE_CLIENT_IDS` = ids de cliente OAuth separados por coma).
+- **App**: `lib/auth.ts` (@capgo/capacitor-social-login; Apple solo en iOS, Google si hay `VITE_GOOGLE_WEB_CLIENT_ID`),
+  `lib/ads.ts` (@capacitor-community/admob, anuncios no personalizados; sin ids propios usa los de prueba de Google).
+  Tableros ilustrados (`game/BoardArt.tsx`, `BoardTheme.art`): el dibujo cubre todo el tablero y las casillas quedan semitransparentes.
+  Fichas con salto 3D (`HOP_S`), acabados perla/mate/obsidiana/tricolor/fuego/viento; efectos burbujas/mariposas/rayos/cumbia.
+  Galería de gráficos solo en desarrollo: `http://localhost:5173/#galeria`. Textos nuevos en `lib/locales2.ts`.
 
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
