@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
 import { Avatar } from '../components/Avatar';
+import { Mascot } from '../components/Mascot';
 import { Background } from '../components/Background';
 import { CoinIcon, CurrencyPill, GemIcon } from '../components/Counter';
 import { humanSeat, useGame } from '../stores/gameStore';
@@ -241,6 +242,7 @@ function WinnerShowcase({ avatar, name, color, frameId, label }: { avatar: strin
         <span className="ribbon-tail r" />
       </motion.div>
       <div className="winner-name">{name}</div>
+      <Mascot size={84} className="victory-mascot" />
     </div>
   );
 }

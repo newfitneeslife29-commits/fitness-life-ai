@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { dailyStatus, dayKey } from '@parques/engine';
 import { Logo } from '../components/Logo';
+import { Mascot } from '../components/Mascot';
 import { Avatar } from '../components/Avatar';
 import { AVATARS } from '../lib/avatars';
 import { COUNTRIES } from '../lib/countries';
@@ -80,6 +81,7 @@ export function WelcomeScreen() {
       <AnimatePresence mode="wait">
         {step === 0 ? (
           <motion.section key="s0" className="card glossy welcome-card" initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -60, opacity: 0 }}>
+            <Mascot size={130} className="welcome-mascot" />
             <h2>{t('¡Bienvenido a Parqués Colombia!')}</h2>
             <p className="rule-note">{t('Crea tu jugador para empezar. Con Apple o Google tu progreso queda guardado y puedes jugar en otro celular.')}</p>
             {provs.map((pv) => (

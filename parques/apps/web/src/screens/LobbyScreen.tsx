@@ -11,6 +11,7 @@ import { missionDef } from '@parques/engine';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
 import { BoardMini } from '../game/Board';
+import { Mascot } from '../components/Mascot';
 import { item } from '@parques/engine';
 import { passSeasonId, tierFromXp, eventAt, AD_MAX_BALANCE } from '@parques/engine';
 import { watchAdForCoins } from '../lib/ads';
@@ -130,6 +131,7 @@ export function LobbyScreen() {
           <div className="hero-3d-inner">
             <BoardMini theme={item(p.equipped.board).board!} id="lobby" className="spin" />
           </div>
+          <Mascot size={78} className="lobby-mascot" />
         </div>
         <div className="hero-side">
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('tournament')}>
