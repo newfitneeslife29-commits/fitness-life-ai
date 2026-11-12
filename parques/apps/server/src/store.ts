@@ -8,8 +8,24 @@
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
-import { levelFromXp, newProfile, normalizeProfile, RATING_DELTA, TOURNAMENT_POINTS, weekEnd, weekKey } from '@parques/engine';
-import type { Profile, RankRow, TournamentInfo } from '@parques/engine';
+import {
+  grantRankPrize,
+  grantTournamentPrize,
+  levelFromXp,
+  newProfile,
+  normalizeProfile,
+  payTournament,
+  rankPrize,
+  RATING_DELTA,
+  TOURNAMENT_GEMS,
+  TOURNAMENT_POINTS,
+  TOURNAMENT_TIERS,
+  tournamentPrizes,
+  tournamentTier,
+  weekEnd,
+  weekKey,
+} from '@parques/engine';
+import type { CupInfo, HallOfFame, Profile, PublicPlayer, RankRow, RankRewardsInfo, TournamentInfo } from '@parques/engine';
 
 export const PRIZES = [
   { place: 1, coins: 5000, gems: 50 },
@@ -47,11 +63,39 @@ CREATE TABLE IF NOT EXISTS parques.purchases (
   grant_id TEXT PRIMARY KEY, player TEXT NOT NULL, product TEXT NOT NULL, source TEXT NOT NULL,
   at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS parques.cups (
+  week TEXT NOT NULL, tier TEXT NOT NULL, player TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
+  points INTEGER NOT NULL DEFAULT 0, games INTEGER NOT NULL DEFAULT 0, fee INTEGER NOT NULL DEFAULT 0,
+  joined TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (week, tier, player)
+);
+CREATE TABLE IF NOT EXISTS parques.cup_results (
+  week TEXT NOT NULL, tier TEXT NOT NULL, player TEXT NOT NULL, place INTEGER NOT NULL, coins INTEGER NOT NULL, gems INTEGER NOT NULL,
+  PRIMARY KEY (week, tier, player)
+);
+CREATE TABLE IF NOT EXISTS parques.settled (what TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS parques.rank_results (
+  week TEXT NOT NULL, scope TEXT NOT NULL, player TEXT NOT NULL, place INTEGER NOT NULL, coins INTEGER NOT NULL, gems INTEGER NOT NULL,
+  PRIMARY KEY (week, scope, player)
+);
+CREATE TABLE IF NOT EXISTS parques.identities (
+  provider TEXT NOT NULL, subject TEXT NOT NULL, account TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
+  email TEXT, created TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (provider, subject)
+);
+CREATE TABLE IF NOT EXISTS parques.sessions (
+  token_hash TEXT PRIMARY KEY, account TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
+  created TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 -- Solo el servidor (rol dueño) lee y escribe: con RLS activo y sin políticas, la API pública de Supabase no ve nada.
 ALTER TABLE parques.accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.cups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.cup_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.settled ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.rank_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.identities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.sessions ENABLE ROW LEVEL SECURITY;
 `;
 
 // ------------------------------------------------------------ Conexión (pg o PGlite)
@@ -169,7 +213,12 @@ export class Store {
   async auth(id: string, token: string): Promise<Profile | null> {
     const db = await this.db;
     const [row] = await db.query<{ token_hash: string; profile: Profile }>('SELECT token_hash, profile FROM parques.accounts WHERE id = $1', [String(id)]);
-    if (!row || row.token_hash !== hash(String(token))) return null;
+    if (!row) return null;
+    const h = hash(String(token));
+    if (row.token_hash !== h) {
+      const [sess] = await db.query('SELECT 1 FROM parques.sessions WHERE token_hash = $1 AND account = $2', [h, String(id)]);
+      if (!sess) return null;
+    }
     return normalizeProfile(row.profile);
   }
 
@@ -294,5 +343,216 @@ export class Store {
       if (!r.ok) throw new Error('No se pudo entregar la compra');
       return true;
     }).catch(() => false);
+  }
+
+  // ------------------------------------------------------------ v0.9: inicio de sesión con Apple / Google
+
+  /** Cuenta vinculada a una identidad de Apple o Google. */
+  async accountFor(provider: string, subject: string): Promise<string | null> {
+    const [row] = await (await this.db).query<{ account: string }>('SELECT account FROM parques.identities WHERE provider = $1 AND subject = $2', [provider, subject]);
+    return row?.account ?? null;
+  }
+
+  /** Vincula la identidad a la cuenta (false si ya pertenece a otra). */
+  async linkIdentity(provider: string, subject: string, account: string, email: string | null): Promise<boolean> {
+    const rows = await (await this.db).query(
+      'INSERT INTO parques.identities (provider, subject, account, email) VALUES ($1, $2, $3, $4) ON CONFLICT (provider, subject) DO NOTHING RETURNING account',
+      [provider, subject, account, email],
+    );
+    return rows.length > 0;
+  }
+
+  /** Abre una sesión nueva para la cuenta (otro dispositivo) y devuelve su token. */
+  async newSession(account: string): Promise<string> {
+    const token = randomBytes(24).toString('base64url');
+    await (await this.db).query('INSERT INTO parques.sessions (token_hash, account) VALUES ($1, $2)', [hash(token), account]);
+    return token;
+  }
+
+  // ------------------------------------------------------------ v0.9: amigos
+
+  async publicPlayer(id: string): Promise<Omit<PublicPlayer, 'online'> | null> {
+    const [r] = await (await this.db).query<{ id: string; name: string; avatar: string; country: string; level: number; rating: number; wins: number; games: number }>(
+      'SELECT id, name, avatar, country, level, rating, wins, games FROM parques.accounts WHERE id = $1',
+      [String(id).trim().toUpperCase().slice(0, 16)],
+    );
+    return r ?? null;
+  }
+
+  // ------------------------------------------------------------ v0.9: copas (torneos con inscripción)
+
+  async joinCup(playerId: string, tierId: string, now = new Date()): Promise<{ ok: boolean; error?: string; profile?: Profile }> {
+    const tier = tournamentTier(tierId);
+    if (!tier || tier.fee <= 0) return { ok: false, error: 'Torneo desconocido' };
+    const wk = weekKey(now);
+    return (await this.db).tx(async (q) => {
+      const [acc] = await q.query<{ level: number }>('SELECT level FROM parques.accounts WHERE id = $1', [playerId]);
+      if (!acc) return { ok: false, error: 'Cuenta no encontrada' };
+      if (acc.level < tier.minLevel) return { ok: false, error: `Necesitas nivel ${tier.minLevel}` };
+      const ins = await q.query('INSERT INTO parques.cups (week, tier, player, fee) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING player', [wk, tier.id, playerId, tier.fee]);
+      if (!ins.length) return { ok: false, error: 'Ya estás inscrito' };
+      const r = await this.updateIn(q, playerId, (p) => payTournament(p, tier.fee));
+      if (!r.ok) throw new Error('error' in r ? r.error : 'No se pudo inscribir');
+      return { ok: true, profile: r.profile };
+    }).catch((e: Error) => ({ ok: false, error: e.message || 'No se pudo inscribir' }));
+  }
+
+  async cupEntry(playerId: string, tierId: string, now = new Date()): Promise<{ games: number } | null> {
+    const [r] = await (await this.db).query<{ games: number }>('SELECT games FROM parques.cups WHERE week = $1 AND tier = $2 AND player = $3', [weekKey(now), tierId, playerId]);
+    return r ?? null;
+  }
+
+  /** Suma los puntos de una partida de copa (solo a inscritos y hasta el máximo de partidas). */
+  async recordCup(tierId: string, ranking: string[], now = new Date()) {
+    const tier = tournamentTier(tierId);
+    if (!tier) return;
+    const wk = weekKey(now);
+    const db = await this.db;
+    for (const [place, id] of ranking.entries()) {
+      await db.query('UPDATE parques.cups SET points = points + $1, games = games + 1 WHERE week = $2 AND tier = $3 AND player = $4 AND games < $5', [
+        TOURNAMENT_POINTS[place] ?? 1,
+        wk,
+        tier.id,
+        id,
+        tier.maxGames,
+      ]);
+    }
+  }
+
+  async cups(playerId: string, now = new Date()): Promise<CupInfo[]> {
+    const db = await this.db;
+    const wk = weekKey(now);
+    const out: CupInfo[] = [];
+    for (const tier of TOURNAMENT_TIERS) {
+      let rows: CupInfo['rows'];
+      let players: number;
+      let mine: { games: number } | undefined;
+      let fees = 0;
+      if (tier.fee === 0) {
+        rows = await db.query('SELECT t.player AS "playerId", a.name, a.avatar, t.points, t.games FROM parques.tournaments t JOIN parques.accounts a ON a.id = t.player WHERE t.week = $1 ORDER BY t.points DESC, t.games ASC LIMIT 50', [wk]);
+        const [c] = await db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM parques.tournaments WHERE week = $1', [wk]);
+        players = c!.n;
+        [mine] = await db.query<{ games: number }>('SELECT games FROM parques.tournaments WHERE week = $1 AND player = $2', [wk, playerId]);
+      } else {
+        rows = await db.query('SELECT c.player AS "playerId", a.name, a.avatar, c.points, c.games FROM parques.cups c JOIN parques.accounts a ON a.id = c.player WHERE c.week = $1 AND c.tier = $2 ORDER BY c.points DESC, c.games ASC LIMIT 50', [wk, tier.id]);
+        const [c] = await db.query<{ n: number; fees: number }>('SELECT COUNT(*)::int AS n, COALESCE(SUM(fee), 0)::int AS fees FROM parques.cups WHERE week = $1 AND tier = $2', [wk, tier.id]);
+        players = c!.n;
+        fees = c!.fees;
+        [mine] = await db.query<{ games: number }>('SELECT games FROM parques.cups WHERE week = $1 AND tier = $2 AND player = $3', [wk, tier.id, playerId]);
+      }
+      const pool = fees + tier.houseBonus;
+      out.push({ tier: tier.id, weekKey: wk, endsAt: weekEnd(now), joined: tier.fee === 0 || !!mine, myGames: mine?.games ?? 0, players, pool, prizes: tournamentPrizes(pool, Math.max(players, 10)), rows });
+    }
+    return out;
+  }
+
+  /** Cierra las copas de una semana: reparte el bote a los 10 primeros (una sola vez). Devuelve a quién se le pagó. */
+  async settleCups(week: string): Promise<{ playerId: string; tier: string; place: number; coins: number }[]> {
+    const db = await this.db;
+    const paid: { playerId: string; tier: string; place: number; coins: number }[] = [];
+    for (const tier of TOURNAMENT_TIERS) {
+      const done = await db.tx(async (q) => {
+        const mark = await q.query('INSERT INTO parques.settled (what) VALUES ($1) ON CONFLICT DO NOTHING RETURNING what', [`cup:${week}:${tier.id}`]);
+        if (!mark.length) return [];
+        const rows =
+          tier.fee === 0
+            ? await q.query<{ player: string; points: number }>('SELECT player, points FROM parques.tournaments WHERE week = $1 AND points > 0 ORDER BY points DESC, games ASC LIMIT 10', [week])
+            : await q.query<{ player: string; points: number }>('SELECT player, points FROM parques.cups WHERE week = $1 AND tier = $2 AND games > 0 ORDER BY points DESC, games ASC LIMIT 10', [week, tier.id]);
+        const [c] = tier.fee === 0 ? [{ fees: 0 }] : await q.query<{ fees: number }>('SELECT COALESCE(SUM(fee), 0)::int AS fees FROM parques.cups WHERE week = $1 AND tier = $2', [week, tier.id]);
+        const prizes = tournamentPrizes(c!.fees + tier.houseBonus, rows.length);
+        const out: typeof paid = [];
+        for (const [i, r] of rows.entries()) {
+          const coins = prizes[i] ?? 0;
+          const gems = TOURNAMENT_GEMS[i] ?? 0;
+          await q.query('INSERT INTO parques.cup_results (week, tier, player, place, coins, gems) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING', [week, tier.id, r.player, i + 1, coins, gems]);
+          await this.updateIn(q, r.player, (p) => grantTournamentPrize(p, i + 1, coins, gems));
+          out.push({ playerId: r.player, tier: tier.id, place: i + 1, coins });
+        }
+        return out;
+      });
+      paid.push(...done);
+    }
+    return paid;
+  }
+
+  async hallOfFame(): Promise<HallOfFame> {
+    const db = await this.db;
+    const wins = await db.query<HallOfFame['wins'][number]>(
+      'SELECT r.player AS "playerId", a.name, a.avatar, COUNT(*)::int AS value FROM parques.cup_results r JOIN parques.accounts a ON a.id = r.player WHERE r.place = 1 GROUP BY r.player, a.name, a.avatar ORDER BY value DESC LIMIT 50',
+    );
+    const coins = await db.query<HallOfFame['coins'][number]>(
+      'SELECT r.player AS "playerId", a.name, a.avatar, SUM(r.coins)::bigint AS value FROM parques.cup_results r JOIN parques.accounts a ON a.id = r.player GROUP BY r.player, a.name, a.avatar ORDER BY value DESC LIMIT 50',
+    );
+    return { wins, coins: coins.map((c) => ({ ...c, value: Number(c.value) })) };
+  }
+
+  // ------------------------------------------------------------ v0.9: premios del ranking
+
+  /** Al cerrar la semana: premios para el top 100 global y el top 50 de cada país (una sola vez). */
+  async settleRanking(week: string): Promise<{ playerId: string; scope: string; place: number; coins: number }[]> {
+    const db = await this.db;
+    return db.tx(async (q) => {
+      const mark = await q.query('INSERT INTO parques.settled (what) VALUES ($1) ON CONFLICT DO NOTHING RETURNING what', [`rank:${week}`]);
+      if (!mark.length) return [];
+      const out: { playerId: string; scope: string; place: number; coins: number }[] = [];
+      const give = async (scope: 'global' | 'country', player: string, place: number) => {
+        const prize = rankPrize(scope, place);
+        if (!prize) return;
+        await q.query('INSERT INTO parques.rank_results (week, scope, player, place, coins, gems) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING', [week, scope, player, place, prize.coins, prize.gems]);
+        await this.updateIn(q, player, (p) => grantRankPrize(p, prize.coins, prize.gems));
+        out.push({ playerId: player, scope, place, coins: prize.coins });
+      };
+      const global = await q.query<{ id: string }>('SELECT id FROM parques.accounts WHERE games > 0 ORDER BY rating DESC, wins DESC LIMIT 100');
+      for (const [i, r] of global.entries()) await give('global', r.id, i + 1);
+      const country = await q.query<{ id: string; place: number }>(
+        'SELECT id, place FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY country ORDER BY rating DESC, wins DESC)::int AS place FROM parques.accounts WHERE games > 0) x WHERE place <= 50',
+      );
+      for (const r of country) await give('country', r.id, r.place);
+      return out;
+    });
+  }
+
+  /** Premios global/país de la semana pasada (`week`) y el de amigos de esta semana (`thisWeek`). */
+  async rankRewards(playerId: string, week: string, thisWeek: string, friends: string[]): Promise<RankRewardsInfo> {
+    const db = await this.db;
+    const rows = await db.query<{ scope: string; week: string; place: number; coins: number; gems: number }>(
+      "SELECT scope, week, place, coins, gems FROM parques.rank_results WHERE player = $2 AND ((week = $1 AND scope <> 'friends') OR (week = $3 AND scope = 'friends'))",
+      [week, playerId, thisWeek],
+    );
+    const get = (s: string) => {
+      const r = rows.find((x) => x.scope === s);
+      return r ? { place: r.place, coins: r.coins, gems: r.gems } : null;
+    };
+    const fr = await this.friendsPlace(playerId, friends);
+    const prize = fr ? rankPrize('friends', fr) : null;
+    const f = get('friends');
+    return {
+      week,
+      global: get('global'),
+      country: get('country'),
+      friends: f ? { ...f, claimed: true } : prize && fr ? { place: fr, ...prize, claimed: false } : null,
+    };
+  }
+
+  /** Puesto entre tus amigos (cuenta solo si tienes al menos 3 amigos con partidas). */
+  private async friendsPlace(playerId: string, friends: string[]): Promise<number | null> {
+    const ids = [...new Set([playerId, ...friends.map(String)])].slice(0, 201);
+    const rows = await (await this.db).query<{ id: string }>('SELECT id FROM parques.accounts WHERE id = ANY($1::text[]) AND games > 0 ORDER BY rating DESC, wins DESC', [ids]);
+    if (rows.length < 4) return null;
+    const i = rows.findIndex((r) => r.id === playerId);
+    return i >= 0 ? i + 1 : null;
+  }
+
+  /** Premio semanal entre amigos (una vez por semana). */
+  async claimFriendsPrize(playerId: string, week: string, friends: string[]): Promise<{ ok: boolean; error?: string; profile?: Profile; coins?: number; gems?: number; place?: number }> {
+    const place = await this.friendsPlace(playerId, friends);
+    const prize = place ? rankPrize('friends', place) : null;
+    if (!place || !prize) return { ok: false, error: 'Necesitas quedar en el top 3 entre al menos 3 amigos que jueguen' };
+    return (await this.db).tx(async (q) => {
+      const ins = await q.query('INSERT INTO parques.rank_results (week, scope, player, place, coins, gems) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING player', [week, 'friends', playerId, place, prize.coins, prize.gems]);
+      if (!ins.length) return { ok: false, error: 'Ya reclamaste el premio de esta semana' };
+      const r = await this.updateIn(q, playerId, (p) => grantRankPrize(p, prize.coins, prize.gems));
+      return { ok: true, profile: r.ok ? r.profile : undefined, coins: prize.coins, gems: prize.gems, place };
+    });
   }
 }

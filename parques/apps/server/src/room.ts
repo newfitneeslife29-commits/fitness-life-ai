@@ -69,6 +69,8 @@ export interface RoomOptions {
   /** Cobra la entrada de un jugador al empezar; devuelve false si no le alcanza. */
   charge?: (playerId: string, entry: number) => boolean | Promise<boolean>;
   onEnd?: (room: Room, results: HumanResult[]) => void;
+  /** Copa (torneo con inscripción) a la que cuenta la partida. */
+  cup?: string | null;
 }
 
 export class Room {
@@ -82,6 +84,7 @@ export class Room {
   readonly entry: number;
   readonly mode: 'online' | 'ai' | 'quick' | 'teams';
   readonly sides: 4 | 6;
+  readonly cup: string | null;
   private botLevel: AiLevel | null;
   private timeLimitMs: number;
   private charge?: RoomOptions['charge'];
@@ -111,6 +114,7 @@ export class Room {
     this.entry = this.table ? (tableOf(this.table)?.entry ?? 0) : 0;
     this.mode = opts.mode ?? 'online';
     this.sides = opts.sides === 6 ? 6 : 4;
+    this.cup = opts.cup ?? null;
     this.botLevel = opts.botLevel ?? (this.table ? (tableOf(this.table)?.ai ?? null) : null);
     this.timeLimitMs = opts.timeLimitMs ?? 0;
     this.charge = opts.charge;

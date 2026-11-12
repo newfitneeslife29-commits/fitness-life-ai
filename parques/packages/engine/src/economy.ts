@@ -121,7 +121,7 @@ export function matchXp(entry: number, place: number): number {
 
 // ---------------------------------------------------------------- Productos con dinero real
 
-export type ProductKind = 'coins' | 'gems' | 'item' | 'pass';
+export type ProductKind = 'coins' | 'gems' | 'item' | 'pass' | 'bundle';
 
 export interface Product {
   id: string;
@@ -135,6 +135,12 @@ export interface Product {
   itemId?: string;
   /** Pase de batalla: niveles extra incluidos. */
   passTiers?: number;
+  /** Paquete: objetos incluidos. */
+  itemIds?: string[];
+  /** Solo se ofrece una vez por cuenta. */
+  once?: boolean;
+  /** Texto destacado ("Más vendido", "-70 %"…). */
+  badge?: string;
 }
 
 export const PRODUCTS: Product[] = [
@@ -146,6 +152,10 @@ export const PRODUCTS: Product[] = [
   { id: 'gems-s', kind: 'gems', usdCents: 99, name: '20 gemas', gems: 20 },
   { id: 'gems-m', kind: 'gems', usdCents: 499, name: '120 gemas', gems: 120 },
   { id: 'gems-l', kind: 'gems', usdCents: 999, name: '260 gemas', gems: 260 },
+  { id: 'gems-xl', kind: 'gems', usdCents: 1999, name: '600 gemas', gems: 600, badge: 'Mejor precio' },
+  { id: 'bundle-inicio', kind: 'bundle', usdCents: 199, name: 'Paquete de bienvenida', coins: 25000, gems: 60, itemIds: ['board-playa'], once: true, badge: '-80 %' },
+  { id: 'bundle-semana', kind: 'bundle', usdCents: 499, name: 'Combo parcero', coins: 60000, gems: 80, itemIds: ['dice-galaxia'], badge: 'Más vendido' },
+  { id: 'bundle-leyenda', kind: 'bundle', usdCents: 1499, name: 'Paquete Leyenda', coins: 250000, gems: 300, itemIds: ['board-guatape', 'pieces-tricolor', 'frame-neon'], badge: 'Todo incluido' },
   { id: 'pass-premium', kind: 'pass', usdCents: 499, name: 'Pase Premium', passTiers: 0 },
   { id: 'pass-elite', kind: 'pass', usdCents: 999, name: 'Pase Élite (+10 niveles)', passTiers: 10 },
 ];
@@ -177,6 +187,17 @@ export const ITEM_PRICES_USD: Record<string, number> = {
   'effect-confeti': 99,
   'effect-pólvora': 199,
   'effect-nieve': 99,
+  'board-playa': 299,
+  'board-cartagena': 399,
+  'board-selva': 399,
+  'board-salsa': 299,
+  'board-guatape': 499,
+  'dice-galaxia': 199,
+  'dice-lava': 149,
+  'pieces-tricolor': 199,
+  'frame-arcoiris': 149,
+  'frame-neon': 199,
+  'effect-rayos': 199,
 };
 
 export function productFor(id: string): Product | undefined {

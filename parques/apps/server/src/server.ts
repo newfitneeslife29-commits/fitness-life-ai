@@ -6,8 +6,16 @@ import { createServer, type Server as HttpServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { Server } from 'socket.io';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import {
   addFriend,
+  buyDeal,
+  claimAd,
+  claimEventTier,
+  exchangeGems,
+  openChest,
+  tournamentTier,
+  weekKey,
   applyMatch,
   buyWithCoins,
   claimDaily,
@@ -26,6 +34,33 @@ import {
   TOP_ROOM_SIZE,
 } from '@parques/engine';
 import type { ClientToServer, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
+
+/** Identidad verificada de Apple o Google. */
+export interface VerifiedIdentity {
+  sub: string;
+  email: string | null;
+}
+export type IdentityVerifier = (provider: 'apple' | 'google', idToken: string) => Promise<VerifiedIdentity | null>;
+
+const APPLE_KEYS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
+const GOOGLE_KEYS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+
+/** Verifica el token de identidad con las llaves públicas de Apple / Google. */
+export const verifyIdentity: IdentityVerifier = async (provider, idToken) => {
+  try {
+    if (provider === 'apple') {
+      const aud = (process.env.APPLE_CLIENT_IDS ?? 'parques.app').split(',').map((x) => x.trim()).filter(Boolean);
+      const { payload } = await jwtVerify(idToken, APPLE_KEYS, { issuer: 'https://appleid.apple.com', audience: aud });
+      return payload.sub ? { sub: payload.sub, email: typeof payload.email === 'string' ? payload.email : null } : null;
+    }
+    const aud = (process.env.GOOGLE_CLIENT_IDS ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+    if (!aud.length) return null;
+    const { payload } = await jwtVerify(idToken, GOOGLE_KEYS, { issuer: ['https://accounts.google.com', 'accounts.google.com'], audience: aud });
+    return payload.sub ? { sub: payload.sub, email: typeof payload.email === 'string' ? payload.email : null } : null;
+  } catch {
+    return null;
+  }
+};
 import { makeCode, Room, type Conn, type HumanResult, type Timing } from './room';
 import { Store } from './store';
 import { Payments, StorePurchases } from './payments';
@@ -47,6 +82,10 @@ export interface ServerOptions {
   timing?: Partial<Timing>;
   payments?: Payments;
   storePurchases?: StorePurchases;
+  /** Verificación de Apple / Google (las pruebas la reemplazan). */
+  verifyIdentity?: IdentityVerifier;
+  /** Cada cuánto se revisan los cierres semanales (copas y ranking). */
+  settleEveryMs?: number;
 }
 
 const MIME: Record<string, string> = {
@@ -197,6 +236,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
   const payments = opts.payments ?? new Payments();
   const storePurchases = opts.storePurchases ?? new StorePurchases();
   const matchWait = opts.matchWaitMs ?? 10000;
+  const verify = opts.verifyIdentity ?? verifyIdentity;
 
   const rooms = new Map<string, Room>();
   const byCode = new Map<string, Room>();
@@ -223,11 +263,12 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     const g = room.state;
     if (!g || !results.length) return;
     for (const r of results) {
-      const summary = summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry });
+      const summary = { ...summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry }), tournament: room.cup };
       const out = await store.update(r.playerId, (p) => applyMatch(p, summary));
       if (out.ok && 'outcome' in out) emitTo(r.playerId, 'match_result', { outcome: out.outcome, profile: out.profile });
     }
     if (room.mode === 'online') await store.recordMatch(results.map((r) => r.playerId));
+    if (room.cup) await store.recordCup(room.cup, results.map((r) => r.playerId));
   };
   const onEnd = (room: Room, results: HumanResult[]) => {
     settle(room, results).catch(logErr);
@@ -275,8 +316,9 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     timer: ReturnType<typeof setTimeout> | null;
     startsAt: number;
   }
-  const queues = new Map<TableId, Queue>();
-  const queueOf = (t: TableId): Queue => {
+  /** Filas: por mesa ("barrio"…) o por copa ("cup:bronce"…). */
+  const queues = new Map<string, Queue>();
+  const queueOf = (t: string): Queue => {
     let q = queues.get(t);
     if (!q) queues.set(t, (q = { ids: [], timer: null, startsAt: 0 }));
     return q;
@@ -291,14 +333,17 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     }
   };
 
-  async function launchQuick(t: TableId) {
+  async function launchQuick(t: string) {
     const q = queueOf(t);
     if (q.timer) clearTimeout(q.timer);
     q.timer = null;
     const group = q.ids.slice(0, 4);
     q.ids = q.ids.slice(4);
     if (!group.length) return;
-    const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, t, { mode: 'online' });
+    const cup = t.startsWith('cup:') ? t.slice(4) : null;
+    const room = cup
+      ? newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, null, { mode: 'online', cup, botLevel: 'expert' })
+      : newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, t as TableId, { mode: 'online' });
     for (const id of group) {
       const p = await store.getProfile(id);
       if (!p) continue;
@@ -309,7 +354,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     if (q.ids.length) armQueue(t);
   }
 
-  function armQueue(t: TableId) {
+  function armQueue(t: string) {
     const q = queueOf(t);
     if (q.ids.length >= 4) return void launchQuick(t).catch(logErr);
     if (!q.timer) {
@@ -355,9 +400,26 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         if (r.ok && 'glyph' in r) playerRoom.get(uid)?.chat(uid, String(r.glyph));
         return wrap(r);
       }
-      case 'tournament_claim': {
-        const r = await store.claimLastWeek(uid);
-        return r.ok ? { ok: true, profile: (await store.getProfile(uid)) ?? undefined, result: { coins: r.coins, gems: r.gems, place: r.place } } : { ok: false, error: r.error };
+      case 'tournament_claim':
+        return { ok: false, error: 'Los premios de los torneos ahora se entregan solos al cerrar la semana' };
+      case 'ad':
+        return wrap(await store.update(uid, (p) => claimAd(p)));
+      case 'event_claim':
+        return wrap(await store.update(uid, (p) => claimEventTier(p, Number(op.tier))));
+      case 'deal':
+        return wrap(await store.update(uid, (p) => buyDeal(p, String(op.itemId))));
+      case 'chest':
+        return wrap(await store.update(uid, (p) => openChest(p, String(op.chestId))));
+      case 'exchange':
+        return wrap(await store.update(uid, (p) => exchangeGems(p, Number(op.gems))));
+      case 'cup_join': {
+        const r = await store.joinCup(uid, String(op.tier));
+        return r.ok ? { ok: true, profile: r.profile } : { ok: false, error: r.error };
+      }
+      case 'rank_friends_claim': {
+        const me = await store.getProfile(uid);
+        const r = await store.claimFriendsPrize(uid, weekKey(new Date()), me?.friends.map((f) => f.id) ?? []);
+        return r.ok ? { ok: true, profile: r.profile, result: { coins: r.coins, gems: r.gems, place: r.place } } : { ok: false, error: r.error };
       }
       default:
         return { ok: false, error: 'Operación desconocida' };
@@ -506,6 +568,86 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
     socket.on('tournament', async (ack) => ack?.(await store.tournament()));
 
+    socket.on('cups', async (ack) => {
+      const id = me();
+      ack?.(id ? await store.cups(id) : []);
+    });
+
+    socket.on('cup_match', async (tierId, ack) => {
+      const p = await profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const tier = tournamentTier(String(tierId));
+      if (!tier || tier.fee === 0) return ack?.({ ok: false, error: 'Torneo desconocido' });
+      const entry = await store.cupEntry(p.id, tier.id);
+      if (!entry) return ack?.({ ok: false, error: 'Primero inscríbete en el torneo' });
+      if (entry.games >= tier.maxGames) return ack?.({ ok: false, error: `Ya jugaste las ${tier.maxGames} partidas de esta semana` });
+      leaveCurrent(p.id);
+      dequeue(p.id);
+      const key = `cup:${tier.id}`;
+      queueOf(key).ids.push(p.id);
+      ack?.({ ok: true });
+      armQueue(key);
+    });
+
+    socket.on('hall_of_fame', async (ack) => ack?.(await store.hallOfFame()));
+
+    socket.on('rank_rewards', async (ack) => {
+      const p = await profileOf();
+      if (!p) return;
+      const now = new Date();
+      ack?.(await store.rankRewards(p.id, weekKey(new Date(now.getTime() - 7 * 86400000)), weekKey(now), p.friends.map((f) => f.id)));
+    });
+
+    socket.on('find_player', async (id, ack) => {
+      const r = await store.publicPlayer(String(id ?? ''));
+      ack?.(r ? { ...r, online: sockets.has(r.id) } : null);
+    });
+
+    socket.on('friends_online', (ids, ack) => {
+      ack?.((Array.isArray(ids) ? ids : []).slice(0, 200).map(String).filter((x) => sockets.has(x)));
+    });
+
+    socket.on('invite', async (o, ack) => {
+      const p = await profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const to = String(o?.to ?? '');
+      if (!sockets.has(to)) return ack?.({ ok: false, error: 'Tu amigo no está conectado' });
+      emitTo(to, 'invited', { from: { id: p.id, name: p.name, avatar: p.photo ? '🙂' : p.avatar }, code: String(o?.code ?? '').slice(0, 8) });
+      ack?.({ ok: true });
+    });
+
+    /** Apple / Google: entra a la cuenta vinculada, o vincula la cuenta actual para no perderla. */
+    socket.on('auth_provider', async (o, ack) => {
+      const provider = o?.provider === 'apple' ? 'apple' : o?.provider === 'google' ? 'google' : null;
+      if (!provider) return ack?.({ ok: false, error: 'Proveedor desconocido' });
+      const ident = await verify(provider, String(o?.idToken ?? ''));
+      if (!ident) return ack?.({ ok: false, error: 'No se pudo verificar la cuenta' });
+      const existing = await store.accountFor(provider, ident.sub);
+      const current = me();
+      let id: string;
+      let token: string | undefined;
+      let linked = false;
+      if (existing) {
+        // Ya está vinculada: entra a esa cuenta (también en un celular nuevo).
+        id = existing;
+        if (existing !== current) token = await store.newSession(existing);
+      } else if (current && o?.link) {
+        id = current;
+        linked = await store.linkIdentity(provider, ident.sub, current, ident.email);
+      } else {
+        const acc = await store.createAccount();
+        id = acc.id;
+        token = acc.token;
+        linked = await store.linkIdentity(provider, ident.sub, acc.id, ident.email);
+        if (o?.name) await store.update(id, (p) => setIdentity(p, { name: String(o.name) }));
+      }
+      const r = await store.update(id, (p) => ({ ok: true, profile: p.linked.includes(provider) ? p : { ...p, linked: [...p.linked, provider] } }));
+      if (current && current !== id && sockets.get(current) === socket.id) sockets.delete(current);
+      socket.data.uid = id;
+      sockets.set(id, socket.id);
+      ack?.({ ok: true, id, token, profile: r.ok ? r.profile : undefined, linked });
+    });
+
     socket.on('disconnect', () => {
       const id = me();
       if (!id || sockets.get(id) !== socket.id) return;
@@ -514,6 +656,21 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       playerRoom.get(id)?.detach(id);
     });
   });
+
+  // Cierres semanales: copas y premios del ranking de la semana pasada (una sola vez, en cualquier réplica).
+  const settleWeek = async () => {
+    const last = weekKey(new Date(Date.now() - 7 * 86400000));
+    const cups = await store.settleCups(last);
+    const ranks = await store.settleRanking(last);
+    for (const c of cups) {
+      pushProfile(c.playerId);
+      emitTo(c.playerId, 'notice', { text: `🏆 Torneo: quedaste ${c.place}º y ganaste ${c.coins} monedas` });
+    }
+    for (const r of ranks) pushProfile(r.playerId);
+  };
+  const settleTimer = setInterval(() => void settleWeek().catch(logErr), opts.settleEveryMs ?? 10 * 60000);
+  settleTimer.unref?.();
+  void store.ready().then(settleWeek).catch(logErr);
 
   const sweep = setInterval(() => {
     const now = Date.now();
@@ -536,6 +693,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     close: () =>
       new Promise((resolve) => {
         clearInterval(sweep);
+        clearInterval(settleTimer);
         for (const q of queues.values()) if (q.timer) clearTimeout(q.timer);
         for (const r of rooms.values()) r.destroy();
         io.close(() => {

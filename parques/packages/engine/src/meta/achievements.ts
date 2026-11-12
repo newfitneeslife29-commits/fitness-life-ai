@@ -26,12 +26,35 @@ export interface ProfileStats {
   emotesSent: number;
   maxDailyStreak: number;
   tableWins: Partial<Record<TableId, number>>;
+  tableGames: Partial<Record<TableId, number>>;
+  perfectWins: number;
+  bigCaptureGames: number;
+  duelWins: number;
+  sixGames: number;
+  quickGames: number;
+  teamGames: number;
+  adsWatched: number;
+  eventTiers: number;
+  tournamentsJoined: number;
+  tournamentWins: number;
+  tournamentPodiums: number;
+  tournamentCoins: number;
+  chestsOpened: number;
+  dealsBought: number;
+  rankRewards: number;
+  purchases: number;
+  dailyClaims: number;
+  spins: number;
+  missionsDone: number;
 }
 
 export const EMPTY_STATS: ProfileStats = {
   games: 0, wins: 0, podiums: 0, captures: 0, captured: 0, crowned: 0, soplos: 0, pairs: 0,
   triplePenalties: 0, onlineGames: 0, winStreak: 0, bestWinStreak: 0, teamWins: 0, quickWins: 0,
-  sixWins: 0, coinsWon: 0, gemsWon: 0, emotesSent: 0, maxDailyStreak: 0, tableWins: {},
+  sixWins: 0, coinsWon: 0, gemsWon: 0, emotesSent: 0, maxDailyStreak: 0, tableWins: {}, tableGames: {},
+  perfectWins: 0, bigCaptureGames: 0, duelWins: 0, sixGames: 0, quickGames: 0, teamGames: 0, adsWatched: 0,
+  eventTiers: 0, tournamentsJoined: 0, tournamentWins: 0, tournamentPodiums: 0, tournamentCoins: 0, chestsOpened: 0,
+  dealsBought: 0, rankRewards: 0, purchases: 0, dailyClaims: 0, spins: 0, missionsDone: 0,
 };
 
 export interface AchievementCtx {
@@ -39,6 +62,7 @@ export interface AchievementCtx {
   level: number;
   owned: number;
   passTiers: number;
+  friends?: number;
 }
 
 export interface AchievementCategory {
@@ -79,6 +103,7 @@ function ladder(start: number, end: number, n = 50): number[] {
 }
 
 const tw = (id: TableId) => (c: AchievementCtx) => c.stats.tableWins[id] ?? 0;
+const tg = (id: TableId) => (c: AchievementCtx) => c.stats.tableGames?.[id] ?? 0;
 
 export const CATEGORIES: AchievementCategory[] = [
   { key: 'games', name: 'Jugador incansable', desc: 'Juega {n} partidas', emoji: '🎲', value: (c) => c.stats.games, thresholds: ladder(1, 50000) },
@@ -108,6 +133,33 @@ export const CATEGORIES: AchievementCategory[] = [
   { key: 'w-leyenda', name: 'Leyenda viva', desc: 'Gana {n} veces en la mesa Leyenda', emoji: '👑', value: tw('leyenda'), thresholds: ladder(1, 5000) },
   { key: 'w-elite', name: 'Élite', desc: 'Gana {n} veces en la Sala Élite', emoji: '💎', value: tw('elite'), thresholds: ladder(1, 5000) },
   { key: 'w-top', name: 'Top de tops', desc: 'Gana {n} veces en Top Leyendas', emoji: '🔥', value: tw('top'), thresholds: ladder(1, 5000) },
+  // v0.9: muchos más logros
+  { key: 'perfect', name: 'Intocable', desc: 'Gana {n} partidas sin que te capturen', emoji: '🛡️', value: (c) => c.stats.perfectWins, thresholds: ladder(1, 5000) },
+  { key: 'bigcap', name: 'Masacre', desc: 'Captura 3 o más fichas en una partida {n} veces', emoji: '🧨', value: (c) => c.stats.bigCaptureGames, thresholds: ladder(1, 10000) },
+  { key: 'duel', name: 'Mano a mano', desc: 'Gana {n} duelos de 2 jugadores', emoji: '⚔️', value: (c) => c.stats.duelWins, thresholds: ladder(1, 10000) },
+  { key: 'sixgames', name: 'Mesa llena', desc: 'Juega {n} partidas de 6 jugadores', emoji: '👨‍👩‍👧‍👦', value: (c) => c.stats.sixGames, thresholds: ladder(1, 20000) },
+  { key: 'quickgames', name: 'Afanado', desc: 'Juega {n} partidas rápidas', emoji: '⏱️', value: (c) => c.stats.quickGames, thresholds: ladder(1, 20000) },
+  { key: 'teamgames', name: 'Compinche', desc: 'Juega {n} partidas en parejas', emoji: '👯', value: (c) => c.stats.teamGames, thresholds: ladder(1, 20000) },
+  { key: 'g-barrio', name: 'Vecino', desc: 'Juega {n} partidas en la mesa Barrio', emoji: '🏘️', value: tg('barrio'), thresholds: ladder(1, 20000) },
+  { key: 'g-ciudad', name: 'Ciudadano', desc: 'Juega {n} partidas en la mesa Ciudad', emoji: '🏙️', value: tg('ciudad'), thresholds: ladder(1, 20000) },
+  { key: 'g-capital', name: 'Capitalino', desc: 'Juega {n} partidas en la mesa Capital', emoji: '🏛️', value: tg('capital'), thresholds: ladder(1, 20000) },
+  { key: 'g-leyenda', name: 'Legendario', desc: 'Juega {n} partidas en la mesa Leyenda', emoji: '📜', value: tg('leyenda'), thresholds: ladder(1, 10000) },
+  { key: 'g-elite', name: 'Club privado', desc: 'Juega {n} partidas en la Sala Élite', emoji: '🥂', value: tg('elite'), thresholds: ladder(1, 10000) },
+  { key: 'g-top', name: 'Entre los mejores', desc: 'Juega {n} partidas en Top Leyendas', emoji: '🌟', value: tg('top'), thresholds: ladder(1, 10000) },
+  { key: 'ads', name: 'Rebuscador', desc: 'Mira {n} anuncios por monedas', emoji: '📺', value: (c) => c.stats.adsWatched, thresholds: ladder(1, 5000) },
+  { key: 'event', name: 'Fiestero', desc: 'Completa {n} premios de eventos', emoji: '🎉', value: (c) => c.stats.eventTiers, thresholds: ladder(1, 2000) },
+  { key: 't-join', name: 'Competidor', desc: 'Inscríbete en {n} torneos', emoji: '🎫', value: (c) => c.stats.tournamentsJoined, thresholds: ladder(1, 2000) },
+  { key: 't-win', name: 'Campeón', desc: 'Gana {n} torneos', emoji: '🏅', value: (c) => c.stats.tournamentWins, thresholds: ladder(1, 500) },
+  { key: 't-podium', name: 'Podio de torneo', desc: 'Termina en el top 3 de {n} torneos', emoji: '🎖️', value: (c) => c.stats.tournamentPodiums, thresholds: ladder(1, 1000) },
+  { key: 't-coins', name: 'Cazafortunas', desc: 'Gana {n} monedas en torneos', emoji: '💰', value: (c) => c.stats.tournamentCoins, thresholds: ladder(1000, 500_000_000) },
+  { key: 'chests', name: 'Abrecofres', desc: 'Abre {n} cofres', emoji: '🧰', value: (c) => c.stats.chestsOpened, thresholds: ladder(1, 5000) },
+  { key: 'deals', name: 'Cazaofertas', desc: 'Compra {n} ofertas del día', emoji: '🏷️', value: (c) => c.stats.dealsBought, thresholds: ladder(1, 2000) },
+  { key: 'rank', name: 'Famoso', desc: 'Gana {n} premios del ranking', emoji: '📈', value: (c) => c.stats.rankRewards, thresholds: ladder(1, 2000) },
+  { key: 'buy', name: 'Mecenas', desc: 'Haz {n} compras en la tienda', emoji: '🛒', value: (c) => c.stats.purchases, thresholds: ladder(1, 1000) },
+  { key: 'dailies', name: 'Constante', desc: 'Reclama {n} recompensas diarias', emoji: '🗓️', value: (c) => c.stats.dailyClaims, thresholds: ladder(1, 3650) },
+  { key: 'spins', name: 'Ruletero', desc: 'Gira la ruleta {n} veces', emoji: '🎡', value: (c) => c.stats.spins, thresholds: ladder(1, 3650) },
+  { key: 'missions', name: 'Misionero', desc: 'Completa {n} misiones', emoji: '📋', value: (c) => c.stats.missionsDone, thresholds: ladder(1, 20000) },
+  { key: 'friends', name: 'Parcero de todos', desc: 'Ten {n} amigos', emoji: '🫂', value: (c) => c.friends ?? 0, thresholds: ladder(1, 200, 30) },
 ];
 
 const ROMAN: [number, string][] = [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
