@@ -3,7 +3,7 @@
  * La mayoría se compran con dinero real (precio en ITEM_PRICES_USD del motor), unos pocos con
  * monedas del juego y otros solo se consiguen en el Pase de batalla.
  */
-import { ITEM_PRICES_USD } from '@parques/engine';
+import { ITEM_PRICES_USD } from '../economy';
 import type { Season } from './seasons';
 
 export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect';

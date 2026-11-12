@@ -1,5 +1,5 @@
 /** Misiones diarias y semanales. Funciones puras. */
-import type { MatchSummary } from './economy';
+import type { MatchSummary } from './rewards';
 
 export type MissionMetric = 'games' | 'wins' | 'captures' | 'crowned' | 'soplos' | 'pairs' | 'quick' | 'teams' | 'online' | 'podiums';
 

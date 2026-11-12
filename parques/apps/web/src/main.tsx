@@ -4,6 +4,10 @@ import { App } from './App';
 import './styles/global.css';
 import './styles/screens.css';
 import './styles/ui.css';
+import { initNative, isNative } from './lib/native';
+
+if (isNative()) void initNative();
+else void import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true }));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

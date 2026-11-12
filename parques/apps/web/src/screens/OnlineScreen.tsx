@@ -9,7 +9,7 @@ import { useSettings } from '../stores/settingsStore';
 import { useFx } from '../stores/fxStore';
 import { useApp } from '../stores/appStore';
 import { Segmented, Toggle } from './SettingsScreen';
-import { TABLES, payouts, type TableId } from '../meta/economy';
+import { TABLES, payouts, type TableId } from '@parques/engine';
 import { TABLE_GRADS } from './TablesScreen';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';

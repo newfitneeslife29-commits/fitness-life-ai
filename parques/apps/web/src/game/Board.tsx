@@ -21,7 +21,7 @@ import {
 import { Piece } from './Piece';
 import { FxLayer } from './Effects';
 import type { Fx } from '../stores/gameStore';
-import type { BoardTheme, EffectStyle, PieceStyle } from '../meta/catalog';
+import type { BoardTheme, EffectStyle, PieceStyle } from '@parques/engine';
 import { tr } from '../lib/i18n';
 
 interface Props {

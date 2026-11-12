@@ -5,14 +5,14 @@ import { BottomNav } from '../components/BottomNav';
 import { DailyReward } from '../components/DailyReward';
 import { useApp } from '../stores/appStore';
 import { useProfile } from '../stores/profileStore';
-import { activeSeason, nextSeason, seasonEnd } from '../meta/seasons';
-import { dailyStatus, dayKey } from '../meta/economy';
-import { missionDef } from '../meta/missions';
+import { activeSeason, nextSeason, seasonEnd } from '@parques/engine';
+import { dailyStatus, dayKey } from '@parques/engine';
+import { missionDef } from '@parques/engine';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
 import { BoardMini } from '../game/Board';
-import { item } from '../meta/catalog';
-import { passSeasonId, tierFromXp } from '../meta/battlepass';
+import { item } from '@parques/engine';
+import { passSeasonId, tierFromXp } from '@parques/engine';
 
 function countdown(ms: number): string {
   const d = Math.floor(ms / 86400000);
@@ -27,7 +27,6 @@ export function LobbyScreen() {
   const t = useT();
   const [, tick] = useState(0);
   useEffect(() => {
-    p.refreshMissions();
     const id = setInterval(() => tick((x) => x + 1), 30000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

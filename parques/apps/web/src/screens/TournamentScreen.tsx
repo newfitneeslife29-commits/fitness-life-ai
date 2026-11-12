@@ -1,7 +1,7 @@
 import { useT } from '../lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { weekKey, type TournamentInfo } from '@parques/engine';
+import type { TournamentInfo } from '@parques/engine';
 import { TopBar } from '../components/TopBar';
 import { Avatar } from '../components/Avatar';
 import { CoinIcon, GemIcon } from '../components/Counter';
@@ -33,13 +33,11 @@ export function TournamentScreen() {
   }, []);
 
   const mine = info?.rows.findIndex((r) => r.playerId === p.id) ?? -1;
-  const thisWeek = weekKey(new Date());
 
   const claim = async () => {
-    const r = await o.claimTournament();
-    if (!r?.ok) return fx.toast({ icon: '🏆', title: t(r?.error ?? 'Sin premio por reclamar') });
-    p.addCurrency(r.coins ?? 0, r.gems ?? 0);
-    p.setTournamentClaim(thisWeek);
+    const res = await p.claimTournament();
+    if (!res.ok || !res.result) return fx.toast({ icon: '🏆', title: t(res.error ?? 'Sin premio por reclamar') });
+    const r = res.result;
     play('win');
     const c = centerOf(claimBtn.current);
     fx.fly('coin', c, 14);

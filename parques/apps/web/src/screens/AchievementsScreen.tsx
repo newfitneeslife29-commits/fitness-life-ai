@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
-import { ACHIEVEMENTS, categoryProgress, roman, tierColor } from '../meta/achievements';
-import { levelFromXp } from '../meta/economy';
+import { ACHIEVEMENTS, categoryProgress, roman, tierColor } from '@parques/engine';
+import { levelFromXp } from '@parques/engine';
 import { useProfile } from '../stores/profileStore';
 import { useT } from '../lib/i18n';
 

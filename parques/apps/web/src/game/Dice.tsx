@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import type { DiceSkin } from '../meta/catalog';
+import type { DiceSkin } from '@parques/engine';
 import { useT } from '../lib/i18n';
 
 const DEFAULT_SKIN: DiceSkin = { face: ['#ffffff', '#efe3c8'], pip: '#2a1400', one: '#e8112d' };

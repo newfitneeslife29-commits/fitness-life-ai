@@ -6,7 +6,8 @@ import { TIPS } from '../game/phrases';
 import { loadAudio } from '../audio/audio';
 import { useApp } from '../stores/appStore';
 import { useProfile } from '../stores/profileStore';
-import { dailyStatus, dayKey } from '../meta/economy';
+import { useOnline } from '../lib/online';
+import { dailyStatus, dayKey } from '@parques/engine';
 
 /** Pantalla de carga: logo animado, barra de progreso y tips. */
 export function SplashScreen() {
@@ -16,16 +17,25 @@ export function SplashScreen() {
   const [progress, setProgress] = useState(0.05);
   const [tip, setTip] = useState(() => Math.floor(Math.random() * TIPS.length));
 
+  const [offline, setOffline] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
-    const id = setInterval(() => setTip((t) => (t + 1) % TIPS.length), 2200);
+    const id = setInterval(() => setTip((x) => (x + 1) % TIPS.length), 2200);
     let alive = true;
+    setOffline(false);
     const minTime = new Promise((r) => setTimeout(r, 1800));
     const fonts = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready ?? Promise.resolve();
-    Promise.all([loadAudio((p) => alive && setProgress(0.1 + p * 0.85)), fonts, minTime]).then(() => {
+    // El juego es online: hay que entrar a la cuenta del servidor antes del lobby.
+    const login = useOnline.getState().connect();
+    Promise.all([loadAudio((p) => alive && setProgress(0.1 + p * 0.8)), fonts, minTime, login]).then(([, , , ok]) => {
       if (!alive) return;
+      if (!ok) {
+        setOffline(true);
+        return;
+      }
       setProgress(1);
       const p = useProfile.getState();
-      p.refreshMissions();
       if (dailyStatus(p.daily.lastClaim, p.daily.streak, dayKey()).canClaim) setDailyOpen(true);
       setTimeout(() => go('lobby'), 350);
     });
@@ -33,7 +43,23 @@ export function SplashScreen() {
       alive = false;
       clearInterval(id);
     };
-  }, [go, setDailyOpen]);
+  }, [go, setDailyOpen, attempt]);
+
+  if (offline) {
+    return (
+      <div className="screen splash-screen">
+        <Logo size={0.9} />
+        <div className="card glossy setup-card center offline-card">
+          <span className="quick-hero">📡</span>
+          <h3>{t('Sin conexión')}</h3>
+          <p className="rule-note">{t('Parqués es un juego online: necesitas internet para jugar y guardar tu progreso.')}</p>
+          <button className="btn3d green wide" onClick={() => setAttempt((x) => x + 1)}>
+            {t('Reintentar')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen splash-screen">

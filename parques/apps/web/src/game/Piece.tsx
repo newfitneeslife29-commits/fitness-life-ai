@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import type { Color } from '@parques/engine';
-import type { PieceStyle } from '../meta/catalog';
+import type { PieceStyle } from '@parques/engine';
 import type { Pt } from './boardLayout';
 
 interface Props {

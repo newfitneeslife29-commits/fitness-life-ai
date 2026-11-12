@@ -9,14 +9,14 @@ import { PairCounter } from '../game/PairCounter';
 import { Banner } from '../game/Banner';
 import { boardBox, jailGeom, piecePoint, viewRotation } from '../game/boardLayout';
 import { phrases } from '../game/phrases';
-import { EMOTES } from '../meta/catalog';
+import { EMOTES } from '@parques/engine';
 import { GemIcon } from '../components/Counter';
 import { useFx } from '../stores/fxStore';
 import { useT } from '../lib/i18n';
 import { humanSeat, legalMovesCache, SOPLO_WINDOW_MS, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
-import { item } from '../meta/catalog';
+import { item } from '@parques/engine';
 import { Background } from '../components/Background';
 import { play } from '../audio/audio';
 import { useSettings } from '../stores/settingsStore';
@@ -266,9 +266,10 @@ export function GameScreen() {
                 <button
                   key={e.id}
                   className={gems < e.gems ? 'poor' : ''}
-                  onClick={() => {
-                    if (!s.emote(e.glyph, e.gems)) toast({ icon: '💎', title: t('Te faltan gemas'), sub: t('Gana partidas (+5) o cómpralas en la tienda') });
+                  onClick={async () => {
                     setChatOpen(false);
+                    const err = await s.emote(e.id);
+                    if (err) toast({ icon: '💎', title: err, sub: t('Gana partidas (+5) o cómpralas en la tienda') });
                   }}
                 >
                   {e.glyph}

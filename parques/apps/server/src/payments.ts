@@ -78,3 +78,52 @@ export class Payments {
     return { ok: true, productId, grantId: s.id ?? sessionId, playerId: s.metadata?.playerId };
   }
 }
+
+/**
+ * Compras dentro de las apps (Google Play y App Store) verificadas con RevenueCat.
+ * La app compra con el SDK de RevenueCat usando como "app user id" el id de la cuenta;
+ * el servidor consulta la API de RevenueCat y entrega cada transacción una sola vez.
+ * Variable: REVENUECAT_SECRET_KEY (llave secreta "sk_…" del proyecto en RevenueCat).
+ */
+export interface StoreTransaction {
+  grantId: string;
+  productId: string;
+  store: string;
+}
+
+export class StorePurchases {
+  constructor(
+    private secretKey = process.env.REVENUECAT_SECRET_KEY ?? '',
+    private fetchFn: typeof fetch = fetch,
+  ) {}
+
+  get enabled(): boolean {
+    return this.secretKey.length > 10;
+  }
+
+  /** Transacciones de compras únicas (consumibles y no consumibles) de ese usuario. */
+  async transactions(appUserId: string): Promise<StoreTransaction[]> {
+    if (!this.enabled) return [];
+    const res = await this.fetchFn(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`, {
+      headers: { Authorization: `Bearer ${this.secretKey}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { subscriber?: { non_subscriptions?: Record<string, { id: string; store?: string }[]> } };
+    const out: StoreTransaction[] = [];
+    for (const [storeId, txs] of Object.entries(json.subscriber?.non_subscriptions ?? {})) {
+      const productId = fromStoreId(storeId);
+      if (!productId) continue;
+      for (const tx of txs) out.push({ grantId: `rc_${tx.id}`, productId, store: tx.store ?? 'store' });
+    }
+    return out;
+  }
+}
+
+/** Convierte el id de la tienda (coins_s, item_board_oro) al id interno (coins-s, item:board-oro). */
+export function fromStoreId(storeId: string): string | null {
+  const candidates = [
+    storeId.replace(/_/g, '-'),
+    storeId.startsWith('item_') ? `item:${storeId.slice(5).replace(/_/g, '-')}` : '',
+  ];
+  return candidates.find((c) => c && productFor(c)) ?? null;
+}

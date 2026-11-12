@@ -6,14 +6,33 @@ import { createServer, type Server as HttpServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { Server } from 'socket.io';
-import { table as tableOf, TOP_ROOM_SIZE } from '@parques/engine';
-import type { ClientToServer, Hello, ServerToClient, TableId } from '@parques/engine';
-import { makeCode, Room, type Conn, type Timing } from './room';
+import {
+  addFriend,
+  applyMatch,
+  buyWithCoins,
+  claimDaily,
+  claimMission,
+  claimPass,
+  equip,
+  grantProduct,
+  levelFromXp,
+  payEntry,
+  removeFriend,
+  setIdentity,
+  spendEmote,
+  spin,
+  summaryFor,
+  table as tableOf,
+  TOP_ROOM_SIZE,
+} from '@parques/engine';
+import type { ClientToServer, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
+import { makeCode, Room, type Conn, type HumanResult, type Timing } from './room';
 import { Store } from './store';
-import { Payments } from './payments';
+import { Payments, StorePurchases } from './payments';
 
 interface SocketData {
-  hello?: Hello;
+  /** Id de la cuenta autenticada. */
+  uid?: string;
 }
 
 export interface ServerOptions {
@@ -24,6 +43,7 @@ export interface ServerOptions {
   matchWaitMs?: number;
   timing?: Partial<Timing>;
   payments?: Payments;
+  storePurchases?: StorePurchases;
 }
 
 const MIME: Record<string, string> = {
@@ -63,8 +83,24 @@ function readBody(req: Req): Promise<Record<string, unknown>> {
   });
 }
 
-/** API de pagos: /api/checkout (POST) y /api/purchase/verify?session_id= (GET). */
-function apiHandler(payments: Payments, store: Store) {
+/** Datos públicos del jugador que ven los demás en la mesa. */
+function helloOf(p: Profile): Hello {
+  return { playerId: p.id, name: p.name, avatar: p.photo ?? p.avatar, country: p.country, level: levelFromXp(p.xp).level };
+}
+
+/**
+ * API HTTP:
+ *  - POST /api/checkout {productId, playerId, returnUrl} → Stripe Checkout (web).
+ *  - GET  /api/purchase/verify?session_id= → verifica el pago y lo acredita a la cuenta.
+ *  - POST /api/iap/verify {id, token} → revisa compras de Google Play / App Store (RevenueCat) y las acredita.
+ */
+function apiHandler(payments: Payments, storePurchases: StorePurchases, store: Store, pushProfile: (id: string) => void) {
+  const credit = (playerId: string, productId: string, grantId: string, source: string): boolean => {
+    if (!store.recordPurchase(grantId, playerId, productId, source)) return false;
+    const r = store.update(playerId, (p) => grantProduct(p, productId, grantId));
+    if (r.ok) pushProfile(playerId);
+    return r.ok;
+  };
   return async (req: Req, res: Res): Promise<boolean> => {
     const url = new URL(req.url ?? '/', 'http://x');
     if (!url.pathname.startsWith('/api/')) return false;
@@ -81,14 +117,45 @@ function apiHandler(payments: Payments, store: Store) {
         return true;
       }
       if (url.pathname === '/api/purchase/verify' && req.method === 'GET') {
-        const id = url.searchParams.get('session_id') ?? '';
-        const r = await payments.verify(id);
-        if (r.ok && r.grantId) store.recordPurchase(r.grantId, r.playerId ?? '', r.productId!);
-        sendJson(res, r.ok ? 200 : 400, r);
+        const r = await payments.verify(url.searchParams.get('session_id') ?? '');
+        if (r.ok && r.grantId && r.playerId) credit(r.playerId, r.productId!, r.grantId, 'stripe');
+        sendJson(res, r.ok ? 200 : 400, { ok: r.ok, productId: r.productId, error: r.error, profile: r.playerId ? store.getProfile(r.playerId) : undefined });
+        return true;
+      }
+      if (url.pathname === '/api/iap/verify' && req.method === 'POST') {
+        const b = await readBody(req);
+        const id = String(b.id ?? '');
+        if (!store.auth(id, String(b.token ?? ''))) {
+          sendJson(res, 401, { ok: false, error: 'Cuenta no válida' });
+          return true;
+        }
+        if (!storePurchases.enabled) {
+          sendJson(res, 400, { ok: false, error: 'Compras de las tiendas no configuradas en el servidor' });
+          return true;
+        }
+        const granted: string[] = [];
+        for (const tx of await storePurchases.transactions(id)) if (credit(id, tx.productId, tx.grantId, tx.store)) granted.push(tx.productId);
+        sendJson(res, 200, { ok: true, granted, profile: store.getProfile(id) });
+        return true;
+      }
+      if (url.pathname === '/api/demo/grant' && req.method === 'POST') {
+        // Compras de PRUEBA (sin cobro): solo si no hay pagos reales configurados y no se desactivaron.
+        if (payments.enabled || process.env.PARQUES_DEMO_PURCHASES === 'off') {
+          sendJson(res, 403, { ok: false, error: 'Compras de prueba desactivadas' });
+          return true;
+        }
+        const b = await readBody(req);
+        const id = String(b.id ?? '');
+        if (!store.auth(id, String(b.token ?? ''))) {
+          sendJson(res, 401, { ok: false, error: 'Cuenta no válida' });
+          return true;
+        }
+        const ok = credit(id, String(b.productId ?? ''), `demo_${Date.now()}_${Math.random().toString(36).slice(2)}`, 'demo');
+        sendJson(res, ok ? 200 : 400, { ok, error: ok ? undefined : 'No se pudo comprar', profile: store.getProfile(id) });
         return true;
       }
       sendJson(res, 404, { error: 'No existe' });
-    } catch (e) {
+    } catch {
       sendJson(res, 500, { error: 'Error del servidor de pagos' });
     }
     return true;
@@ -105,7 +172,7 @@ function staticHandler(dir: string | null, api: (req: Req, res: Res) => Promise<
     }
     if (!dir || !existsSync(dir)) {
       res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
-      res.end('Servidor de Parqués activo. Abre la app web para jugar.');
+      res.end('Servidor de Parqués activo.');
       return;
     }
     const url = decodeURIComponent((req.url ?? '/').split('?')[0]!);
@@ -123,15 +190,80 @@ function staticHandler(dir: string | null, api: (req: Req, res: Res) => Promise<
 export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: Server; store: Store; close: () => Promise<void> } {
   const store = new Store(opts.dataFile ?? null);
   const payments = opts.payments ?? new Payments();
-  const http = createServer(staticHandler(opts.staticDir ?? null, apiHandler(payments, store)));
-  const io = new Server<ClientToServer, ServerToClient, Record<string, never>, SocketData>(http, { cors: { origin: '*' } });
+  const storePurchases = opts.storePurchases ?? new StorePurchases();
   const matchWait = opts.matchWaitMs ?? 10000;
 
   const rooms = new Map<string, Room>();
   const byCode = new Map<string, Room>();
   const playerRoom = new Map<string, Room>();
   const sockets = new Map<string, string>(); // playerId → socket.id
-  /** Una fila de emparejamiento por mesa. */
+
+  const emitTo = (playerId: string, event: string, ...args: unknown[]) => {
+    const sid = sockets.get(playerId);
+    if (sid) (io.to(sid).emit as (e: string, ...a: unknown[]) => void)(event, ...args);
+  };
+  const connFor = (playerId: string): Conn => ({ emit: (event, ...args) => emitTo(playerId, event, ...args) });
+  const pushProfile = (id: string) => {
+    const p = store.getProfile(id);
+    if (p) emitTo(id, 'profile', p);
+  };
+
+  const http = createServer(staticHandler(opts.staticDir ?? null, apiHandler(payments, storePurchases, store, pushProfile)));
+  const io = new Server<ClientToServer, ServerToClient, Record<string, never>, SocketData>(http, { cors: { origin: '*' }, maxHttpBufferSize: 200_000 });
+
+  /** Cobro de la entrada en la cuenta (lo llama la sala al empezar). */
+  const charge = (playerId: string, entry: number) => store.update(playerId, (p) => payEntry(p, entry)).ok;
+
+  /** Al terminar: premios en la cuenta de cada humano y, si es online entre personas, ranking y torneo. */
+  const onEnd = (room: Room, results: HumanResult[]) => {
+    const g = room.state;
+    if (g && results.length) {
+      for (const r of results) {
+        const summary = summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry });
+        const out = store.update(r.playerId, (p) => applyMatch(p, summary));
+        if (out.ok && 'outcome' in out) emitTo(r.playerId, 'match_result', { outcome: out.outcome, profile: out.profile });
+      }
+      if (room.mode === 'online') store.recordMatch(results.map((r) => r.playerId));
+    }
+    setTimeout(() => {
+      room.destroy();
+      rooms.delete(room.id);
+      if (room.code) byCode.delete(room.code);
+      for (const id of room.humans()) if (playerRoom.get(id) === room) playerRoom.delete(id);
+    }, 60000).unref?.();
+  };
+
+  function newRoom(kind: 'quick' | 'private', seats: number, rules: Room['rules'], hostId: string | null, table: TableId | null = 'barrio', extra: Partial<ConstructorParameters<typeof Room>[0]> = {}): Room {
+    let code: string | null = null;
+    if (kind === 'private') {
+      do code = makeCode();
+      while (byCode.has(code));
+    }
+    const room = new Room({ kind, code, hostId, seats, rules, timing: opts.timing, onEnd, table, charge, ...extra });
+    rooms.set(room.id, room);
+    if (code) byCode.set(code, room);
+    return room;
+  }
+
+  function leaveCurrent(playerId: string) {
+    const r = playerRoom.get(playerId);
+    if (!r) return;
+    r.leave(playerId);
+    playerRoom.delete(playerId);
+  }
+
+  /** ¿Puede entrar a esa mesa? (nivel, monedas y sala Top Leyendas). */
+  function eligible(p: Profile, t: TableId | null): string | null {
+    if (!t) return null;
+    const tier = tableOf(t);
+    if (!tier) return 'Mesa desconocida';
+    if (levelFromXp(p.xp).level < tier.minLevel) return `Necesitas nivel ${tier.minLevel}`;
+    if (tier.topOnly && store.rankOf(p.id) > TOP_ROOM_SIZE) return `Solo para el top ${TOP_ROOM_SIZE} del ranking`;
+    if (p.coins < tier.entry) return 'Te faltan monedas';
+    return null;
+  }
+
+  // ------------------------------------------------ Emparejamiento por mesa
   interface Queue {
     ids: string[];
     timer: ReturnType<typeof setTimeout> | null;
@@ -153,53 +285,6 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     }
   };
 
-  /** ¿Puede este jugador entrar a esa mesa? (nivel mínimo y sala Top Leyendas). */
-  function eligible(h: Hello, t: TableId): string | null {
-    const tier = tableOf(t);
-    if (!tier) return 'Mesa desconocida';
-    if ((h.level ?? 1) < tier.minLevel) return `Necesitas nivel ${tier.minLevel}`;
-    if (tier.topOnly && store.rankOf(h.playerId) > TOP_ROOM_SIZE) return `Solo para el top ${TOP_ROOM_SIZE} del ranking`;
-    return null;
-  }
-
-  const connFor = (playerId: string): Conn => ({
-    emit: (event, ...args) => {
-      const sid = sockets.get(playerId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (sid) (io.to(sid).emit as (e: string, ...a: unknown[]) => void)(event, ...args);
-    },
-  });
-
-  const onEnd = (room: Room, ranking: string[]) => {
-    if (ranking.length) store.recordMatch(ranking);
-    // La mesa se limpia un rato después para que los clientes vean el final.
-    setTimeout(() => {
-      room.destroy();
-      rooms.delete(room.id);
-      if (room.code) byCode.delete(room.code);
-      for (const id of room.humans()) if (playerRoom.get(id) === room) playerRoom.delete(id);
-    }, 60000).unref?.();
-  };
-
-  function newRoom(kind: 'quick' | 'private', seats: number, rules: Room['rules'], hostId: string | null, table: TableId = 'barrio'): Room {
-    let code: string | null = null;
-    if (kind === 'private') {
-      do code = makeCode();
-      while (byCode.has(code));
-    }
-    const room = new Room({ kind, code, hostId, seats, rules, timing: opts.timing, onEnd, table });
-    rooms.set(room.id, room);
-    if (code) byCode.set(code, room);
-    return room;
-  }
-
-  function leaveCurrent(playerId: string) {
-    const r = playerRoom.get(playerId);
-    if (!r) return;
-    r.leave(playerId);
-    playerRoom.delete(playerId);
-  }
-
   function launchQuick(t: TableId) {
     const q = queueOf(t);
     if (q.timer) clearTimeout(q.timer);
@@ -207,11 +292,11 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     const group = q.ids.slice(0, 4);
     q.ids = q.ids.slice(4);
     if (!group.length) return;
-    const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, t);
+    const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, t, { mode: 'online' });
     for (const id of group) {
-      const h = io.sockets.sockets.get(sockets.get(id) ?? '')?.data.hello;
-      if (!h) continue;
-      room.addPlayer(h, connFor(id));
+      const p = store.getProfile(id);
+      if (!p) continue;
+      room.addPlayer(helloOf(p), connFor(id));
       playerRoom.set(id, room);
     }
     room.start();
@@ -228,30 +313,114 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     for (const id of q.ids) connFor(id).emit('searching', { waiting: q.ids.length, startsInMs: Math.max(0, q.startsAt - Date.now()) });
   }
 
-  io.on('connection', (socket) => {
-    const me = () => socket.data.hello?.playerId;
+  // ------------------------------------------------ Operaciones de perfil
+  function runOp(uid: string, op: ProfileOp): ProfileOpResult {
+    const wrap = (r: { ok: boolean; error?: string; profile?: Profile } & Record<string, unknown>): ProfileOpResult => {
+      if (!r.ok) return { ok: false, error: r.error };
+      const { ok: _ok, profile, error: _e, ...result } = r;
+      return { ok: true, profile, result };
+    };
+    switch (op?.op) {
+      case 'get':
+        return { ok: true, profile: store.getProfile(uid) ?? undefined };
+      case 'identity':
+        return wrap(store.update(uid, (p) => setIdentity(p, op.patch ?? {})));
+      case 'buy':
+        return wrap(store.update(uid, (p) => buyWithCoins(p, String(op.itemId))));
+      case 'equip':
+        return wrap(store.update(uid, (p) => equip(p, String(op.itemId))));
+      case 'daily':
+        return wrap(store.update(uid, (p) => claimDaily(p)));
+      case 'spin':
+        return wrap(store.update(uid, (p) => spin(p)));
+      case 'mission':
+        return wrap(store.update(uid, (p) => claimMission(p, String(op.id))));
+      case 'pass':
+        return wrap(store.update(uid, (p) => claimPass(p, Number(op.tier), op.track === 'premium' ? 'premium' : 'free')));
+      case 'friend_add': {
+        const f = store.getProfile(String(op.friend?.id ?? '').toUpperCase());
+        const friend = f ? { id: f.id, name: f.name, avatar: f.avatar } : { id: String(op.friend?.id ?? ''), name: String(op.friend?.name ?? ''), avatar: '🙂' };
+        return wrap(store.update(uid, (p) => addFriend(p, friend)));
+      }
+      case 'friend_remove':
+        return wrap(store.update(uid, (p) => removeFriend(p, String(op.id))));
+      case 'emote': {
+        const r = store.update(uid, (p) => spendEmote(p, String(op.emoteId)));
+        if (r.ok && 'glyph' in r) playerRoom.get(uid)?.chat(uid, String(r.glyph));
+        return wrap(r);
+      }
+      case 'tournament_claim': {
+        const r = store.claimLastWeek(uid);
+        return r.ok ? { ok: true, profile: store.getProfile(uid) ?? undefined, result: { coins: r.coins, gems: r.gems, place: r.place } } : { ok: false, error: r.error };
+      }
+      default:
+        return { ok: false, error: 'Operación desconocida' };
+    }
+  }
 
-    socket.on('hello', (h, ack) => {
-      if (!h || typeof h.playerId !== 'string' || h.playerId.length < 4) return;
-      // El avatar puede ser un emoji o una foto pequeña (data URL JPEG/PNG de hasta ~40 KB).
-      const av = String(h.avatar ?? '🙂');
-      const avatar = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(av) && av.length <= 40000 ? av : av.slice(0, 8);
-      const hello: Hello = { playerId: h.playerId.slice(0, 16), name: String(h.name ?? 'Jugador').slice(0, 14), avatar, country: String(h.country ?? 'XX').slice(0, 2), level: Math.max(1, Math.min(2000, Number(h.level) || 1)) };
-      socket.data.hello = hello;
-      sockets.set(hello.playerId, socket.id);
-      store.upsertPlayer(hello);
+  io.on('connection', (socket) => {
+    const me = () => socket.data.uid;
+    const profileOf = () => (me() ? store.getProfile(me()!) : null);
+
+    /** Entrar: con id+token existentes, o crear una cuenta nueva de invitado. */
+    socket.on('auth', (a, ack) => {
+      let id: string | undefined;
+      let token: string | undefined;
+      let profile: Profile | null = null;
+      if (a?.id && a?.token) {
+        profile = store.auth(String(a.id), String(a.token));
+        if (!profile) return ack?.({ ok: false, error: 'Cuenta no válida' });
+        id = profile.id;
+      } else {
+        const acc = store.createAccount();
+        ({ id, token, profile } = acc);
+      }
+      socket.data.uid = id;
+      sockets.set(id!, socket.id);
+      ack?.({ ok: true, id, token, profile: profile! });
+    });
+
+    socket.on('profile_op', (op, ack) => {
+      const uid = me();
+      if (!uid) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      ack?.(runOp(uid, op));
+    });
+
+    socket.on('play_ai', (o, ack) => {
+      const p = profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const t: TableId | null = o?.table && tableOf(o.table) && !tableOf(o.table)!.onlineOnly ? o.table : null;
+      const err = eligible(p, t);
+      if (err) return ack?.({ ok: false, error: err });
+      leaveCurrent(p.id);
+      dequeue(p.id);
+      const players = ([2, 3, 4, 6] as const).includes(o?.players) ? o.players : 4;
+      const teams = !!o?.teams && players === 4;
+      const quick = !!o?.quick;
+      const r = o?.rules ?? {};
+      const room = newRoom(
+        'quick',
+        players,
+        { soplar: r.soplar !== false, triplePairPenalty: r.triplePairPenalty !== false, jailAttempts: Number(r.jailAttempts) || 3, teams, piecesPerPlayer: quick ? 2 : 4 },
+        null,
+        t,
+        { mode: quick ? 'quick' : teams ? 'teams' : 'ai', sides: players === 6 ? 6 : 4, botLevel: o?.level, timeLimitMs: quick ? 300000 : 0 },
+      );
+      room.addPlayer(helloOf(p), connFor(p.id));
+      playerRoom.set(p.id, room);
+      room.start();
       ack?.({ ok: true });
     });
 
     socket.on('quick_match', (t, ack) => {
-      const id = me();
-      if (!id) return ack?.({ ok: false, error: 'Primero saluda (hello)' });
+      const p = profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const tier: TableId = tableOf(t) ? t : 'barrio';
-      const err = eligible(socket.data.hello!, tier);
+      const err = eligible(p, tier);
       if (err) return ack?.({ ok: false, error: err });
-      leaveCurrent(id);
-      dequeue(id);
-      queueOf(tier).ids.push(id);
+      leaveCurrent(p.id);
+      dequeue(p.id);
+      queueOf(tier).ids.push(p.id);
       ack?.({ ok: true });
       armQueue(tier);
     });
@@ -262,31 +431,31 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     });
 
     socket.on('create_private', (o, ack) => {
-      const id = me();
-      if (!id) return ack?.({ ok: false, error: 'Primero saluda (hello)' });
-      leaveCurrent(id);
+      const p = profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const tier: TableId = o?.table && tableOf(o.table) ? o.table : 'barrio';
+      const err = eligible(p, tier);
+      if (err) return ack?.({ ok: false, error: err });
+      leaveCurrent(p.id);
       const seats = Math.max(2, Math.min(4, Number(o?.seats) || 4));
       const r = o?.rules ?? {};
-      const tier: TableId = o?.table && tableOf(o.table) ? o.table : 'barrio';
-      const err = eligible(socket.data.hello!, tier);
-      if (err) return ack?.({ ok: false, error: err });
-      const room = newRoom('private', seats, { soplar: r.soplar !== false, triplePairPenalty: r.triplePairPenalty !== false, jailAttempts: Number(r.jailAttempts) || 3, teams: !!r.teams }, id, tier);
-      room.addPlayer(socket.data.hello!, connFor(id));
-      playerRoom.set(id, room);
+      const room = newRoom('private', seats, { soplar: r.soplar !== false, triplePairPenalty: r.triplePairPenalty !== false, jailAttempts: Number(r.jailAttempts) || 3, teams: !!r.teams }, p.id, tier, { mode: 'online' });
+      room.addPlayer(helloOf(p), connFor(p.id));
+      playerRoom.set(p.id, room);
       ack?.({ ok: true, code: room.code! });
     });
 
     socket.on('join_private', (code, ack) => {
-      const id = me();
-      if (!id) return ack?.({ ok: false, error: 'Primero saluda (hello)' });
+      const p = profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const room = byCode.get(String(code).toUpperCase());
       if (!room) return ack?.({ ok: false, error: 'No existe una mesa con ese código' });
-      const err = eligible(socket.data.hello!, room.table);
+      const err = eligible(p, room.table);
       if (err) return ack?.({ ok: false, error: err });
-      if (playerRoom.get(id) !== room) leaveCurrent(id);
-      const r = room.addPlayer(socket.data.hello!, connFor(id));
+      if (playerRoom.get(p.id) !== room) leaveCurrent(p.id);
+      const r = room.addPlayer(helloOf(p), connFor(p.id));
       if (typeof r === 'string') return ack?.({ ok: false, error: r });
-      playerRoom.set(id, room);
+      playerRoom.set(p.id, room);
       ack?.({ ok: true });
     });
 
@@ -331,24 +500,15 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
     socket.on('tournament', (ack) => ack?.(store.tournament()));
 
-    socket.on('tournament_claim', (ack) => {
-      const id = me();
-      if (!id) return ack?.({ ok: false, error: 'Primero saluda (hello)' });
-      ack?.(store.claimLastWeek(id));
-    });
-
     socket.on('disconnect', () => {
       const id = me();
-      if (!id) return;
-      // Solo cuenta si es la conexión vigente del jugador (pudo haber abierto otra).
-      if (sockets.get(id) !== socket.id) return;
+      if (!id || sockets.get(id) !== socket.id) return;
       sockets.delete(id);
       dequeue(id);
       playerRoom.get(id)?.detach(id);
     });
   });
 
-  // Limpieza de mesas abandonadas.
   const sweep = setInterval(() => {
     const now = Date.now();
     for (const r of rooms.values()) {
@@ -372,7 +532,10 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         clearInterval(sweep);
         for (const q of queues.values()) if (q.timer) clearTimeout(q.timer);
         for (const r of rooms.values()) r.destroy();
-        io.close(() => resolve());
+        io.close(() => {
+          store.close();
+          resolve();
+        });
       }),
   };
 }

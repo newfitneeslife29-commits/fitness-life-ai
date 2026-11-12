@@ -4,8 +4,8 @@ import { formatUsd, PRODUCTS, ITEM_PRICES_USD } from '@parques/engine';
 import { TopBar } from '../components/TopBar';
 import { BottomNav } from '../components/BottomNav';
 import { CoinIcon, GemIcon } from '../components/Counter';
-import { CATEGORY_NAMES, EMOTES, ITEMS, type Category, type Item } from '../meta/catalog';
-import { activeSeason, SEASONS } from '../meta/seasons';
+import { CATEGORY_NAMES, EMOTES, ITEMS, type Category, type Item } from '@parques/engine';
+import { activeSeason, SEASONS } from '@parques/engine';
 import { useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
 import { useApp } from '../stores/appStore';
@@ -47,15 +47,14 @@ export function ShopScreen() {
   const [tab, setTab] = useState<Tab>('board');
   const season = activeSeason();
 
-  const buyCoins = (it: Item, el: HTMLElement) => {
-    const r = p.buy(it.id);
+  const buyCoins = async (it: Item, el: HTMLElement) => {
+    const r = await p.buy(it.id);
     if (!r.ok) {
       fx.toast({ icon: '🙅', title: t(r.error ?? 'No se pudo comprar') });
       if (r.error === 'Te faltan monedas') setTab('coins');
       return;
     }
     play('coin');
-    p.equip(it.id);
     fx.toast({ icon: it.emoji, title: t('¡{name} es tuyo!', { name: t(it.name) }), sub: t('Ya lo tienes equipado') });
     fx.fly('xp', centerOf(el), 4);
   };

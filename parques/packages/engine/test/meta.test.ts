@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DAILY_REWARDS, ROULETTE, TABLES, dailyStatus, daysBetween, matchRewards, spinRoulette, type MatchSummary } from './economy';
-import { advanceMissions, DAILY_POOL, pickMissions, WEEKLY_POOL } from './missions';
-import { ACHIEVEMENTS, CATEGORIES, EMPTY_STATS, newlyUnlocked, roman } from './achievements';
-import { activeSeason, isActive, nextSeason, SEASONS } from './seasons';
-import { DEFAULT_EQUIPPED, EMOTES, ITEMS, item } from './catalog';
-import { PASS_TIERS, freeReward, premiumReward, tierFromXp, PASS_XP_PER_TIER } from './battlepass';
-import { ITEM_PRICES_USD } from '@parques/engine';
+import { TABLES } from '../src';
+import { DAILY_REWARDS, ROULETTE, dailyStatus, daysBetween, matchRewards, spinRoulette, type MatchSummary } from '../src/meta/rewards';
+import { advanceMissions, DAILY_POOL, pickMissions, WEEKLY_POOL } from '../src/meta/missions';
+import { ACHIEVEMENTS, CATEGORIES, EMPTY_STATS, newlyUnlocked, roman } from '../src/meta/achievements';
+import { activeSeason, seasonActive, nextSeason, SEASONS } from '../src/meta/seasons';
+import { DEFAULT_EQUIPPED, EMOTES, ITEMS, item } from '../src/meta/catalog';
+import { PASS_TIERS, freeReward, premiumReward, tierFromXp, PASS_XP_PER_TIER } from '../src/meta/battlepass';
+import { ITEM_PRICES_USD } from '../src';
 
 const base: MatchSummary = { place: 0, players: 4, won: true, teams: false, captures: 2, captured: 1, crowned: 4, soplos: 1, pairs: 5, triplePenalties: 0, mode: 'ai', table: 'barrio', entry: 200 };
 
@@ -92,8 +93,8 @@ describe('pase de batalla', () => {
 describe('temporadas y tienda', () => {
   it('Navidad cruza el año; Carnaval y Feria en sus meses', () => {
     const nav = SEASONS.find((s) => s.id === 'navidad')!;
-    expect(isActive(nav, new Date(2026, 11, 24))).toBe(true);
-    expect(isActive(nav, new Date(2027, 0, 5))).toBe(true);
+    expect(seasonActive(nav, new Date(2026, 11, 24))).toBe(true);
+    expect(seasonActive(nav, new Date(2027, 0, 5))).toBe(true);
     expect(activeSeason(new Date(2026, 1, 20))?.id).toBe('carnaval');
     expect(activeSeason(new Date(2026, 4, 1))).toBeNull();
     expect(nextSeason(new Date(2026, 4, 1)).season.id).toBe('feria');

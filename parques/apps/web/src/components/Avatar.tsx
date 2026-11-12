@@ -1,4 +1,4 @@
-import { item } from '../meta/catalog';
+import { item } from '@parques/engine';
 
 /** Avatar con marco de la tienda. Muestra la foto del usuario si la subió (o si `emoji` es una foto). */
 export function Avatar({ emoji, photo, frameId, size = 56, color, level, ring }: { emoji: string; photo?: string | null; frameId?: string; size?: number; color?: string; level?: number; ring?: number }) {

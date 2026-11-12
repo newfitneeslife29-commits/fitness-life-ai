@@ -1,30 +1,37 @@
 # Parqués 🎲🇨🇴
 
-Parqués colombiano moderno para el navegador y el celular (PWA instalable): tablero clásico, contra la máquina,
-local, parejas, Modo Rápido, online con amigos, torneos, tienda de skins, misiones y mucho más.
+Parqués colombiano **online** para iOS, Android y navegador: tablero clásico en 3D, partidas contra la máquina y entre
+personas, mesas con apuesta, Sala Élite y Top Leyendas, torneos, ranking, pase de batalla, más de 1.200 logros y 4 idiomas.
+El servidor guarda las cuentas y es la autoridad del juego (sin trampas).
 
-## Probar
+## Probar en el computador
 ```bash
 cd parques
 npm install
-npm run dev          # app en http://localhost:5173
-npm run dev:server   # (otra terminal) servidor online para partidas en línea, ranking y torneo
+npm run dev:server   # servidor online (cuentas, partidas, pagos) en :3001
+npm run dev          # en otra terminal: la app en http://localhost:5173
 ```
-- Celular en la misma red Wi-Fi: abre `http://<IP-de-tu-PC>:5173`.
-- Todo en un solo puerto (como producción): `npm start` y abre `http://localhost:3001`.
-- `?speed=10` en la URL acelera animaciones y bots.
+Celular en la misma red Wi-Fi: abre `http://<IP-de-tu-PC>:5173`.
 
-## Pagos con dinero real
-Sin configuración, las compras funcionan en **modo prueba** (no cobran). Para cobrar de verdad con Stripe:
+## Apps iOS y Android
 ```bash
-STRIPE_SECRET_KEY=sk_live_xxx npm run dev:server   # o sk_test_xxx para probar con tarjetas de prueba
+cd parques/apps/web
+cp .env.mobile.example .env.mobile   # pon la URL HTTPS de tu servidor y las llaves de RevenueCat
+npm run android      # abre Android Studio  → Run ▶ (emulador o celular)
+npm run ios          # abre Xcode (solo en Mac) → Run ▶
 ```
-⚠️ Antes de cobrar en producción hay que guardar monedas y compras en cuentas del servidor (hoy viven en el navegador).
+Para publicar: en Android Studio *Build → Generate Signed Bundle* (Google Play) y en Xcode *Product → Archive* (App Store).
+
+## Servidor en producción
+```bash
+cd parques && npm start             # compila la web y sirve todo en el puerto 3001 (PORT para cambiarlo)
+```
+Variables: `PARQUES_DATA` (archivo de la base SQLite), `STRIPE_SECRET_KEY` (pagos web), `REVENUECAT_SECRET_KEY`
+(compras en Google Play / App Store), `PARQUES_DEMO_PURCHASES=off` (apaga las compras de prueba). Debe ir detrás de HTTPS.
 
 ## Pruebas
 ```bash
-npm test         # motor (85), servidor (19) y web (25)
-npm run demo     # partida de 4 bots narrada en la consola
+npm test         # motor (107), servidor (24) y web (11)
 ```
 
-El contexto completo para desarrollar (reglas, arquitectura y convenciones) está en [CLAUDE.md](./CLAUDE.md).
+El contexto completo para desarrollar está en [CLAUDE.md](./CLAUDE.md).

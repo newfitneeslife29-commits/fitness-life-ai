@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { getSession, useOnline } from '../lib/online';
+import { useFx } from '../stores/fxStore';
 import { TopBar } from '../components/TopBar';
 import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
@@ -86,19 +89,49 @@ export function SettingsScreen() {
         <button className="btn3d small ghost" onClick={() => go('profile')}>
           ✏️ {t('Editar nombre, foto y país')}
         </button>
-        <button
-          className="btn3d small red"
-          onClick={() => {
-            if (confirm(t('¿Borrar todo tu progreso guardado en este dispositivo?'))) {
-              p.reset();
-              go('lobby');
-            }
-          }}
-        >
-          🗑️ {t('Borrar progreso')}
-        </button>
+        <AccountRecovery />
       </section>
       <p className="rule-note">{t('Parqués · progreso guardado en este dispositivo')}</p>
+    </div>
+  );
+}
+
+/** Cuenta guardada en el servidor: código de recuperación para entrar desde otro celular. */
+function AccountRecovery() {
+  const t = useT();
+  const toast = useFx((f) => f.toast);
+  const restore = useOnline((o) => o.restore);
+  const [show, setShow] = useState(false);
+  const [code, setCode] = useState('');
+  const session = getSession();
+  const recovery = session ? `${session.id}-${session.token}` : '';
+  return (
+    <div className="recovery">
+      <p className="rule-note">{t('Tu progreso se guarda en el servidor. Con tu código de recuperación puedes entrar desde otro celular.')}</p>
+      {show ? (
+        <div className="recovery-code" onClick={() => navigator.clipboard?.writeText(recovery).then(() => toast({ icon: '📋', title: t('Código copiado') }))}>
+          {recovery}
+        </div>
+      ) : (
+        <button className="btn3d small ghost" onClick={() => setShow(true)}>
+          🔑 {t('Ver mi código de recuperación')}
+        </button>
+      )}
+      <div className="join-row">
+        <input className="text-input" placeholder={t('Pega un código de recuperación')} value={code} onChange={(e) => setCode(e.target.value)} />
+        <button
+          className="btn3d small blue"
+          disabled={code.length < 20}
+          onClick={async () => {
+            const i = code.trim().indexOf('-');
+            const err = i > 0 ? await restore(code.trim().slice(0, i), code.trim().slice(i + 1)) : 'Cuenta no válida';
+            toast(err ? { icon: '⚠️', title: t(err) } : { icon: '✅', title: t('¡Cuenta recuperada!') });
+            if (!err) setCode('');
+          }}
+        >
+          {t('Entrar')}
+        </button>
+      </div>
     </div>
   );
 }

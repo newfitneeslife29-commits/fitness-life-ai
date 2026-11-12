@@ -8,12 +8,13 @@ import { humanSeat, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
-import { levelFromXp } from '../meta/economy';
+import { levelFromXp } from '@parques/engine';
 import { play } from '../audio/audio';
 import { useT } from '../lib/i18n';
+import { useOnline } from '../lib/online';
 
 export function VictoryScreen() {
-  const { game, config, rematch, quit, finishMatch, outcome, online } = useGame();
+  const { game, config, rematch, quit, outcome, online } = useGame();
   const go = useApp((a) => a.go);
   const profile = useProfile();
   const lvl = useLevel();
@@ -23,14 +24,22 @@ export function VictoryScreen() {
   const [levelUp, setLevelUp] = useState<number | null>(null);
   const [xpShown, setXpShown] = useState<number | null>(null);
 
+  // Sonido de victoria / derrota al entrar.
   useEffect(() => {
     if (!game || !config) return;
-    const before = profile.xp;
-    const res = outcome ?? finishMatch();
     const me = game.players.findIndex((_, i) => humanSeat(config, game, i));
     const won = me >= 0 && (game.rules.teams ? game.players[game.ranking[0]!]!.team === game.players[me]!.team : game.ranking[0] === me);
     play(won || me < 0 ? 'win' : 'lose');
-    if (!res || outcome) return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Los premios los manda el servidor (puede tardar un instante): se animan al llegar.
+  const shown = useRef(false);
+  useEffect(() => {
+    const res = outcome;
+    if (!res || shown.current) return;
+    shown.current = true;
+    const before = Math.max(0, profile.xp - res.xp);
     setXpShown(before);
     const timers: ReturnType<typeof setTimeout>[] = [];
     timers.push(
@@ -41,24 +50,24 @@ export function VictoryScreen() {
           play('coin');
         }
         setXpShown(before + res.xp);
-      }, 1300),
+      }, 900),
     );
     if (res.levelAfter > res.levelBefore) {
       timers.push(
         setTimeout(() => {
           setLevelUp(res.levelAfter);
           play('levelup');
-        }, 2600),
+        }, 2400),
       );
     }
-    if (res.gems) timers.push(setTimeout(() => { fx.fly('gem', centerOf(rewardsRef.current), 5); fx.toast({ icon: '💎', title: t('+{n} gemas por ganar', { n: res.gems }) }); }, 1700));
+    if (res.gems) timers.push(setTimeout(() => { fx.fly('gem', centerOf(rewardsRef.current), 5); fx.toast({ icon: '💎', title: t('+{n} gemas por ganar', { n: res.gems }) }); }, 1500));
     res.achievements.slice(0, 4).forEach((a, i) => timers.push(setTimeout(() => fx.toast({ icon: a.badge, title: t('¡Logro desbloqueado!'), sub: `${t(a.name.replace(/ [IVXL]+$/, ''))} ${a.name.match(/[IVXL]+$/)?.[0] ?? ''} · +${a.coins} 🪙` }), 2200 + i * 900)));
     if (res.achievements.length > 4) timers.push(setTimeout(() => fx.toast({ icon: '🏅', title: t('+{n} logros más', { n: res.achievements.length - 4 }) }), 6000));
     res.missions.forEach((m, i) => timers.push(setTimeout(() => fx.toast({ icon: '🎯', title: t('Misión completada'), sub: `${t(m.text)} · ${t('reclámala en Eventos')}` }), 3200 + i * 900)));
     if (res.passTiersGained > 0) timers.push(setTimeout(() => fx.toast({ icon: '🎟️', title: t('¡Subiste {n} nivel(es) en el pase!', { n: res.passTiersGained }) }), 4200));
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [outcome]);
 
   if (!game || !config) return null;
 
@@ -146,14 +155,22 @@ export function VictoryScreen() {
       </div>
 
       <div className="victory-actions">
-        {!online ? (
+        {!online || config.mode !== 'online' ? (
           <motion.button
             className="btn3d green shine"
             whileTap={{ scale: 0.93 }}
-            onClick={() => {
-              if (config.table) return go('tables');
-              rematch();
-              go('game');
+            onClick={async () => {
+              if (!online) {
+                rematch();
+                return go('game');
+              }
+              // Partida contra la máquina en el servidor: la misma mesa otra vez (cobra la entrada).
+              quit();
+              const err = await useOnline.getState().rematchAi();
+              if (err) {
+                fx.toast({ icon: '⚠️', title: t(err) });
+                go('lobby');
+              }
             }}
           >
             🔁 {t('Revancha')}

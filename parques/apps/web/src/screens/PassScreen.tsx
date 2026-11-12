@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { formatUsd, productFor } from '@parques/engine';
 import { TopBar } from '../components/TopBar';
 import { CoinIcon, GemIcon } from '../components/Counter';
-import { PASS_TIERS, PASS_XP_PER_TIER, freeReward, passEndsAt, passSeasonName, premiumReward, tierFromXp, type PassReward } from '../meta/battlepass';
-import { item } from '../meta/catalog';
+import { PASS_TIERS, PASS_XP_PER_TIER, freeReward, passEndsAt, passSeasonName, premiumReward, tierFromXp, type PassReward } from '@parques/engine';
+import { item } from '@parques/engine';
 import { useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
 import { useSettings } from '../stores/settingsStore';
@@ -46,10 +46,6 @@ export function PassScreen() {
   const fx = useFx();
   const scroller = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    p.refreshPass();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const pass = p.pass;
   const reached = tierFromXp(pass.xp);
@@ -60,9 +56,10 @@ export function PassScreen() {
     el?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }, [reached]);
 
-  const claim = (tier: number, track: 'free' | 'premium', el: HTMLElement) => {
-    const r = p.claimPass(tier, track);
-    if (!r) return;
+  const claim = async (tier: number, track: 'free' | 'premium', el: HTMLElement) => {
+    const res = await p.claimPass(tier, track);
+    if (!res.ok || !res.result) return fx.toast({ icon: '⚠️', title: t(res.error ?? 'Error') });
+    const r = res.result.reward;
     play('coin');
     const c = centerOf(el);
     if (r.coins) fx.fly('coin', c, 8);

@@ -19,10 +19,10 @@ import {
 import type { Action, AiLevel, GameEvent, GameState, HouseRules, Move, PieceRef, UpdateMsg } from '@parques/engine';
 import { piecePoint, trackCell, type Pt } from '../game/boardLayout';
 import { BOT_LINES, pick } from '../game/phrases';
-import { tr } from '../lib/i18n';
 import { play, vibrate } from '../audio/audio';
-import type { TableTier, MatchSummary } from '../meta/economy';
-import { useProfile, type MatchOutcome } from './profileStore';
+import type { TableTier, MatchOutcome } from '@parques/engine';
+import { useProfile } from './profileStore';
+import { tr } from '../lib/i18n';
 
 export interface SeatConfig {
   name: string;
@@ -118,7 +118,9 @@ interface GameStore {
   outcome: MatchOutcome | null;
 
   start: (config: MatchConfig) => void;
-  startOnline: (config: MatchConfig, msg: UpdateMsg, link: OnlineLink, mySeat: number) => void;
+  startOnline: (config: MatchConfig, msg: UpdateMsg, link: OnlineLink, mySeat: number, endsAt?: number | null) => void;
+  /** Premios que mandó el servidor al terminar. */
+  setOutcome: (o: MatchOutcome) => void;
   receive: (msg: UpdateMsg) => void;
   rematch: () => void;
   quit: () => void;
@@ -130,10 +132,9 @@ interface GameStore {
   say: (player: number, text: string) => void;
   chat: (text: string) => void;
   /** Emote pagado con gemas. Devuelve false si no alcanzan las gemas. */
-  emote: (glyph: string, gems: number) => boolean;
+  emote: (emoteId: string) => Promise<string | null>;
   setPaused: (p: boolean) => void;
   /** Aplica los premios de la partida al perfil (una sola vez). */
-  finishMatch: () => MatchOutcome | null;
 }
 
 let uid = 1;
@@ -446,11 +447,15 @@ export const useGame = create<GameStore>((set, get) => {
       scheduleNext();
     },
 
-    startOnline(config, msg, link, mySeat) {
+    setOutcome(o) {
+      set({ outcome: o });
+    },
+
+    startOnline(config, msg, link, mySeat, endsAt) {
       epoch++;
       clearTimers();
       queue = Promise.resolve();
-      set({ ...fresh(config, msg.state), matchDeadline: null, online: link, mySeat, viewSide: viewSideFor(config, mySeat, msg.state) });
+      set({ ...fresh(config, msg.state), matchDeadline: endsAt ?? null, online: link, mySeat, viewSide: viewSideFor(config, mySeat, msg.state) });
       applyDeadlines(msg);
       autoSelect();
     },
@@ -570,11 +575,17 @@ export const useGame = create<GameStore>((set, get) => {
       if (speaker >= 0) get().say(speaker, text);
     },
 
-    emote(glyph, gems) {
-      if (!useProfile.getState().spendGems(gems)) return false;
+    async emote(emoteId) {
+      // El servidor cobra las gemas; en online también reparte el emote a la mesa.
+      const r = await useProfile.getState().emote(emoteId);
+      if (!r.ok) return tr(r.error ?? 'Te faltan gemas');
       play('pair');
-      get().chat(glyph);
-      return true;
+      if (!get().online && r.result?.glyph) {
+        const g = get().game;
+        const me = g ? g.players.findIndex((_, i) => isHuman(i)) : -1;
+        if (me >= 0) get().say(me, r.result.glyph);
+      }
+      return null;
     },
 
     setPaused(p) {
@@ -584,35 +595,6 @@ export const useGame = create<GameStore>((set, get) => {
       else scheduleNext();
     },
 
-    finishMatch() {
-      const { game, config, outcome } = get();
-      if (outcome || !game || !config || game.phase !== 'over') return outcome;
-      const humans = game.players.map((_, i) => i).filter((i) => isHuman(i));
-      // En partidas locales de varios humanos no hay premios individuales.
-      if (humans.length !== 1) return null;
-      const me = humans[0]!;
-      const p = game.players[me]!;
-      const place = game.ranking.indexOf(me);
-      const won = game.rules.teams ? game.players[game.ranking[0]!]!.team === p.team : place === 0;
-      const summary: MatchSummary = {
-        place: game.rules.teams ? (won ? 0 : 2) : place,
-        players: game.players.length,
-        won,
-        captures: p.stats.captures,
-        captured: p.stats.captured,
-        crowned: p.stats.crowned,
-        soplos: p.stats.soplosHechos,
-        pairs: p.stats.pairs,
-        triplePenalties: p.stats.tripleParCastigos,
-        mode: config.mode,
-        table: config.table,
-        entry: config.entry,
-        teams: !!game.rules.teams,
-      };
-      const result = useProfile.getState().applyMatch(summary);
-      set({ outcome: result });
-      return result;
-    },
   };
 
   function applyDeadlines(msg: UpdateMsg) {

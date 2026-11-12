@@ -22,7 +22,7 @@ npm install
 npm test            # todas las pruebas (motor, web y servidor)
 npm run typecheck
 npm run dev         # app web en http://localhost:5173 (?speed=10 acelera animaciones y bots)
-npm run dev:server  # servidor online en :3001 (Vite le pasa /socket.io por proxy)
+npm run dev:server  # servidor online en :3001 (OBLIGATORIO: el juego es online; Vite le pasa /socket.io y /api)
 npm start           # compila la web y la sirve junto al servidor en http://localhost:3001
 npm run demo        # partida de 4 bots narrada en consola (npm run demo -- <semilla>)
 npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.svg (Playwright)
@@ -98,8 +98,8 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 - **Pagos con dinero real** (`apps/server/src/payments.ts` + `apps/web/src/lib/payments.ts`): Stripe Checkout por API REST.
   El precio lo fija el servidor (`PRODUCTS` / `ITEM_PRICES_USD` del motor). Al volver (`?purchase=success&session_id=`) el
   servidor verifica `payment_status = paid` y el cliente entrega (ids de compra deduplicados en `profile.grants`).
-  Variables: `STRIPE_SECRET_KEY` (sk_…), `STRIPE_CURRENCY` (usd por defecto). **Sin llave → modo prueba** (diálogo claro, no cobra).
-  ⚠️ El monedero vive en localStorage: antes de cobrar en producción hay que mover monedas/compras a cuentas del servidor (Supabase).
+  Variables: `STRIPE_SECRET_KEY` (sk_…), `STRIPE_CURRENCY` (usd por defecto). **Sin llave → modo prueba** (diálogo claro, no cobra;
+  el servidor acredita por `/api/demo/grant`; se apaga con `PARQUES_DEMO_PURCHASES=off`).
 - **Tienda**: tableros mayormente con dinero real (Caribe, Madera fina, Noche de rumba, Mármol real, Oro 24K, temporada) y pocos con monedas
   (Eje Cafetero); igual dados/fichas/marcos/efectos. Paquetes de monedas y gemas en dólares. Objetos `currency: 'pass'` solo en el pase.
 - **Pase de batalla** mensual (`meta/battlepass.ts`, `screens/PassScreen.tsx`): 50 niveles, 150 XP de pase por nivel (la XP de las partidas),
@@ -111,6 +111,33 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 - **Gráficos 3D** (SVG/CSS): tablero con canto/grosor y perspectiva (`BoardScene`, `BoardMini` para tienda/lobby/pase con prefijo de ids),
   fichas tipo peón con sombreado (`PieceGlyph`, gradientes en `components/GlobalDefs.tsx`), dados cubo 3D CSS (`Cube`).
 - **Salas online por mesa**: `quick_match(table)`; el servidor valida nivel (enviado en `hello`) y el puesto en el ranking para Top Leyendas.
+
+## Juego ONLINE (v0.7): el servidor es la autoridad
+- **Cuentas**: al abrir la app el cliente hace `auth` (Socket.IO). Sin sesión, el servidor crea una cuenta de invitado y devuelve
+  `{id, token}` (se guarda en localStorage como `parques-session`; `id-token` es el **código de recuperación** en Ajustes → Cuenta).
+- **Base de datos**: SQLite incluido en Node (`node:sqlite`, `apps/server/src/store.ts`), archivo `apps/server/data/parques.db`
+  (o `PARQUES_DATA`). Tablas: accounts (perfil JSON + rating), tournaments, claims, purchases.
+- **Perfil = datos + operaciones puras** en `packages/engine/src/meta/profile.ts` (applyMatch, payEntry, buyWithCoins, equip,
+  spendEmote, grantProduct, claimDaily, spin, claimMission, claimPass, setIdentity, amigos). El servidor las ejecuta (`profile_op`)
+  dentro de una transacción; el cliente (`stores/profileStore.ts`) es solo un espejo que recibe `profile`.
+- **Todas las partidas con premio corren en el servidor**, también contra la máquina (`play_ai` → sala con bots, 4 o 6 jugadores,
+  parejas, Modo Rápido con `TIME_UP`). La sala cobra la entrada al empezar (`charge`) y al terminar aplica `applyMatch` a cada
+  humano y envía `match_result` (premios). Ranking y torneo solo cuentan partidas entre personas (`mode: 'online'`).
+  Lo único local es "varias personas en el mismo celular" (gratis, sin premios).
+- Datos del juego compartidos (catálogo, logros, misiones, pase, temporadas, premios) en `packages/engine/src/meta/`.
+- Tiempos de prueba del servidor: `PARQUES_TURN_MS`, `PARQUES_BOT_MS`. URL del servidor en el cliente: Ajustes, o `VITE_SERVER_URL`.
+
+## Apps iOS y Android (Capacitor 7)
+- Proyectos nativos en `apps/web/android` (Gradle) y `apps/web/ios` (Xcode, Swift Package Manager). Id: `co.parques.app`.
+- `cp apps/web/.env.mobile.example apps/web/.env.mobile` y llenar `VITE_SERVER_URL` (HTTPS público) y llaves de RevenueCat.
+- `npm run android -w @parques/web` / `npm run ios -w @parques/web`: compila (`vite build --mode mobile`), `cap sync` y abre el IDE.
+- Íconos y pantallas de inicio: `npm run assets:mobile -w @parques/web` (desde `public/icon.svg`).
+- `src/lib/native.ts`: barra de estado, splash, botón atrás de Android (lobby/minimizar, pausa en partida), háptica.
+  El service worker de la PWA solo se registra en la web.
+- **Compras en las tiendas** (obligatorio por Apple/Google para bienes digitales): RevenueCat (`@revenuecat/purchases-capacitor`).
+  Ids de producto en las tiendas = `storeProductId()` (`coins_s`, `gems_m`, `pass_premium`, `item_board_oro`…), todos consumibles
+  o no consumibles (no suscripciones). La app compra con `appUserID = id de la cuenta`; luego `POST /api/iap/verify {id, token}`:
+  el servidor consulta `api.revenuecat.com/v1/subscribers/{id}` con `REVENUECAT_SECRET_KEY` y acredita cada transacción una vez.
 
 ## Reglas implementadas
 1. 4 fichas por jugador (2 en Modo Rápido), todas empiezan en la cárcel. Colores en orden de juego: amarillo, rojo, verde, azul (+ naranja y morado en 6).
@@ -148,10 +175,11 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 4. ✅ Monedas y gemas, mesas con apuesta, tienda de skins, misiones, recompensa diaria (racha 7 días + ruleta), logros, niveles/XP.
 5. ✅ Online: Node + Socket.IO, partida rápida, mesas privadas, reconexión, la IA reemplaza a quien abandona.
 6. ✅ Torneo semanal con tabla, ranking (global, país, amigos) y temporadas con skins.
+8. ✅ v0.7: juego 100 % online (cuentas y monedero en el servidor, partidas contra la máquina en el servidor), apps iOS/Android con Capacitor y compras en tiendas (RevenueCat).
 7. ✅ v0.6: economía con entradas y reparto, nivel 2000, pagos reales (Stripe), gemas para emotes, pase de batalla,
    1.205 logros, foto de perfil, 4 idiomas, Sala Élite y Top Leyendas, gráficos 3D.
 
 ## Pendiente / ideas
-- **Cuentas en la nube (Supabase) — necesario antes de cobrar dinero real**: hoy monedas/compras viven en localStorage y el servidor usa JSON.
-- Para publicar en Google Play / App Store se requieren sus sistemas de pago (Play Billing / StoreKit) en lugar de Stripe.
+- Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
+- Para muchos jugadores a la vez: Postgres en lugar de SQLite y varias instancias del servidor (Socket.IO adapter).
 - Online solo en tablero de 4 (6 jugadores es local/IA).

@@ -8,6 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // El service worker se registra a mano solo en la web (no dentro de las apps nativas).
+      injectRegister: null,
       includeAssets: ['favicon.svg', 'icon.svg', 'icons/*.png'],
       manifest: {
         name: 'Parqués',

@@ -4,6 +4,7 @@
  */
 import type { Action, GameEvent, GameState, HouseRules } from './types';
 import type { TableId } from './economy';
+import type { MatchOutcome, Profile, Friend } from './meta/profile';
 
 export interface NetSeat {
   side: number;
@@ -25,9 +26,13 @@ export interface RoomInfo {
   rules: Partial<HouseRules>;
   status: 'waiting' | 'playing' | 'over';
   kind: 'quick' | 'private';
-  /** Mesa (define la entrada que paga cada jugador). */
-  table: TableId;
+  /** Mesa (define la entrada que paga cada jugador); null = práctica sin apuesta. */
+  table: TableId | null;
   entry: number;
+  sides: 4 | 6;
+  mode: 'online' | 'ai' | 'quick' | 'teams';
+  /** Fin del Modo Rápido (timestamp del servidor) o null. */
+  endsAt: number | null;
 }
 
 export interface Deadlines {
@@ -52,8 +57,52 @@ export interface Hello {
   level?: number;
 }
 
+/** Operaciones sobre la cuenta que ejecuta el servidor. */
+export type ProfileOp =
+  | { op: 'get' }
+  | { op: 'identity'; patch: { name?: string; avatar?: string; photo?: string | null; country?: string } }
+  | { op: 'buy'; itemId: string }
+  | { op: 'equip'; itemId: string }
+  | { op: 'daily' }
+  | { op: 'spin' }
+  | { op: 'mission'; id: string }
+  | { op: 'pass'; tier: number; track: 'free' | 'premium' }
+  | { op: 'friend_add'; friend: Friend }
+  | { op: 'friend_remove'; id: string }
+  | { op: 'emote'; emoteId: string }
+  | { op: 'tournament_claim' };
+
+export interface ProfileOpResult {
+  ok: boolean;
+  error?: string;
+  profile?: Profile;
+  /** Datos extra según la operación (premio de la ruleta, día reclamado, etc.). */
+  result?: Record<string, unknown>;
+}
+
+export interface AuthResult {
+  ok: boolean;
+  error?: string;
+  id?: string;
+  /** Solo al crear la cuenta: el secreto para volver a entrar (y código de recuperación). */
+  token?: string;
+  profile?: Profile;
+}
+
+/** Partida contra la máquina en el servidor. */
+export interface PlayAiOpts {
+  table: TableId | null;
+  players: 2 | 3 | 4 | 6;
+  teams?: boolean;
+  quick?: boolean;
+  level?: 'easy' | 'normal' | 'expert';
+  rules?: Partial<HouseRules>;
+}
+
 export interface ClientToServer {
-  hello: (h: Hello, ack: (r: { ok: true }) => void) => void;
+  auth: (a: { id?: string; token?: string }, ack: (r: AuthResult) => void) => void;
+  profile_op: (op: ProfileOp, ack: (r: ProfileOpResult) => void) => void;
+  play_ai: (o: PlayAiOpts, ack: (r: { ok: boolean; error?: string }) => void) => void;
   quick_match: (table: TableId, ack: (r: { ok: boolean; error?: string }) => void) => void;
   cancel_match: () => void;
   create_private: (opts: { seats: number; rules: Partial<HouseRules>; table?: TableId }, ack: (r: { ok: boolean; code?: string; error?: string }) => void) => void;
@@ -65,7 +114,6 @@ export interface ClientToServer {
   resume: (roomId: string, ack: (r: { ok: boolean }) => void) => void;
   ranking: (q: { scope: 'global' | 'country' | 'friends'; country?: string; friends?: string[] }, ack: (rows: RankRow[]) => void) => void;
   tournament: (ack: (t: TournamentInfo) => void) => void;
-  tournament_claim: (ack: (r: { ok: boolean; coins?: number; gems?: number; place?: number; error?: string }) => void) => void;
 }
 
 export interface ServerToClient {
@@ -76,6 +124,15 @@ export interface ServerToClient {
   chat: (msg: { seat: number; text: string }) => void;
   notice: (msg: { text: string }) => void;
   searching: (msg: { waiting: number; startsInMs: number }) => void;
+  /** Perfil actualizado por el servidor. */
+  profile: (p: Profile) => void;
+  /** Premios de la partida que acaba de terminar. */
+  match_result: (r: { outcome: MatchOutcome; profile: Profile }) => void;
+}
+
+/** Id del producto en Google Play / App Store (sin ':' ni '-'). */
+export function storeProductId(productId: string): string {
+  return productId.replace(/[:-]/g, '_');
 }
 
 export interface RankRow {

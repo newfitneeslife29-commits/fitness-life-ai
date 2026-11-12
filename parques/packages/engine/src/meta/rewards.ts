@@ -1,8 +1,6 @@
-/** Economía del cliente: usa la compartida del motor y agrega recompensa diaria y ruleta. */
-import { matchXp, payouts, table, WINNER_GEMS, type TableId } from '@parques/engine';
+/** Premios de partida, recompensa diaria y ruleta. */
+import { matchXp, payouts, table, WINNER_GEMS, type TableId } from '../economy';
 
-export { TABLES, levelFromXp, levelReward, xpForLevel, xpToReach, MAX_LEVEL, TOTAL_XP, payouts, matchXp, table } from '@parques/engine';
-export type { TableTier, TableId } from '@parques/engine';
 
 /** Monedas iniciales al crear la cuenta. */
 export const START_COINS = 1000;

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Fx } from '../stores/gameStore';
-import type { EffectStyle } from '../meta/catalog';
+import type { EffectStyle } from '@parques/engine';
 
 /** Explosión de estrellas, corona, flash de cárcel y anillo de salida. */
 export function FxLayer({ fx, rot, effect = 'stars' }: { fx: Fx[]; rot: number; effect?: EffectStyle }) {

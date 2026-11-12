@@ -20,7 +20,7 @@ function md(d: Date): number {
   return (d.getMonth() + 1) * 100 + d.getDate();
 }
 
-export function isActive(s: Season, date: Date): boolean {
+export function seasonActive(s: Season, date: Date): boolean {
   const x = md(date);
   const a = s.from[0] * 100 + s.from[1];
   const b = s.to[0] * 100 + s.to[1];
@@ -28,7 +28,7 @@ export function isActive(s: Season, date: Date): boolean {
 }
 
 export function activeSeason(date = new Date()): Season | null {
-  return SEASONS.find((s) => isActive(s, date)) ?? null;
+  return SEASONS.find((s) => seasonActive(s, date)) ?? null;
 }
 
 /** Fin de la temporada activa (timestamp) para la cuenta regresiva. */

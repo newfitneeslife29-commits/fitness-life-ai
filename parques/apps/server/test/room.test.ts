@@ -65,7 +65,7 @@ describe('Room (servidor autoritativo)', () => {
     room.start();
     for (let i = 0; i < 4000 && room.status === 'playing'; i++) vi.advanceTimersByTime(60);
     expect(room.status).toBe('over');
-    expect(onEnd).toHaveBeenCalledWith(room, ['AAAA']);
+    expect(onEnd.mock.calls[0]![1].map((r: { playerId: string }) => r.playerId)).toEqual(['AAAA']);
     expect(a.last('update').state.phase).toBe('over');
   });
 

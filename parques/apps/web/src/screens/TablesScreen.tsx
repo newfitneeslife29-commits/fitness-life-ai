@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
 import { CoinIcon, GemIcon } from '../components/Counter';
-import { TABLES, payouts, type TableId, type TableTier } from '../meta/economy';
+import { TABLES, payouts, type TableId, type TableTier } from '@parques/engine';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
 import { useSettings } from '../stores/settingsStore';
-import { useGame, type MatchConfig, type SeatConfig } from '../stores/gameStore';
+import { useOnline } from '../lib/online';
 import { useFx } from '../stores/fxStore';
-import { AVATARS, BOT_NAMES } from '../lib/avatars';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
 
@@ -35,30 +34,26 @@ export function TablesScreen() {
   const p = useProfile();
   const lvl = useLevel();
   const rules = useSettings((s) => s.houseRules);
-  const start = useGame((g) => g.start);
+  const online = useOnline();
   const toast = useFx((f) => f.toast);
   const [players, setPlayers] = useState<2 | 4>(4);
 
-  const playTier = (tier: TableTier) => {
+  const [busy, setBusy] = useState(false);
+
+  /** La partida la juega el SERVIDOR: cobra la entrada y aplica los premios en la cuenta. */
+  const playTier = async (tier: TableTier) => {
+    if (busy) return;
     if (tier.onlineOnly) return go('online');
     if (lvl.level < tier.minLevel) return toast({ icon: '🔒', title: t('Necesitas nivel {n}', { n: tier.minLevel }) });
-    if (!p.pay(tier.entry)) {
+    if (p.coins < tier.entry) {
       toast({ icon: '🪙', title: t('Te faltan monedas'), sub: t('Cómpralas en la tienda o reclama la recompensa diaria') });
       return go('shop');
     }
+    setBusy(true);
     play('coin');
-    const names = [...BOT_NAMES].sort(() => Math.random() - 0.5);
-    const sides = players === 2 ? [0, 2] : [0, 1, 2, 3];
-    const seats: SeatConfig[] = sides.map((side, k) => ({
-      name: k === 0 ? p.name : names[k]!,
-      side,
-      kind: k === 0 ? 'human' : 'bot',
-      level: tier.ai,
-      avatar: k === 0 ? (p.photo ?? p.avatar) : AVATARS[(k * 3 + 2) % AVATARS.length]!,
-    }));
-    const config: MatchConfig = { sides: 4, seats, mode: 'ai', table: tier.id, entry: tier.entry, turnSeconds: tier.turnSeconds, timeLimitSec: 0, rules: { ...rules } };
-    start(config);
-    go('game');
+    const err = await online.playAi({ table: tier.id, players, rules: { ...rules } });
+    setBusy(false);
+    if (err) toast({ icon: '⚠️', title: t(err) });
   };
 
   return (

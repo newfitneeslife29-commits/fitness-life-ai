@@ -3,7 +3,7 @@
  * Cada categoría tiene hasta 50 metas que crecen de forma geométrica, para que
  * siempre haya un siguiente logro por alcanzar.
  */
-import type { TableId } from '@parques/engine';
+import type { TableId } from '../economy';
 
 export interface ProfileStats {
   games: number;
@@ -41,7 +41,7 @@ export interface AchievementCtx {
   passTiers: number;
 }
 
-export interface Category {
+export interface AchievementCategory {
   key: string;
   name: string;
   /** Descripción con {n}. */
@@ -80,7 +80,7 @@ function ladder(start: number, end: number, n = 50): number[] {
 
 const tw = (id: TableId) => (c: AchievementCtx) => c.stats.tableWins[id] ?? 0;
 
-export const CATEGORIES: Category[] = [
+export const CATEGORIES: AchievementCategory[] = [
   { key: 'games', name: 'Jugador incansable', desc: 'Juega {n} partidas', emoji: '🎲', value: (c) => c.stats.games, thresholds: ladder(1, 50000) },
   { key: 'wins', name: 'Ganador', desc: 'Gana {n} partidas', emoji: '🏆', value: (c) => c.stats.wins, thresholds: ladder(1, 20000) },
   { key: 'podiums', name: 'Siempre en el podio', desc: 'Queda en el podio {n} veces', emoji: '🥉', value: (c) => c.stats.podiums, thresholds: ladder(1, 30000) },

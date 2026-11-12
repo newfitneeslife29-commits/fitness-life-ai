@@ -3,6 +3,7 @@ import { Howl, Howler } from 'howler';
 import { RECIPES, musicLoop, type SfxName } from './sounds';
 import { render } from './synth';
 import { useSettings } from '../stores/settingsStore';
+import { hapticVibrate } from '../lib/native';
 
 const sfx = new Map<SfxName, Howl>();
 let music: Howl | null = null;
@@ -46,7 +47,7 @@ export function play(name: SfxName, rate = 1) {
 }
 
 export function vibrate(pattern: number | number[]) {
-  if (useSettings.getState().vibration) navigator.vibrate?.(pattern);
+  if (useSettings.getState().vibration) void hapticVibrate(pattern);
 }
 
 /** Enciende o apaga la música según los ajustes (con fundido). */

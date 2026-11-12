@@ -8,9 +8,10 @@ import { useGame, type MatchConfig, type SeatConfig } from '../stores/gameStore'
 import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
 import { TopBar } from '../components/TopBar';
+import { useOnline } from '../lib/online';
 import { useLevel } from '../stores/profileStore';
 import { useFx } from '../stores/fxStore';
-import { TABLES, payouts, type TableId } from '../meta/economy';
+import { TABLES, payouts, type TableId } from '@parques/engine';
 import { CoinIcon } from '../components/Counter';
 import { useT } from '../lib/i18n';
 import { play } from '../audio/audio';
@@ -52,12 +53,24 @@ export function SetupScreen() {
   const staked = humans === 1;
   const tier = TABLES.find((t) => t.id === tierId)!;
 
-  const onStart = () => {
+  const onStart = async () => {
     if (staked) {
+      // Contra la máquina: la partida la juega el servidor (cobra la entrada y paga los premios).
       if (lvl.level < tier.minLevel) return toast({ icon: '🔒', title: t('Necesitas nivel {n}', { n: tier.minLevel }) });
-      if (!me.pay(tier.entry)) return toast({ icon: '🪙', title: t('Te faltan monedas'), sub: t('Cómpralas en la tienda o reclama la recompensa diaria') });
+      if (me.coins < tier.entry) return toast({ icon: '🪙', title: t('Te faltan monedas'), sub: t('Cómpralas en la tienda o reclama la recompensa diaria') });
       play('coin');
+      const err = await useOnline.getState().playAi({
+        table: tier.id,
+        players: count as 2 | 3 | 4 | 6,
+        teams: mode === 'teams',
+        quick: mode === 'quick',
+        level,
+        rules: { soplar, triplePairPenalty: triple, jailAttempts: attempts },
+      });
+      if (err) toast({ icon: '⚠️', title: t(err) });
+      return;
     }
+    // Varias personas en el mismo celular (o solo máquinas): partida local, gratis y sin premios.
     const names = [...BOT_NAMES].sort(() => Math.random() - 0.5);
     let humanN = 0;
     const seats: SeatConfig[] = seatSides.map((side, k) => {

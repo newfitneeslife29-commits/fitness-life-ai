@@ -3,10 +3,10 @@
  * textos con t()/tr() en el código + textos de los catálogos de datos.
  */
 import { TABLES, PRODUCTS } from '@parques/engine';
-import { CATEGORY_NAMES, ITEMS } from '../meta/catalog';
-import { CATEGORIES } from '../meta/achievements';
-import { DAILY_POOL, WEEKLY_POOL } from '../meta/missions';
-import { SEASONS } from '../meta/seasons';
+import { CATEGORY_NAMES, ITEMS } from '@parques/engine';
+import { CATEGORIES } from '@parques/engine';
+import { DAILY_POOL, WEEKLY_POOL } from '@parques/engine';
+import { SEASONS } from '@parques/engine';
 import { TIPS } from '../game/phrases';
 import { COUNTRIES } from './countries';
 
@@ -17,6 +17,7 @@ export const SERVER_MESSAGES = [
   'La semana pasada no hubo torneo', 'Quedaste {n}º: premios solo para el top 3', 'No jugaste la semana pasada',
   'Ya reclamaste ese premio', 'Sin premio por reclamar', 'Ya lo tienes', 'Este objeto no se compra con monedas',
   'No se pudo comprar', 'La máquina está jugando por ti', 'No hay partida en curso', 'Acción no permitida', 'No estás en esta mesa',
+  'Cuenta no válida', 'Primero inicia sesión', 'Ya reclamaste hoy', 'Ya la reclamaste', 'Todavía no la completas', 'Todavía no llegas a ese nivel', 'Necesitas el Pase Premium', 'Ya lo reclamaste', 'Ese emote es del Pase Premium', 'Compras de prueba desactivadas', 'Foto inválida o muy grande', 'Ya es tu amigo', 'No tienes ese objeto', 'Solo disponible en su temporada', 'Cuenta no encontrada', 'Operación desconocida', 'No estás en una mesa',
 ];
 
 export function dataKeys(): string[] {

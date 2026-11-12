@@ -3,7 +3,7 @@ import { motion, useAnimationControls } from 'framer-motion';
 import { Modal } from './Modal';
 import { CoinIcon } from './Counter';
 import { useT } from '../lib/i18n';
-import { DAILY_REWARDS, ROULETTE, dailyStatus, dayKey } from '../meta/economy';
+import { DAILY_REWARDS, ROULETTE, dailyStatus, dayKey } from '@parques/engine';
 import { useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
 import { play } from '../audio/audio';
@@ -19,9 +19,10 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
   const [tab, setTab] = useState<'streak' | 'wheel'>('streak');
   const btn = useRef<HTMLButtonElement>(null);
 
-  const claim = () => {
-    const r = p.claimDaily();
-    if (!r) return;
+  const claim = async () => {
+    const res = await p.claimDaily();
+    if (!res.ok || !res.result) return fx.toast({ icon: '⚠️', title: t(res.error ?? 'Error') });
+    const r = res.result;
     play('coin');
     const from = centerOf(btn.current);
     fx.fly('coin', from, 10);
@@ -86,9 +87,13 @@ function Roulette({ canSpin }: { canSpin: boolean }) {
 
   const spin = async () => {
     if (spinning) return;
-    const r = p.spin();
-    if (!r) return;
     setSpinning(true);
+    const res = await p.spin();
+    if (!res.ok || !res.result) {
+      setSpinning(false);
+      return fx.toast({ icon: '⚠️', title: t(res.error ?? 'Error') });
+    }
+    const r = res.result;
     setResult(null);
     // La flecha está arriba: el sector `index` debe terminar en 0°.
     const target = 360 * 6 + (360 - (r.index * seg + seg / 2));
@@ -100,7 +105,6 @@ function Roulette({ canSpin }: { canSpin: boolean }) {
     setSpinning(false);
     const prize = ROULETTE[r.index]!;
     setResult(prize.label);
-    p.addCurrency(r.coins, 0);
     play('coin');
     fx.fly('coin', centerOf(wheelRef.current), 10);
     fx.toast({ icon: '🎡', title: t('¡Premio de la ruleta!'), sub: t('+{n} monedas', { n: r.coins }) });

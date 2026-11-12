@@ -40,7 +40,15 @@ const BOT_NAMES = ['La Toña', 'Don Chucho', 'El Mono', 'Doña Rosa', 'Pacho', '
 const BOT_AVATARS = ['🐆', '🦥', '🐢', '🐻', '🦊', '🐒', '🌺', '🎺'];
 
 function sidesFor(n: number): number[] {
-  return n === 2 ? [0, 2] : n === 3 ? [0, 1, 2] : [0, 1, 2, 3];
+  return n === 2 ? [0, 2] : n === 3 ? [0, 1, 2] : n === 6 ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3];
+}
+
+/** Resultado de un humano al terminar (para aplicar premios en su cuenta). */
+export interface HumanResult {
+  playerId: string;
+  place: number;
+  won: boolean;
+  stats: { captures: number; captured: number; crowned: number; soplosHechos: number; pairs: number; tripleParCastigos: number };
 }
 
 export interface RoomOptions {
@@ -50,8 +58,17 @@ export interface RoomOptions {
   seats: number;
   rules?: Partial<HouseRules>;
   timing?: Partial<Timing>;
-  table?: TableId;
-  onEnd?: (room: Room, humanRanking: string[]) => void;
+  table?: TableId | null;
+  /** Partida contra la máquina (1 humano + bots), Modo Rápido, etc. */
+  mode?: 'online' | 'ai' | 'quick' | 'teams';
+  sides?: 4 | 6;
+  /** Nivel de los bots (por defecto el de la mesa). */
+  botLevel?: AiLevel;
+  /** Límite de la partida en ms (Modo Rápido). */
+  timeLimitMs?: number;
+  /** Cobra la entrada de un jugador al empezar; devuelve false si no le alcanza. */
+  charge?: (playerId: string, entry: number) => boolean;
+  onEnd?: (room: Room, results: HumanResult[]) => void;
 }
 
 export class Room {
@@ -61,8 +78,14 @@ export class Room {
   readonly hostId: string | null;
   readonly rules: Partial<HouseRules>;
   readonly seats: Seat[];
-  readonly table: TableId;
+  readonly table: TableId | null;
   readonly entry: number;
+  readonly mode: 'online' | 'ai' | 'quick' | 'teams';
+  readonly sides: 4 | 6;
+  private botLevel: AiLevel | null;
+  private timeLimitMs: number;
+  private charge?: RoomOptions['charge'];
+  private endTimer: ReturnType<typeof setTimeout> | null = null;
   status: 'waiting' | 'playing' | 'over' = 'waiting';
   state: GameState | null = null;
   lastActivity = Date.now();
@@ -81,12 +104,17 @@ export class Room {
     this.code = opts.code ?? null;
     this.hostId = opts.hostId ?? null;
     const teams = !!opts.rules?.teams;
-    this.rules = { ...opts.rules, teams, piecesPerPlayer: 4 };
+    this.rules = { ...opts.rules, teams, piecesPerPlayer: opts.rules?.piecesPerPlayer ?? 4 };
     this.timing = { ...DEFAULT_TIMING, ...opts.timing };
     this.onEnd = opts.onEnd;
-    this.table = opts.table ?? 'barrio';
-    this.entry = tableOf(this.table)?.entry ?? 0;
-    this.seats = sidesFor(teams ? 4 : opts.seats).map((side) => ({
+    this.table = opts.table === undefined ? 'barrio' : opts.table;
+    this.entry = this.table ? (tableOf(this.table)?.entry ?? 0) : 0;
+    this.mode = opts.mode ?? 'online';
+    this.sides = opts.sides === 6 ? 6 : 4;
+    this.botLevel = opts.botLevel ?? (this.table ? (tableOf(this.table)?.ai ?? null) : null);
+    this.timeLimitMs = opts.timeLimitMs ?? 0;
+    this.charge = opts.charge;
+    this.seats = sidesFor(teams ? 4 : this.sides === 6 ? 6 : Math.min(4, opts.seats)).map((side) => ({
       side,
       name: '',
       avatar: '',
@@ -109,6 +137,9 @@ export class Room {
       kind: this.kind,
       table: this.table,
       entry: this.entry,
+      sides: this.sides,
+      mode: this.mode,
+      endsAt: this.endsAt,
     };
   }
 
@@ -207,17 +238,33 @@ export class Room {
         s.name = names[b % names.length]!;
         s.avatar = BOT_AVATARS[randomInt(BOT_AVATARS.length)]!;
         s.kind = 'bot';
-        s.level = b % 2 ? 'expert' : 'normal';
+        s.level = this.botLevel ?? (b % 2 ? 'expert' : 'normal');
         b++;
       }
     }
+    // Cobro de la entrada (en el servidor): quien no tenga monedas queda reemplazado por la máquina.
+    if (this.entry > 0 && this.charge) {
+      for (const s of this.seats) {
+        if (s.playerId && !this.charge(s.playerId, this.entry)) {
+          this.conns.get(s.playerId)?.emit('notice', { text: 'Te faltan monedas' });
+          this.conns.delete(s.playerId);
+          Object.assign(s, { playerId: null, kind: 'bot', name: names[b++ % names.length]!, level: this.botLevel ?? 'normal' });
+        }
+      }
+    }
     this.state = createGame({
-      sides: 4,
+      sides: this.sides,
       rules: this.rules,
       seed: randomInt(2 ** 31),
       players: this.seats.map((s) => ({ name: s.name, side: s.side, isBot: s.kind === 'bot' })),
     });
     this.status = 'playing';
+    this.startedAt = Date.now();
+    if (this.timeLimitMs > 0) {
+      this.endTimer = setTimeout(() => {
+        if (this.status === 'playing') this.apply({ type: 'TIME_UP' });
+      }, this.timeLimitMs);
+    }
     this.schedule();
     this.seats.forEach((s, i) => {
       if (s.playerId) this.conns.get(s.playerId)?.emit('sync', { state: sanitizeState(this.state!), events: [], deadlines: this.deadlines(), room: this.info(), mySeat: i });
@@ -257,6 +304,7 @@ export class Room {
 
   destroy() {
     this.clearTimers();
+    if (this.endTimer) clearTimeout(this.endTimer);
     for (const g of this.grace.values()) clearTimeout(g);
     this.grace.clear();
   }
@@ -379,11 +427,26 @@ export class Room {
     }, this.timing.turnMs);
   }
 
+  /** Momento en que termina el Modo Rápido (para el reloj del cliente). */
+  get endsAt(): number | null {
+    return this.endTimer ? this.startedAt + this.timeLimitMs : null;
+  }
+  private startedAt = Date.now();
+
   private finish() {
     this.status = 'over';
     this.clearTimers();
-    const ranking = this.state!.ranking.map((i) => this.seats[i]!.playerId).filter((x): x is string => !!x);
-    this.onEnd?.(this, ranking);
+    if (this.endTimer) clearTimeout(this.endTimer);
+    const g = this.state!;
+    const winnerTeam = g.players[g.ranking[0]!]?.team ?? null;
+    const results: HumanResult[] = [];
+    g.ranking.forEach((i, place) => {
+      const s = this.seats[i]!;
+      if (!s.playerId) return;
+      const pl = g.players[i]!;
+      results.push({ playerId: s.playerId, place, won: g.rules.teams ? pl.team === winnerTeam : place === 0, stats: pl.stats });
+    });
+    this.onEnd?.(this, results);
   }
 }
 
