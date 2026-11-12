@@ -300,4 +300,5 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Tejista": ["Tejo player", "Jogador de tejo", "Joueur de tejo"],
   "Congo de carnaval": ["Carnival congo", "Congo de carnaval", "Congo du carnaval"],
   "Avatares": ["Avatars", "Avatares", "Avatars"],
+  "Solo los 100 mejores del ranking, desde nivel 300.": ["Only the top 100 in the ranking, from level 300.", "Só os 100 melhores do ranking, a partir do nível 300.", "Seulement le top 100 du classement, dès le niveau 300."],
 };

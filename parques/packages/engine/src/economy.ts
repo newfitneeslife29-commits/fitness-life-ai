@@ -68,7 +68,7 @@ export const TABLES: TableTier[] = [
   { id: 'capital', name: 'Capital', entry: 5000, minLevel: 20, ai: 'expert', turnSeconds: 20, emoji: '🏛️', blurb: 'Solo pa\' los berracos.' },
   { id: 'leyenda', name: 'Leyenda', entry: 25000, minLevel: 50, ai: 'expert', turnSeconds: 20, emoji: '👑', blurb: 'Donde se coronan las leyendas.' },
   { id: 'elite', name: 'Sala Élite', entry: 100000, minLevel: 200, ai: 'expert', turnSeconds: 20, emoji: '💎', blurb: 'Solo jugadores de nivel 200 o más.' },
-  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 200, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 20, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking.' },
+  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 300, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 20, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking, desde nivel 300.' },
 ];
 
 /** Cupos de la sala Top Leyendas (puestos del ranking global). */
