@@ -22,11 +22,14 @@ interface Props {
   bubble?: Bubble;
   align: 'left' | 'right' | 'center';
   team?: number | null;
+  /** Botón de emotes pegado al avatar (solo en mi asiento). */
+  onEmote?: () => void;
+  emoteOpen?: boolean;
 }
 
 const RING = 2 * Math.PI * 30;
 
-export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team }: Props) {
+export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen }: Props) {
   const color = `var(--${player.color})`;
   return (
     <div className={`seat ${active ? 'active' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
@@ -40,6 +43,18 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
         </div>
         <span className="seat-level">{tag}</span>
         {place ? <span className="seat-place">{place}º</span> : null}
+        {onEmote ? (
+          <motion.button
+            className={`seat-emote ${emoteOpen ? 'on' : ''}`}
+            onClick={onEmote}
+            whileTap={{ scale: 0.85 }}
+            animate={emoteOpen ? { rotate: 0 } : { rotate: [0, -12, 12, 0] }}
+            transition={emoteOpen ? undefined : { duration: 0.6, repeat: Infinity, repeatDelay: 6 }}
+            aria-label={tr('Emotes')}
+          >
+            😀
+          </motion.button>
+        ) : null}
       </div>
       <div className="seat-info">
         <div className="seat-name">{player.name}</div>

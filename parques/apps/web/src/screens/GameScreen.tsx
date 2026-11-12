@@ -8,7 +8,7 @@ import { PlayerSeat } from '../game/PlayerSeat';
 import { PairCounter } from '../game/PairCounter';
 import { Banner } from '../game/Banner';
 import { boardBox, jailGeom, piecePoint, viewRotation } from '../game/boardLayout';
-import { phrases } from '../game/phrases';
+import { phrases, REGIONS } from '../game/phrases';
 import { EMOTES } from '@parques/engine';
 import { GemIcon } from '../components/Counter';
 import { useFx } from '../stores/fxStore';
@@ -29,6 +29,7 @@ export function GameScreen() {
   const go = useApp((a) => a.go);
   const { game, config, view } = s;
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatTab, setChatTab] = useState<string>('emotes');
   const [menuOpen, setMenuOpen] = useState(false);
   const [, tick] = useState(0);
   const equipped = useProfile((p) => p.equipped);
@@ -104,6 +105,9 @@ export function GameScreen() {
   const topRow = placed.filter((p) => p.top).sort((a, b) => a.x - b.x);
   const bottomRow = placed.filter((p) => !p.top).sort((a, b) => a.x - b.x);
 
+  // Mi asiento (donde va el botón de emotes): el mío en online, o el único humano en la mesa.
+  const humanSeats = game.players.map((_, i) => i).filter((i) => seatCfg(game.players[i]!.side).kind === 'human');
+  const mySeatIndex = s.online && s.mySeat !== null ? s.mySeat : humanSeats.length === 1 ? humanSeats[0]! : game.current;
   const renderSeat = (i: number, align: 'left' | 'right' | 'center') => {
     const p = game.players[i]!;
     const cfg = seatCfg(p.side);
@@ -125,6 +129,8 @@ export function GameScreen() {
         bubble={s.bubbles[i]}
         align={align}
         team={p.team}
+        onEmote={i === mySeatIndex ? () => { setChatOpen((o) => !o); play('tap'); } : undefined}
+        emoteOpen={chatOpen}
       />
     );
   };
@@ -173,9 +179,7 @@ export function GameScreen() {
         {matchLeft !== null ? (
           <div className={`chip match-clock ${matchLeft < 30000 ? 'hurry' : ''}`}>⏱ {fmt(matchLeft * s.speed)}</div>
         ) : (
-          <button className="btn3d ghost icon" onClick={() => setChatOpen((o) => !o)} aria-label="Chat">
-            💬
-          </button>
+          <span className="game-top-spacer" />
         )}
       </header>
 
@@ -225,13 +229,7 @@ export function GameScreen() {
           onRoll={s.humanRoll}
           skin={diceSkin}
         />
-        <div className="side-actions">
-          {matchLeft !== null ? (
-            <button className="btn3d ghost icon" onClick={() => setChatOpen((o) => !o)} aria-label="Chat">
-              💬
-            </button>
-          ) : null}
-        </div>
+        <div className="side-actions" />
       </div>
 
 
@@ -256,37 +254,49 @@ export function GameScreen() {
 
       <AnimatePresence>
         {chatOpen ? (
-          <motion.div className="chat-panel card" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}>
-            <div className="chat-head">
-              <b>💎 {t('Emotes')}</b>
-              <span className="chat-gems"><GemIcon size={16} /> {gems}</span>
-            </div>
-            <div className="chat-reactions">
-              {EMOTES.filter((e) => !e.pass || passPremium).map((e) => (
-                <button
-                  key={e.id}
-                  className={gems < e.gems ? 'poor' : ''}
-                  onClick={async () => {
-                    setChatOpen(false);
-                    const err = await s.emote(e.id);
-                    if (err) toast({ icon: '💎', title: err, sub: t('Gana partidas (+5) o cómpralas en la tienda') });
-                  }}
-                >
-                  {e.glyph}
-                  <small>{e.gems}</small>
+          <motion.div className="chat-panel card" initial={{ y: 30, opacity: 0, scale: 0.9 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 30, opacity: 0, scale: 0.9 }} transition={{ type: 'spring', stiffness: 380, damping: 26 }}>
+            <div className="chat-tabs">
+              <button className={chatTab === 'emotes' ? 'on' : ''} onClick={() => setChatTab('emotes')}>💎 {t('Emotes')}</button>
+              <button className={chatTab === 'frases' ? 'on' : ''} onClick={() => setChatTab('frases')}>💬 {t('Frases')}</button>
+              {REGIONS.map((r) => (
+                <button key={r.id} className={chatTab === r.id ? 'on' : ''} onClick={() => setChatTab(r.id)}>
+                  {r.flag} {r.name}
                 </button>
               ))}
             </div>
-            <div className="chat-head">
-              <b>💬 {t('Frases (gratis)')}</b>
-            </div>
-            <div className="chat-phrases">
-              {phrases(lang).map((p) => (
-                <button key={p} onClick={() => { s.chat(p); setChatOpen(false); }}>
-                  {p}
-                </button>
-              ))}
-            </div>
+            {chatTab === 'emotes' ? (
+              <>
+                <div className="chat-head">
+                  <b>{t('Emotes con gemas')}</b>
+                  <span className="chat-gems"><GemIcon size={16} /> {gems}</span>
+                </div>
+                <div className="chat-reactions">
+                  {EMOTES.filter((e) => !e.pass || passPremium).map((e) => (
+                    <motion.button
+                      key={e.id}
+                      whileTap={{ scale: 0.8 }}
+                      className={gems < e.gems ? 'poor' : ''}
+                      onClick={async () => {
+                        setChatOpen(false);
+                        const err = await s.emote(e.id);
+                        if (err) toast({ icon: '💎', title: err, sub: t('Gana partidas (+5) o cómpralas en la tienda') });
+                      }}
+                    >
+                      {e.glyph}
+                      <small>{e.gems}</small>
+                    </motion.button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="chat-phrases">
+                {(chatTab === 'frases' ? phrases(lang) : (REGIONS.find((r) => r.id === chatTab)?.phrases ?? [])).map((p) => (
+                  <button key={p} onClick={() => { s.chat(p); setChatOpen(false); }}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
           </motion.div>
         ) : null}
       </AnimatePresence>

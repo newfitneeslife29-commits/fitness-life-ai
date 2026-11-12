@@ -13,8 +13,27 @@ export function phrases(lang: Lang): string[] {
   return PHRASES[lang] ?? PHRASES.es;
 }
 
+/** Frases de las regiones de Colombia (en español en todos los idiomas: son parte del sabor del juego). */
+export const REGIONS: { id: string; name: string; flag: string; phrases: string[] }[] = [
+  { id: 'costa', name: 'Costa', flag: '🌴', phrases: ['¡Ajá, y entonces!', '¡Erda, qué jugada!', '¡Nojoda, me cogiste!', '¡Eche, qué vaina!', '¡Ombe, no me hagas eso!', '¡Ay hombe, tan bacano!', '¡Mi llave, te fuiste pa\' la cárcel!', '¡Qué molleja de suerte!', '¡Ponte pilas, cachaco!', '¡Eso está chévere, compa!', '¡Ajá, ¿y la mía qué?!', '¡Bacano, mi vale!'] },
+  { id: 'paisa', name: 'Paisa', flag: '⛰️', phrases: ['¡Ave María, pues!', '¡Qué chimba de jugada!', '¡Hágale, mijo!', '¡Pilas, parcero!', '¡Qué pecado con usté!', '¡Eh, avemaría, qué suerte!', '¡De una, parce!', '¡Bien pueda, mijo!'] },
+  { id: 'rolo', name: 'Bogotá', flag: '🏙️', phrases: ['¡Qué chévere, sumercé!', '¡Uy, qué oso!', '¡Juemadre, qué suerte!', '¡Bacano, parce!', '¡Qué boleta, hermano!', '¡Ala, qué jugadita!', '¡Me tumbó, vea pues!'] },
+  { id: 'valle', name: 'Valle', flag: '💃', phrases: ['¡Oís, mirá esa jugada!', '¡Ve, qué bonito!', '¡Qué pena con vos!', '¡Ey, mirá vé!', '¡Eso es salsa, mi so!', '¡Ve, ni lo sentiste!'] },
+  { id: 'santander', name: 'Santander', flag: '🐜', phrases: ['¡Qué jartera, mano!', '¡Ábrase, mano!', '¡Mano, qué jugadita!', '¡Hijuepucha, me ganó!', '¡Eso es a lo santandereano!'] },
+  { id: 'pacifico', name: 'Pacífico', flag: '🌊', phrases: ['¡Ey, qué sabroso!', '¡Qué sabrosura, mi hermano!', '¡Aguanta, primo!', '¡Eso es currulao!'] },
+  { id: 'llanos', name: 'Llanos', flag: '🐎', phrases: ['¡Ajo, compadre!', '¡Upa, compae!', '¡Eso es pa\' los llanos!', '¡Ahí sí, cabrestero!'] },
+  { id: 'sur', name: 'Nariño y Tolima', flag: '🌋', phrases: ['¡Achichay!', '¡Ala, qué suerte!', '¡Opa, qué voleo!', '¡Ayayay, qué jugada!', '¡Eso, guambra!'] },
+  { id: 'boyaca', name: 'Boyacá', flag: '🥔', phrases: ['¡Sumercé, qué jugada tan buena!', '¡Ay, juepucha!', '¡Qué hubo, sumercé!', '¡Ahí le dejo, mi señor!'] },
+];
+
 const LINES: Record<Lang, Record<'capture' | 'captured' | 'crown' | 'soplo' | 'pilas', string[]>> = {
-  es: { capture: ['¡Nos vemos en la cárcel!', '¡Qué jugadón!', '¡Eso es todo!', '😎'], captured: ['¡Uy, qué boleta!', '¡No me la monte!', '😡', '😱'], crown: ['¡Qué jugadón!', '👑', '¡Coronamos, parce!'], soplo: ['¡Lo soplé!', '¡Pilas pues!', '😂'], pilas: ['¡Pilas pues!', '¡Uy, se viene!'] },
+  es: {
+    capture: ['¡Nos vemos en la cárcel!', '¡Qué jugadón!', '¡Eso es todo!', '😎', '¡Mi llave, te fuiste pa\' la cárcel!', '¡Erda, qué jugada!', '¡Qué chimba de jugada!', '¡Ve, ni lo sentiste!', '¡Ajo, compadre!'],
+    captured: ['¡Uy, qué boleta!', '¡No me la monte!', '😡', '😱', '¡Nojoda, me cogiste!', '¡Ave María, pues!', '¡Qué jartera, mano!', '¡Ay, juepucha!', '¡Achichay!'],
+    crown: ['¡Qué jugadón!', '👑', '¡Coronamos, parce!', '¡Ay hombe, tan bacano!', '¡Qué sabrosura!', '¡Eso es salsa, mi so!'],
+    soplo: ['¡Lo soplé!', '¡Pilas pues!', '😂', '¡Ajá, y entonces!', '¡Ponte pilas, cachaco!'],
+    pilas: ['¡Pilas pues!', '¡Uy, se viene!', '¡Pilas, parcero!', '¡Aguanta, primo!'],
+  },
   en: { capture: ['See you in jail!', 'What a move!', '😎'], captured: ['Oops!', 'Give me a break!', '😡', '😱'], crown: ['What a move!', '👑', 'Crowned!'], soplo: ['Busted!', '😂'], pilas: ['Watch out!', 'Here it comes!'] },
   pt: { capture: ['Te vejo na cadeia!', 'Que jogada!', '😎'], captured: ['Ih!', 'Para com isso!', '😡', '😱'], crown: ['Que jogada!', '👑', 'Coroei!'], soplo: ['Te peguei!', '😂'], pilas: ['Fica esperto!', 'Lá vem!'] },
   fr: { capture: ['À bientôt en prison !', 'Quel coup !', '😎'], captured: ['Oups !', 'Arrête un peu !', '😡', '😱'], crown: ['Quel coup !', '👑', 'Couronné !'], soplo: ['Je t\'ai eu !', '😂'], pilas: ['Attention !', 'Ça arrive !'] },

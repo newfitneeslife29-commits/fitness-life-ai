@@ -5,18 +5,17 @@
 
 // ---------------------------------------------------------------- Niveles
 
-export const MAX_LEVEL = 2000;
-/** XP total necesaria para llegar al nivel máximo. */
-export const TOTAL_XP = 200_000_000;
+export const MAX_LEVEL = 500;
+/** XP total necesaria para llegar al nivel máximo (100·499 + 50·499² = 12.499.950). */
+export const TOTAL_XP = 100 * (MAX_LEVEL - 1) + 50 * (MAX_LEVEL - 1) ** 2;
 
 /**
  * XP acumulada para ESTAR en el nivel `level` (nivel 1 = 0).
  * cum(L) = 100·(L−1) + 50·(L−1)²  → del 1 al 2 se necesitan 150 XP (3 partidas de 50)
- * y cada nivel pide 100 XP más que el anterior. El nivel 2000 exige exactamente 200 millones.
+ * y cada nivel pide 100 XP más que el anterior. El nivel máximo es el 500.
  */
 export function xpToReach(level: number): number {
   const L = Math.max(1, Math.min(MAX_LEVEL, Math.floor(level)));
-  if (L === MAX_LEVEL) return TOTAL_XP;
   const n = L - 1;
   return 100 * n + 50 * n * n;
 }
@@ -64,12 +63,12 @@ export interface TableTier {
 }
 
 export const TABLES: TableTier[] = [
-  { id: 'barrio', name: 'Barrio', entry: 200, minLevel: 1, ai: 'easy', turnSeconds: 25, emoji: '🏘️', blurb: 'La mesa de la cuadra, pa\' calentar.' },
+  { id: 'barrio', name: 'Barrio', entry: 200, minLevel: 1, ai: 'easy', turnSeconds: 20, emoji: '🏘️', blurb: 'La mesa de la cuadra, pa\' calentar.' },
   { id: 'ciudad', name: 'Ciudad', entry: 1000, minLevel: 5, ai: 'normal', turnSeconds: 20, emoji: '🏙️', blurb: 'Aquí ya se juega en serio.' },
-  { id: 'capital', name: 'Capital', entry: 5000, minLevel: 20, ai: 'expert', turnSeconds: 18, emoji: '🏛️', blurb: 'Solo pa\' los berracos.' },
-  { id: 'leyenda', name: 'Leyenda', entry: 25000, minLevel: 50, ai: 'expert', turnSeconds: 15, emoji: '👑', blurb: 'Donde se coronan las leyendas.' },
-  { id: 'elite', name: 'Sala Élite', entry: 100000, minLevel: 100, ai: 'expert', turnSeconds: 15, emoji: '💎', blurb: 'Solo jugadores de nivel 100 o más.' },
-  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 100, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 15, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking.' },
+  { id: 'capital', name: 'Capital', entry: 5000, minLevel: 20, ai: 'expert', turnSeconds: 20, emoji: '🏛️', blurb: 'Solo pa\' los berracos.' },
+  { id: 'leyenda', name: 'Leyenda', entry: 25000, minLevel: 50, ai: 'expert', turnSeconds: 20, emoji: '👑', blurb: 'Donde se coronan las leyendas.' },
+  { id: 'elite', name: 'Sala Élite', entry: 100000, minLevel: 200, ai: 'expert', turnSeconds: 20, emoji: '💎', blurb: 'Solo jugadores de nivel 200 o más.' },
+  { id: 'top', name: 'Top Leyendas', entry: 250000, minLevel: 200, topOnly: true, onlineOnly: true, ai: 'expert', turnSeconds: 20, emoji: '🔥', blurb: 'Solo los 100 mejores del ranking.' },
 ];
 
 /** Cupos de la sala Top Leyendas (puestos del ranking global). */

@@ -108,6 +108,9 @@ function configFrom(room: RoomInfo, mySeat: number): MatchConfig {
   };
 }
 
+/** Primera conexión desde que se abrió la app. */
+let freshLaunch = true;
+
 const link = {
   sendAction: (a: Parameters<ClientToServer['action']>[0]) =>
     socket?.emit('action', a, (r) => {
@@ -182,7 +185,22 @@ export const useOnline = create<OnlineState>((set, get) => ({
           if (r.profile) useProfile.getState().setFromServer(r.profile);
           set({ status: 'online' });
           const roomId = remembered();
-          if (roomId) s.emit('resume', roomId, (x) => x.ok || remember(null));
+          if (roomId && freshLaunch) {
+            // Se cerró la app en plena partida = abandono: se sale de la mesa (la máquina juega por ti) y se queda en el inicio.
+            s.emit('leave');
+            remember(null);
+          } else if (roomId) {
+            // Corte de conexión con la app abierta: se vuelve a la misma partida.
+            s.emit('resume', roomId, (x) => {
+              if (x.ok) return;
+              remember(null);
+              if (useApp.getState().screen === 'game' && useGame.getState().online) {
+                useGame.getState().quit();
+                useApp.getState().go('lobby');
+              }
+            });
+          }
+          freshLaunch = false;
           done(true);
         });
       };
