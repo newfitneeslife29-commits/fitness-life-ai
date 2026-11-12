@@ -31,7 +31,7 @@ function RewardArt({ r }: { r: PassReward }) {
   if (r.itemId) {
     const it = item(r.itemId);
     if (it.board) return <div className="pr-board"><BoardMini theme={it.board} id={`pass-${it.id}`} /></div>;
-    if (it.pieces) return <svg viewBox="-25 -55 50 65" className="pr-svg"><PieceGlyph color="rojo" style={it.pieces} r={17} /></svg>;
+    if (it.pieces) return <svg viewBox="-25 -55 50 65" className="pr-svg"><PieceGlyph color="rojo" style={it.pieces} r={17} img={it.piecesImg} /></svg>;
     if (it.dice) return <Cube value={6} skin={it.dice} size={40} />;
     return <span className="pr-emoji">{r.icon}</span>;
   }

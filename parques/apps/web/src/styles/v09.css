@@ -222,3 +222,10 @@
 .victory-mascot { position: absolute; right: 2px; bottom: -6px; z-index: 4; }
 .hero-3d { position: relative; }
 .lobby-mascot { position: absolute; right: -10px; bottom: -14px; z-index: 3; }
+.avatar-pick.art { margin-top: 6px; }
+.avatar-pick.art button { padding: 0; overflow: hidden; aspect-ratio: 1; }
+.avatar-pick.art img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block; }
+.avatar-face.photo { object-fit: cover; }
+
+/* Avatares de la tienda sin ilustración: medallón brillante con su emoji */
+.avatar-face.av-medal { box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22), inset 0 3px 6px rgba(255, 255, 255, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.85); text-shadow: 0 3px 4px rgba(0, 0, 0, 0.3); }

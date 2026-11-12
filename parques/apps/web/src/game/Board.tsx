@@ -38,6 +38,7 @@ interface Props {
   onTarget: (move: Move) => void;
   theme: BoardTheme;
   pieceStyle: PieceStyle;
+  pieceImg?: string;
   effect: EffectStyle;
 }
 
@@ -127,6 +128,8 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
   const LLEGADA = labels ? tr('LLEGADA') : '';
   // Tableros ilustrados: el dibujo cubre todo el tablero y las piezas del tablero quedan semitransparentes.
   const art = theme.art ?? null;
+  const scene = theme.image ?? null;
+  const illustrated = !!(art || scene);
   const half = boardBox(sides).w;
 
   return (
@@ -142,11 +145,11 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
       <polygon points={outlinePoints(sides, 16)} fill={theme.frame} stroke={theme.frameDark} strokeWidth={8} strokeLinejoin="round" />
       <polygon points={outlinePoints(sides, 16)} fill={url('frameGloss')} />
       <polygon points={outlinePoints(sides, 2)} fill={url('skyBg')} stroke={theme.frameDark} strokeWidth={5} strokeLinejoin="round" />
-      {art ? <BoardArt art={art} r={half} rot={rot} clipPoints={outlinePoints(sides, 2)} /> : null}
+      {scene ? <BoardScenery image={scene} half={half} rot={rot} clipPoints={outlinePoints(sides, 2)} /> : art ? <BoardArt art={art} r={half} rot={rot} clipPoints={outlinePoints(sides, 2)} /> : null}
       <polygon points={outlinePoints(sides, 2)} fill="none" stroke="rgba(0,0,0,.25)" strokeWidth={14} strokeLinejoin="round" style={{ filter: 'blur(3px)' }} />
 
       {/* Cielo con volumen */}
-      {art ? (
+      {illustrated ? (
         <>
           {/* Cielo de vidrio: deja ver el dibujo */}
           <circle r={sky + 6} fill="none" stroke="#fff" strokeWidth={6} opacity={0.85} />
@@ -176,10 +179,22 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
             <clipPath id={clip}>
               <polygon points={j.points} />
             </clipPath>
-            <polygon points={j.points} fill={c(color)} opacity={art ? 0.62 : 1} />
+            {illustrated ? (
+              // Tablero con escenario: la cárcel deja ver el dibujo (solo un velo y un borde del color del jugador).
+              <g>
+                <polygon points={j.points} fill={c(color)} opacity={0.18} />
+                <g clipPath={`url(#${clip})`}>
+                  <polygon points={j.points} fill="none" stroke={c(color)} strokeWidth={34} opacity={0.75} />
+                  <polygon points={j.points} fill="none" stroke="rgba(255,255,255,.8)" strokeWidth={4} strokeDasharray="14 10" transform={`translate(${j.center.x} ${j.center.y}) scale(0.9) translate(${-j.center.x} ${-j.center.y})`} />
+                </g>
+                <polygon points={j.points} fill="none" stroke={LINE} strokeWidth={6} strokeLinejoin="round" />
+              </g>
+            ) : (
+            <>
+            <polygon points={j.points} fill={c(color)} />
             <g clipPath={`url(#${clip})`}>
               <polygon points={j.points} fill="none" stroke="rgba(0,0,0,.35)" strokeWidth={28} style={{ filter: 'blur(8px)' }} />
-              <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={art ? 0.15 : 0.3}>
+              <g transform={`translate(${j.center.x} ${j.center.y})`} opacity={0.3}>
                 <rect x={-34} y={-14} width={68} height={52} rx={10} fill={cd(color)} />
                 <path d="M-20 -14 V-30 A20 20 0 0 1 20 -30 V-14" fill="none" stroke={cd(color)} strokeWidth={10} />
               </g>
@@ -200,6 +215,8 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
             </g>
             <polygon points={j.points} fill={url('jailGloss')} pointerEvents="none" />
             <polygon points={j.points} fill="none" stroke={LINE} strokeWidth={6} strokeLinejoin="round" />
+            </>
+            )}
           </g>
         );
       })}
@@ -213,7 +230,7 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
         if (o === 0 || o === 5 || o === 12) {
           return (
             <g key={`sq-${sq}`}>
-              <SolidCell cell={cl} color={color} glass={!!art} />
+              <SolidCell cell={cl} color={color} glass={illustrated} />
               {labels ? <SafeStar cell={cl} size={font * 0.55} /> : null}
               {labels ? <Label cell={cl} text={o === 5 ? SALIDA : SEGURO} font={font} /> : null}
             </g>
@@ -221,7 +238,7 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
         }
         return (
           <g key={`sq-${sq}`}>
-            <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} fillOpacity={art ? 0.5 : 1} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
+            <polygon points={cl.points} fill={cell ? `color-mix(in srgb, ${c(color)} ${theme.tint}%, ${cell})` : `color-mix(in srgb, ${c(color)} ${theme.tint}%, white)`} fillOpacity={illustrated ? 0.62 : 1} stroke={LINE} strokeWidth={2.5} strokeLinejoin="round" />
             <polygon points={cl.points} fill={url('tileGloss')} pointerEvents="none" />
             {labels ? <CellNumber cell={cl} n={sq + 1} font={font} /> : null}
           </g>
@@ -232,9 +249,9 @@ export const BoardScene = memo(function BoardScene({ sides, active, theme, rot, 
       {colors.map((color, side) => (
         <g key={`cor-${side}`} opacity={active[side] ? 1 : 0.55}>
           {Array.from({ length: 7 }, (_, i) => (
-            <SolidCell key={i} cell={corridorCell(sides, side, i + 1)} color={color} glass={!!art} />
+            <SolidCell key={i} cell={corridorCell(sides, side, i + 1)} color={color} glass={illustrated} />
           ))}
-          <SolidCell cell={llegadaCell(sides, side)} color={color} glass={!!art} />
+          <SolidCell cell={llegadaCell(sides, side)} color={color} glass={illustrated} />
           {labels ? <Label cell={llegadaCell(sides, side)} text={LLEGADA} font={font} /> : null}
         </g>
       ))}
@@ -332,7 +349,7 @@ export function BoardMini({ theme, id, labels = false, className = '' }: { theme
   );
 }
 
-export function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget, theme, pieceStyle, effect }: Props) {
+export function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget, theme, pieceStyle, pieceImg, effect }: Props) {
   const sides = game.sides;
   const box = boardBox(sides);
   const rot = viewRotation(sides, viewSide);
@@ -425,6 +442,7 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
                 selected={!!selected && selected.owner === p.ref.owner && selected.index === p.ref.index}
                 crowned={p.pos === homeFor(sides)}
                 style={pieceStyle}
+                img={pieceImg}
                 onClick={() => onPiece(p.ref)}
               />
             );
@@ -460,6 +478,23 @@ function TurnGlow({ sides, side, color }: { sides: 4 | 6; side: number; color: C
         transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
         style={{ filter: `drop-shadow(0 0 14px var(--${color}))` }}
       />
+    </g>
+  );
+}
+
+/** Escenario pintado (arte en public/art/boards): fondo de todo el tablero; el recorrido se dibuja encima. */
+function BoardScenery({ image, half, rot, clipPoints }: { image: string; half: number; rot: number; clipPoints: string }) {
+  const idp = useContext(Idp);
+  const clip = `${idp}scene-${image}`;
+  const size = half * 2.05;
+  return (
+    <g pointerEvents="none">
+      <clipPath id={clip}>
+        <polygon points={clipPoints} />
+      </clipPath>
+      <g clipPath={`url(#${clip})`}>
+        <image href={`art/boards/${image}.webp`} x={-size / 2} y={-size / 2} width={size} height={size} transform={`rotate(${-rot})`} preserveAspectRatio="xMidYMid slice" />
+      </g>
     </g>
   );
 }

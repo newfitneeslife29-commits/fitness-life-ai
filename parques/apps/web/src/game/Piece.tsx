@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Color } from '@parques/engine';
 import type { PieceStyle } from '@parques/engine';
@@ -15,6 +15,7 @@ interface Props {
   selected: boolean;
   crowned: boolean;
   style: PieceStyle;
+  img?: string;
   onClick: () => void;
 }
 
@@ -38,9 +39,23 @@ const FINISH: Partial<Record<PieceStyle, (fill: string) => { body: string; overl
   obsidiana: () => ({ body: '#16131f', overlay: 'url(#pc-head)', stroke: '#000' }),
   fuego: (f) => ({ body: f, overlay: 'url(#pc-fire)' }),
   viento: (f) => ({ body: f, overlay: 'url(#pc-wind)' }),
+  ceramica: () => ({ body: '#c8693a' }),
+  muisca: () => ({ body: '#f2b81e' }),
+  esmeralda: (f) => ({ body: f, overlay: 'url(#pc-pearl)' }),
 };
 
-export function PieceGlyph({ color, style, r = R }: { color: Color; style: PieceStyle; r?: number }) {
+const IMG_COLORS = new Set<Color>(['amarillo', 'azul', 'rojo', 'verde']);
+
+/** Ficha con arte (public/art/pieces/<img>-<color>.webp); los colores sin arte (naranja, morado) usan la ficha dibujada. */
+export function PieceGlyph({ color, style, r = R, img }: { color: Color; style: PieceStyle; r?: number; img?: string }) {
+  if (img && IMG_COLORS.has(color)) {
+    const w = r * 2.7;
+    return <image href={`art/pieces/${img}-${color}.webp`} x={-w / 2} y={-w * 0.92} width={w} height={w} preserveAspectRatio="xMidYMax meet" />;
+  }
+  return <PieceDrawn color={color} style={style} r={r} />;
+}
+
+function PieceDrawn({ color, style, r = R }: { color: Color; style: PieceStyle; r?: number }) {
   const baseFill = `var(--${color})`;
   const dark = `var(--${color}-dark)`;
   const finish = FINISH[style]?.(baseFill);
@@ -50,7 +65,7 @@ export function PieceGlyph({ color, style, r = R }: { color: Color; style: Piece
   const headR = r * 0.62;
   const headY = -h - headR * 0.55;
   const body = `M${-r * 0.78} 0 C${-r * 0.7} ${-h * 0.45} ${-r * 0.32} ${-h * 0.7} ${-r * 0.34} ${-h} L${r * 0.34} ${-h} C${r * 0.32} ${-h * 0.7} ${r * 0.7} ${-h * 0.45} ${r * 0.78} 0 Z`;
-  const glass = style === 'cristal';
+  const glass = style === 'cristal' || style === 'esmeralda';
   return (
     <g>
       {/* base */}
@@ -69,12 +84,25 @@ export function PieceGlyph({ color, style, r = R }: { color: Color; style: Piece
           <path d={`M${-r * 0.45} ${-h * 0.58} L${r * 0.45} ${-h * 0.58} L${r * 0.38} ${-h * 0.72} L${-r * 0.38} ${-h * 0.72} Z`} fill="#ce1126" />
         </g>
       ) : null}
+      <StyleBody style={style} r={r} h={h} color={baseFill} />
       {style === 'moneda' || style === 'corona' ? <ellipse cx={0} cy={-h} rx={r * 0.42} ry={r * 0.14} fill="#ffcf3f" stroke="#a87400" strokeWidth={1.5} /> : null}
       {/* cabeza */}
       {style === 'estrella' ? (
         <g>
           <polygon points={starPts(headR * 1.5, headR * 0.7, headY)} fill={fill} stroke={dark} strokeWidth={2} strokeLinejoin="round" />
           <polygon points={starPts(headR * 1.5, headR * 0.7, headY)} fill="url(#pc-head)" />
+        </g>
+      ) : style === 'grano' ? (
+        <g>
+          <ellipse cx={0} cy={headY} rx={headR * 0.95} ry={headR * 1.15} fill="#6d3b14" stroke="#2a1404" strokeWidth={1.8} />
+          <path d={`M0 ${headY - headR * 1.05} C${headR * 0.45} ${headY - headR * 0.3} ${-headR * 0.45} ${headY + headR * 0.3} 0 ${headY + headR * 1.05}`} fill="none" stroke="#2a1404" strokeWidth={2} />
+          <ellipse cx={-headR * 0.35} cy={headY - headR * 0.4} rx={headR * 0.22} ry={headR * 0.4} fill="rgba(255,220,180,.45)" />
+        </g>
+      ) : style === 'esmeralda' ? (
+        <g>
+          <polygon points={octPts(headR * 1.1, headY)} fill={fill} stroke={dark} strokeWidth={2} />
+          <polygon points={octPts(headR * 0.6, headY)} fill="rgba(255,255,255,.35)" />
+          <polygon points={`${-headR * 0.4},${headY - headR * 1.0} ${headR * 0.4},${headY - headR * 1.0} 0,${headY - headR * 0.3}`} fill="rgba(255,255,255,.6)" />
         </g>
       ) : style === 'gema' ? (
         <g>
@@ -89,6 +117,21 @@ export function PieceGlyph({ color, style, r = R }: { color: Color; style: Piece
           {glass ? <circle cx={0} cy={headY} r={headR} fill="none" stroke="rgba(255,255,255,.9)" strokeWidth={1.5} /> : null}
         </g>
       )}
+      {style === 'vueltiao' ? (
+        <g>
+          <ellipse cx={0} cy={headY - headR * 0.35} rx={headR * 1.7} ry={headR * 0.5} fill="#f3e6c4" stroke="#1a1a1a" strokeWidth={1.6} />
+          <ellipse cx={0} cy={headY - headR * 0.35} rx={headR * 1.35} ry={headR * 0.38} fill="none" stroke="#1a1a1a" strokeWidth={1.4} strokeDasharray="3 2" />
+          <path d={`M${-headR * 0.75} ${headY - headR * 0.4} C${-headR * 0.7} ${headY - headR * 1.6} ${headR * 0.7} ${headY - headR * 1.6} ${headR * 0.75} ${headY - headR * 0.4} Z`} fill="#f3e6c4" stroke="#1a1a1a" strokeWidth={1.6} />
+          <path d={`M${-headR * 0.72} ${headY - headR * 0.75} Q0 ${headY - headR * 0.95} ${headR * 0.72} ${headY - headR * 0.75}`} fill="none" stroke="#1a1a1a" strokeWidth={2.4} />
+          <path d={`M${-headR * 0.55} ${headY - headR * 1.1} Q0 ${headY - headR * 1.3} ${headR * 0.55} ${headY - headR * 1.1}`} fill="none" stroke="#1a1a1a" strokeWidth={2} />
+        </g>
+      ) : null}
+      {style === 'muisca' ? (
+        <g fill="none" stroke="#8a5a00" strokeWidth={1.4}>
+          <circle cx={0} cy={headY} r={headR * 0.45} />
+          <path d={`M${-headR * 0.2} ${headY} a${headR * 0.2} ${headR * 0.2} 0 1 1 ${headR * 0.2} ${headR * 0.2}`} />
+        </g>
+      ) : null}
       {style === 'corona' ? (
         <path
           d={`M${-headR} ${headY - headR * 0.6} l0 ${-headR * 0.9} l${headR * 0.5} ${headR * 0.5} l${headR * 0.5} ${-headR * 0.8} l${headR * 0.5} ${headR * 0.8} l${headR * 0.5} ${-headR * 0.5} l0 ${headR * 0.9} z`}
@@ -124,18 +167,71 @@ export function PieceGlyph({ color, style, r = R }: { color: Color; style: Piece
   );
 }
 
+/** Puntos de un octágono (cabeza tallada). */
+function octPts(r: number, cy: number): string {
+  return Array.from({ length: 8 }, (_, i) => {
+    const a = (Math.PI / 4) * i + Math.PI / 8;
+    return `${(Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`;
+  }).join(' ');
+}
+
+/** Decoración del cuerpo según el estilo (bandas, franjas, espirales). */
+function StyleBody({ style, r, h, color }: { style: PieceStyle; r: number; h: number; color: string }) {
+  const band = (y0: number, y1: number, fill: string, k: string) => {
+    const w0 = r * (0.78 - 0.44 * y0);
+    const w1 = r * (0.78 - 0.44 * y1);
+    return <path key={k} d={`M${-w0} ${-h * y0} L${w0} ${-h * y0} L${w1} ${-h * y1} L${-w1} ${-h * y1} Z`} fill={fill} />;
+  };
+  if (style === 'ceramica')
+    return (
+      <g>
+        {band(0.18, 0.3, color, 'a')}
+        {band(0.52, 0.6, color, 'b')}
+        {[-0.4, 0, 0.4].map((x) => (
+          <circle key={x} cx={x * r} cy={-h * 0.41} r={r * 0.07} fill="#fff3e0" />
+        ))}
+      </g>
+    );
+  if (style === 'chiva')
+    return <g>{[['#ffcd00', 0.12], ['#e53935', 0.27], ['#1e88e5', 0.42], ['#43a047', 0.57], ['#ffcd00', 0.72]].map(([c, y]) => band(y as number, (y as number) + 0.1, c as string, String(y)))}</g>;
+  if (style === 'muisca')
+    return (
+      <g fill="none" stroke="#8a5a00" strokeWidth={1.3}>
+        {[-0.35, 0.35].map((x) => (
+          <path key={x} d={`M${x * r} ${-h * 0.35} m-${r * 0.14} 0 a${r * 0.14} ${r * 0.14} 0 1 1 ${r * 0.14} ${r * 0.14} a${r * 0.07} ${r * 0.07} 0 1 1 ${r * 0.07} ${-r * 0.07}`} />
+        ))}
+        {band(0.62, 0.68, '#8a5a00', 'z')}
+      </g>
+    );
+  if (style === 'grano' || style === 'vueltiao') return band(0.66, 0.74, style === 'grano' ? '#6d3b14' : '#1a1a1a', 's');
+  return null;
+}
+
 /** Duración de un salto de casilla (igual a la pausa entre pasos del gameStore). */
 export const HOP_S = 0.22;
 
 /** Ficha en el tablero: salta en arco 3D de casilla en casilla (sombra que se achica) y rebota si se puede mover. */
-export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, onClick }: Props) {
+export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onClick }: Props) {
   const r = crowned ? R * 0.72 : R;
   const onBoard = pos >= 0;
+  // De vuelta a la cárcel (capturada o soplada): vuelo largo en arco con giro.
+  const prev = useRef(pos);
+  const [flying, setFlying] = useState(false);
+  const toJail = flying || (pos < 0 && prev.current >= 0);
+  useEffect(() => {
+    const was = prev.current;
+    prev.current = pos;
+    if (pos < 0 && was >= 0) {
+      setFlying(true);
+      const t = setTimeout(() => setFlying(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [pos]);
   return (
     <motion.g
       initial={false}
       animate={{ x: at.x, y: at.y }}
-      transition={{ type: 'tween', ease: [0.45, 0, 0.55, 1], duration: HOP_S }}
+      transition={toJail ? { type: 'tween', ease: [0.3, 0, 0.3, 1], duration: 0.75 } : { type: 'tween', ease: [0.45, 0, 0.55, 1], duration: HOP_S }}
       onClick={movable ? onClick : undefined}
       style={{ cursor: movable ? 'pointer' : 'default' }}
       data-piece={id}
@@ -161,15 +257,17 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           key={pos}
           initial={false}
           animate={
-            movable
+            toJail
+              ? { y: [0, -90, -40, 0], rotate: [0, 200, 340, 360], scaleX: 1, scaleY: 1 }
+              : movable
               ? { y: [0, -9, 0], scaleX: 1, scaleY: 1 }
               : onBoard
                 ? { y: [0, -30, 0, 0], scaleX: [1, 0.94, 1.12, 1], scaleY: [1, 1.1, 0.86, 1] }
                 : { y: 0, scaleX: 1, scaleY: 1 }
           }
-          transition={movable ? { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
+          transition={toJail ? { duration: 0.75, times: [0, 0.4, 0.75, 1], ease: 'easeOut' } : movable ? { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
         >
-          <PieceGlyph color={color} style={style} r={r} />
+          <PieceGlyph color={color} style={style} r={r} img={img} />
           {crowned ? (
             <path d="M-9 -44 L-9 -52 L-4.5 -48 L0 -54 L4.5 -48 L9 -52 L9 -44 Z" fill="#ffcf3f" stroke="#7a4b00" strokeWidth={1.5} strokeLinejoin="round" />
           ) : null}

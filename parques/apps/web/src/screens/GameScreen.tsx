@@ -36,6 +36,7 @@ export function GameScreen() {
   const theme = item(equipped.board).board!;
   const diceSkin = item(equipped.dice).dice!;
   const pieceStyle = item(equipped.pieces).pieces!;
+  const pieceImg = item(equipped.pieces).piecesImg;
   const effect = item(equipped.effect).effect!;
   const myFrame = equipped.frame;
   const settings = useSettings();
@@ -188,7 +189,13 @@ export function GameScreen() {
       <div className="seat-row">{topRow.map((p, k) => renderSeat(p.i, alignFor(k, topRow.length, p.x)))}</div>
 
       <div className="board-wrap">
-        <div className="board-tilt" style={{ ['--ar' as string]: `${boardBox(game.sides).w / boardBox(game.sides).h}` }}>
+        <motion.div
+          className="board-tilt"
+          style={{ ['--ar' as string]: `${boardBox(game.sides).w / boardBox(game.sides).h}` }}
+          initial={{ scale: 0.55, rotate: -18, opacity: 0, y: 60 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 160, damping: 16, mass: 0.9 }}
+        >
           <Board
             game={game}
             view={view}
@@ -201,9 +208,10 @@ export function GameScreen() {
             onTarget={(m) => s.humanMove(m)}
             theme={theme}
             pieceStyle={pieceStyle}
+            pieceImg={pieceImg}
             effect={effect}
           />
-        </div>
+        </motion.div>
         <Banner banner={s.banner} />
         <AnimatePresence>
           {exitMoves.length > 0 ? (

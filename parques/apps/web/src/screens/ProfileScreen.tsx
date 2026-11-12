@@ -1,3 +1,5 @@
+import { ITEMS } from '@parques/engine';
+
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
@@ -119,6 +121,16 @@ export function ProfileScreen() {
               {a}
             </button>
           ))}
+        </div>
+        <div className="avatar-pick art">
+          {ITEMS.filter((it) => it.category === 'avatar' && p.owned.includes(it.id)).map((it) => (
+            <button key={it.id} className={p.avatar === `av:${it.id}` ? 'on' : ''} onClick={() => p.equip(it.id)}>
+              <Avatar emoji={`av:${it.id}`} size={46} />
+            </button>
+          ))}
+          <button className="more" onClick={() => go('shop')}>
+            ➕
+          </button>
         </div>
         <select className="text-input" value={p.country} onChange={(e) => p.setIdentity({ country: e.target.value })}>
           {COUNTRIES.map((c) => (

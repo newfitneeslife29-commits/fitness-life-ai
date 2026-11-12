@@ -46,9 +46,20 @@ export function LobbyScreen() {
   const evReady = ev.def.tiers.filter((tr, i) => p.event.points >= tr.goal && !p.event.claimed.includes(i)).length;
   const lowCoins = p.coins < AD_MAX_BALANCE;
 
+  let tileN = 0;
   const tile = (icon: string, title: string, sub: string, cls: string, onClick: () => void, badge?: string) => (
-    <motion.button className={`mode-tile ${cls}`} whileTap={{ scale: 0.92 }} whileHover={{ y: -3 }} onClick={() => { play('tap'); onClick(); }}>
-      <span className="mt-icon">{icon}</span>
+    <motion.button
+      className={`mode-tile ${cls}`}
+      initial={{ y: 24, opacity: 0, scale: 0.9 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      transition={{ delay: 0.12 + tileN++ * 0.05, type: 'spring', stiffness: 300, damping: 20 }}
+      whileTap={{ scale: 0.92 }}
+      whileHover={{ y: -3 }}
+      onClick={() => { play('tap'); onClick(); }}
+    >
+      <motion.span className="mt-icon" whileHover={{ rotate: [0, -12, 12, 0], scale: 1.15 }} transition={{ duration: 0.45 }}>
+        {icon}
+      </motion.span>
       <span className="mt-title">{t(title)}</span>
       <span className="mt-sub">{t(sub)}</span>
       {badge ? <span className="mt-badge">{badge}</span> : null}
