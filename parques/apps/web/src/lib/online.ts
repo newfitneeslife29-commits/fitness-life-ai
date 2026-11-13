@@ -6,7 +6,7 @@
  */
 import { create } from 'zustand';
 import { io, type Socket } from 'socket.io-client';
-import type { ClientToServer, CupInfo, HallOfFame, HouseRules, PlayAiOpts, PublicPlayer, RankRewardsInfo, RankRow, RoomInfo, ServerToClient, TableId, TournamentInfo, UpdateMsg } from '@parques/engine';
+import type { ClubMessage, DirectMessage, FlashBracket, ClientToServer, CupInfo, HallOfFame, HouseRules, PlayAiOpts, PublicPlayer, RankRewardsInfo, RankRow, RoomInfo, ServerToClient, TableId, TournamentInfo, UpdateMsg } from '@parques/engine';
 import { tr } from './i18n';
 import { useGame, type MatchConfig } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
@@ -39,6 +39,7 @@ interface OnlineState {
   cups: () => Promise<CupInfo[] | null>;
   cupMatch: (tier: string) => Promise<string | null>;
   hallOfFame: () => Promise<HallOfFame | null>;
+  league: () => Promise<{ rating: number; games: number; claimed: boolean } | null>;
   rankRewards: () => Promise<RankRewardsInfo | null>;
   findPlayer: (id: string) => Promise<PublicPlayer | null>;
   friendsOnline: (ids: string[]) => Promise<string[]>;
@@ -49,6 +50,20 @@ interface OnlineState {
   /** Invitación recibida de un amigo. */
   invite: { from: { id: string; name: string; avatar: string }; code: string } | null;
   dismissInvite: () => void;
+  /** v1.2 social: llamada genérica con respuesta (clubes, mensajes, reportes…). */
+  call: <T = unknown>(event: keyof ClientToServer, ...args: unknown[]) => Promise<T | null>;
+  /** Mensajes directos recibidos/enviados por amigo y no leídos. */
+  dms: Record<string, DirectMessage[]>;
+  unread: Record<string, number>;
+  pushDm: (m: DirectMessage) => void;
+  markRead: (friendId: string) => void;
+  /** Últimos mensajes del chat del club recibidos en vivo. */
+  clubFeed: ClubMessage[];
+  /** Torneo relámpago: fila y llaves. */
+  flash: { waiting?: number; startsAt?: number; bracket?: FlashBracket } | null;
+  flashJoin: () => Promise<string | null>;
+  flashCancel: () => void;
+  duoMatch: () => Promise<string | null>;
 }
 
 let socket: S | null = null;
@@ -119,6 +134,35 @@ function configFrom(room: RoomInfo, mySeat: number): MatchConfig {
       avatar: s.avatar,
     })),
   };
+}
+
+const REF_KEY = 'parques-ref';
+/** Enlace de invitación (/r/ID → ?ref=ID): se guarda el código hasta tener cuenta. */
+try {
+  const ref = new URLSearchParams(location.search).get('ref');
+  if (ref && /^[A-Z0-9]{4,16}$/i.test(ref)) localStorage.setItem(REF_KEY, ref.toUpperCase());
+} catch {
+  /* sin acceso */
+}
+async function redeemPendingReferral() {
+  let code: string | null = null;
+  try {
+    code = localStorage.getItem(REF_KEY);
+  } catch {
+    return;
+  }
+  const p = useProfile.getState();
+  if (!code || p.referredBy || code === p.id) {
+    if (code) localStorage.removeItem(REF_KEY);
+    return;
+  }
+  const r = await p.redeemReferral(code);
+  try {
+    localStorage.removeItem(REF_KEY);
+  } catch {
+    /* ignorar */
+  }
+  if (r.ok) useFx.getState().toast({ icon: '🎉', title: tr('¡Invitación canjeada!'), sub: `+${r.result?.coins ?? 0}` });
 }
 
 /** Primera conexión desde que se abrió la app. */
@@ -203,6 +247,12 @@ export const useOnline = create<OnlineState>((set, get) => ({
       };
       const login = () => {
         s.emit('auth', getSession() ?? {}, (r) => {
+          if (!r.ok && r.error?.includes('suspendida')) {
+            // Cuenta suspendida por el administrador: no se borra la sesión (se puede apelar).
+            set({ status: 'error', error: r.error });
+            done(false);
+            return;
+          }
           if (!r.ok) {
             // La cuenta guardada ya no existe en este servidor: se crea una nueva.
             saveSession(null);
@@ -210,6 +260,7 @@ export const useOnline = create<OnlineState>((set, get) => ({
               if (r2.ok && r2.id && r2.token) saveSession({ id: r2.id, token: r2.token });
               if (r2.profile) useProfile.getState().setFromServer(r2.profile);
               set({ status: 'online' });
+              setTimeout(() => void redeemPendingReferral(), 1500);
               done(true);
             });
             return;
@@ -217,6 +268,7 @@ export const useOnline = create<OnlineState>((set, get) => ({
           if (r.token && r.id) saveSession({ id: r.id, token: r.token });
           if (r.profile) useProfile.getState().setFromServer(r.profile);
           set({ status: 'online' });
+          setTimeout(() => void redeemPendingReferral(), 1500);
           const roomId = remembered();
           if (roomId && freshLaunch) {
             // Se cerró la app en plena partida = abandono: se sale de la mesa (la máquina juega por ti) y se queda en el inicio.
@@ -244,7 +296,7 @@ export const useOnline = create<OnlineState>((set, get) => ({
       });
       s.on('disconnect', () => set({ status: 'connecting' }));
       s.on('room', (room) => set({ room }));
-      s.on('searching', (m) => set({ searching: { waiting: m.waiting, startsAt: Date.now() + m.startsInMs } }));
+      s.on('searching', (m) => set((st) => ({ searching: { waiting: m.waiting, startsAt: Date.now() + m.startsInMs }, room: st.room?.status === 'waiting' ? null : st.room })));
       s.on('match_found', (info) => set({ room: info, mySeat: info.mySeat }));
       s.on('sync', (msg) => {
         if (useGame.getState().online && useApp.getState().screen === 'game' && get().room?.roomId === msg.room.roomId) {
@@ -262,9 +314,21 @@ export const useOnline = create<OnlineState>((set, get) => ({
         useProfile.getState().setFromServer(r.profile);
         useGame.getState().setOutcome(r.outcome);
       });
-      s.on('chat', (m) => useGame.getState().say(m.seat, m.text));
+      s.on('chat', (m) => {
+        const from = get().room?.seats[m.seat]?.playerId;
+        if (from && useProfile.getState().blocked.includes(from)) return; // bloqueado: no se ve su chat
+        useGame.getState().say(m.seat, m.text);
+      });
       s.on('invited', (m) => set({ invite: m }));
       s.on('notice', (m) => useFx.getState().toast({ icon: '📣', title: tr(m.text) }));
+      s.on('dm', (m) => {
+        if (useProfile.getState().blocked.includes(m.from)) return;
+        get().pushDm(m);
+        const f = useProfile.getState().friends.find((x) => x.id === m.from);
+        useFx.getState().toast({ icon: '💬', title: f?.name ?? m.from, sub: m.text });
+      });
+      s.on('club_chat', (m) => set((st) => ({ clubFeed: [...st.clubFeed, m].slice(-60) })));
+      s.on('flash', (m) => set((st) => ({ flash: { ...(st.flash ?? {}), ...m, startsAt: m.startsInMs !== undefined ? Date.now() + m.startsInMs : st.flash?.startsAt } })));
       setTimeout(() => {
         if (first) {
           set({ status: 'error', error: 'El servidor no responde' });
@@ -332,6 +396,41 @@ export const useOnline = create<OnlineState>((set, get) => ({
   invite: null,
   dismissInvite: () => set({ invite: null }),
 
+  call: async <T,>(event: keyof ClientToServer, ...args: unknown[]) => {
+    if (!(await get().connect())) return null;
+    return ack<T>((cb) => (socket!.emit as (e: string, ...a: unknown[]) => void)(event, ...args, cb));
+  },
+  dms: {},
+  unread: {},
+  pushDm: (m) =>
+    set((st) => {
+      const me = useProfile.getState().id;
+      const other = m.from === me ? m.to : m.from;
+      return {
+        dms: { ...st.dms, [other]: [...(st.dms[other] ?? []), m].slice(-80) },
+        unread: m.from === me ? st.unread : { ...st.unread, [other]: (st.unread[other] ?? 0) + 1 },
+      };
+    }),
+  markRead: (id) => set((st) => ({ unread: { ...st.unread, [id]: 0 } })),
+  clubFeed: [],
+  flash: null,
+  flashJoin: async () => {
+    if (!(await get().connect())) return get().error ?? 'Sin conexión';
+    set({ flash: { waiting: 1, startsAt: Date.now() + 30000 } });
+    const r = await ack<{ ok: boolean; error?: string }>((cb) => socket!.emit('flash_join', cb));
+    if (!r?.ok) set({ flash: null });
+    return r?.ok ? null : (r?.error ?? 'Error');
+  },
+  flashCancel: () => {
+    socket?.emit('flash_cancel');
+    set({ flash: null });
+  },
+  duoMatch: async () => {
+    const r = await ack<{ ok: boolean; error?: string }>((cb) => socket?.emit('duo_match', cb));
+    if (r?.ok) set({ searching: { waiting: 2, startsAt: Date.now() + 10000 }, room: null });
+    return r?.ok ? null : (r?.error ?? 'Error');
+  },
+
   cups: async () => {
     if (!(await get().connect())) return null;
     return ack((cb) => socket!.emit('cups', cb));
@@ -348,6 +447,11 @@ export const useOnline = create<OnlineState>((set, get) => ({
   hallOfFame: async () => {
     if (!(await get().connect())) return null;
     return ack((cb) => socket!.emit('hall_of_fame', cb));
+  },
+
+  league: async () => {
+    if (!(await get().connect())) return null;
+    return ack((cb) => socket!.emit('league', cb));
   },
 
   rankRewards: async () => {

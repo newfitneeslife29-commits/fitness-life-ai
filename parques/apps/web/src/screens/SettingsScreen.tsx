@@ -8,6 +8,7 @@ import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
 import { LANGUAGES, useT } from '../lib/i18n';
+import { askNotificationPermission } from '../lib/notify';
 import { MUSIC_TRACKS, play } from '../audio/audio';
 
 export function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
@@ -47,6 +48,16 @@ export function SettingsScreen() {
         <Toggle label={`🎵 ${t('Música')}`} value={s.music} onChange={(v) => s.set({ music: v })} />
         {s.music ? <MusicPicker /> : null}
         <Toggle label={`📳 ${t('Vibración')}`} value={s.vibration} onChange={(v) => s.set({ vibration: v })} />
+        <Toggle
+          label={`🔔 ${t('Notificaciones (regalo diario, racha, cofre)')}`}
+          value={s.notifications}
+          onChange={(v) => {
+            s.set({ notifications: v });
+            if (v) void askNotificationPermission();
+          }}
+        />
+        <Toggle label={`🔷 ${t('Modo daltónico (figuras en las fichas)')}`} value={s.colorblind} onChange={(v) => s.set({ colorblind: v })} />
+        <Toggle label={`🔠 ${t('Letra grande')}`} value={s.bigText} onChange={(v) => s.set({ bigText: v })} />
         <div className="row">
           <span>🌐 {t('Idioma')}</span>
           <select className="text-input slim" value={s.language} onChange={(e) => s.set({ language: e.target.value as typeof s.language })}>

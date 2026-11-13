@@ -74,6 +74,16 @@ export function TournamentScreen() {
   return (
     <div className="screen tournament-screen">
       <TopBar back title={t('Torneos')} />
+      <motion.button className="card glossy flash-banner" whileTap={{ scale: 0.97 }} initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={() => go('flash')}>
+        <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+          ⚡
+        </motion.span>
+        <span>
+          <b>{t('Torneo relámpago')}</b>
+          <small>{t('16 jugadores · eliminación en minutos')}</small>
+        </span>
+        <span className="chev">›</span>
+      </motion.button>
 
       <div className="cup-tabs">
         {TOURNAMENT_TIERS.map((tt) => (

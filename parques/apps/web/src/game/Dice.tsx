@@ -86,7 +86,7 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
         {FACES.map((f) => (
           <div
             key={f.v}
-            className="cube-face"
+            className={`cube-face ${skin.anim ? `anim-${skin.anim}` : ''}`}
             style={{
               width: size,
               height: size,

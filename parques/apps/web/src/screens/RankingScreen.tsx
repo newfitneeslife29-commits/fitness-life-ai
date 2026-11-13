@@ -1,3 +1,4 @@
+import { LeagueCard } from '../components/LeagueCard';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RANK_PRIZES, type RankRewardsInfo, type RankRow } from '@parques/engine';
@@ -66,6 +67,7 @@ export function RankingScreen() {
         <button className={scope === 'country' ? 'on' : ''} onClick={() => setScope('country')}>{country?.flag} {t(country?.name ?? '')}</button>
         <button className={scope === 'friends' ? 'on' : ''} onClick={() => setScope('friends')}>👥 {t('Amigos')}</button>
       </div>
+      <LeagueCard />
       <motion.section key={`prize-${scope}`} className="card glossy rank-prizes" initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <h3>🎁 {t('Premios de cada semana')}</h3>
         <div className="rp-bands">

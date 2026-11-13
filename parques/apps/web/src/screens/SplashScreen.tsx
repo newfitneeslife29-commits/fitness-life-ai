@@ -65,6 +65,10 @@ export function SplashScreen() {
           <button className="btn3d green wide" onClick={() => setAttempt((x) => x + 1)}>
             {t('Reintentar')}
           </button>
+          <button className="btn3d blue wide" onClick={() => useApp.getState().openSetup('ai')}>
+            📴 {t('Jugar sin conexión contra la máquina')}
+          </button>
+          <small className="rule-note">{t('Sin apuesta ni premios: solo para practicar.')}</small>
         </div>
       </div>
     );

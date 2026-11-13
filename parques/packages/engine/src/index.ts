@@ -22,4 +22,6 @@ export * from './meta/profile';
 export * from './meta/ads';
 export * from './meta/events';
 export * from './meta/shop';
+export * from './meta/extras';
 export * from './meta/competition';
+export * from './meta/social';

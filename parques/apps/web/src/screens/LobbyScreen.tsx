@@ -1,4 +1,5 @@
 import { CoachTour } from '../components/CoachTour';
+import { QuickCards } from '../components/QuickCards';
 import { LOBBY_TOUR } from '../game/tutorialData';
 import { TOUR_KEY } from './TutorialScreen';
 import { useEffect, useState } from 'react';
@@ -19,6 +20,8 @@ import { item } from '@parques/engine';
 import { passSeasonId, tierFromXp, eventAt, AD_MAX_BALANCE } from '@parques/engine';
 import { watchAdForCoins } from '../lib/ads';
 import { providers, signIn } from '../lib/auth';
+import { useOnline } from '../lib/online';
+import { askNotificationsOnce } from '../lib/notify';
 
 function countdown(ms: number): string {
   const d = Math.floor(ms / 86400000);
@@ -29,6 +32,8 @@ function countdown(ms: number): string {
 
 export function LobbyScreen() {
   const { go, openSetup, dailyOpen, setDailyOpen } = useApp();
+  const netError = useOnline((o) => o.status === 'error');
+  useEffect(() => askNotificationsOnce(), []);
   const [tour, setTour] = useState(() => {
     try {
       return !!localStorage.getItem(TOUR_KEY);
@@ -117,6 +122,8 @@ export function LobbyScreen() {
         {evReady ? <span className="side-dot static">{evReady}</span> : <span className="sb-go">›</span>}
       </motion.button>
 
+      <QuickCards />
+
       {providers().length && !p.linked.length ? (
         <div className="save-progress card glossy">
           <span>💾 {t('Guarda tu progreso')}</span>
@@ -126,6 +133,12 @@ export function LobbyScreen() {
             </button>
           ))}
         </div>
+      ) : null}
+
+      {netError ? (
+        <motion.button className="offline-banner" initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} whileTap={{ scale: 0.96 }} onClick={() => { play('tap'); openSetup('ai'); }}>
+          📴 <span><b>{t('Sin conexión')}</b><small>{t('Juega contra la máquina sin apuesta mientras vuelve el internet')}</small></span> ›
+        </motion.button>
       ) : null}
 
       {lowCoins ? (
@@ -145,6 +158,10 @@ export function LobbyScreen() {
             🎯
             {missionsReady ? <span className="side-dot">{missionsReady}</span> : null}
             <small>{t('Misiones')}</small>
+          </motion.button>
+          <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('club')}>
+            🛡️
+            <small>{t('Club')}</small>
           </motion.button>
         </div>
         <div className="hero-3d">

@@ -254,6 +254,28 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 - Tienda: banco de monedas/gemas arriba (`bank-strip`); velo bajo la barra de estado (`status-veil`). Dados: el usado se ve gris
   con ✓ (no transparente). Más frases de la Costa.
 
+## v1.2 (lo nuevo: las 20 ideas)
+- **Bloque A (progreso)** `meta/extras.ts`: cofre por victorias (3, VIP 2), salvar racha (15 gemas), Pase VIP 30 días
+  (`vip-30`, US$6,99: diario doble, cofre cada 2, marco), duplicar premio viendo anuncio (`double_win`), reto del día con
+  reglas especiales (`dailyChallenge`), modo Historia por regiones (`STORY`, 8 jefes; `play_ai {story}`), ligas por división
+  (`DIVISIONS`, premio semanal con 3 partidas online, `league_claim`), skins animadas y efectos de victoria (categoría `victory`).
+- **Bloque B (social)** `meta/social.ts` + `apps/server/src/social.ts`: filtro de groserías (`cleanChat`, en el chat de la
+  mesa, clubes y mensajes), bloquear (`profile.blocked`), reportes (`report` → tabla `reports`), sanción por abandono
+  (3 en 24 h → `penaltyUntil`, sin online un rato), suspensiones (`bans`, la cuenta no entra). Clubes (`clubs`,
+  `club_members`, `club_wins`, `club_claims`, `club_messages`; crear cuesta 5.000, máx. 30, chat, ranking semanal y cofre
+  10/30/75 victorias). Mensajes a amigos (`dm`, `messages`, rápidos en `QUICK_MESSAGES`). Referidos: enlace `/r/<ID>` →
+  `/?ref=ID` (el cliente lo canjea solo; nuevo +500, quien invita +1.000 y 10 gemas, máx. 30). Torneo relámpago
+  (`flash_join`: 16 jugadores, 4 mesas Ciudad → final, premios `FLASH.prizes`, bots si faltan). 2 vs 2 online: mesa
+  privada en parejas (el amigo queda enfrente) y `duo_match` busca otra pareja.
+- **Panel de administración**: `https://<servidor>/admin` (`apps/server/src/admin.ts`), clave en la variable
+  **`PARQUES_ADMIN_TOKEN`** (≥ 12 caracteres; sin ella está apagado): resumen, buscar jugador, regalar/quitar monedas,
+  suspender, reportes y aviso a todos.
+- **Bloque C**: práctica sin conexión contra la máquina (Setup y pantalla de carga; local, sin apuesta), accesibilidad
+  (Ajustes: modo daltónico con figuras ▲●■◆★✚ en fichas y nombres, letra grande), notificaciones locales
+  (`lib/notify.ts`, @capacitor/local-notifications: regalo diario, racha, cofre, "te extrañamos"; las push remotas
+  necesitarían Firebase/APNs), repetición de la última partida (`lib/replay.ts`, `ReplayScreen`) y "Compartir momento"
+  (`lib/share.ts`: tarjeta PNG 1080×1350 con @capacitor/share + filesystem).
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

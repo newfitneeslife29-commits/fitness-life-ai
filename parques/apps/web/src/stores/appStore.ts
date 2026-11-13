@@ -19,7 +19,12 @@ export type Screen =
   | 'pass'
   | 'achievements'
   | 'welcome'
-  | 'tutorial';
+  | 'tutorial'
+  | 'story'
+  | 'vip'
+  | 'club'
+  | 'flash'
+  | 'replay';
 export type SetupMode = MatchConfig['mode'];
 
 interface AppStore {

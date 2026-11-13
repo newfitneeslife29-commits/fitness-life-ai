@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Color } from '@parques/engine';
 import type { PieceStyle } from '@parques/engine';
 import type { Pt } from './boardLayout';
+import { useSettings } from '../stores/settingsStore';
 
 interface Props {
   id: string;
@@ -42,6 +43,7 @@ const FINISH: Partial<Record<PieceStyle, (fill: string) => { body: string; overl
   ceramica: () => ({ body: '#c8693a' }),
   muisca: () => ({ body: '#f2b81e' }),
   esmeralda: (f) => ({ body: f, overlay: 'url(#pc-pearl)' }),
+  neon: () => ({ body: '#0d0b22' }),
 };
 
 const IMG_COLORS = new Set<Color>(['amarillo', 'azul', 'rojo', 'verde']);
@@ -124,6 +126,29 @@ function PieceDrawn({ color, style, r = R }: { color: Color; style: PieceStyle; 
           <path d={`M${-headR * 0.75} ${headY - headR * 0.4} C${-headR * 0.7} ${headY - headR * 1.6} ${headR * 0.7} ${headY - headR * 1.6} ${headR * 0.75} ${headY - headR * 0.4} Z`} fill="#f3e6c4" stroke="#1a1a1a" strokeWidth={1.6} />
           <path d={`M${-headR * 0.72} ${headY - headR * 0.75} Q0 ${headY - headR * 0.95} ${headR * 0.72} ${headY - headR * 0.75}`} fill="none" stroke="#1a1a1a" strokeWidth={2.4} />
           <path d={`M${-headR * 0.55} ${headY - headR * 1.1} Q0 ${headY - headR * 1.3} ${headR * 0.55} ${headY - headR * 1.1}`} fill="none" stroke="#1a1a1a" strokeWidth={2} />
+        </g>
+      ) : null}
+      {style === 'neon' ? (
+        <motion.g animate={{ opacity: [0.55, 1, 0.55] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ filter: `drop-shadow(0 0 4px ${baseFill})` }}>
+          <path d={body} fill="none" stroke={baseFill} strokeWidth={2.6} />
+          <circle cx={0} cy={headY} r={headR} fill="none" stroke={baseFill} strokeWidth={2.6} />
+          <ellipse cx={0} cy={-1} rx={r} ry={r * 0.42} fill="none" stroke={baseFill} strokeWidth={2} />
+        </motion.g>
+      ) : null}
+      {style === 'cometa' ? (
+        <g>
+          {[1, 2, 3].map((k) => (
+            <motion.circle
+              key={k}
+              cx={-headR * 0.9 * k}
+              cy={headY + headR * 0.35 * k}
+              r={headR * (1 - k * 0.22)}
+              fill={fill}
+              animate={{ opacity: [0.5 / k, 0.15 / k, 0.5 / k], cx: [-headR * 0.9 * k, -headR * 1.1 * k, -headR * 0.9 * k] }}
+              transition={{ duration: 0.9, repeat: Infinity, delay: k * 0.1 }}
+            />
+          ))}
+          <circle cx={headR * 0.25} cy={headY - headR * 0.3} r={headR * 0.3} fill="#fff" opacity={0.85} />
         </g>
       ) : null}
       {style === 'muisca' ? (
@@ -211,8 +236,12 @@ function StyleBody({ style, r, h, color }: { style: PieceStyle; r: number; h: nu
 export const HOP_S = 0.22;
 
 /** Ficha en el tablero: salta en arco 3D de casilla en casilla (sombra que se achica) y rebota si se puede mover. */
+/** Figura de cada color (modo para daltónicos). */
+export const COLOR_SHAPES: Record<Color, string> = { amarillo: '▲', rojo: '●', verde: '■', azul: '◆', naranja: '★', morado: '✚' };
+
 export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onClick }: Props) {
   const r = crowned ? R * 0.72 : R;
+  const colorblind = useSettings((s) => s.colorblind);
   const onBoard = pos >= 0;
   // De vuelta a la cárcel (capturada o soplada): vuelo largo en arco con giro.
   const prev = useRef(pos);
@@ -268,6 +297,14 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           transition={toJail ? { duration: 0.75, times: [0, 0.4, 0.75, 1], ease: 'easeOut' } : movable ? { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
         >
           <PieceGlyph color={color} style={style} r={r} img={img} />
+          {colorblind ? (
+            <g className="cb-mark" transform={`translate(0 ${-r * 1.15})`}>
+              <circle r={r * 0.62} fill="rgba(0,0,0,.72)" stroke="#fff" strokeWidth={1.5} />
+              <text y={r * 0.26} textAnchor="middle" fontSize={r * 0.8} fontWeight={900} fill="#fff">
+                {COLOR_SHAPES[color]}
+              </text>
+            </g>
+          ) : null}
           {crowned ? (
             <path d="M-9 -44 L-9 -52 L-4.5 -48 L0 -54 L4.5 -48 L9 -52 L9 -44 Z" fill="#ffcf3f" stroke="#7a4b00" strokeWidth={1.5} strokeLinejoin="round" />
           ) : null}

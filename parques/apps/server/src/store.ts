@@ -9,6 +9,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import {
+  divisionOf,
   grantRankPrize,
   grantTournamentPrize,
   levelFromXp,
@@ -85,6 +86,37 @@ CREATE TABLE IF NOT EXISTS parques.sessions (
   token_hash TEXT PRIMARY KEY, account TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
   created TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- v1.2 social
+CREATE TABLE IF NOT EXISTS parques.reports (
+  id BIGSERIAL PRIMARY KEY, reporter TEXT NOT NULL, target TEXT NOT NULL, reason TEXT NOT NULL, day TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open', at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE (reporter, target, day)
+);
+CREATE TABLE IF NOT EXISTS parques.bans (player TEXT PRIMARY KEY, until TIMESTAMPTZ NOT NULL, reason TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS parques.messages (
+  id BIGSERIAL PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, text TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS messages_pair ON parques.messages (sender, receiver, at DESC);
+CREATE TABLE IF NOT EXISTS parques.referrals (
+  newbie TEXT PRIMARY KEY, referrer TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS parques.clubs (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT NOT NULL, owner TEXT NOT NULL, created TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS clubs_name ON parques.clubs (lower(name));
+CREATE TABLE IF NOT EXISTS parques.club_members (
+  player TEXT PRIMARY KEY, club TEXT NOT NULL REFERENCES parques.clubs(id) ON DELETE CASCADE, role TEXT NOT NULL DEFAULT 'member',
+  joined TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS parques.club_wins (
+  week TEXT NOT NULL, club TEXT NOT NULL, player TEXT NOT NULL, wins INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (week, club, player)
+);
+CREATE TABLE IF NOT EXISTS parques.club_claims (
+  week TEXT NOT NULL, club TEXT NOT NULL, player TEXT NOT NULL, tier INTEGER NOT NULL, PRIMARY KEY (week, player, tier)
+);
+CREATE TABLE IF NOT EXISTS parques.club_messages (
+  id BIGSERIAL PRIMARY KEY, club TEXT NOT NULL, sender TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS club_messages_club ON parques.club_messages (club, at DESC);
 -- Solo el servidor (rol dueño) lee y escribe: con RLS activo y sin políticas, la API pública de Supabase no ve nada.
 ALTER TABLE parques.accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.tournaments ENABLE ROW LEVEL SECURITY;
@@ -96,13 +128,22 @@ ALTER TABLE parques.settled ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.rank_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.bans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.clubs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_wins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_messages ENABLE ROW LEVEL SECURITY;
 `;
 
 // ------------------------------------------------------------ Conexión (pg o PGlite)
-interface Sql {
+export interface Sql {
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
 }
-interface Db extends Sql {
+export interface Db extends Sql {
   tx<T>(fn: (q: Sql) => Promise<T>): Promise<T>;
   /** Varias sentencias sin parámetros (el esquema). */
   exec(text: string): Promise<void>;
@@ -164,13 +205,16 @@ export interface StoreOptions {
 
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 
-function randomId(): string {
+export function randomId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const b = randomBytes(8);
   return Array.from(b, (x) => chars[x % chars.length]).join('');
 }
 
 type UpdateResult<T> = T | { ok: false; error: string };
+
+/** Partidas online mínimas en la semana para cobrar la liga. */
+export const LEAGUE_MIN_GAMES = 3;
 
 export class Store {
   private db: Promise<Db>;
@@ -181,6 +225,11 @@ export class Store {
       await db.exec(SCHEMA);
       return db;
     })();
+  }
+
+  /** Acceso directo a la base (módulo social y panel de administración). */
+  sql(): Promise<Db> {
+    return this.db;
   }
 
   /** Espera a que la base esté lista (falla si no se puede conectar). */
@@ -554,5 +603,29 @@ export class Store {
       const r = await this.updateIn(q, playerId, (p) => grantRankPrize(p, prize.coins, prize.gems));
       return { ok: true, profile: r.ok ? r.profile : undefined, coins: prize.coins, gems: prize.gems, place };
     });
+  }
+
+  /** Premio semanal de la liga: tu división según tus trofeos, si jugaste al menos 3 partidas online esta semana. Una vez por semana. */
+  async claimLeague(playerId: string, week: string): Promise<{ ok: boolean; error?: string; profile?: Profile; coins?: number; gems?: number; division?: string }> {
+    const db = await this.db;
+    const [t] = await db.query<{ games: number }>('SELECT games FROM parques.tournaments WHERE week = $1 AND player = $2', [week, playerId]);
+    if (!t || t.games < LEAGUE_MIN_GAMES) return { ok: false, error: `Juega ${LEAGUE_MIN_GAMES} partidas online esta semana para cobrar tu liga` };
+    const [a] = await db.query<{ rating: number }>('SELECT rating FROM parques.accounts WHERE id = $1', [playerId]);
+    const div = divisionOf(a?.rating ?? 1000);
+    return db.tx(async (q) => {
+      const ins = await q.query('INSERT INTO parques.rank_results (week, scope, player, place, coins, gems) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING player', [week, 'league', playerId, 0, div.coins, div.gems]);
+      if (!ins.length) return { ok: false, error: 'Ya cobraste la liga de esta semana' };
+      const r = await this.updateIn(q, playerId, (p) => grantRankPrize(p, div.coins, div.gems));
+      return { ok: true, profile: r.ok ? r.profile : undefined, coins: div.coins, gems: div.gems, division: div.id };
+    });
+  }
+
+  /** Trofeos de un jugador y si ya cobró la liga de esta semana. */
+  async leagueInfo(playerId: string, week: string): Promise<{ rating: number; games: number; claimed: boolean }> {
+    const db = await this.db;
+    const [a] = await db.query<{ rating: number }>('SELECT rating FROM parques.accounts WHERE id = $1', [playerId]);
+    const [t] = await db.query<{ games: number }>('SELECT games FROM parques.tournaments WHERE week = $1 AND player = $2', [week, playerId]);
+    const [c] = await db.query<{ player: string }>("SELECT player FROM parques.rank_results WHERE week = $1 AND scope = 'league' AND player = $2", [week, playerId]);
+    return { rating: a?.rating ?? 1000, games: t?.games ?? 0, claimed: !!c };
   }
 }

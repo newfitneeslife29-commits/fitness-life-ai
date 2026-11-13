@@ -24,6 +24,16 @@ import { PassScreen } from './screens/PassScreen';
 import { AchievementsScreen } from './screens/AchievementsScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { TutorialScreen } from './screens/TutorialScreen';
+import { StoryScreen } from './screens/StoryScreen';
+import { VipScreen } from './screens/VipScreen';
+import { ClubScreen } from './screens/ClubScreen';
+import { FlashScreen } from './screens/FlashScreen';
+import { ReplayScreen } from './screens/ReplayScreen';
+import { startReplayRecorder } from './lib/replay';
+import { startNotifications } from './lib/notify';
+
+startReplayRecorder();
+startNotifications();
 import { setMusicTrack } from './audio/audio';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
@@ -45,6 +55,11 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   achievements: AchievementsScreen,
   welcome: WelcomeScreen,
   tutorial: TutorialScreen,
+  story: StoryScreen,
+  vip: VipScreen,
+  club: ClubScreen,
+  flash: FlashScreen,
+  replay: ReplayScreen,
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */
@@ -63,6 +78,10 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+  const bigText = useSettings((s) => s.bigText);
+  useEffect(() => {
+    document.documentElement.classList.toggle('big-text', bigText);
+  }, [bigText]);
   useEffect(() => {
     void resumePurchase();
   }, []);

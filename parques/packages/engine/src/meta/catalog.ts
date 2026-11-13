@@ -6,8 +6,12 @@
 import { ITEM_PRICES_USD } from '../economy';
 import type { Season } from './seasons';
 
-export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect' | 'avatar';
-export type Currency = 'coins' | 'usd' | 'pass' | 'free' | 'event';
+export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect' | 'avatar' | 'victory';
+export type Currency = 'coins' | 'usd' | 'pass' | 'free' | 'event' | 'vip';
+/** Celebración al ganar (pantalla de victoria). */
+export type VictoryStyle = 'confeti' | 'papayera' | 'dadito' | 'chiva' | 'polvora' | 'mariposas' | 'silletas';
+/** Animación encima del escenario del tablero. */
+export type BoardAnim = 'rain' | 'waves' | 'fireflies' | 'shooting-stars' | 'petals';
 
 /** Ilustraciones de tablero (dibujos de fondo, centro y esquinas). */
 export type BoardArt =
@@ -15,6 +19,8 @@ export type BoardArt =
   | 'tejo' | 'cielo' | 'carnaval' | 'navidad' | 'tatacoa';
 
 export interface BoardTheme {
+  /** Animación sobre el escenario (lluvia, olas, luciérnagas…). */
+  anim?: BoardAnim;
   frame: string;
   frameDark: string;
   /** Color del canto del tablero (grosor 3D). */
@@ -37,13 +43,15 @@ export interface BoardTheme {
 export interface DiceSkin {
   /** Textura de las caras (imagen en public/art/dice/<texture>.webp); los puntos los dibuja la app. */
   texture?: string;
+  /** Dados animados (premium): brillo que recorre las caras. */
+  anim?: 'fire' | 'rainbow' | 'glow';
   face: [string, string];
   pip: string;
   one: string;
   edge?: string;
 }
 
-export type PieceStyle = 'clasica' | 'gema' | 'brillante' | 'moneda' | 'estrella' | 'cristal' | 'corona' | 'perla' | 'mate' | 'obsidiana' | 'tricolor' | 'fuego' | 'viento' | 'ceramica' | 'muisca' | 'grano' | 'vueltiao' | 'chiva' | 'esmeralda';
+export type PieceStyle = 'clasica' | 'gema' | 'brillante' | 'moneda' | 'estrella' | 'cristal' | 'corona' | 'perla' | 'mate' | 'obsidiana' | 'tricolor' | 'fuego' | 'viento' | 'ceramica' | 'muisca' | 'grano' | 'vueltiao' | 'chiva' | 'esmeralda' | 'cometa' | 'neon';
 export type EffectStyle = 'stars' | 'flowers' | 'confetti' | 'fireworks' | 'snow' | 'bubbles' | 'butterflies' | 'lightning' | 'music';
 
 export interface FrameSkin {
@@ -66,6 +74,7 @@ export interface Item {
   pieces?: PieceStyle;
   frame?: FrameSkin;
   effect?: EffectStyle;
+  victory?: VictoryStyle;
   /** Fichas con arte (public/art/pieces/<piecesImg>-<color>.webp). */
   piecesImg?: string;
   /** Avatar con arte (public/art/avatars/<avatarImg>.webp). */
@@ -73,7 +82,7 @@ export interface Item {
   emoji: string;
 }
 
-type Raw = Omit<Item, 'currency' | 'price'> & { coins?: number; passOnly?: boolean };
+type Raw = Omit<Item, 'currency' | 'price'> & { coins?: number; passOnly?: boolean; vipOnly?: boolean };
 
 const page = (a: string, b: string): [string, string] => [a, b];
 
@@ -283,11 +292,35 @@ const RAW: Raw[] = [
   { id: 'effect-mariposas', category: 'effect', name: 'Mariposas amarillas', coins: 9000, emoji: '🦋', effect: 'butterflies' },
   { id: 'effect-rayos', category: 'effect', name: 'Rayos', emoji: '⚡', effect: 'lightning' },
   { id: 'effect-cumbia', category: 'effect', name: 'Cumbia (Evento)', event: 'ev-online', emoji: '🎶', effect: 'music' },
+  // v1.2: marco VIP, skins animadas y celebraciones de victoria
+  { id: 'frame-vip', category: 'frame', name: 'VIP dorado', vipOnly: true, emoji: '💎', frame: { ring: ['#fff1a8', '#b8860b'], ornament: '💎' } },
+  { id: 'dice-fuego-vivo', category: 'dice', name: 'Fuego vivo', emoji: '🔥', dice: { texture: 'volcan', anim: 'fire', face: ['#ff7043', '#3e0a0a'], pip: '#fff8e1', one: '#ffeb3b', edge: '#1a0303' } },
+  { id: 'dice-arcoiris-vivo', category: 'dice', name: 'Arcoíris vivo', emoji: '🌈', dice: { texture: 'arcoiris', anim: 'rainbow', face: ['#ffffff', '#eeeeee'], pip: '#ffffff', one: '#ffffff', edge: '#6d28d9' } },
+  { id: 'dice-neon-vivo', category: 'dice', name: 'Neón vivo', coins: 30000, emoji: '💡', dice: { texture: 'estrellas', anim: 'glow', face: ['#3a1c7a', '#0f0a30'], pip: '#7df9ff', one: '#ff4fd8', edge: '#22d3ee' } },
+  { id: 'pieces-cometa', category: 'pieces', name: 'Cometas', emoji: '☄️', pieces: 'cometa' },
+  { id: 'pieces-neon', category: 'pieces', name: 'Neón', coins: 35000, emoji: '🔮', pieces: 'neon' },
+  { id: 'board-amazonas-lluvia', category: 'board', name: 'Amazonas bajo la lluvia', emoji: '🌧️',
+    board: { image: 'amazonas', anim: 'rain', frame: '#1b5e20', frameDark: '#0a2e0d', slab: '#14501a', sky: ['#e8f5e9', '#81c784', '#2e7d32'], circle: ['#ffffff', '#66bb6a'], line: '#0a2e0d', tint: 10, deco: 'stars', page: page('#0d2e12', '#030d05') } },
+  { id: 'board-caribe-olas', category: 'board', name: 'Caribe con olas', emoji: '🌊',
+    board: { image: 'sanandres', anim: 'waves', frame: '#0288d1', frameDark: '#01385a', slab: '#0277bd', sky: ['#e1f5fe', '#4fc3f7', '#0277bd'], circle: ['#fff9c4', '#26c6da'], line: '#01385a', tint: 10, deco: 'stars', page: page('#01385a', '#00121d') } },
+  { id: 'board-mompox-luciernagas', category: 'board', name: 'Mompox de luciérnagas', coins: 70000, emoji: '✨',
+    board: { image: 'mompox', anim: 'fireflies', frame: '#4527a0', frameDark: '#1a0b45', slab: '#311b92', sky: ['#ede7f6', '#b39ddb', '#5e35b1'], circle: ['#fff59d', '#7e57c2'], line: '#1a0b45', tint: 10, deco: 'stars', page: page('#1a0b45', '#070214') } },
+  { id: 'board-galaxia-estrellas', category: 'board', name: 'Lluvia de estrellas', emoji: '🌠',
+    board: { image: 'galaxia', anim: 'shooting-stars', frame: '#311b92', frameDark: '#0d0630', slab: '#1a0a5e', sky: ['#ede7f6', '#7e57c2', '#311b92'], circle: ['#fff59d', '#7e57c2'], line: '#0d0630', tint: 10, deco: 'stars', page: page('#120838', '#040112') } },
+  { id: 'board-flores-petalos', category: 'board', name: 'Pétalos de la Feria', emoji: '🌸',
+    board: { image: 'flores', anim: 'petals', frame: '#c2185b', frameDark: '#4a0a24', slab: '#880e4f', sky: ['#fce4ec', '#f48fb1', '#c2185b'], circle: ['#fff9c4', '#ec407a'], line: '#4a0a24', tint: 10, deco: 'stars', page: page('#4a0a24', '#14030a') } },
+  { id: 'victory-confeti', category: 'victory', name: 'Confeti', emoji: '🎊', victory: 'confeti' },
+  { id: 'victory-papayera', category: 'victory', name: 'Papayera', coins: 12000, emoji: '🎺', victory: 'papayera' },
+  { id: 'victory-polvora', category: 'victory', name: 'Pólvora de diciembre', coins: 20000, emoji: '🎆', victory: 'polvora' },
+  { id: 'victory-silletas', category: 'victory', name: 'Lluvia de flores', coins: 15000, emoji: '💐', victory: 'silletas' },
+  { id: 'victory-dadito', category: 'victory', name: 'Dadito bailando', emoji: '🕺', victory: 'dadito' },
+  { id: 'victory-chiva', category: 'victory', name: 'Chiva rumbera', emoji: '🚌', victory: 'chiva' },
+  { id: 'victory-mariposas', category: 'victory', name: 'Mariposas amarillas', emoji: '🦋', victory: 'mariposas' },
 ];
 
-export const ITEMS: Item[] = RAW.map(({ coins, passOnly, ...it }) => {
+export const ITEMS: Item[] = RAW.map(({ coins, passOnly, vipOnly, ...it }) => {
   const usd = ITEM_PRICES_USD[it.id];
-  const currency: Currency = passOnly ? 'pass' : it.event ? 'event' : coins ? 'coins' : usd ? 'usd' : 'free';
+  const currency: Currency = vipOnly ? 'vip' : passOnly ? 'pass' : it.event ? 'event' : coins ? 'coins' : usd ? 'usd' : 'free';
   return { ...it, currency, price: coins ?? 0 };
 });
 
@@ -302,6 +335,7 @@ export const DEFAULT_EQUIPPED: Record<Category, string> = {
   frame: 'frame-ninguno',
   effect: 'effect-estrellas',
   avatar: 'avatar-dadito',
+  victory: 'victory-confeti',
 };
 
 export const FREE_ITEMS = ITEMS.filter((i) => i.currency === 'free').map((i) => i.id);
@@ -317,6 +351,7 @@ export const CATEGORY_NAMES: Record<Category, string> = {
   frame: 'Marcos',
   effect: 'Efectos',
   avatar: 'Avatares',
+  victory: 'Victorias',
 };
 
 /** Emotes que se envían en partida pagando gemas. */

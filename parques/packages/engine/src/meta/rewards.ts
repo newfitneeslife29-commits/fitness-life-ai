@@ -23,6 +23,8 @@ export interface MatchSummary {
   entry: number;
   /** Torneo al que cuenta la partida (si es de torneo). */
   tournament?: string | null;
+  /** Id de la partida (para duplicar el premio con un anuncio una sola vez). */
+  matchId?: string;
 }
 
 /** Lo que deja la partida: monedas que recibe (incluye su entrada si la recupera), XP y gemas. */
