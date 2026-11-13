@@ -7,6 +7,8 @@ import { Avatar } from '../components/Avatar';
 import { isEmote } from './phrases';
 import { Cube } from './Dice';
 import type { DiceSkin } from '@parques/engine';
+import { useSettings } from '../stores/settingsStore';
+import { COLOR_SHAPES } from './Piece';
 
 interface Props {
   player: PlayerState;
@@ -43,6 +45,7 @@ const RING = 2 * Math.PI * 30;
 
 export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll }: Props) {
   const color = `var(--${player.color})`;
+  const colorblind = useSettings((s) => s.colorblind);
   return (
     <div className={`seat ${active ? 'active' : ''} ${player.left ? 'left-game' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
       {player.left ? <span className="seat-left-tag">🚪 {tr('Se fue')}</span> : null}
@@ -71,7 +74,10 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
         ) : null}
       </div>
       <div className="seat-info">
-        <div className="seat-name">{player.name}</div>
+        <div className="seat-name">
+          {colorblind ? <span className="cb-shape">{COLOR_SHAPES[player.color]}</span> : null}
+          {player.name}
+        </div>
         <div className="seat-sub">
           <span>👑 {crowned}/{player.pieces.length}</span>
           {level ? <span>{level}</span> : null}

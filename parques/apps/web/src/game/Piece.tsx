@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Color } from '@parques/engine';
 import type { PieceStyle } from '@parques/engine';
 import type { Pt } from './boardLayout';
+import { useSettings } from '../stores/settingsStore';
 
 interface Props {
   id: string;
@@ -235,8 +236,12 @@ function StyleBody({ style, r, h, color }: { style: PieceStyle; r: number; h: nu
 export const HOP_S = 0.22;
 
 /** Ficha en el tablero: salta en arco 3D de casilla en casilla (sombra que se achica) y rebota si se puede mover. */
+/** Figura de cada color (modo para daltónicos). */
+export const COLOR_SHAPES: Record<Color, string> = { amarillo: '▲', rojo: '●', verde: '■', azul: '◆', naranja: '★', morado: '✚' };
+
 export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onClick }: Props) {
   const r = crowned ? R * 0.72 : R;
+  const colorblind = useSettings((s) => s.colorblind);
   const onBoard = pos >= 0;
   // De vuelta a la cárcel (capturada o soplada): vuelo largo en arco con giro.
   const prev = useRef(pos);
@@ -292,6 +297,14 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           transition={toJail ? { duration: 0.75, times: [0, 0.4, 0.75, 1], ease: 'easeOut' } : movable ? { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
         >
           <PieceGlyph color={color} style={style} r={r} img={img} />
+          {colorblind ? (
+            <g className="cb-mark" transform={`translate(0 ${-r * 1.15})`}>
+              <circle r={r * 0.62} fill="rgba(0,0,0,.72)" stroke="#fff" strokeWidth={1.5} />
+              <text y={r * 0.26} textAnchor="middle" fontSize={r * 0.8} fontWeight={900} fill="#fff">
+                {COLOR_SHAPES[color]}
+              </text>
+            </g>
+          ) : null}
           {crowned ? (
             <path d="M-9 -44 L-9 -52 L-4.5 -48 L0 -54 L4.5 -48 L9 -52 L9 -44 Z" fill="#ffcf3f" stroke="#7a4b00" strokeWidth={1.5} strokeLinejoin="round" />
           ) : null}

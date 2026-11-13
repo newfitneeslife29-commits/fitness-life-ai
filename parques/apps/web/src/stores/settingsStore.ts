@@ -24,6 +24,11 @@ export interface Settings {
   turnSeconds: number;
   /** URL del servidor online (vacío = mismo origen). */
   serverUrl: string;
+  /** Accesibilidad: figuras en las fichas para distinguir colores y letra más grande. */
+  colorblind: boolean;
+  bigText: boolean;
+  /** Recordatorios en el celular (regalo diario, racha, cofre). */
+  notifications: boolean;
   set: (patch: Partial<Omit<Settings, 'set' | 'setRules'>>) => void;
   setRules: (patch: Partial<Settings['houseRules']>) => void;
 }
@@ -40,6 +45,9 @@ export const useSettings = create<Settings>()(
       houseRules: { soplar: true, triplePairPenalty: true, jailAttempts: 3 },
       turnSeconds: 20,
       serverUrl: '',
+      colorblind: false,
+      bigText: false,
+      notifications: true,
       set: (patch) => set(patch),
       setRules: (patch) => set((s) => ({ houseRules: { ...s.houseRules, ...patch } })),
     }),

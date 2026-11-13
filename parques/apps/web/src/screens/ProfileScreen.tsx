@@ -98,6 +98,9 @@ export function ProfileScreen() {
           </div>
         ))}
       </div>
+      <button className="btn3d blue" onClick={() => go('replay')}>
+        🎬 {t('Repetición de la última partida')}
+      </button>
       <button className="btn3d purple" onClick={() => go('achievements')}>
         🏅 {t('Ver todos los logros')}
       </button>

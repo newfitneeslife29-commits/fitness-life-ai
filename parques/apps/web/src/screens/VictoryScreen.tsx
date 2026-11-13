@@ -15,6 +15,7 @@ import { adsAvailable, showRewardedAd } from '../lib/ads';
 import { play } from '../audio/audio';
 import { useT } from '../lib/i18n';
 import { useOnline } from '../lib/online';
+import { shareMoment } from '../lib/share';
 
 export function VictoryScreen() {
   const { game, config, rematch, quit, outcome, online } = useGame();
@@ -158,6 +159,35 @@ export function VictoryScreen() {
       )}
 
       <ExtraRewards outcome={outcome} />
+
+      <div className="moment-row">
+        <motion.button className="btn3d small blue" whileTap={{ scale: 0.93 }} onClick={() => { play('tap'); go('replay'); }}>
+          🎬 {t('Repetición')}
+        </motion.button>
+        <motion.button
+          className="btn3d small purple"
+          whileTap={{ scale: 0.93 }}
+          onClick={async () => {
+            play('tap');
+            const st = me >= 0 ? game.players[me]!.stats : null;
+            const ok = await shareMoment({
+              title: won ? t('¡Gané!') : t('¡Quedé {n}º!', { n: myPlace + 1 }),
+              subtitle: outcome && outcome.coins > 0 ? `+${outcome.coins.toLocaleString()} 🪙` : 'Parqués Colombia',
+              name: profile.name,
+              avatar: profile.avatar,
+              playerId: profile.id,
+              stats: [
+                { icon: '⚔️', label: t('Capturas'), value: String(st?.captures ?? 0) },
+                { icon: '👑', label: t('Coronadas'), value: String(st?.crowned ?? 0) },
+                { icon: '🎲', label: t('Pares'), value: String(st?.pairs ?? 0) },
+              ],
+            });
+            if (!ok) fx.toast({ icon: '⚠️', title: t('No se pudo compartir') });
+          }}
+        >
+          📸 {t('Compartir momento')}
+        </motion.button>
+      </div>
 
       <div className="victory-actions">
         {flashLive ? (
