@@ -38,7 +38,7 @@ describe('perfil (operaciones del servidor)', () => {
     if (!g.ok) return;
     expect(grantProduct(g.profile, 'item:board-oro', 'cs_1', now).ok).toBe(false);
     const coins = grantProduct(p, 'coins-m', 'cs_2', now);
-    expect(coins.ok && coins.profile.coins).toBe(50000 + 50) // + logro "Mecenas I";
+    expect(coins.ok && coins.profile.coins).toBe(50000 + 20) // + logro "Mecenas I";
     expect(equip(p, 'board-oro').ok).toBe(false);
   });
 

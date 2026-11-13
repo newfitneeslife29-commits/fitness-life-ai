@@ -42,7 +42,7 @@ describe('anuncios con premio', () => {
     expect(claimAd({ ...rich, coins: 5000 }, now).ok).toBe(false);
     let p = { ...rich, coins: 0 };
     const r1 = claimAd(p, now);
-    expect(r1.ok && r1.profile.coins).toBe(AD_COINS + 50); // + logro "Rebuscador I"
+    expect(r1.ok && r1.profile.coins).toBe(AD_COINS + 20); // + logro "Rebuscador I"
     if (!r1.ok) return;
     expect(claimAd(r1.profile, new Date(now.getTime() + 1000)).ok).toBe(false);
     p = { ...r1.profile, coins: 0 };
@@ -139,7 +139,7 @@ describe('ranking y torneos', () => {
     const p = newProfile('A', now);
     expect(payTournament(p, 5000).ok).toBe(false);
     const r = payTournament(p, 1000);
-    expect(r.ok && r.profile.coins).toBe(50); // + logro "Competidor I"
+    expect(r.ok && r.profile.coins).toBe(20); // + logro "Competidor I"
     const w = grantTournamentPrize(p, 1, 30000, 30);
     expect(w.profile.stats.tournamentWins).toBe(1);
     expect(w.profile.stats.tournamentCoins).toBe(30000);

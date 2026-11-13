@@ -182,7 +182,8 @@ export const ACHIEVEMENTS: AchievementDef[] = CATEGORIES.flatMap((c) =>
     desc: c.desc.replace('{n}', fmtN(goal)),
     badge: c.emoji,
     goal,
-    coins: Math.min(5000, 50 + i * 40),
+    // Nivel I da poco (antes 50: en la primera partida se juntaban más de 2.000 monedas solo en logros).
+    coins: Math.min(5000, 20 + i * 40),
   })),
 );
 
