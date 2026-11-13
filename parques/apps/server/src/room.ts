@@ -34,6 +34,8 @@ export const DEFAULT_TIMING: Timing = { turnMs: 20000, soploMs: 4500, botDelayMs
 
 interface Seat extends NetSeat {
   level: AiLevel;
+  /** Se fue de una partida online: queda fuera (sus turnos se saltan) y no puede volver. */
+  left?: boolean;
 }
 
 const BOT_NAMES = ['La Toña', 'Don Chucho', 'El Mono', 'Doña Rosa', 'Pacho', 'La Nena', 'Juancho', 'Mafe'];
@@ -213,7 +215,7 @@ export class Room {
   /** Reconexión: se vuelve a sentar y recibe el estado completo. */
   attach(playerId: string, conn: Conn): boolean {
     const i = this.seatOf(playerId);
-    if (i < 0 || this.status === 'over') return false;
+    if (i < 0 || this.status === 'over' || this.seats[i]!.left) return false;
     this.conns.set(playerId, conn);
     const seat = this.seats[i]!;
     seat.connected = true;
@@ -379,6 +381,20 @@ export class Room {
     s.replaced = true;
     s.connected = false;
     s.level = 'normal';
+    // Online entre personas (sin parejas): quien se va queda fuera y los demás siguen jugando.
+    const g = this.state;
+    if (this.mode === 'online' && g && !g.rules.teams && g.phase !== 'over') {
+      s.left = true;
+      this.notice(`${s.name} salió de la partida`);
+      if (this.seats.every((x) => !x.playerId || x.replaced)) {
+        this.status = 'over';
+        this.destroy();
+        this.onEnd?.(this, []);
+        return;
+      }
+      this.apply({ type: 'RESIGN', player: i });
+      return;
+    }
     this.notice(text);
     if (this.seats.every((x) => !x.playerId || x.replaced)) {
       // Ya no queda ningún humano: se cierra la mesa.

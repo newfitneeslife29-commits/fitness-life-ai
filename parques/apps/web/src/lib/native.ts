@@ -25,6 +25,11 @@ export async function initNative() {
   }
   setTimeout(() => SplashScreen.hide().catch(() => undefined), 300);
 
+  // App en segundo plano (botón de inicio, otra app, pantalla apagada): se calla la música.
+  App.addListener('appStateChange', ({ isActive }) => {
+    void import('../audio/audio').then((m) => m.setAppHidden(!isActive));
+  });
+
   // Botón "atrás" de Android: vuelve al lobby; en el lobby minimiza la app.
   App.addListener('backButton', () => {
     const { screen, go } = useApp.getState();

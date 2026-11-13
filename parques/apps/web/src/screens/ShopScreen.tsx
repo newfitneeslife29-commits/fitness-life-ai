@@ -18,7 +18,7 @@ import { PieceGlyph } from '../game/Piece';
 import { BoardMini } from '../game/Board';
 
 type Tab = 'offers' | Category | 'coins' | 'gems';
-const TABS: Tab[] = ['offers', 'board', 'avatar', 'pieces', 'dice', 'frame', 'effect', 'coins', 'gems'];
+const TABS: Tab[] = ['offers', 'coins', 'gems', 'board', 'avatar', 'pieces', 'dice', 'frame', 'effect'];
 
 function untilMidnight(): string {
   const now = new Date();
@@ -113,6 +113,35 @@ export function ShopScreen() {
   return (
     <div className="screen shop-screen with-nav">
       <TopBar back title={t('Tienda')} />
+      {/* Banco: monedas y gemas siempre a la vista arriba */}
+      <section className="bank-strip">
+        <div className="bank-head">
+          <span>🏦 {t('Recarga monedas y gemas')}</span>
+          <button className="link-btn" onClick={() => { play('tap'); setTab('coins'); }}>
+            {t('Ver todo')} ›
+          </button>
+        </div>
+        <div className="bank-row">
+          {PRODUCTS.filter((x) => x.kind === 'coins' || x.kind === 'gems').map((pack, i) => (
+            <motion.button
+              key={pack.id}
+              className={`bank-pack ${pack.kind} ${pack.id === 'coins_l' || pack.id === 'gems_m' ? 'hot' : ''}`}
+              initial={{ y: 20, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 * i, type: 'spring', stiffness: 320, damping: 20 }}
+              whileTap={{ scale: 0.93 }}
+              onClick={() => void buyReal(pack.id)}
+            >
+              {pack.id === 'coins_l' || pack.id === 'gems_m' ? <span className="bank-hot">🔥 {t('Popular')}</span> : null}
+              <motion.span className="bank-icon" animate={{ y: [0, -4, 0], rotate: [0, -6, 6, 0] }} transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.2 }}>
+                {pack.kind === 'coins' ? <CoinIcon size={34} /> : <GemIcon size={34} />}
+              </motion.span>
+              <b>{(pack.coins ?? pack.gems)!.toLocaleString()}</b>
+              <span className="bank-price">{formatUsd(pack.usdCents)}</span>
+            </motion.button>
+          ))}
+        </div>
+      </section>
       {season ? (
         <div className="season-strip" style={{ ['--sa' as string]: season.colors[0], ['--sb' as string]: season.colors[1] }}>
           {season.emoji} <b>{t(season.name)}</b>: {t(season.blurb)}

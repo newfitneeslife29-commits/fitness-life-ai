@@ -31,7 +31,7 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 ## Arquitectura del motor
 - `applyAction(state, action) → { ok, state, events }` es **puro** (clona y nunca muta la entrada).
 - Acciones: `ROLL` (dados opcionales forzados para pruebas/servidor), `MOVE` (`exit` | `step` con un dado | `sum` con los dos),
-  `SOPLAR`, `DISMISS_SOPLO`, `TIME_UP`.
+  `SOPLAR`, `DISMISS_SOPLO`, `TIME_UP`, `RESIGN` (abandono online).
 - `events` describe lo ocurrido en orden (`PIECE_MOVED` con `path`, `CAPTURED`, `CROWNED`, `TRIPLE_PAIR`,
   `SOPLO_AVAILABLE`, `EXTRA_TURN`, `TURN_CHANGED`, `GAME_OVER`…). La UI anima a partir de ellos; nunca recalcula reglas.
 - `getLegalMoves(state)` es la única fuente de verdad (UI resalta, IA elige, servidor valida).
@@ -238,6 +238,21 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 - Arreglo: el menú de pausa quedaba abajo cortado (`.game-screen > *:not(.bg)` le quitaba el `position: fixed`).
 - Más tienda: tableros Comuna 13, El Dorado, Arrecife de Providencia, Valle de Cocora, Festival Vallenato; 10 dados con
   textura nueva; 8 marcos. `art.test.ts` sigue exigiendo que toda skin tenga su imagen.
+
+## v1.1 (lo nuevo)
+- **Todos los tableros con escenario** de Higgsfield (37); `art.test.ts` lo exige.
+- **Abandono online** (`RESIGN` en el motor, `PLAYER_LEFT`): en partidas `mode: 'online'` sin parejas, quien se sale (o no vuelve
+  tras la gracia) queda fuera: fichas a la cárcel, sus turnos se saltan, queda último y no puede volver a sentarse. Prueba
+  `test/resign.test.ts` y en `room.test.ts`. Contra la máquina y en parejas sigue reemplazándolo la IA.
+- **Tutorial** (`screens/TutorialScreen.tsx`, textos en `game/tutorialData.ts`): tras registrarse, partida de práctica guiada con
+  dados preparados (sacar con par, mover, capturar con 2+3 —la víctima se ubica con el motor—, seguros, soplar, tres pares, cielo)
+  y luego recorrido del inicio (`components/CoachTour.tsx`, `LOBBY_TOUR`). Se repite desde Ajustes. Llaves `parques-tutorial-done`
+  y `parques-tour-pending`.
+- **Música elegible** (Ajustes y menú de pausa): Automática, Cumbia, Vallenato, Salsa, Champeta, Porro (`public/music/*.mp3`,
+  `musicTrack` en ajustes). Se pausa al pasar la app a segundo plano (`visibilitychange` + `appStateChange` de Capacitor) y en
+  iPhone suena aunque esté en silencio (`navigator.audioSession.type = 'playback'`).
+- Tienda: banco de monedas/gemas arriba (`bank-strip`); velo bajo la barra de estado (`status-veil`). Dados: el usado se ve gris
+  con ✓ (no transparente). Más frases de la Costa.
 
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).

@@ -1,3 +1,6 @@
+import { CoachTour } from '../components/CoachTour';
+import { LOBBY_TOUR } from '../game/tutorialData';
+import { TOUR_KEY } from './TutorialScreen';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
@@ -26,6 +29,13 @@ function countdown(ms: number): string {
 
 export function LobbyScreen() {
   const { go, openSetup, dailyOpen, setDailyOpen } = useApp();
+  const [tour, setTour] = useState(() => {
+    try {
+      return !!localStorage.getItem(TOUR_KEY);
+    } catch {
+      return false;
+    }
+  });
   const p = useProfile();
   const t = useT();
   const [, tick] = useState(0);
@@ -177,6 +187,19 @@ export function LobbyScreen() {
 
       <BottomNav badges={{ events: missionsReady }} />
       <DailyReward open={dailyOpen} onClose={() => setDailyOpen(false)} />
+      {tour ? (
+        <CoachTour
+          steps={LOBBY_TOUR}
+          onDone={() => {
+            try {
+              localStorage.removeItem(TOUR_KEY);
+            } catch {
+              /* sin almacenamiento */
+            }
+            setTour(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

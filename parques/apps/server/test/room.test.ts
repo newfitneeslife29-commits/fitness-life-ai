@@ -69,7 +69,7 @@ describe('Room (servidor autoritativo)', () => {
     expect(a.last('update').state.phase).toBe('over');
   });
 
-  it('desconexión: espera el tiempo de gracia y luego la IA lo reemplaza', () => {
+  it('desconexión: espera el tiempo de gracia y luego queda fuera de la partida online', () => {
     const room = new Room({ kind: 'private', seats: 2, timing });
     const a = fakeConn();
     const b = fakeConn();
@@ -80,7 +80,7 @@ describe('Room (servidor autoritativo)', () => {
     expect(room.info().seats[1]!.replaced).toBe(false);
     vi.advanceTimersByTime(250);
     expect(room.info().seats[1]!.replaced).toBe(true);
-    expect(a.msgs.some((m) => m.event === 'notice' && String((m.args[0] as { text: string }).text).includes('no volvió'))).toBe(true);
+    expect(a.msgs.some((m) => m.event === 'notice' && String((m.args[0] as { text: string }).text).includes('salió de la partida'))).toBe(true);
     room.destroy();
   });
 
@@ -115,6 +115,25 @@ describe('Room (servidor autoritativo)', () => {
     room.leave('BBBB');
     expect(room.status).toBe('over');
     expect(onEnd).toHaveBeenCalledWith(room, []);
+  });
+
+  it('online: quien se va queda fuera (sin máquina) y los demás siguen jugando', () => {
+    const room = new Room({ kind: 'private', seats: 3, timing });
+    const a = fakeConn();
+    const b = fakeConn();
+    const c = fakeConn();
+    room.addPlayer(hello('AAAA'), a.conn);
+    room.addPlayer(hello('BBBB'), b.conn);
+    room.addPlayer(hello('CCCC'), c.conn);
+    room.start();
+    room.leave('BBBB');
+    expect(room.status).toBe('playing');
+    const st = b.last('update') ?? a.last('update');
+    expect(st.state.players[1].left).toBe(true);
+    expect(st.events.some((e: { type: string }) => e.type === 'PLAYER_LEFT')).toBe(true);
+    // No puede volver a sentarse.
+    expect(room.attach('BBBB', fakeConn().conn)).toBe(false);
+    room.destroy();
   });
 
   it('el chat llega a todos con el número de silla', () => {

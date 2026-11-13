@@ -7,7 +7,7 @@ import { entryFor, homeFor, squareOf } from './board';
 import { getLegalMoves, isLegalMove, dieValueOf } from './moves';
 import { rollDice } from './rng';
 import { captureAt } from './rules/capture';
-import { checkFinish, endGame } from './rules/finish';
+import { checkFinish, checkGameOver, endGame } from './rules/finish';
 import { exitJail } from './rules/jail';
 import { applySoplo, canSoplar, trackMissedCapture } from './rules/soplar';
 import { applyTriplePairPenalty } from './rules/triplePair';
@@ -47,12 +47,33 @@ export function applyAction(input: GameState, action: Action): ActionResult {
     case 'TIME_UP':
       endGame(state, events);
       break;
+    case 'RESIGN':
+      error = doResign(state, action.player, events);
+      break;
     default:
       error = 'Acción desconocida';
   }
   if (error) return fail(error);
   state.version++;
   return { ok: true, state, events };
+}
+
+/** Abandono (solo sin parejas): fuera de la partida; si era su turno pasa al siguiente. */
+function doResign(state: GameState, player: number, events: GameEvent[]): string | null {
+  const pl = state.players[player];
+  if (!pl) return 'Jugador inválido';
+  if (state.rules.teams) return 'En parejas no se puede abandonar';
+  if (pl.left || pl.finished) return null;
+  pl.left = true;
+  pl.pieces = pl.pieces.map(() => -1);
+  if (state.pendingSoplo?.offender === player) {
+    state.pendingSoplo = null;
+    events.push({ type: 'SOPLO_EXPIRED' });
+  }
+  events.push({ type: 'PLAYER_LEFT', player });
+  checkGameOver(state, events);
+  if (state.phase !== 'over' && state.current === player) nextPlayer(state, events);
+  return null;
 }
 
 function doRoll(state: GameState, player: number, forced: [number, number] | undefined, events: GameEvent[]): string | null {

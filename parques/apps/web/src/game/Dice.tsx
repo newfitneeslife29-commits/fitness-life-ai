@@ -54,9 +54,9 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
   wasRolling.current = rolling;
   const [rx, ry] = ORIENT[value] ?? [0, 0];
   const h = size / 2;
-  const edge = skin.edge ?? 'rgba(0,0,0,.18)';
+  const edge = skin.edge ?? 'rgba(0,0,0,.38)';
   return (
-    <div className="cube-wrap" style={{ width: size, height: size, opacity: used && !rolling ? 0.4 : 1 }}>
+    <div className={`cube-wrap ${used && !rolling ? 'used' : ''}`} style={{ width: size, height: size }}>
       <motion.div
         className="cube"
         style={{ width: size, height: size }}
@@ -78,7 +78,7 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
               background: skin.texture
                 ? `radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), rgba(0,0,0,.12)), url(art/dice/${skin.texture}.webp) center / cover`
                 : `radial-gradient(circle at 30% 25%, ${skin.face[0]}, ${skin.face[1]})`,
-              boxShadow: `inset 0 0 0 2px ${edge}, inset 0 -5px 8px rgba(0,0,0,.1), inset 0 4px 8px rgba(255,255,255,.6)`,
+              boxShadow: `inset 0 0 0 3px ${edge}, inset 0 -6px 10px rgba(0,0,0,.22), inset 0 3px 5px rgba(255,255,255,.35)`,
             }}
           >
             <Face value={f.v} skin={skin} size={size} />

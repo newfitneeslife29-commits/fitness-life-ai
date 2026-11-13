@@ -14,6 +14,8 @@ export type Lang = 'es' | 'en' | 'pt' | 'fr';
 export interface Settings {
   sound: boolean;
   music: boolean;
+  /** Canción elegida: 'auto' = cumbia en el menú y vallenato en la partida. */
+  musicTrack: string;
   vibration: boolean;
   language: Lang;
   theme: Theme;
@@ -31,6 +33,7 @@ export const useSettings = create<Settings>()(
     (set) => ({
       sound: true,
       music: true,
+      musicTrack: 'auto',
       vibration: true,
       language: detectLang(),
       theme: 'dark',
