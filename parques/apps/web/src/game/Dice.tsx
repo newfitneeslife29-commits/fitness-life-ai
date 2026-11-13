@@ -62,10 +62,26 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
         style={{ width: size, height: size }}
         animate={
           rolling
-            ? { rotateX: [0, 360], rotateY: [0, 360], y: [0, -26, 0] }
-            : { rotateX: rx + (tilt ? -16 : 0) + 720 * spins.current, rotateY: ry + (tilt ? 22 : 0) + 720 * spins.current, y: 0 }
+            ? // Agitando en el vaso: volteretas en los 3 ejes con saltitos.
+              { rotateX: [0, 200, 420, 720], rotateY: [0, 300, 480, 720], rotateZ: [0, 90, -60, 0], y: [0, -size * 0.45, -size * 0.1, -size * 0.35, 0], x: [0, size * 0.12, -size * 0.12, 0] }
+            : // Cae: gira hasta su cara y rebota dos veces antes de quedarse quieto.
+              {
+                rotateX: rx + (tilt ? -16 : 0) + 720 * spins.current,
+                rotateY: ry + (tilt ? 22 : 0) + 720 * spins.current,
+                rotateZ: 0,
+                x: 0,
+                y: spins.current ? [-size * 0.9, 0, -size * 0.28, 0, -size * 0.08, 0].map((v) => v + (spins.current % 2) * 0.001) : 0,
+              }
         }
-        transition={rolling ? { duration: 0.45, repeat: Infinity, ease: 'linear', delay } : { type: 'spring', stiffness: 120, damping: 14, mass: 0.8 }}
+        transition={
+          rolling
+            ? { duration: 0.55, repeat: Infinity, ease: 'easeInOut', delay }
+            : {
+                rotateX: { type: 'spring', stiffness: 140, damping: 13, mass: 0.8, delay },
+                rotateY: { type: 'spring', stiffness: 140, damping: 13, mass: 0.8, delay },
+                y: { duration: 0.75, times: [0, 0.38, 0.58, 0.76, 0.88, 1], ease: 'easeOut', delay },
+              }
+        }
       >
         {FACES.map((f) => (
           <div
@@ -85,7 +101,11 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
           </div>
         ))}
       </motion.div>
-      <div className="cube-shadow" />
+      <motion.div
+        className="cube-shadow"
+        animate={rolling ? { scale: [1, 0.6, 0.9, 0.65, 1], opacity: [0.9, 0.5, 0.8, 0.55, 0.9] } : { scale: 1, opacity: 0.9 }}
+        transition={rolling ? { duration: 0.55, repeat: Infinity, delay } : { duration: 0.3 }}
+      />
     </div>
   );
 }
