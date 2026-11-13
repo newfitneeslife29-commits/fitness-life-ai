@@ -282,6 +282,13 @@ export class Room {
             Object.assign(s, { playerId: null, kind: 'bot', name: names[b++ % names.length]!, level: this.botLevel ?? 'normal' });
           }
         });
+        // Nadie pudo pagar: no se juega (una mesa solo de máquinas no tiene sentido).
+        if (!this.seats.some((s) => s.playerId)) {
+          this.status = 'over';
+          this.destroy();
+          this.onEnd?.(this, []);
+          return;
+        }
         this.begin();
       });
     }

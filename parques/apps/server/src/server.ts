@@ -729,8 +729,9 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     socket.on('play_ai', async (o, ack) => {
       const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
-      const t: TableId | null = o?.table && tableOf(o.table) && !tableOf(o.table)!.onlineOnly ? o.table : null;
-      const err = await eligible(p, t);
+      // Contra la máquina SIEMPRE hay mesa con entrada (sin mesa = Barrio): nunca se juega gratis con premios.
+      const t: TableId = o?.table && tableOf(o.table) && !tableOf(o.table)!.onlineOnly ? o.table : 'barrio';
+      const err = (await eligible(p, t)) ?? ((o?.challenge || typeof o?.story === 'number') ? await eligible(p, 'barrio') : null);
       if (err) return ack?.({ ok: false, error: err });
       leaveCurrent(p.id);
       dequeue(p.id);
