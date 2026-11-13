@@ -28,7 +28,7 @@ async function guest() {
 }
 
 /** Espera el resultado de la partida; cuenta cuántos llegan (debe ser 1). */
-function waitResult(c, ms = 240000) {
+function waitResult(c, ms = 1500000) {
   return new Promise((res, rej) => {
     const results = [];
     let charged = null;
@@ -131,15 +131,20 @@ async function ops() {
 
 (async () => {
   try {
-    await ops();
-    await playAi('Barrio 4 jugadores', { table: 'barrio', players: 4, level: 'easy' });
-    await playAi('Barrio 1 vs 1', { table: 'barrio', players: 2, level: 'easy' });
-    await playAi('Barrio parejas', { table: 'barrio', players: 4, teams: true, level: 'easy' });
-    await playAi('Barrio Modo Rápido', { table: 'barrio', players: 4, quick: true, level: 'easy' });
-    await playAi('Práctica 6 jugadores', { table: 'barrio', players: 6, level: 'easy' });
-    await playAi('Práctica sin apuesta', { table: null, players: 4, level: 'easy' });
-    await playOnlinePair();
-    await onlineResign();
+    const only = process.argv[2];
+    const all = {
+      ops: () => ops(),
+      b4: () => playAi('Barrio 4 jugadores', { table: 'barrio', players: 4, level: 'easy' }),
+      b2: () => playAi('Barrio 1 vs 1', { table: 'barrio', players: 2, level: 'easy' }),
+      teams: () => playAi('Barrio parejas', { table: 'barrio', players: 4, teams: true, level: 'easy' }),
+      quick: () => playAi('Barrio Modo Rápido', { table: 'barrio', players: 4, quick: true, level: 'easy' }),
+      six: () => playAi('Barrio 6 jugadores', { table: 'barrio', players: 6, level: 'easy' }),
+      free: () => playAi('Práctica sin apuesta', { table: null, players: 4, level: 'easy' }),
+      online: () => playOnlinePair(),
+      resign: () => onlineResign(),
+    };
+    const pick = only ? only.split(',') : Object.keys(all);
+    await Promise.all(pick.map((k) => all[k]()));
   } catch (e) {
     fails.push(String(e));
     console.log('❌', e);

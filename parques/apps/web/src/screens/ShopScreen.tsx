@@ -125,14 +125,14 @@ export function ShopScreen() {
           {PRODUCTS.filter((x) => x.kind === 'coins' || x.kind === 'gems').map((pack, i) => (
             <motion.button
               key={pack.id}
-              className={`bank-pack ${pack.kind} ${pack.id === 'coins_l' || pack.id === 'gems_m' ? 'hot' : ''}`}
+              className={`bank-pack ${pack.kind} ${pack.id === 'coins-l' || pack.id === 'gems-m' ? 'hot' : ''}`}
               initial={{ y: 20, opacity: 0, scale: 0.9 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               transition={{ delay: 0.05 * i, type: 'spring', stiffness: 320, damping: 20 }}
               whileTap={{ scale: 0.93 }}
               onClick={() => void buyReal(pack.id)}
             >
-              {pack.id === 'coins_l' || pack.id === 'gems_m' ? <span className="bank-hot">🔥 {t('Popular')}</span> : null}
+              {pack.id === 'coins-l' || pack.id === 'gems-m' ? <span className="bank-hot">🔥 {t('Popular')}</span> : null}
               <motion.span className="bank-icon" animate={{ y: [0, -4, 0], rotate: [0, -6, 6, 0] }} transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.2 }}>
                 {pack.kind === 'coins' ? <CoinIcon size={34} /> : <GemIcon size={34} />}
               </motion.span>
