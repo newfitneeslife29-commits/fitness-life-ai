@@ -106,5 +106,31 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Meta SDK: tells Meta when someone installs or opens the app after an ad,
+	     so app-promotion campaigns can find people who install. The client token
+	     comes from the META_CLIENT_TOKEN build setting (empty = the SDK stays off). -->
+	<key>FacebookAppID</key>
+	<string>1083377077815719</string>
+	<key>FacebookClientToken</key>
+	<string>$(META_CLIENT_TOKEN)</string>
+	<key>FacebookDisplayName</key>
+	<string>Fitness Life</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<true/>
+	<key>FBSDKAutoLogMetaDataEnabled</key>
+	<false/>
+	<key>FBSDKAutoLogProductImprovementEnabled</key>
+	<false/>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>v9wttpbfk9.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>n38lu8286q.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

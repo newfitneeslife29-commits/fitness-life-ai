@@ -24,6 +24,9 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
+      # Meta SDK (installs from ads): the app's client token, a variable in
+      # Settings → Secrets and variables → Actions. Without it the SDK stays off.
+      META_CLIENT_TOKEN: ${{ vars.META_CLIENT_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

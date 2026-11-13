@@ -19,7 +19,13 @@ export default defineConfig({
       includeAssets: ['icon.svg'],
       // Exercise photos are precached too, so how-to images work offline.
       // Stripe's return page reads its query string: never answer it with the app.
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'], navigateFallbackDenylist: [/stripe-return\.html/] },
+      // The download page (ads link to it) always comes from the network, so a
+      // phone that once opened the web app never gets an old copy of it.
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        globIgnores: ['descargar.html'],
+        navigateFallbackDenylist: [/stripe-return\.html/, /descargar\.html/],
+      },
       manifest: {
         name: 'Fitness Life',
         short_name: 'Fitness Life',
