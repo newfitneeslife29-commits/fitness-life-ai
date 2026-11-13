@@ -67,7 +67,7 @@ describe('servidor online (autoridad)', () => {
     expect((await op(a, { op: 'buy', itemId: 'board-oro' })).ok).toBe(false); // es de dinero real
     const d = await op(a, { op: 'daily' });
     expect(d.ok).toBe(true);
-    expect(d.profile.coins).toBe(1100 + 50); // + logro "Constante I"
+    expect(d.profile.coins).toBe(1100 + 20); // + logro "Constante I"
     expect((await op(a, { op: 'daily' })).ok).toBe(false);
     const e = await op(a, { op: 'emote', emoteId: 'e-risa' });
     expect(e.profile.gems).toBe(9);
@@ -135,10 +135,10 @@ describe('servidor online (autoridad)', () => {
     expect((await post({ id: a.id, token: 'falso' })).ok).toBe(false);
     const r1 = await post({ id: a.id, token: a.token });
     expect(r1.granted).toEqual(['coins-m']);
-    expect(r1.profile.coins).toBe(31000 + 50) // + logro "Mecenas I";
+    expect(r1.profile.coins).toBe(31000 + 20); // + logro "Mecenas I"
     const r2 = await post({ id: a.id, token: a.token });
     expect(r2.granted).toEqual([]);
-    expect(r2.profile.coins).toBe(31000 + 50);
+    expect(r2.profile.coins).toBe(31000 + 20);
   });
 });
 
