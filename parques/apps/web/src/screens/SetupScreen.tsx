@@ -50,7 +50,10 @@ export function SetupScreen() {
   const humans = seatSides.filter((_, k) => kinds[k] === 'human').length;
 
   // Contra la máquina (un solo humano) se paga la entrada de la mesa elegida, salvo en práctica sin conexión.
-  const [practice, setPractice] = useState(() => useOnline.getState().status !== 'online');
+  // Solo se puede practicar gratis cuando de verdad NO hay conexión con el servidor.
+  const offline = useOnline((o) => o.status === 'error');
+  const [practiceWanted, setPractice] = useState(true);
+  const practice = offline && practiceWanted;
   const staked = humans === 1 && !practice;
   const tier = TABLES.find((t) => t.id === tierId)!;
 
@@ -148,7 +151,7 @@ export function SetupScreen() {
         </div>
       </section>
 
-      {humans === 1 ? (
+      {humans === 1 && offline ? (
         <section className="card setup-card practice-card">
           <Toggle label={`📴 ${t('Práctica sin conexión (sin apuesta)')}`} value={practice} onChange={setPractice} />
           <p className="rule-note">{practice ? t('Juegas en tu celular contra la máquina, aunque no tengas internet. No cobra entrada ni da premios.') : t('Partida con apuesta en el servidor: cobra la entrada y paga premios.')}</p>
