@@ -23,6 +23,7 @@ import { TournamentScreen } from './screens/TournamentScreen';
 import { PassScreen } from './screens/PassScreen';
 import { AchievementsScreen } from './screens/AchievementsScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
+import { setMusicTrack } from './audio/audio';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
   splash: SplashScreen,
@@ -45,10 +46,13 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */
-const OWN_BG: Screen[] = ['game', 'victory'];
+const OWN_BG: Screen[] = ['game', 'victory', 'welcome', 'splash'];
 
 export function App() {
   const screen = useApp((a) => a.screen);
+  useEffect(() => {
+    setMusicTrack(screen === 'game' ? 'game' : 'lobby');
+  }, [screen]);
   const theme = useSettings((s) => s.theme);
   const lang = useSettings((s) => s.language);
   useEffect(() => {

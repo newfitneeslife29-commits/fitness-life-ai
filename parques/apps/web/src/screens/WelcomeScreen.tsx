@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { dailyStatus, dayKey } from '@parques/engine';
 import { Logo } from '../components/Logo';
+import { FiestaBackdrop } from '../components/FiestaBackdrop';
 import { Mascot } from '../components/Mascot';
 import { Avatar } from '../components/Avatar';
 import { AVATARS } from '../lib/avatars';
 import { COUNTRIES } from '../lib/countries';
 import { providers, signIn } from '../lib/auth';
 import { useProfile } from '../stores/profileStore';
+import { useOnline } from '../lib/online';
 import { useApp } from '../stores/appStore';
 import { useFx } from '../stores/fxStore';
 import { useT } from '../lib/i18n';
@@ -45,6 +47,19 @@ export function WelcomeScreen() {
   const [avatar, setAvatar] = useState(p.avatar);
   const [country, setCountry] = useState(p.country || 'CO');
   const [saving, setSaving] = useState(false);
+  const [recover, setRecover] = useState(false);
+  const [code, setCode] = useState('');
+  const restore = useOnline((o) => o.restore);
+  const doRestore = async () => {
+    const c = code.trim();
+    const i = c.indexOf('-');
+    const err = i > 0 ? await restore(c.slice(0, i), c.slice(i + 1)) : 'Cuenta no válida';
+    if (err) return toast({ icon: '⚠️', title: t(err) });
+    markOnboarded();
+    play('win');
+    toast({ icon: '✅', title: t('¡Cuenta recuperada!') });
+    go('lobby');
+  };
   const provs = providers();
 
   const finish = async () => {
@@ -76,8 +91,8 @@ export function WelcomeScreen() {
 
   return (
     <div className="screen welcome-screen">
-      <div className="splash-glow" />
-      <Logo size={0.8} />
+      <FiestaBackdrop />
+      <Logo size={0.95} />
       <AnimatePresence mode="wait">
         {step === 0 ? (
           <motion.section key="s0" className="card glossy welcome-card" initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -60, opacity: 0 }}>
@@ -93,6 +108,18 @@ export function WelcomeScreen() {
             <button className="btn3d green wide" onClick={() => setStep(1)}>
               ✨ {provs.length ? t('Crear jugador sin cuenta') : t('Crear mi jugador')}
             </button>
+            {recover ? (
+              <motion.div className="join-row" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}>
+                <input className="text-input" placeholder={t('Pega un código de recuperación')} value={code} onChange={(e) => setCode(e.target.value)} />
+                <button className="btn3d small blue" disabled={code.trim().length < 20} onClick={() => void doRestore()}>
+                  {t('Entrar')}
+                </button>
+              </motion.div>
+            ) : (
+              <button className="link-btn" onClick={() => setRecover(true)}>
+                🔑 {t('Ya tengo cuenta: usar código de recuperación')}
+              </button>
+            )}
             <small className="rule-note">{t('Siempre puedes vincular tu cuenta después en Ajustes.')}</small>
           </motion.section>
         ) : (

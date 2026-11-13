@@ -224,6 +224,21 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
   a la cárcel, entradas escalonadas en lobby y tienda.
   Galería de gráficos solo en desarrollo: `http://localhost:5173/#galeria`. Textos nuevos en `lib/locales2.ts`.
 
+## v1.0 (lo nuevo)
+- **Arte con Higgsfield**: logo (`public/art/logo.webp`, componente `Logo` con brillo y flotación), ícono de la app
+  (`resources/icon-art.png` → `python3 scripts/gen-art-icons.py` regenera íconos y splash de Android/iOS/PWA; usa también
+  `resources/splash-bg.png`), fondo de fiesta animado (`components/FiestaBackdrop.tsx`: plaza ilustrada `art/welcome.webp`
+  con zoom lento, guirnaldas, luces, luciérnagas y confeti) en carga y registro, Dadito animado (`art/dadito-hola.webp`,
+  `art/dadito-gana.webp`; `<Mascot mood>`), 24 avatares ilustrados, escenarios de 26 tableros.
+- **Sonido**: efectos grabados en `public/sfx/*.mp3` y música en `public/music/lobby.mp3` y `game.mp3` (cambia sola al
+  entrar/salir de la partida, `setMusicTrack`). Si un archivo no carga se usa el sonido sintetizado de `audio/sounds.ts`
+  (los dados siguen sintetizados).
+- **Ajustes → Cerrar sesión** (`logout()` en `lib/online.ts`: borra la sesión del celular y vuelve al registro); en el
+  registro se puede entrar con Apple/Google o con un código de recuperación.
+- Arreglo: el menú de pausa quedaba abajo cortado (`.game-screen > *:not(.bg)` le quitaba el `position: fixed`).
+- Más tienda: tableros Comuna 13, El Dorado, Arrecife de Providencia, Valle de Cocora, Festival Vallenato; 10 dados con
+  textura nueva; 8 marcos. `art.test.ts` sigue exigiendo que toda skin tenga su imagen.
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

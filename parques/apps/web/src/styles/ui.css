@@ -450,6 +450,11 @@
 
 /* ---------- Juego ---------- */
 .game-screen > *:not(.bg) { position: relative; z-index: 1; }
+/* Capas flotantes: nunca en el flujo de la pantalla de juego (si no, el menú de pausa quedaba abajo, cortado). */
+.game-screen > .modal-backdrop:not(.bg) { position: fixed; z-index: 100; }
+.game-screen > .levelup:not(.bg) { position: fixed; z-index: 200; }
+.game-screen > .confetti:not(.bg) { position: fixed; z-index: 5; }
+.game-screen > .chat-panel:not(.bg) { position: fixed; z-index: 60; }
 .game-screen .bg { position: absolute; }
 .game-status { backdrop-filter: blur(8px); }
 

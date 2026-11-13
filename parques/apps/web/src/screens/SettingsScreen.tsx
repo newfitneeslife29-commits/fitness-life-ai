@@ -1,7 +1,7 @@
 import { providers, signIn } from '../lib/auth';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { getSession, useOnline } from '../lib/online';
+import { AnimatePresence, motion } from 'framer-motion';
+import { getSession, logout, useOnline } from '../lib/online';
 import { useFx } from '../stores/fxStore';
 import { TopBar } from '../components/TopBar';
 import { useSettings } from '../stores/settingsStore';
@@ -91,6 +91,7 @@ export function SettingsScreen() {
           ✏️ {t('Editar nombre, foto y país')}
         </button>
         <AccountRecovery />
+        <LogoutButton />
       </section>
       <p className="rule-note">{t('Parqués Colombia · tu progreso se guarda en el servidor')}</p>
     </div>
@@ -147,5 +148,49 @@ function AccountRecovery() {
         </button>
       </div>
     </div>
+  );
+}
+
+/** Cerrar sesión con confirmación (avisa si la cuenta no está vinculada a Apple/Google). */
+function LogoutButton() {
+  const t = useT();
+  const linked = useProfile((p) => p.linked);
+  const [ask, setAsk] = useState(false);
+  return (
+    <>
+      <motion.button className="btn3d red wide logout-btn" whileTap={{ scale: 0.95 }} onClick={() => { play('tap'); setAsk(true); }}>
+        🚪 {t('Cerrar sesión')}
+      </motion.button>
+      <AnimatePresence>
+        {ask ? (
+          <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAsk(false)}>
+            <motion.div
+              className="modal card glossy"
+              initial={{ scale: 0.7, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div className="modal-icon" animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1 }}>
+                🚪
+              </motion.div>
+              <h2>{t('¿Cerrar sesión?')}</h2>
+              <p className="modal-text">
+                {linked.length
+                  ? t('Podrás volver a entrar con tu cuenta de Apple o Google cuando quieras.')
+                  : t('Tu cuenta no está vinculada a Apple ni Google. Guarda tu código de recuperación antes de salir o perderás tu progreso.')}
+              </p>
+              <button className="btn3d red wide" onClick={() => logout()}>
+                {t('Sí, cerrar sesión')}
+              </button>
+              <button className="btn3d ghost wide" onClick={() => setAsk(false)}>
+                {t('Cancelar')}
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </>
   );
 }

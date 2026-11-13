@@ -242,7 +242,7 @@ function WinnerShowcase({ avatar, name, color, frameId, label }: { avatar: strin
         <span className="ribbon-tail r" />
       </motion.div>
       <div className="winner-name">{name}</div>
-      <Mascot size={84} className="victory-mascot" />
+      <Mascot size={96} mood="gana" className="victory-mascot" />
     </div>
   );
 }
