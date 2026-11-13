@@ -357,3 +357,31 @@
 .bundle-body { flex: 1 1 150px; min-width: 0; }
 .bundle-body span { flex-wrap: wrap; white-space: nowrap; }
 .bundle > .btn3d { flex: 1 0 110px; position: relative; z-index: 1; }
+
+/* ---------- Dados junto al avatar de cada jugador (como en el parchís) ---------- */
+.seat { gap: 6px; }
+.seat-info { max-width: 92px; }
+.seat-dicebox { position: relative; flex: none; display: flex; gap: 4px; padding: 6px 6px 8px; border-radius: 12px; border: 2px solid #6b4423; background: linear-gradient(160deg, #3b7a2a, #1f4d15); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.25); opacity: 0.55; filter: saturate(0.6); transition: opacity 0.25s, filter 0.25s, box-shadow 0.25s; cursor: default; font: inherit; color: inherit; }
+.seat-dicebox.active { opacity: 1; filter: none; border-color: var(--pc, var(--gold)); box-shadow: 0 0 0 2px var(--pc, var(--gold)), 0 0 16px var(--pc, var(--gold)), 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.25); }
+.seat-dicebox.empty { opacity: 0.35; }
+.seat-dicebox.empty.active { opacity: 1; }
+.seat-dicebox.can-roll { cursor: pointer; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(255, 207, 63, 0.8), 0 4px 10px rgba(0, 0, 0, 0.45); }
+.seat-dicebox .cube-wrap { perspective: 260px; }
+.seat-dicebox .cube-face { border-radius: 6px; }
+.seat-dicebox .cube-shadow { bottom: -5px; height: 6px; }
+.seat-dicebox-hint { position: absolute; left: 50%; bottom: -14px; translate: -50% 0; padding: 1px 8px; border-radius: 8px; background: var(--gold); color: #3a2400; font-weight: 900; font-size: 0.68rem; white-space: nowrap; }
+.seat-dice { display: none; }
+.roll-center { display: flex; justify-content: center; align-items: center; min-height: 62px; }
+.roll-big { font-size: 1.35rem !important; padding: 12px 26px !important; border-radius: 22px !important; }
+.roll-status { padding: 8px 14px; border-radius: 16px; background: rgba(0, 0, 0, 0.3); font-weight: 900; font-size: 0.85rem; white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
+.control-bar > :nth-child(2) { padding: 0; border: 0; background: none; box-shadow: none; }
+@media (max-width: 380px) { .seat-info { max-width: 70px; } }
+/* Asiento en dos filas: avatar + dados arriba, nombre y fichas coronadas debajo (los nombres ya no se cortan) */
+.game-screen .seat { flex-wrap: wrap; row-gap: 2px; border-radius: 22px; padding: 6px 8px; max-width: 49%; }
+.game-screen .seat .seat-info { flex: 1 0 100%; max-width: none; order: 3; text-align: center; }
+.game-screen .seat.align-left .seat-info { text-align: left; padding-left: 4px; }
+.game-screen .seat.align-right .seat-info { text-align: right; padding-right: 4px; }
+.game-screen .seat .seat-sub { justify-content: inherit; }
+.game-screen .seat.align-left .seat-sub { justify-content: flex-start; }
+.game-screen .seat.align-right .seat-sub { justify-content: flex-end; }
+.game-screen .seat .seat-name { font-size: 0.85rem; }

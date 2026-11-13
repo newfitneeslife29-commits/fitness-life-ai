@@ -365,4 +365,9 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Salsa caleña": ["Cali salsa", "Salsa de Cali", "Salsa de Cali"],
   "Champeta": ["Champeta", "Champeta", "Champeta"],
   "Porro y papayera": ["Porro brass band", "Porro e banda", "Porro et fanfare"],
+  "¡Tira!": ["Roll!", "Jogue!", "Lance !"],
+  "TIRAR": ["ROLL", "JOGAR", "LANCER"],
+  "Rodando…": ["Rolling…", "Rolando…", "Ça roule…"],
+  "Mueve una ficha": ["Move a piece", "Mova uma peça", "Bouge un pion"],
+  "Turno de {name}": ["{name}'s turn", "Vez de {name}", "Tour de {name}"],
 };

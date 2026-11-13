@@ -5,7 +5,7 @@ import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
 import { Avatar } from '../components/Avatar';
 import { isEmote } from './phrases';
-import { DieFace } from './Dice';
+import { Cube } from './Dice';
 import type { DiceSkin } from '@parques/engine';
 
 interface Props {
@@ -28,13 +28,20 @@ interface Props {
   onEmote?: () => void;
   emoteOpen?: boolean;
   /** Dados del rival en turno (se muestran junto a su avatar). */
+  /** Últimos dados de este jugador (se ven junto a su avatar, como en el parchís). */
   dice?: [number, number] | null;
   diceSkin?: DiceSkin;
+  /** Dados usados en la tirada actual (solo del jugador en turno). */
+  used?: [boolean, boolean];
+  rolling?: boolean;
+  /** Es mi turno de tirar: mis dados laten y se tocan para tirar. */
+  canRoll?: boolean;
+  onRoll?: () => void;
 }
 
 const RING = 2 * Math.PI * 30;
 
-export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin }: Props) {
+export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll }: Props) {
   const color = `var(--${player.color})`;
   return (
     <div className={`seat ${active ? 'active' : ''} ${player.left ? 'left-game' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
@@ -71,14 +78,9 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
           {team !== null && team !== undefined ? <span>{tr('Pareja {n}', { n: team + 1 })}</span> : null}
         </div>
       </div>
-      <AnimatePresence>
-        {active && dice && diceSkin ? (
-          <motion.div className="seat-dice" initial={{ scale: 0.3, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.3, opacity: 0 }} transition={{ type: 'spring', stiffness: 420, damping: 18 }}>
-            <DieFace value={dice[0]} skin={diceSkin} size={26} />
-            <DieFace value={dice[1]} skin={diceSkin} size={26} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {diceSkin ? (
+        <SeatDice dice={dice ?? null} skin={diceSkin} active={active} used={active ? used : undefined} rolling={!!rolling && active} canRoll={!!canRoll} onRoll={onRoll} />
+      ) : null}
       <AnimatePresence>
         {bubble ? (
           <motion.div
@@ -135,5 +137,26 @@ function TimerRing({ deadline, totalMs }: { deadline: number; totalMs: number })
         ['--ring-len' as string]: `${RING}`,
       }}
     />
+  );
+}
+
+/** Cajita de dados junto al avatar: muestra la última tirada; el del turno los ve rodar ahí; yo los toco para tirar. */
+function SeatDice({ dice, skin, active, used, rolling, canRoll, onRoll }: { dice: [number, number] | null; skin: DiceSkin; active: boolean; used?: [boolean, boolean]; rolling: boolean; canRoll: boolean; onRoll?: () => void }) {
+  const [a, b] = dice ?? [6, 5];
+  return (
+    <motion.button
+      type="button"
+      className={`seat-dicebox ${active ? 'active' : ''} ${canRoll ? 'can-roll' : ''} ${dice ? '' : 'empty'}`}
+      onClick={canRoll ? onRoll : undefined}
+      disabled={!canRoll}
+      whileTap={canRoll ? { scale: 0.88 } : undefined}
+      animate={canRoll ? { scale: [1, 1.1, 1], rotate: [0, -4, 4, 0] } : { scale: 1, rotate: 0 }}
+      transition={canRoll ? { duration: 1.1, repeat: Infinity } : { duration: 0.2 }}
+      aria-label={canRoll ? tr('Tirar los dados') : tr('Dados')}
+    >
+      <Cube value={a} skin={skin} size={26} rolling={rolling} used={!!dice && !!used?.[0]} />
+      <Cube value={b} skin={skin} size={26} rolling={rolling} used={!!dice && !!used?.[1]} delay={0.06} />
+      {canRoll ? <span className="seat-dicebox-hint">{tr('¡Tira!')}</span> : null}
+    </motion.button>
   );
 }

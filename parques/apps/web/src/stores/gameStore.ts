@@ -99,6 +99,10 @@ interface GameStore {
   game: GameState | null;
   view: number[][];
   shownDice: [number, number] | null;
+  /** Última tirada de cada jugador (índice → dados), para mostrarla junto a su avatar. */
+  seatDice: Record<number, [number, number]>;
+  /** Jugador que está tirando ahora. */
+  roller: number | null;
   rolling: boolean;
   busy: boolean;
   selected: PieceRef | null;
@@ -201,10 +205,10 @@ export const useGame = create<GameStore>((set, get) => {
       const g = get().game ?? final;
       switch (e.type) {
         case 'ROLLED': {
-          set({ rolling: true, shownDice: get().shownDice ?? e.dice });
+          set({ rolling: true, roller: e.player, shownDice: get().seatDice[e.player] ?? get().shownDice ?? e.dice });
           play('roll');
           await sleep(BASE.roll);
-          set({ rolling: false, shownDice: e.dice });
+          set({ rolling: false, shownDice: e.dice, seatDice: { ...get().seatDice, [e.player]: e.dice } });
           play('land');
           if (e.pair) play('pair');
           if (e.pair && e.pairStreak === 2 && final.rules.triplePairPenalty) {
@@ -411,6 +415,8 @@ export const useGame = create<GameStore>((set, get) => {
     game,
     view: game.players.map((p) => [...p.pieces]),
     shownDice: null,
+    seatDice: {},
+    roller: null,
     rolling: false,
     busy: false,
     selected: null,
@@ -428,6 +434,8 @@ export const useGame = create<GameStore>((set, get) => {
     game: null,
     view: [],
     shownDice: null,
+    seatDice: {},
+    roller: null,
     rolling: false,
     busy: false,
     selected: null,

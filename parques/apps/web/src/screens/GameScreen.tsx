@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { homeFor, isActive } from '@parques/engine';
 import type { Move, PieceRef } from '@parques/engine';
 import { Board } from '../game/Board';
-import { Dice } from '../game/Dice';
 import { PlayerSeat } from '../game/PlayerSeat';
 import { PairCounter } from '../game/PairCounter';
 import { Banner } from '../game/Banner';
@@ -132,8 +131,12 @@ export function GameScreen() {
         team={p.team}
         onEmote={i === mySeatIndex ? () => { setChatOpen((o) => !o); play('tap'); } : undefined}
         emoteOpen={chatOpen}
-        dice={i !== mySeatIndex && !s.rolling ? s.shownDice : null}
+        dice={s.seatDice[i] ?? null}
         diceSkin={diceSkin}
+        used={game.phase === 'move' ? game.diceUsed : undefined}
+        rolling={s.rolling && s.roller === i}
+        canRoll={i === mySeatIndex && humanTurn && game.phase === 'roll'}
+        onRoll={s.humanRoll}
       />
     );
   };
@@ -230,15 +233,24 @@ export function GameScreen() {
 
       <div className="control-bar">
         <PairCounter streak={game.pairStreak} penalty={game.rules.triplePairPenalty} />
-        <Dice
-          dice={s.shownDice}
-          used={game.diceUsed}
-          rolling={s.rolling}
-          canRoll={humanTurn && game.phase === 'roll'}
-          tint={`var(--${current.color})`}
-          onRoll={s.humanRoll}
-          skin={diceSkin}
-        />
+        <div className="roll-center">
+          {humanTurn && game.phase === 'roll' ? (
+            <motion.button
+              className="btn3d play-btn roll-big shine"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: [1, 1.06, 1], opacity: 1 }}
+              transition={{ scale: { duration: 1, repeat: Infinity }, opacity: { duration: 0.2 } }}
+              whileTap={{ scale: 0.9 }}
+              onClick={s.humanRoll}
+            >
+              🎲 {t('TIRAR')}
+            </motion.button>
+          ) : (
+            <motion.span key={`${game.current}-${game.phase}`} className="roll-status" initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+              {s.rolling ? `🎲 ${t('Rodando…')}` : humanTurn ? `👆 ${t('Mueve una ficha')}` : `⏳ ${t('Turno de {name}', { name: current.name })}`}
+            </motion.span>
+          )}
+        </div>
         <div className="side-actions">
           <button className="pill-btn" onClick={() => { setChatTab('emotes'); setChatOpen((o) => !o || chatTab !== 'emotes'); play('tap'); }}>
             😀 EMOJI
