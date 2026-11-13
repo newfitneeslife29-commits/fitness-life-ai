@@ -9,6 +9,11 @@ import { Server } from 'socket.io';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import {
   advanceStory,
+  blockPlayer,
+  FLASH,
+  grantReward,
+  recordAbandon,
+  unblockPlayer,
   claimChallenge,
   claimWinChest,
   dailyChallenge,
@@ -41,7 +46,9 @@ import {
   table as tableOf,
   TOP_ROOM_SIZE,
 } from '@parques/engine';
-import type { ClientToServer, HouseRules, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
+import type { ClientToServer, FlashBracket, HouseRules, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
+import { Social } from './social';
+import { adminRoute } from './admin';
 
 /** Identidad verificada de Apple o Google. */
 export interface VerifiedIdentity {
@@ -94,6 +101,9 @@ export interface ServerOptions {
   verifyIdentity?: IdentityVerifier;
   /** Cada cuánto se revisan los cierres semanales (copas y ranking). */
   settleEveryMs?: number;
+  /** Torneo relámpago: espera de la fila y pausa antes de la final (pruebas). */
+  flashWaitMs?: number;
+  flashFinalDelayMs?: number;
 }
 
 const MIME: Record<string, string> = {
@@ -260,7 +270,36 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     store.getProfile(id).then((p) => p && emitTo(id, 'profile', p), logErr);
   };
 
-  const http = createServer(staticHandler(opts.staticDir ?? null, apiHandler(payments, storePurchases, store, pushProfile), () => store.ready().then(() => true, () => false)));
+  const social = new Social(store);
+  const baseHandler = staticHandler(opts.staticDir ?? null, apiHandler(payments, storePurchases, store, pushProfile), () => store.ready().then(() => true, () => false));
+  const http = createServer((req, res) => {
+    void (async () => {
+      const ctx = {
+        store,
+        social,
+        online: () => sockets.size,
+        rooms: () => rooms.size,
+        broadcast: (text: string) => io.emit('notice', { text }),
+        pushProfile,
+        kick: (id: string) => {
+          const sid = sockets.get(id);
+          if (sid) io.sockets.sockets.get(sid)?.disconnect(true);
+        },
+      };
+      if (await adminRoute(req, res, ctx)) return;
+      // Enlace de invitación: /r/<ID> abre la app con el código de quien invita.
+      const m = /^\/r\/([A-Za-z0-9]{4,16})\/?$/.exec((req.url ?? '').split('?')[0]!);
+      if (m) {
+        res.writeHead(302, { location: `/?ref=${m[1]!.toUpperCase()}` });
+        res.end();
+        return;
+      }
+      await baseHandler(req, res);
+    })().catch((e) => {
+      logErr(e);
+      if (!res.headersSent) res.writeHead(500).end();
+    });
+  });
   const io = new Server<ClientToServer, ServerToClient, Record<string, never>, SocketData>(http, { cors: { origin: '*' }, maxHttpBufferSize: 200_000 });
 
   /** Cobro de la entrada en la cuenta (lo llama la sala al empezar). */
@@ -285,11 +324,15 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         emitTo(r.playerId, 'match_result', { outcome: { ...out.outcome, special, matchId: room.id }, profile: prof });
       }
     }
-    if (room.mode === 'online') await store.recordMatch(results.map((r) => r.playerId));
+    if (room.mode === 'online') {
+      await store.recordMatch(results.map((r) => r.playerId));
+      for (const r of results) if (r.won) await social.clubWin(r.playerId);
+    }
     if (room.cup) await store.recordCup(room.cup, results.map((r) => r.playerId));
   };
   const onEnd = (room: Room, results: HumanResult[]) => {
     settle(room, results).catch(logErr);
+    if (room.flash) flashRoomEnded(room);
     setTimeout(() => {
       room.destroy();
       rooms.delete(room.id);
@@ -310,9 +353,13 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     return room;
   }
 
-  function leaveCurrent(playerId: string) {
+  function leaveCurrent(playerId: string, abandon = false) {
     const r = playerRoom.get(playerId);
     if (!r) return;
+    // Abandonar una partida online en juego cuenta para la sanción (3 en 24 h → un rato sin online).
+    if (abandon && r.mode === 'online' && r.status === 'playing' && r.state && r.state.phase !== 'over' && !r.seats[r.seatOf(playerId)]?.left) {
+      store.update(playerId, (p) => recordAbandon(p)).then((x) => x.ok && pushProfile(playerId), logErr);
+    }
     r.leave(playerId);
     playerRoom.delete(playerId);
   }
@@ -382,6 +429,186 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     for (const id of q.ids) connFor(id).emit('searching', { waiting: q.ids.length, startsInMs: Math.max(0, q.startsAt - Date.now()) });
   }
 
+  /** Sanción por abandonos o suspensión del administrador. */
+  async function blockedFromOnline(p: Profile): Promise<string | null> {
+    const ban = await social.bannedUntil(p.id);
+    if (ban) return 'Tu cuenta está suspendida';
+    if (p.penaltyUntil > Date.now()) return `Abandonaste muchas partidas: espera ${Math.ceil((p.penaltyUntil - Date.now()) / 60000)} min para jugar online`;
+    return null;
+  }
+
+  // ------------------------------------------------ Torneo relámpago (16 jugadores, 4 mesas → final)
+  interface Flash {
+    id: string;
+    humans: Set<string>;
+    semis: { room: Room | null; names: string[]; winner: string | null; winnerId: string | null }[];
+    final: Room | null;
+    finalNames: string[];
+    ranking: string[];
+    stage: FlashBracket['stage'];
+  }
+  const flashQ: Queue = { ids: [], timer: null, startsAt: 0 };
+  const flashes = new Map<string, Flash>();
+  const BOT_POOL = ['La Toña', 'Don Chucho', 'El Mono', 'Doña Rosa', 'Pacho', 'La Nena', 'Juancho', 'Mafe', 'El Profe', 'Chepe', 'La Mona', 'Tavo'];
+
+  const flashBracket = (f: Flash, id: string): FlashBracket => {
+    const semi = f.semis.find((x) => x.room?.seatOf(id) !== undefined && (x.room?.seatOf(id) ?? -1) >= 0);
+    let me: FlashBracket['me'] = 'playing';
+    if (f.stage === 'done') me = f.ranking[0] === id ? 'champion' : 'done';
+    else if (f.final && f.final.seatOf(id) >= 0) me = 'final';
+    else if (semi?.winner) me = semi.winnerId === id ? 'waiting' : 'out';
+    return {
+      id: f.id,
+      stage: f.stage,
+      semis: f.semis.map((x) => ({ names: x.names, winner: x.winner })),
+      final: f.stage === 'semis' ? null : { names: f.finalNames, ranking: f.ranking.map((r) => f.final?.seats.find((s) => s.playerId === r)?.name ?? r) },
+      me,
+    };
+  };
+  const flashPush = (f: Flash) => {
+    for (const id of f.humans) emitTo(id, 'flash', { bracket: flashBracket(f, id) });
+  };
+
+  function armFlash() {
+    if (flashQ.ids.length >= FLASH.size) return void launchFlash().catch(logErr);
+    if (!flashQ.timer && flashQ.ids.length) {
+      flashQ.startsAt = Date.now() + (opts.flashWaitMs ?? FLASH.waitMs);
+      flashQ.timer = setTimeout(() => void launchFlash().catch(logErr), opts.flashWaitMs ?? FLASH.waitMs);
+    }
+    for (const id of flashQ.ids) emitTo(id, 'flash', { waiting: flashQ.ids.length, startsInMs: Math.max(0, flashQ.startsAt - Date.now()) });
+  }
+
+  async function launchFlash() {
+    if (flashQ.timer) clearTimeout(flashQ.timer);
+    flashQ.timer = null;
+    const group = flashQ.ids.slice(0, FLASH.size);
+    flashQ.ids = flashQ.ids.slice(FLASH.size);
+    if (!group.length) return;
+    const f: Flash = { id: Math.random().toString(36).slice(2, 8), humans: new Set(group), semis: [], final: null, finalNames: [], ranking: [], stage: 'semis' };
+    flashes.set(f.id, f);
+    const bots = [...BOT_POOL].sort(() => Math.random() - 0.5);
+    for (let t = 0; t < 4; t++) {
+      const ids = group.slice(t * 4, t * 4 + 4);
+      if (!ids.length) {
+        const names = bots.splice(0, 4);
+        f.semis.push({ room: null, names, winner: names[Math.floor(Math.random() * names.length)]!, winnerId: null });
+        continue;
+      }
+      const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, 'ciudad', { mode: 'online', botLevel: 'expert', flash: { id: f.id, round: 'semi' } });
+      for (const id of ids) {
+        const p = await store.getProfile(id);
+        if (!p) continue;
+        room.addPlayer(helloOf(p), connFor(id));
+        playerRoom.set(id, room);
+      }
+      f.semis.push({ room, names: [], winner: null, winnerId: null });
+      await room.start();
+      f.semis[t]!.names = room.seats.map((s) => s.name);
+    }
+    flashPush(f);
+    maybeFinal(f);
+    if (flashQ.ids.length) armFlash();
+  }
+
+  function flashRoomEnded(room: Room) {
+    const f = flashes.get(room.flash!.id);
+    if (!f) return;
+    const g = room.state;
+    if (room.flash!.round === 'semi') {
+      const semi = f.semis.find((x) => x.room === room);
+      if (!semi || semi.winner) return;
+      const seat = g && g.phase === 'over' ? room.seats[g.ranking[0]!] : undefined;
+      // Si todos los humanos se fueron, avanza un bot de esa mesa.
+      const s = seat ?? room.seats.find((x) => x.kind === 'bot' && !x.left) ?? room.seats[0]!;
+      semi.winner = s.name;
+      semi.winnerId = s.playerId && !s.left && !s.replaced ? s.playerId : null;
+      flashPush(f);
+      maybeFinal(f);
+      return;
+    }
+    // Final: premios por puesto a los humanos.
+    f.stage = 'done';
+    const order = g ? g.ranking.map((i) => room.seats[i]!) : [];
+    f.ranking = order.map((s) => s.playerId ?? s.name);
+    order.forEach((s, place) => {
+      const prize = FLASH.prizes[place];
+      if (!s.playerId || !prize) return;
+      const id = s.playerId;
+      store.update(id, (p) => grantReward(p, prize.coins, prize.gems)).then((x) => {
+        if (!x.ok) return;
+        pushProfile(id);
+        emitTo(id, 'notice', { text: `⚡ Torneo relámpago: quedaste ${place + 1}º y ganaste ${prize.coins} monedas` });
+      }, logErr);
+    });
+    flashPush(f);
+    setTimeout(() => flashes.delete(f.id), 120000).unref?.();
+  }
+
+  function maybeFinal(f: Flash) {
+    if (f.stage !== 'semis' || f.semis.some((x) => !x.winner)) return;
+    f.stage = 'final';
+    f.finalNames = f.semis.map((x) => x.winner!);
+    const humans = f.semis.flatMap((x) => (x.winnerId ? [x.winnerId] : []));
+    if (!humans.length) {
+      f.stage = 'done';
+      f.ranking = [...f.finalNames].sort(() => Math.random() - 0.5);
+      flashPush(f);
+      return;
+    }
+    flashPush(f);
+    const botNames = f.semis.filter((x) => !x.winnerId).map((x) => x.winner!);
+    const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3 }, null, null, { mode: 'online', botLevel: 'expert', flash: { id: f.id, round: 'final' }, botNames });
+    f.final = room;
+    setTimeout(() => {
+      void (async () => {
+        for (const id of humans) {
+          const p = await store.getProfile(id);
+          if (!p) continue;
+          room.addPlayer(helloOf(p), connFor(id));
+          playerRoom.set(id, room);
+          emitTo(id, 'notice', { text: '⚡ ¡Llegaste a la final del torneo relámpago!' });
+        }
+        await room.start();
+        flashPush(f);
+      })().catch(logErr);
+    }, opts.flashFinalDelayMs ?? 6000).unref?.();
+  }
+
+  // ------------------------------------------------ 2 vs 2 online con un amigo
+  const duoQ: { pairs: [string, string][]; timer: ReturnType<typeof setTimeout> | null; table: TableId } = { pairs: [], timer: null, table: 'barrio' };
+  async function launchDuo() {
+    if (duoQ.timer) clearTimeout(duoQ.timer);
+    duoQ.timer = null;
+    const [a, b] = duoQ.pairs.splice(0, 2);
+    if (!a) return;
+    const room = newRoom('quick', 4, { soplar: true, triplePairPenalty: true, jailAttempts: 3, teams: true }, null, duoQ.table, { mode: 'online' });
+    // Compañeros en lados opuestos: pareja A en las sillas 0 y 2, pareja B en 1 y 3.
+    const seatsFor = [[0, 2], [1, 3]] as const;
+    for (const [k, pair] of [a, b].entries()) {
+      if (!pair) continue;
+      for (const [j, id] of pair.entries()) {
+        const p = await store.getProfile(id);
+        if (!p) continue;
+        room.addPlayer(helloOf(p), connFor(id), seatsFor[k]![j]);
+        playerRoom.set(id, room);
+      }
+    }
+    await room.start();
+    if (duoQ.pairs.length) armDuo();
+  }
+  function armDuo() {
+    if (duoQ.pairs.length >= 2) return void launchDuo().catch(logErr);
+    if (!duoQ.timer && duoQ.pairs.length) duoQ.timer = setTimeout(() => void launchDuo().catch(logErr), opts.matchWaitMs ?? matchWait);
+    for (const pair of duoQ.pairs) for (const id of pair) connFor(id).emit('searching', { waiting: duoQ.pairs.length * 2, startsInMs: opts.matchWaitMs ?? matchWait });
+  }
+  const dropDuo = (id: string) => {
+    duoQ.pairs = duoQ.pairs.filter((p) => !p.includes(id));
+    if (!duoQ.pairs.length && duoQ.timer) {
+      clearTimeout(duoQ.timer);
+      duoQ.timer = null;
+    }
+  };
+
   // ------------------------------------------------ Operaciones de perfil
   async function runOp(uid: string, op: ProfileOp): Promise<ProfileOpResult> {
     const wrap = (r: { ok: boolean; error?: string; profile?: Profile } & Record<string, unknown>): ProfileOpResult => {
@@ -430,6 +657,22 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         return wrap(await store.update(uid, (p) => doubleLastWin(p, String(op.matchId))));
       case 'save_streak':
         return wrap(await store.update(uid, (p) => saveStreak(p)));
+      case 'block':
+        return wrap(await store.update(uid, (p) => blockPlayer(p, String(op.id))));
+      case 'unblock':
+        return wrap(await store.update(uid, (p) => unblockPlayer(p, String(op.id))));
+      case 'referral': {
+        const r = await social.redeem(uid, String(op.code ?? ''));
+        if (r.ok && r.referrer) {
+          pushProfile(r.referrer);
+          emitTo(r.referrer, 'notice', { text: '🎉 Un amigo entró con tu invitación: ¡ganaste monedas y gemas!' });
+        }
+        return r.ok ? { ok: true, profile: r.profile, result: { coins: r.coins } } : { ok: false, error: r.error };
+      }
+      case 'club_chest': {
+        const r = await social.claimClubChest(uid, Number(op.tier));
+        return r.ok ? { ok: true, profile: r.profile, result: { coins: r.coins, gems: r.gems } } : { ok: false, error: r.error };
+      }
       case 'league_claim': {
         const r = await store.claimLeague(uid, weekKey(new Date()));
         return r.ok ? { ok: true, profile: r.profile, result: { coins: r.coins, gems: r.gems, division: r.division } } : { ok: false, error: r.error };
@@ -471,6 +714,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         const acc = await store.createAccount();
         ({ id, token, profile } = acc);
       }
+      if (await social.bannedUntil(id!)) return ack?.({ ok: false, error: 'Tu cuenta está suspendida por reportes de la comunidad' });
       socket.data.uid = id;
       sockets.set(id!, socket.id);
       ack?.({ ok: true, id, token, profile: profile! });
@@ -539,7 +783,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       const p = await profileOf();
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const tier: TableId = tableOf(t) ? t : 'barrio';
-      const err = await eligible(p, tier);
+      const err = (await blockedFromOnline(p)) ?? (await eligible(p, tier));
       if (err) return ack?.({ ok: false, error: err });
       leaveCurrent(p.id);
       dequeue(p.id);
@@ -550,7 +794,10 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
     socket.on('cancel_match', () => {
       const id = me();
-      if (id) dequeue(id);
+      if (id) {
+        dequeue(id);
+        dropDuo(id);
+      }
     });
 
     socket.on('create_private', async (o, ack) => {
@@ -576,7 +823,9 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       const err = await eligible(p, room.table);
       if (err) return ack?.({ ok: false, error: err });
       if (playerRoom.get(p.id) !== room) leaveCurrent(p.id);
-      const r = room.addPlayer(helloOf(p), connFor(p.id));
+      // En parejas, el primero que entra queda de compañero del anfitrión (lado opuesto).
+      const prefer = room.rules.teams && room.humans().length === 1 ? 2 : undefined;
+      const r = room.addPlayer(helloOf(p), connFor(p.id), prefer);
       if (typeof r === 'string') return ack?.({ ok: false, error: r });
       playerRoom.set(p.id, room);
       ack?.({ ok: true });
@@ -605,7 +854,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
     socket.on('leave', () => {
       const id = me();
-      if (id) leaveCurrent(id);
+      if (id) leaveCurrent(id, true);
     });
 
     socket.on('resume', (roomId, ack) => {
@@ -673,8 +922,114 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
       const to = String(o?.to ?? '');
       if (!sockets.has(to)) return ack?.({ ok: false, error: 'Tu amigo no está conectado' });
+      const target = await store.getProfile(to);
+      if (target?.blocked.includes(p.id)) return ack?.({ ok: false, error: 'No puedes invitar a este jugador' });
       emitTo(to, 'invited', { from: { id: p.id, name: p.name, avatar: p.photo ? '🙂' : p.avatar }, code: String(o?.code ?? '').slice(0, 8) });
       ack?.({ ok: true });
+    });
+
+    // ------------------------------------------------ v1.2 social
+    socket.on('report', async (o, ack) => {
+      const id = me();
+      if (!id) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      ack?.(await social.report(id, String(o?.playerId ?? ''), String(o?.reason ?? '')));
+    });
+
+    socket.on('dm', async (o, ack) => {
+      const p = await profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const r = await social.sendDm(p, String(o?.to ?? ''), String(o?.text ?? ''));
+      if (r.ok && r.msg) emitTo(r.msg.to, 'dm', r.msg);
+      ack?.(r);
+    });
+
+    socket.on('dm_history', async (withId, ack) => {
+      const id = me();
+      ack?.(id ? await social.dmHistory(id, String(withId ?? '')) : []);
+    });
+
+    socket.on('club_list', async (q, ack) => ack?.(await social.listClubs(String(q ?? ''))));
+    socket.on('club_info', async (ack) => {
+      const id = me();
+      ack?.(id ? await social.clubInfo(id, (x) => sockets.has(x)) : null);
+    });
+    socket.on('club_create', async (o, ack) => {
+      const id = me();
+      if (!id) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const r = await social.createClub(id, String(o?.name ?? ''), String(o?.emoji ?? ''));
+      if (r.ok) pushProfile(id);
+      ack?.(r);
+    });
+    socket.on('club_join', async (club, ack) => {
+      const id = me();
+      if (!id) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      ack?.(await social.joinClub(id, String(club ?? '')));
+    });
+    socket.on('club_leave', async (ack) => {
+      const id = me();
+      if (!id) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      ack?.(await social.leaveClub(id));
+    });
+    socket.on('club_kick', async (player, ack) => {
+      const id = me();
+      if (!id) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      ack?.(await social.kick(id, String(player ?? '')));
+    });
+    socket.on('club_chat', async (text, ack) => {
+      const p = await profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const r = await social.clubChat(p, String(text ?? ''));
+      if (r.ok && r.club && r.msg) for (const m of await social.clubMembers(r.club)) emitTo(m, 'club_chat', r.msg);
+      ack?.({ ok: r.ok, error: r.error });
+    });
+
+    socket.on('flash_join', async (ack) => {
+      const p = await profileOf();
+      if (!p) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      const err = await blockedFromOnline(p);
+      if (err) return ack?.({ ok: false, error: err });
+      if (p.coins < FLASH.entry) return ack?.({ ok: false, error: 'Te faltan monedas' });
+      leaveCurrent(p.id);
+      dequeue(p.id);
+      if (!flashQ.ids.includes(p.id)) flashQ.ids.push(p.id);
+      ack?.({ ok: true });
+      armFlash();
+    });
+    socket.on('flash_cancel', () => {
+      const id = me();
+      if (!id) return;
+      flashQ.ids = flashQ.ids.filter((x) => x !== id);
+      if (!flashQ.ids.length && flashQ.timer) {
+        clearTimeout(flashQ.timer);
+        flashQ.timer = null;
+      }
+    });
+
+    socket.on('duo_match', async (ack) => {
+      const id = me();
+      const room = id ? playerRoom.get(id) : undefined;
+      if (!id || !room || room.kind !== 'private' || room.status !== 'waiting') return ack?.({ ok: false, error: 'Primero crea una mesa privada en parejas' });
+      if (room.hostId !== id) return ack?.({ ok: false, error: 'Solo el anfitrión puede buscar rivales' });
+      if (!room.rules.teams) return ack?.({ ok: false, error: 'La mesa debe ser en parejas' });
+      const pair = room.humans();
+      if (pair.length !== 2) return ack?.({ ok: false, error: 'Espera a que entre tu compañero' });
+      for (const x of pair) {
+        const p = await store.getProfile(x);
+        const err = p ? ((await blockedFromOnline(p)) ?? (await eligible(p, room.table))) : 'Cuenta no encontrada';
+        if (err) return ack?.({ ok: false, error: p && x !== id ? `${p.name}: ${err}` : err });
+      }
+      // Se cierra la mesa privada y la pareja pasa a la fila de 2 vs 2.
+      for (const x of pair) {
+        room.leave(x);
+        playerRoom.delete(x);
+      }
+      room.destroy();
+      rooms.delete(room.id);
+      if (room.code) byCode.delete(room.code);
+      duoQ.table = room.table ?? 'barrio';
+      duoQ.pairs.push([pair[0]!, pair[1]!]);
+      ack?.({ ok: true });
+      armDuo();
     });
 
     /** Apple / Google: entra a la cuenta vinculada, o vincula la cuenta actual para no perderla. */
@@ -714,6 +1069,8 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       if (!id || sockets.get(id) !== socket.id) return;
       sockets.delete(id);
       dequeue(id);
+      dropDuo(id);
+      flashQ.ids = flashQ.ids.filter((x) => x !== id);
       playerRoom.get(id)?.detach(id);
     });
   });
@@ -756,6 +1113,8 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         clearInterval(sweep);
         clearInterval(settleTimer);
         for (const q of queues.values()) if (q.timer) clearTimeout(q.timer);
+        if (flashQ.timer) clearTimeout(flashQ.timer);
+        if (duoQ.timer) clearTimeout(duoQ.timer);
         for (const r of rooms.values()) r.destroy();
         io.close(() => {
           store.close().then(() => resolve(), () => resolve());

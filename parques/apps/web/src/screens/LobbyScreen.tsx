@@ -149,6 +149,10 @@ export function LobbyScreen() {
             {missionsReady ? <span className="side-dot">{missionsReady}</span> : null}
             <small>{t('Misiones')}</small>
           </motion.button>
+          <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('club')}>
+            🛡️
+            <small>{t('Club')}</small>
+          </motion.button>
         </div>
         <div className="hero-3d">
           <div className="hero-halo" />

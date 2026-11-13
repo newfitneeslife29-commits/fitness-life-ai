@@ -12,6 +12,7 @@ import {
   applyAction,
   autoAction,
   canSoplar,
+  cleanChat,
   createGame,
   sanitizeState,
   shouldSoplar,
@@ -77,6 +78,10 @@ export interface RoomOptions {
   special?: { kind: 'challenge' } | { kind: 'story'; stage: number };
   /** Nombre y avatar del primer rival (jefe de la Historia). */
   boss?: { name: string; avatar: string };
+  /** Torneo relámpago al que pertenece la mesa. */
+  flash?: { id: string; round: 'semi' | 'final' } | null;
+  /** Nombres de los bots (p. ej. finalistas del relámpago que son la máquina). */
+  botNames?: string[];
 }
 
 export class Room {
@@ -93,6 +98,8 @@ export class Room {
   readonly mode: 'online' | 'ai' | 'quick' | 'teams';
   readonly sides: 4 | 6;
   readonly cup: string | null;
+  readonly flash: RoomOptions['flash'] | null;
+  private botNames: string[] | null;
   private botLevel: AiLevel | null;
   private timeLimitMs: number;
   private charge?: RoomOptions['charge'];
@@ -127,6 +134,8 @@ export class Room {
     this.timeLimitMs = opts.timeLimitMs ?? 0;
     this.special = opts.special ?? null;
     this.boss = opts.boss ?? null;
+    this.flash = opts.flash ?? null;
+    this.botNames = opts.botNames ?? null;
     this.charge = opts.charge;
     this.seats = sidesFor(teams ? 4 : this.sides === 6 ? 6 : Math.min(4, opts.seats)).map((side) => ({
       side,
@@ -170,14 +179,14 @@ export class Room {
   }
 
   /** Sienta a un jugador (solo antes de empezar). */
-  addPlayer(h: Hello, conn: Conn): number | string {
+  addPlayer(h: Hello, conn: Conn, prefer?: number): number | string {
     if (this.status !== 'waiting') return 'La partida ya empezó';
     const existing = this.seatOf(h.playerId);
     if (existing >= 0) {
       this.conns.set(h.playerId, conn);
       return existing;
     }
-    const free = this.seats.findIndex((s) => !s.playerId);
+    const free = prefer !== undefined && this.seats[prefer] && !this.seats[prefer]!.playerId ? prefer : this.seats.findIndex((s) => !s.playerId);
     if (free < 0) return 'La mesa está llena';
     Object.assign(this.seats[free]!, { playerId: h.playerId, name: h.name.slice(0, 14) || 'Jugador', avatar: h.avatar || '🙂', kind: 'human', connected: true });
     this.conns.set(h.playerId, conn);
@@ -246,7 +255,7 @@ export class Room {
   start(): void | Promise<void> {
     if (this.status !== 'waiting') return;
     let b = 0;
-    const names = [...BOT_NAMES].sort(() => Math.random() - 0.5);
+    const names = [...(this.botNames ?? []), ...[...BOT_NAMES].sort(() => Math.random() - 0.5)];
     for (const s of this.seats) {
       if (!s.playerId) {
         s.name = names[b % names.length]!;
@@ -327,7 +336,7 @@ export class Room {
   chat(playerId: string, text: string) {
     const seat = this.seatOf(playerId);
     if (seat < 0) return;
-    const t = String(text).slice(0, 60);
+    const t = cleanChat(String(text), 60);
     for (const c of this.conns.values()) c.emit('chat', { seat, text: t });
   }
 

@@ -86,6 +86,37 @@ CREATE TABLE IF NOT EXISTS parques.sessions (
   token_hash TEXT PRIMARY KEY, account TEXT NOT NULL REFERENCES parques.accounts(id) ON DELETE CASCADE,
   created TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- v1.2 social
+CREATE TABLE IF NOT EXISTS parques.reports (
+  id BIGSERIAL PRIMARY KEY, reporter TEXT NOT NULL, target TEXT NOT NULL, reason TEXT NOT NULL, day TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open', at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE (reporter, target, day)
+);
+CREATE TABLE IF NOT EXISTS parques.bans (player TEXT PRIMARY KEY, until TIMESTAMPTZ NOT NULL, reason TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS parques.messages (
+  id BIGSERIAL PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, text TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS messages_pair ON parques.messages (sender, receiver, at DESC);
+CREATE TABLE IF NOT EXISTS parques.referrals (
+  newbie TEXT PRIMARY KEY, referrer TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS parques.clubs (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT NOT NULL, owner TEXT NOT NULL, created TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS clubs_name ON parques.clubs (lower(name));
+CREATE TABLE IF NOT EXISTS parques.club_members (
+  player TEXT PRIMARY KEY, club TEXT NOT NULL REFERENCES parques.clubs(id) ON DELETE CASCADE, role TEXT NOT NULL DEFAULT 'member',
+  joined TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS parques.club_wins (
+  week TEXT NOT NULL, club TEXT NOT NULL, player TEXT NOT NULL, wins INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (week, club, player)
+);
+CREATE TABLE IF NOT EXISTS parques.club_claims (
+  week TEXT NOT NULL, club TEXT NOT NULL, player TEXT NOT NULL, tier INTEGER NOT NULL, PRIMARY KEY (week, player, tier)
+);
+CREATE TABLE IF NOT EXISTS parques.club_messages (
+  id BIGSERIAL PRIMARY KEY, club TEXT NOT NULL, sender TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS club_messages_club ON parques.club_messages (club, at DESC);
 -- Solo el servidor (rol dueño) lee y escribe: con RLS activo y sin políticas, la API pública de Supabase no ve nada.
 ALTER TABLE parques.accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.tournaments ENABLE ROW LEVEL SECURITY;
@@ -97,13 +128,22 @@ ALTER TABLE parques.settled ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.rank_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parques.sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.bans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.clubs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_wins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parques.club_messages ENABLE ROW LEVEL SECURITY;
 `;
 
 // ------------------------------------------------------------ Conexión (pg o PGlite)
-interface Sql {
+export interface Sql {
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
 }
-interface Db extends Sql {
+export interface Db extends Sql {
   tx<T>(fn: (q: Sql) => Promise<T>): Promise<T>;
   /** Varias sentencias sin parámetros (el esquema). */
   exec(text: string): Promise<void>;
@@ -165,7 +205,7 @@ export interface StoreOptions {
 
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 
-function randomId(): string {
+export function randomId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const b = randomBytes(8);
   return Array.from(b, (x) => chars[x % chars.length]).join('');
@@ -185,6 +225,11 @@ export class Store {
       await db.exec(SCHEMA);
       return db;
     })();
+  }
+
+  /** Acceso directo a la base (módulo social y panel de administración). */
+  sql(): Promise<Db> {
+    return this.db;
   }
 
   /** Espera a que la base esté lista (falla si no se puede conectar). */

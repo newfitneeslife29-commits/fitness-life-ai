@@ -153,11 +153,27 @@ export function OnlineScreen() {
             ) : (
               <p className="rule-note">{t('Esperando a que el anfitrión empiece…')}</p>
             )}
+            {isHost && room.rules.teams ? (
+              <div className="duo-box">
+                <p className="rule-note">🤝 {t('2 vs 2 online: tu amigo queda de compañero (lado opuesto). Busquen juntos otra pareja; si no aparece, la máquina juega de rival.')}</p>
+                <button
+                  className="btn3d purple wide"
+                  disabled={room.seats.filter((s) => s.playerId).length !== 2}
+                  onClick={async () => {
+                    play('tap');
+                    const err = await o.duoMatch();
+                    if (err) toast({ icon: '⚠️', title: t(err) });
+                  }}
+                >
+                  ⚔️ {t('Buscar otra pareja')}
+                </button>
+              </div>
+            ) : null}
             <button className="btn3d small ghost" onClick={() => o.leaveRoom()}>
               {t('Salir de la mesa')}
             </button>
           </motion.section>
-        ) : tab === 'quick' ? (
+        ) : tab === 'quick' || o.searching ? (
           <motion.section key="quick" className="card glossy setup-card center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             {o.searching ? (
               <>

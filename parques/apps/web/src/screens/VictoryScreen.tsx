@@ -19,6 +19,7 @@ import { useOnline } from '../lib/online';
 export function VictoryScreen() {
   const { game, config, rematch, quit, outcome, online } = useGame();
   const go = useApp((a) => a.go);
+  const flashLive = useOnline((o) => !!o.flash?.bracket && o.flash.bracket.stage !== 'done');
   const profile = useProfile();
   const lvl = useLevel();
   const fx = useFx();
@@ -159,6 +160,11 @@ export function VictoryScreen() {
       <ExtraRewards outcome={outcome} />
 
       <div className="victory-actions">
+        {flashLive ? (
+          <motion.button className="btn3d purple shine" whileTap={{ scale: 0.93 }} animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1.2, repeat: Infinity }} onClick={() => { quit(); go('flash'); }}>
+            ⚡ {t('Ver torneo relámpago')}
+          </motion.button>
+        ) : null}
         {!online || config.mode !== 'online' ? (
           <motion.button
             className="btn3d green shine"

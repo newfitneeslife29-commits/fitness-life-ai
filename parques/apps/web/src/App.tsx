@@ -26,6 +26,8 @@ import { WelcomeScreen } from './screens/WelcomeScreen';
 import { TutorialScreen } from './screens/TutorialScreen';
 import { StoryScreen } from './screens/StoryScreen';
 import { VipScreen } from './screens/VipScreen';
+import { ClubScreen } from './screens/ClubScreen';
+import { FlashScreen } from './screens/FlashScreen';
 import { setMusicTrack } from './audio/audio';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
@@ -49,6 +51,8 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   tutorial: TutorialScreen,
   story: StoryScreen,
   vip: VipScreen,
+  club: ClubScreen,
+  flash: FlashScreen,
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */

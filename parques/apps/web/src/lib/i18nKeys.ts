@@ -10,7 +10,7 @@ import { SEASONS, EVENTS, TOURNAMENT_TIERS, CHESTS } from '@parques/engine';
 import { REGIONS } from '../game/phrases';
 import { TIPS } from '../game/phrases';
 import { LOBBY_TOUR, MUSIC_TRACKS, TUTORIAL_STEPS, VIP_PERKS } from '../game/tutorialData';
-import { CHALLENGES, DIVISIONS, STORY } from '@parques/engine';
+import { CHALLENGES, DIVISIONS, QUICK_MESSAGES, STORY } from '@parques/engine';
 import { COUNTRIES } from './countries';
 
 export const SERVER_MESSAGES = [
@@ -29,6 +29,15 @@ export const SERVER_MESSAGES = [
   'Cuenta no válida', 'Primero inicia sesión', 'Ya reclamaste hoy', 'Ya la reclamaste', 'Todavía no la completas', 'Todavía no llegas a ese nivel', 'Necesitas el Pase Premium', 'Ya lo reclamaste', 'Ese emote es del Pase Premium', 'Compras de prueba desactivadas', 'Foto inválida o muy grande', 'Ya es tu amigo', 'No tienes ese objeto', 'Solo disponible en su temporada', 'Cuenta no encontrada', 'Operación desconocida', 'No estás en una mesa',
   'Todavía no tienes cofre de victorias', 'No hay premio para duplicar', 'Ya duplicaste este premio', 'No tienes racha que salvar', 'Tu racha no está en peligro', 'Etapa desconocida', 'Ya superaste esa etapa', 'Primero supera las etapas anteriores', 'Ya cobraste la liga de esta semana', 'Juega 3 partidas online esta semana para cobrar tu liga',
   'Todavía no tienes cofre de victorias', 'No hay premio para duplicar', 'Ya duplicaste este premio', 'No tienes racha que salvar', 'Tu racha no está en peligro', 'Ya ganaste el reto de hoy', 'Etapa desconocida', 'Ya superaste esa etapa', 'Primero supera las etapas anteriores', 'Ya cobraste la liga de esta semana', 'Juega 3 partidas online esta semana para cobrar tu liga',
+  // v1.2 social
+  'Jugador no válido', 'Jugador no encontrado', 'Ya reportaste a este jugador hoy', 'No puedes escribirle a este jugador', 'Solo puedes escribirle a tus amigos',
+  'Mensaje vacío', 'Vas muy rápido, espera un momento', 'Las invitaciones solo se canjean en los primeros días', 'Código no válido', 'Ya canjeaste una invitación',
+  'Llegaste al máximo de invitaciones con premio', 'El nombre es muy corto', 'El nombre es muy largo', 'Ese nombre no está permitido', 'Ya estás en un club',
+  'Ya existe un club con ese nombre', 'No se pudo crear el club', 'Club no encontrado', 'El club está lleno', 'No estás en un club',
+  'Solo el dueño del club puede sacar miembros', 'Ya cobraste este cofre', 'Tu cuenta está suspendida', 'Tu cuenta está suspendida por reportes de la comunidad',
+  'Primero crea una mesa privada en parejas', 'Solo el anfitrión puede buscar rivales', 'La mesa debe ser en parejas', 'Espera a que entre tu compañero',
+  'No puedes invitar a este jugador', '¡Llegaste a la final del torneo relámpago!', '🎉 Un amigo entró con tu invitación: ¡ganaste monedas y gemas!',
+  'Reporte enviado. ¡Gracias por cuidar la comunidad!', 'groserías', 'trampa', 'abandono', 'nombre ofensivo',
 ];
 
 export function dataKeys(): string[] {
@@ -53,6 +62,7 @@ export function dataKeys(): string[] {
     ...CHALLENGES.flatMap((c) => [c.name, c.desc]),
     ...STORY.flatMap((s) => [s.region, s.boss, s.intro]),
     ...DIVISIONS.map((d) => d.name),
+    ...QUICK_MESSAGES,
     ...COUNTRIES.map((c) => c.name),
     'Amarillo', 'Azul', 'Rojo', 'Verde', 'Morado', 'Naranja',
     'Práctica libre', 'Partida local', 'Parejas 2 vs 2', 'Modo Rápido', 'Online',

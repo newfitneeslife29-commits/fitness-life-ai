@@ -16,6 +16,7 @@ import { eventAt, eventPoints, type EventState } from './events';
 import { CHESTS, chestRoll, dailyDeals, GEM_EXCHANGE } from './shop';
 import { DAILY_COUNT, WEEKLY_COUNT } from './missions';
 import { DAY_MS, STORY, STREAK_SAVE_GEMS, VIP_DAYS, dailyChallenge, isVip, winChestReward, winsForChest } from './extras';
+import { abandonPenalty, REFERRAL } from './social';
 
 export interface PassState {
   season: string;
@@ -72,6 +73,14 @@ export interface Profile {
   challenge: { day: string; done: boolean };
   /** Etapas del modo Historia superadas. */
   story: number;
+  /** Jugadores bloqueados (no ves su chat ni te pueden escribir o invitar). */
+  blocked: string[];
+  /** Abandonos de partidas online (ms) y sanción activa hasta (ms). */
+  abandons: number[];
+  penaltyUntil: number;
+  /** Quién me invitó (código de referido canjeado) y cuántos amigos he invitado. */
+  referredBy: string | null;
+  referrals: number;
 }
 
 export interface MatchOutcome {
@@ -133,6 +142,11 @@ export function newProfile(id: string, now = new Date()): Profile {
     lastWin: null,
     challenge: { day: today, done: false },
     story: 0,
+    blocked: [],
+    abandons: [],
+    penaltyUntil: 0,
+    referredBy: null,
+    referrals: 0,
   };
 }
 
@@ -160,6 +174,11 @@ export function normalizeProfile(p: Partial<Profile> & { id: string }, now = new
     lastWin: p.lastWin ?? null,
     challenge: p.challenge ?? base.challenge,
     story: p.story ?? 0,
+    blocked: p.blocked ?? [],
+    abandons: p.abandons ?? [],
+    penaltyUntil: p.penaltyUntil ?? 0,
+    referredBy: p.referredBy ?? null,
+    referrals: p.referrals ?? 0,
   };
 }
 
@@ -595,4 +614,44 @@ export function advanceStory(p: Profile, stage: number): OpResult<{ coins: numbe
   const newItems = st.reward.itemIds.filter((id) => !p.owned.includes(id));
   const u = unlock({ ...p, story: p.story + 1, coins: p.coins + st.reward.coins, gems: p.gems + st.reward.gems, owned: [...p.owned, ...newItems] });
   return { ok: true, profile: u.profile, coins: st.reward.coins, gems: st.reward.gems, itemIds: newItems };
+}
+
+// ------------------------------------------------------------ v1.2 social
+
+/** Bloquear a un jugador (también lo quita de amigos). */
+export function blockPlayer(p: Profile, id: string): OpResult | OpFail {
+  const x = String(id ?? '').trim().toUpperCase().slice(0, 16);
+  if (!x || x === p.id) return fail('Jugador no válido');
+  if (p.blocked.includes(x)) return { ok: true, profile: p };
+  return { ok: true, profile: { ...p, blocked: [...p.blocked, x].slice(-200), friends: p.friends.filter((f) => f.id !== x) } };
+}
+
+export function unblockPlayer(p: Profile, id: string): OpResult {
+  return { ok: true, profile: { ...p, blocked: p.blocked.filter((b) => b !== String(id ?? '').toUpperCase()) } };
+}
+
+/** Abandono de una partida online: a la tercera en 24 h queda sin partidas online un rato. */
+export function recordAbandon(p: Profile, now = Date.now()): OpResult<{ penaltyUntil: number }> {
+  const r = abandonPenalty(p.abandons, now);
+  const penaltyUntil = Math.max(p.penaltyUntil, r.penaltyUntil);
+  return { ok: true, profile: { ...p, abandons: r.abandons, penaltyUntil }, penaltyUntil };
+}
+
+/** La cuenta nueva canjea el código de quien la invitó (una sola vez). */
+export function redeemReferral(p: Profile, referrer: string): OpResult<{ coins: number }> | OpFail {
+  const r = String(referrer ?? '').trim().toUpperCase();
+  if (!r || r === p.id) return fail('Código no válido');
+  if (p.referredBy) return fail('Ya canjeaste una invitación');
+  return { ok: true, profile: { ...p, referredBy: r, coins: p.coins + REFERRAL.newCoins }, coins: REFERRAL.newCoins };
+}
+
+/** Premio para quien invitó (hasta REFERRAL.max amigos). */
+export function grantReferrer(p: Profile): OpResult<{ coins: number; gems: number }> | OpFail {
+  if (p.referrals >= REFERRAL.max) return fail('Llegaste al máximo de invitaciones con premio');
+  return { ok: true, profile: { ...p, referrals: p.referrals + 1, coins: p.coins + REFERRAL.coins, gems: p.gems + REFERRAL.gems }, coins: REFERRAL.coins, gems: REFERRAL.gems };
+}
+
+/** Premio genérico (cofre del club, torneo relámpago, regalo del administrador). */
+export function grantReward(p: Profile, coins: number, gems: number): OpResult {
+  return { ok: true, profile: { ...p, coins: Math.max(0, p.coins + Math.trunc(coins)), gems: Math.max(0, p.gems + Math.trunc(gems)) } };
 }

@@ -43,6 +43,10 @@ interface ProfileState extends Profile {
   doubleWin: (matchId: string) => Promise<OpReply<{ coins: number }>>;
   saveStreak: () => Promise<OpReply>;
   claimLeague: () => Promise<OpReply<{ coins: number; gems: number; division: string }>>;
+  block: (id: string) => Promise<OpReply>;
+  unblock: (id: string) => Promise<OpReply>;
+  redeemReferral: (code: string) => Promise<OpReply<{ coins: number }>>;
+  claimClubChest: (tier: number) => Promise<OpReply<{ coins: number; gems: number }>>;
   openChest: (chestId: string) => Promise<OpReply<{ itemId: string | null; coins: number }>>;
   exchangeGems: (gems: number) => Promise<OpReply<{ coins: number }>>;
   joinCup: (tier: string) => Promise<OpReply>;
@@ -83,6 +87,10 @@ export const useProfile = create<ProfileState>()((set, get) => {
     doubleWin: (matchId) => op({ op: 'double_win', matchId }),
     saveStreak: () => op({ op: 'save_streak' }),
     claimLeague: () => op({ op: 'league_claim' }),
+    block: (id) => op({ op: 'block', id }),
+    unblock: (id) => op({ op: 'unblock', id }),
+    redeemReferral: (code) => op({ op: 'referral', code }),
+    claimClubChest: (tier) => op({ op: 'club_chest', tier }),
     openChest: (chestId) => op({ op: 'chest', chestId }),
     exchangeGems: (gems) => op({ op: 'exchange', gems }),
     joinCup: (tier) => op({ op: 'cup_join', tier }),

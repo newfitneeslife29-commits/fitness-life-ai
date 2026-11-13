@@ -21,7 +21,9 @@ export type Screen =
   | 'welcome'
   | 'tutorial'
   | 'story'
-  | 'vip';
+  | 'vip'
+  | 'club'
+  | 'flash';
 export type SetupMode = MatchConfig['mode'];
 
 interface AppStore {

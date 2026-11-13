@@ -5,6 +5,7 @@
 import type { Action, GameEvent, GameState, HouseRules } from './types';
 import type { TableId } from './economy';
 import type { MatchOutcome, Profile, Friend } from './meta/profile';
+import type { ClubInfo, ClubMessage, ClubRow, DirectMessage, FlashBracket } from './meta/social';
 
 export interface NetSeat {
   side: number;
@@ -81,7 +82,11 @@ export type ProfileOp =
   | { op: 'win_chest' }
   | { op: 'double_win'; matchId: string }
   | { op: 'save_streak' }
-  | { op: 'league_claim' };
+  | { op: 'league_claim' }
+  | { op: 'block'; id: string }
+  | { op: 'unblock'; id: string }
+  | { op: 'referral'; code: string }
+  | { op: 'club_chest'; tier: number };
 
 /** Datos públicos de un jugador (búsqueda de amigos). */
 export interface PublicPlayer {
@@ -178,6 +183,21 @@ export interface ClientToServer {
   friends_online: (ids: string[], ack: (online: string[]) => void) => void;
   invite: (o: { to: string; code: string }, ack: (r: { ok: boolean; error?: string }) => void) => void;
   /** Iniciar sesión / vincular con Apple o Google (token de identidad del proveedor). */
+  /** v1.2 social */
+  report: (o: { playerId: string; reason: string }, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  dm: (o: { to: string; text: string }, ack: (r: { ok: boolean; error?: string; msg?: DirectMessage }) => void) => void;
+  dm_history: (withId: string, ack: (msgs: DirectMessage[]) => void) => void;
+  club_list: (q: string, ack: (rows: ClubRow[]) => void) => void;
+  club_info: (ack: (c: ClubInfo | null) => void) => void;
+  club_create: (o: { name: string; emoji: string }, ack: (r: { ok: boolean; error?: string; profile?: Profile }) => void) => void;
+  club_join: (id: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  club_leave: (ack: (r: { ok: boolean; error?: string }) => void) => void;
+  club_kick: (playerId: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  club_chat: (text: string, ack?: (r: { ok: boolean; error?: string }) => void) => void;
+  flash_join: (ack: (r: { ok: boolean; error?: string }) => void) => void;
+  flash_cancel: () => void;
+  /** Mesa privada en parejas: el anfitrión y su amigo buscan otra pareja (o la máquina). */
+  duo_match: (ack: (r: { ok: boolean; error?: string }) => void) => void;
   auth_provider: (o: { provider: 'apple' | 'google'; idToken: string; name?: string; link: boolean }, ack: (r: AuthResult & { linked?: boolean }) => void) => void;
 }
 
@@ -194,6 +214,11 @@ export interface ServerToClient {
   /** Premios de la partida que acaba de terminar. */
   match_result: (r: { outcome: MatchOutcome & { matchId?: string; special?: { kind: string; coins: number; gems: number; itemIds?: string[]; stage?: number } | null }; profile: Profile }) => void;
   /** Un amigo te invita a su mesa privada. */
+  /** Mensaje directo de un amigo. */
+  dm: (m: DirectMessage) => void;
+  club_chat: (m: ClubMessage) => void;
+  /** Estado del torneo relámpago (fila y llaves). */
+  flash: (m: { waiting?: number; startsInMs?: number; bracket?: FlashBracket }) => void;
   invited: (m: { from: { id: string; name: string; avatar: string }; code: string }) => void;
 }
 
