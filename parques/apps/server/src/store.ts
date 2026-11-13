@@ -9,6 +9,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import {
+  divisionOf,
   grantRankPrize,
   grantTournamentPrize,
   levelFromXp,
@@ -171,6 +172,9 @@ function randomId(): string {
 }
 
 type UpdateResult<T> = T | { ok: false; error: string };
+
+/** Partidas online mínimas en la semana para cobrar la liga. */
+export const LEAGUE_MIN_GAMES = 3;
 
 export class Store {
   private db: Promise<Db>;
@@ -554,5 +558,29 @@ export class Store {
       const r = await this.updateIn(q, playerId, (p) => grantRankPrize(p, prize.coins, prize.gems));
       return { ok: true, profile: r.ok ? r.profile : undefined, coins: prize.coins, gems: prize.gems, place };
     });
+  }
+
+  /** Premio semanal de la liga: tu división según tus trofeos, si jugaste al menos 3 partidas online esta semana. Una vez por semana. */
+  async claimLeague(playerId: string, week: string): Promise<{ ok: boolean; error?: string; profile?: Profile; coins?: number; gems?: number; division?: string }> {
+    const db = await this.db;
+    const [t] = await db.query<{ games: number }>('SELECT games FROM parques.tournaments WHERE week = $1 AND player = $2', [week, playerId]);
+    if (!t || t.games < LEAGUE_MIN_GAMES) return { ok: false, error: `Juega ${LEAGUE_MIN_GAMES} partidas online esta semana para cobrar tu liga` };
+    const [a] = await db.query<{ rating: number }>('SELECT rating FROM parques.accounts WHERE id = $1', [playerId]);
+    const div = divisionOf(a?.rating ?? 1000);
+    return db.tx(async (q) => {
+      const ins = await q.query('INSERT INTO parques.rank_results (week, scope, player, place, coins, gems) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING player', [week, 'league', playerId, 0, div.coins, div.gems]);
+      if (!ins.length) return { ok: false, error: 'Ya cobraste la liga de esta semana' };
+      const r = await this.updateIn(q, playerId, (p) => grantRankPrize(p, div.coins, div.gems));
+      return { ok: true, profile: r.ok ? r.profile : undefined, coins: div.coins, gems: div.gems, division: div.id };
+    });
+  }
+
+  /** Trofeos de un jugador y si ya cobró la liga de esta semana. */
+  async leagueInfo(playerId: string, week: string): Promise<{ rating: number; games: number; claimed: boolean }> {
+    const db = await this.db;
+    const [a] = await db.query<{ rating: number }>('SELECT rating FROM parques.accounts WHERE id = $1', [playerId]);
+    const [t] = await db.query<{ games: number }>('SELECT games FROM parques.tournaments WHERE week = $1 AND player = $2', [week, playerId]);
+    const [c] = await db.query<{ player: string }>("SELECT player FROM parques.rank_results WHERE week = $1 AND scope = 'league' AND player = $2", [week, playerId]);
+    return { rating: a?.rating ?? 1000, games: t?.games ?? 0, claimed: !!c };
   }
 }

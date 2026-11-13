@@ -121,7 +121,7 @@ export function matchXp(entry: number, place: number): number {
 
 // ---------------------------------------------------------------- Productos con dinero real
 
-export type ProductKind = 'coins' | 'gems' | 'item' | 'pass' | 'bundle';
+export type ProductKind = 'coins' | 'gems' | 'item' | 'pass' | 'bundle' | 'vip';
 
 export interface Product {
   id: string;
@@ -153,6 +153,7 @@ export const PRODUCTS: Product[] = [
   { id: 'gems-m', kind: 'gems', usdCents: 499, name: '120 gemas', gems: 120 },
   { id: 'gems-l', kind: 'gems', usdCents: 999, name: '260 gemas', gems: 260 },
   { id: 'gems-xl', kind: 'gems', usdCents: 1999, name: '600 gemas', gems: 600, badge: 'Mejor precio' },
+  { id: 'vip-30', kind: 'vip', usdCents: 699, name: 'Pase VIP (30 días)' },
   { id: 'bundle-inicio', kind: 'bundle', usdCents: 199, name: 'Paquete de bienvenida', coins: 25000, gems: 60, itemIds: ['board-playa'], once: true, badge: '-80 %' },
   { id: 'bundle-semana', kind: 'bundle', usdCents: 499, name: 'Combo parcero', coins: 60000, gems: 80, itemIds: ['dice-galaxia'], badge: 'Más vendido' },
   { id: 'bundle-leyenda', kind: 'bundle', usdCents: 1499, name: 'Paquete Leyenda', coins: 250000, gems: 300, itemIds: ['board-guatape', 'pieces-tricolor', 'frame-neon'], badge: 'Todo incluido' },
@@ -230,6 +231,16 @@ export const ITEM_PRICES_USD: Record<string, number> = {
   'avatar-salsero': 149,
   'avatar-tejo': 99,
   'avatar-congo': 199,
+  'dice-fuego-vivo': 299,
+  'dice-arcoiris-vivo': 199,
+  'pieces-cometa': 399,
+  'board-amazonas-lluvia': 499,
+  'board-caribe-olas': 499,
+  'board-galaxia-estrellas': 599,
+  'board-flores-petalos': 499,
+  'victory-dadito': 199,
+  'victory-chiva': 299,
+  'victory-mariposas': 99,
   'dice-gema3d': 199,
   'dice-arcoiris': 99,
   'dice-jaguar': 149,

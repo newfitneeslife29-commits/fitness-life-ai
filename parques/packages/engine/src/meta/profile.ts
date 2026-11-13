@@ -15,6 +15,7 @@ import { AD_COINS, adStatus, EMPTY_ADS, type AdsState } from './ads';
 import { eventAt, eventPoints, type EventState } from './events';
 import { CHESTS, chestRoll, dailyDeals, GEM_EXCHANGE } from './shop';
 import { DAILY_COUNT, WEEKLY_COUNT } from './missions';
+import { DAY_MS, STORY, STREAK_SAVE_GEMS, VIP_DAYS, dailyChallenge, isVip, winChestReward, winsForChest } from './extras';
 
 export interface PassState {
   season: string;
@@ -61,6 +62,16 @@ export interface Profile {
   deals: { day: string; bought: string[] };
   /** Cuentas de Apple / Google vinculadas (solo para mostrar). */
   linked: string[];
+  /** Cofre por victorias: victorias acumuladas y cofres listos para abrir. */
+  winChest: { wins: number; ready: number };
+  /** Pase VIP activo hasta (ms). 0 = sin VIP. */
+  vipUntil: number;
+  /** Última partida con ganancia (para duplicarla viendo un anuncio, una vez). */
+  lastWin: { id: string; net: number; doubled: boolean } | null;
+  /** Reto del día ya ganado. */
+  challenge: { day: string; done: boolean };
+  /** Etapas del modo Historia superadas. */
+  story: number;
 }
 
 export interface MatchOutcome {
@@ -117,6 +128,11 @@ export function newProfile(id: string, now = new Date()): Profile {
     bundles: [],
     deals: { day: today, bought: [] },
     linked: [],
+    winChest: { wins: 0, ready: 0 },
+    vipUntil: 0,
+    lastWin: null,
+    challenge: { day: today, done: false },
+    story: 0,
   };
 }
 
@@ -139,6 +155,11 @@ export function normalizeProfile(p: Partial<Profile> & { id: string }, now = new
     bundles: p.bundles ?? [],
     deals: p.deals ?? base.deals,
     linked: p.linked ?? [],
+    winChest: { ...base.winChest, ...(p.winChest ?? {}) },
+    vipUntil: p.vipUntil ?? 0,
+    lastWin: p.lastWin ?? null,
+    challenge: p.challenge ?? base.challenge,
+    story: p.story ?? 0,
   };
 }
 
@@ -235,8 +256,19 @@ export function applyMatch(p0: Profile, m: MatchSummary, now = new Date()): OpRe
   const passXp = p.pass.xp + xp;
   const passTiersGained = tierFromXp(passXp) - tierBefore;
   const evPoints = eventPoints(eventAt(now.getTime()).def, m);
+  // Cofre por victorias y última ganancia (para duplicarla con un anuncio).
+  const need = winsForChest(isVip(p.vipUntil, now.getTime()));
+  let chest = { ...p.winChest };
+  if (won) {
+    chest = { wins: chest.wins + 1, ready: chest.ready };
+    if (chest.wins >= need) chest = { wins: 0, ready: chest.ready + 1 };
+  }
+  const net = coins - m.entry;
+  const lastWin = net > 0 ? { id: m.matchId ?? String(now.getTime()), net, doubled: false } : p.lastWin;
   const next: Profile = {
     ...p,
+    winChest: chest,
+    lastWin,
     xp: p.xp + xp,
     coins: p.coins + coins + levelCoins,
     gems: p.gems + gems,
@@ -300,6 +332,10 @@ export function grantProduct(p0: Profile, productId: string, grantId: string, no
     for (const id of pr.itemIds ?? []) if (!p.owned.includes(id)) p = { ...p, owned: [...p.owned, id] };
   }
   p = { ...p, stats: { ...p.stats, purchases: p.stats.purchases + 1 } };
+  if (pr.kind === 'vip') {
+    const from = Math.max(now.getTime(), p.vipUntil);
+    p = { ...p, vipUntil: from + VIP_DAYS * DAY_MS, owned: p.owned.includes('frame-vip') ? p.owned : [...p.owned, 'frame-vip'] };
+  }
   if (pr.kind === 'pass') {
     const extra = (pr.passTiers ?? 0) * PASS_XP_PER_TIER;
     p = { ...p, pass: { ...p.pass, premium: true, xp: p.pass.xp + extra }, passTiersTotal: p.passTiersTotal + (pr.passTiers ?? 0) };
@@ -317,10 +353,10 @@ export function claimDaily(p: Profile, now = new Date()): OpResult<{ coins: numb
   const u = unlock({
     ...p,
     daily: { ...p.daily, lastClaim: today, streak },
-    coins: p.coins + reward.coins,
+    coins: p.coins + reward.coins * (isVip(p.vipUntil, now.getTime()) ? 2 : 1),
     stats: { ...p.stats, maxDailyStreak: Math.max(p.stats.maxDailyStreak, streak), dailyClaims: p.stats.dailyClaims + 1 },
   });
-  return { ok: true, profile: u.profile, coins: reward.coins, day: st.day };
+  return { ok: true, profile: u.profile, coins: reward.coins * (isVip(p.vipUntil, now.getTime()) ? 2 : 1), day: st.day };
 }
 
 export function spin(p: Profile, now = new Date(), random = Math.random()): OpResult<{ index: number; coins: number }> | OpFail {
@@ -512,4 +548,51 @@ export function grantTournamentPrize(p: Profile, place: number, coins: number, g
       stats: { ...st, tournamentWins: st.tournamentWins + (place === 1 ? 1 : 0), tournamentPodiums: st.tournamentPodiums + (place <= 3 ? 1 : 0), tournamentCoins: st.tournamentCoins + coins },
     }).profile,
   };
+}
+
+// ---------------------------------------------------------------- v1.2
+
+/** Abre un cofre de victorias listo. */
+export function claimWinChest(p: Profile, random = Math.random()): OpResult<{ coins: number; gems: number }> | OpFail {
+  if (p.winChest.ready <= 0) return fail('Todavía no tienes cofre de victorias');
+  const r = winChestReward(random);
+  const u = unlock({ ...p, coins: p.coins + r.coins, gems: p.gems + r.gems, winChest: { ...p.winChest, ready: p.winChest.ready - 1 } });
+  return { ok: true, profile: u.profile, ...r };
+}
+
+/** Duplica la ganancia de la última partida (tras ver un anuncio). Una sola vez por partida. */
+export function doubleLastWin(p: Profile, matchId: string): OpResult<{ coins: number }> | OpFail {
+  const w = p.lastWin;
+  if (!w || w.id !== matchId) return fail('No hay premio para duplicar');
+  if (w.doubled) return fail('Ya duplicaste este premio');
+  return { ok: true, profile: { ...p, coins: p.coins + w.net, lastWin: { ...w, doubled: true } }, coins: w.net };
+}
+
+/** Salva la racha diaria si faltaste exactamente un día (cuesta gemas). */
+export function saveStreak(p: Profile, now = new Date()): OpResult | OpFail {
+  const today = dayKey(now);
+  if (!p.daily.lastClaim || p.daily.streak < 2) return fail('No tienes racha que salvar');
+  if (daysBetween(p.daily.lastClaim, today) !== 2) return fail('Tu racha no está en peligro');
+  if (p.gems < STREAK_SAVE_GEMS) return fail('Te faltan gemas');
+  const y = new Date(now.getTime() - DAY_MS);
+  return { ok: true, profile: { ...p, gems: p.gems - STREAK_SAVE_GEMS, daily: { ...p.daily, lastClaim: dayKey(y) } } };
+}
+
+/** Premio del reto del día (lo llama el servidor cuando ganas el reto). */
+export function claimChallenge(p: Profile, now = new Date()): OpResult<{ coins: number; gems: number }> | OpFail {
+  const day = dayKey(now);
+  if (p.challenge.day === day && p.challenge.done) return fail('Ya ganaste el reto de hoy');
+  const c = dailyChallenge(day);
+  const u = unlock({ ...p, coins: p.coins + c.coins, gems: p.gems + c.gems, challenge: { day, done: true } });
+  return { ok: true, profile: u.profile, coins: c.coins, gems: c.gems };
+}
+
+/** Superar una etapa de la Historia (lo llama el servidor cuando ganas esa etapa). */
+export function advanceStory(p: Profile, stage: number): OpResult<{ coins: number; gems: number; itemIds: string[] }> | OpFail {
+  const st = STORY[stage];
+  if (!st) return fail('Etapa desconocida');
+  if (stage !== p.story) return fail(stage < p.story ? 'Ya superaste esa etapa' : 'Primero supera las etapas anteriores');
+  const newItems = st.reward.itemIds.filter((id) => !p.owned.includes(id));
+  const u = unlock({ ...p, story: p.story + 1, coins: p.coins + st.reward.coins, gems: p.gems + st.reward.gems, owned: [...p.owned, ...newItems] });
+  return { ok: true, profile: u.profile, coins: st.reward.coins, gems: st.reward.gems, itemIds: newItems };
 }

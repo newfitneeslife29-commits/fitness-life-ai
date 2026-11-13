@@ -77,7 +77,11 @@ export type ProfileOp =
   | { op: 'chest'; chestId: string }
   | { op: 'exchange'; gems: number }
   | { op: 'cup_join'; tier: string }
-  | { op: 'rank_friends_claim' };
+  | { op: 'rank_friends_claim' }
+  | { op: 'win_chest' }
+  | { op: 'double_win'; matchId: string }
+  | { op: 'save_streak' }
+  | { op: 'league_claim' };
 
 /** Datos públicos de un jugador (búsqueda de amigos). */
 export interface PublicPlayer {
@@ -144,6 +148,10 @@ export interface PlayAiOpts {
   quick?: boolean;
   level?: 'easy' | 'normal' | 'expert';
   rules?: Partial<HouseRules>;
+  /** Jugar el reto del día (reglas y premio los pone el servidor). */
+  challenge?: boolean;
+  /** Jugar esa etapa del modo Historia. */
+  story?: number;
 }
 
 export interface ClientToServer {
@@ -163,6 +171,7 @@ export interface ClientToServer {
   tournament: (ack: (t: TournamentInfo) => void) => void;
   cups: (ack: (cups: CupInfo[]) => void) => void;
   cup_match: (tier: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
+  league: (ack: (r: { rating: number; games: number; claimed: boolean } | null) => void) => void;
   hall_of_fame: (ack: (h: HallOfFame) => void) => void;
   rank_rewards: (ack: (r: RankRewardsInfo) => void) => void;
   find_player: (id: string, ack: (p: PublicPlayer | null) => void) => void;
@@ -183,7 +192,7 @@ export interface ServerToClient {
   /** Perfil actualizado por el servidor. */
   profile: (p: Profile) => void;
   /** Premios de la partida que acaba de terminar. */
-  match_result: (r: { outcome: MatchOutcome; profile: Profile }) => void;
+  match_result: (r: { outcome: MatchOutcome & { matchId?: string; special?: { kind: string; coins: number; gems: number; itemIds?: string[]; stage?: number } | null }; profile: Profile }) => void;
   /** Un amigo te invita a su mesa privada. */
   invited: (m: { from: { id: string; name: string; avatar: string }; code: string }) => void;
 }

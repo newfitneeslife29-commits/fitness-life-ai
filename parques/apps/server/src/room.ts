@@ -73,11 +73,17 @@ export interface RoomOptions {
   onEnd?: (room: Room, results: HumanResult[]) => void;
   /** Copa (torneo con inscripción) a la que cuenta la partida. */
   cup?: string | null;
+  /** Reto del día o etapa de la Historia (premio extra al ganar). */
+  special?: { kind: 'challenge' } | { kind: 'story'; stage: number };
+  /** Nombre y avatar del primer rival (jefe de la Historia). */
+  boss?: { name: string; avatar: string };
 }
 
 export class Room {
   readonly id = randomBytes(6).toString('hex');
   readonly kind: 'quick' | 'private';
+  readonly special: RoomOptions['special'] | null;
+  private boss: RoomOptions['boss'] | null;
   readonly code: string | null;
   readonly hostId: string | null;
   readonly rules: Partial<HouseRules>;
@@ -119,6 +125,8 @@ export class Room {
     this.cup = opts.cup ?? null;
     this.botLevel = opts.botLevel ?? (this.table ? (tableOf(this.table)?.ai ?? null) : null);
     this.timeLimitMs = opts.timeLimitMs ?? 0;
+    this.special = opts.special ?? null;
+    this.boss = opts.boss ?? null;
     this.charge = opts.charge;
     this.seats = sidesFor(teams ? 4 : this.sides === 6 ? 6 : Math.min(4, opts.seats)).map((side) => ({
       side,
@@ -243,6 +251,10 @@ export class Room {
       if (!s.playerId) {
         s.name = names[b % names.length]!;
         s.avatar = BOT_AVATARS[randomInt(BOT_AVATARS.length)]!;
+        if (b === 0 && this.boss) {
+          s.name = this.boss.name;
+          s.avatar = this.boss.avatar;
+        }
         s.kind = 'bot';
         s.level = this.botLevel ?? (b % 2 ? 'expert' : 'normal');
         b++;

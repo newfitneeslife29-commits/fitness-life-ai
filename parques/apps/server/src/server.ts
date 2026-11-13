@@ -8,6 +8,14 @@ import { extname, join, normalize } from 'node:path';
 import { Server } from 'socket.io';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import {
+  advanceStory,
+  claimChallenge,
+  claimWinChest,
+  dailyChallenge,
+  dayKey,
+  doubleLastWin,
+  saveStreak,
+  STORY,
   addFriend,
   buyDeal,
   claimAd,
@@ -33,7 +41,7 @@ import {
   table as tableOf,
   TOP_ROOM_SIZE,
 } from '@parques/engine';
-import type { ClientToServer, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
+import type { ClientToServer, HouseRules, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
 
 /** Identidad verificada de Apple o Google. */
 export interface VerifiedIdentity {
@@ -61,7 +69,7 @@ export const verifyIdentity: IdentityVerifier = async (provider, idToken) => {
     return null;
   }
 };
-import { makeCode, Room, type Conn, type HumanResult, type Timing } from './room';
+import { makeCode, Room, type Conn, type HumanResult, type RoomOptions, type Timing } from './room';
 import { Store } from './store';
 import { Payments, StorePurchases } from './payments';
 
@@ -263,9 +271,19 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     const g = room.state;
     if (!g || !results.length) return;
     for (const r of results) {
-      const summary = { ...summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry }), tournament: room.cup };
+      const summary = { ...summaryFor({ place: r.place, players: g.players.length, won: r.won, teams: !!g.rules.teams, stats: r.stats, mode: room.mode === 'online' ? 'online' : room.mode, table: room.table, entry: room.entry }), tournament: room.cup, matchId: room.id };
       const out = await store.update(r.playerId, (p) => applyMatch(p, summary));
-      if (out.ok && 'outcome' in out) emitTo(r.playerId, 'match_result', { outcome: out.outcome, profile: out.profile });
+      // Reto del día / etapa de la Historia: premio extra solo si ganó.
+      let special: { kind: string; coins: number; gems: number; itemIds?: string[]; stage?: number } | null = null;
+      const sp = room.special;
+      if (r.won && sp) {
+        const ex = await store.update(r.playerId, (p) => (sp.kind === 'challenge' ? claimChallenge(p) : advanceStory(p, sp.stage)));
+        if (ex.ok) special = { kind: sp.kind, coins: (ex as { coins: number }).coins, gems: (ex as { gems: number }).gems, itemIds: (ex as { itemIds?: string[] }).itemIds, stage: sp.kind === 'story' ? sp.stage : undefined };
+      }
+      if (out.ok && 'outcome' in out) {
+        const prof = special ? ((await store.getProfile(r.playerId)) ?? out.profile) : out.profile;
+        emitTo(r.playerId, 'match_result', { outcome: { ...out.outcome, special, matchId: room.id }, profile: prof });
+      }
     }
     if (room.mode === 'online') await store.recordMatch(results.map((r) => r.playerId));
     if (room.cup) await store.recordCup(room.cup, results.map((r) => r.playerId));
@@ -406,6 +424,16 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         return wrap(await store.update(uid, (p) => claimAd(p)));
       case 'event_claim':
         return wrap(await store.update(uid, (p) => claimEventTier(p, Number(op.tier))));
+      case 'win_chest':
+        return wrap(await store.update(uid, (p) => claimWinChest(p)));
+      case 'double_win':
+        return wrap(await store.update(uid, (p) => doubleLastWin(p, String(op.matchId))));
+      case 'save_streak':
+        return wrap(await store.update(uid, (p) => saveStreak(p)));
+      case 'league_claim': {
+        const r = await store.claimLeague(uid, weekKey(new Date()));
+        return r.ok ? { ok: true, profile: r.profile, result: { coins: r.coins, gems: r.gems, division: r.division } } : { ok: false, error: r.error };
+      }
       case 'deal':
         return wrap(await store.update(uid, (p) => buyDeal(p, String(op.itemId))));
       case 'chest':
@@ -465,14 +493,41 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       const players = ([2, 3, 4, 6] as const).includes(o?.players) ? o.players : 4;
       const teams = !!o?.teams && players === 4;
       const quick = !!o?.quick;
-      const r = o?.rules ?? {};
+      let r: Partial<HouseRules> = o?.rules ?? {};
+      // Reto del día y Historia: reglas y rivales los decide el servidor.
+      let special: RoomOptions['special'] | undefined;
+      let boss: RoomOptions['boss'] | undefined;
+      let level = o?.level;
+      let nPlayers = players;
+      if (o?.challenge) {
+        const c = dailyChallenge(dayKey());
+        if (p.challenge.day === dayKey() && p.challenge.done) return ack?.({ ok: false, error: 'Ya ganaste el reto de hoy' });
+        r = { ...c.rules };
+        nPlayers = c.players;
+        special = { kind: 'challenge' };
+      } else if (typeof o?.story === 'number') {
+        const st = STORY[o.story];
+        if (!st || o.story !== p.story) return ack?.({ ok: false, error: 'Primero supera las etapas anteriores' });
+        r = { ...st.rules };
+        nPlayers = st.players;
+        level = st.level;
+        special = { kind: 'story', stage: o.story };
+        boss = { name: st.boss, avatar: st.bossAvatar };
+      }
       const room = newRoom(
         'quick',
-        players,
-        { soplar: r.soplar !== false, triplePairPenalty: r.triplePairPenalty !== false, jailAttempts: Number(r.jailAttempts) || 3, teams, piecesPerPlayer: quick ? 2 : 4 },
+        nPlayers,
+        {
+          ...r,
+          soplar: r.soplar !== false,
+          triplePairPenalty: r.triplePairPenalty !== false,
+          jailAttempts: Number(r.jailAttempts) || 3,
+          teams,
+          piecesPerPlayer: quick ? 2 : (r.piecesPerPlayer ?? 4),
+        },
         null,
-        t,
-        { mode: quick ? 'quick' : teams ? 'teams' : 'ai', sides: players === 6 ? 6 : 4, botLevel: o?.level, timeLimitMs: quick ? 300000 : 0 },
+        special ? 'barrio' : t,
+        { mode: quick ? 'quick' : teams ? 'teams' : 'ai', sides: nPlayers === 6 ? 6 : 4, botLevel: level, timeLimitMs: quick ? 300000 : 0, special, boss },
       );
       room.addPlayer(helloOf(p), connFor(p.id));
       playerRoom.set(p.id, room);
@@ -590,6 +645,12 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
     });
 
     socket.on('hall_of_fame', async (ack) => ack?.(await store.hallOfFame()));
+
+    socket.on('league', async (ack) => {
+      const id = me();
+      if (!id) return ack?.(null);
+      ack?.(await store.leagueInfo(id, weekKey(new Date())));
+    });
 
     socket.on('rank_rewards', async (ack) => {
       const p = await profileOf();
