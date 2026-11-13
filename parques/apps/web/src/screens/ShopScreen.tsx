@@ -18,7 +18,7 @@ import { PieceGlyph } from '../game/Piece';
 import { BoardMini } from '../game/Board';
 
 type Tab = 'offers' | Category | 'coins' | 'gems';
-const TABS: Tab[] = ['offers', 'coins', 'gems', 'board', 'avatar', 'pieces', 'dice', 'frame', 'effect'];
+const TABS: Tab[] = ['offers', 'coins', 'gems', 'board', 'avatar', 'pieces', 'dice', 'victory', 'frame', 'effect'];
 
 function untilMidnight(): string {
   const now = new Date();
@@ -45,6 +45,7 @@ function Preview({ it }: { it: Item }) {
   );
   if (it.frame) return <Avatar emoji={p.avatar} photo={p.photo} frameId={it.id} size={70} />;
   if (it.category === 'avatar') return <Avatar emoji={`av:${it.id}`} size={84} />;
+  if (it.victory === 'dadito') return <img src="art/dadito-gana.webp" alt="" className="prev-dadito" />;
   return <span className="prev-emoji">{it.emoji}</span>;
 }
 
@@ -147,6 +148,9 @@ export function ShopScreen() {
           {season.emoji} <b>{t(season.name)}</b>: {t(season.blurb)}
         </div>
       ) : null}
+      <motion.button className="vip-strip" whileTap={{ scale: 0.97 }} onClick={() => go('vip')}>
+        💎 <b>{t('Pase VIP')}</b> — {t('premio diario doble, cofre más rápido y marco dorado')} ›
+      </motion.button>
       <motion.button className="pass-strip" whileTap={{ scale: 0.97 }} onClick={() => go('pass')}>
         🎟️ <b>{t('Pase de batalla')}</b> — {t('skins exclusivas, monedas y gemas')} ›
       </motion.button>
@@ -277,6 +281,10 @@ export function ShopScreen() {
                       </button>
                     ) : unavailable ? (
                       <span className="si-state muted">{t('Vuelve en {name}', { name: t(seasonItem!.name) })}</span>
+                    ) : it.currency === 'vip' ? (
+                      <button className="btn3d small purple" onClick={() => go('vip')}>
+                        💎 {t('Con el VIP')}
+                      </button>
                     ) : it.currency === 'pass' ? (
                       <button className="btn3d small purple" onClick={() => go('pass')}>
                         🎟️ {t('En el pase')}

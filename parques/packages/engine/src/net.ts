@@ -171,7 +171,7 @@ export interface ClientToServer {
   tournament: (ack: (t: TournamentInfo) => void) => void;
   cups: (ack: (cups: CupInfo[]) => void) => void;
   cup_match: (tier: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
-  league: (ack: (r: { rating: number; games: number; claimed: boolean } | null) => void) => void;
+  league: (ack: (r: { rating: number; games: number; claimed: boolean }) => void) => void;
   hall_of_fame: (ack: (h: HallOfFame) => void) => void;
   rank_rewards: (ack: (r: RankRewardsInfo) => void) => void;
   find_player: (id: string, ack: (p: PublicPlayer | null) => void) => void;

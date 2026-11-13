@@ -402,6 +402,7 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
         <BoardDefs theme={theme} />
         <g transform={`rotate(${rot})`}>
           <BoardScene sides={sides} active={activeSides} theme={theme} rot={rot} />
+          {theme.anim ? <BoardAnimLayer kind={theme.anim} half={boardBox(sides).w} rot={rot} /> : null}
           {game.phase !== 'over' ? <TurnGlow sides={sides} side={game.players[game.current]!.side} color={game.players[game.current]!.color} /> : null}
 
           {targets.map((tg, i) => (
@@ -498,3 +499,36 @@ function BoardScenery({ image, half, rot, clipPoints }: { image: string; half: n
     </g>
   );
 }
+
+/** Animación premium encima del escenario (lluvia, olas, luciérnagas, estrellas fugaces, pétalos). No intercepta toques. */
+const BoardAnimLayer = memo(function BoardAnimLayer({ kind, half, rot }: { kind: NonNullable<BoardTheme['anim']>; half: number; rot: number }) {
+  const n = kind === 'rain' ? 40 : kind === 'fireflies' ? 22 : kind === 'petals' ? 18 : kind === 'shooting-stars' ? 5 : 8;
+  const items = Array.from({ length: n }, (_, i) => ({ i, x: -half + ((i * 97) % 100) / 100 * half * 2, y: -half + ((i * 61) % 100) / 100 * half * 2, d: ((i * 37) % 100) / 100 }));
+  return (
+    <g pointerEvents="none" transform={`rotate(${-rot})`} className={`banim banim-${kind}`}>
+      {kind === 'rain'
+        ? items.map((p) => (
+            <line key={p.i} x1={p.x} y1={-half} x2={p.x - 10} y2={-half + 34} stroke="rgba(200,230,255,.65)" strokeWidth={2.4} strokeLinecap="round" style={{ animationDelay: `${p.d * 1.2}s`, ['--fall' as string]: `${half * 2 + 40}px` }} />
+          ))
+        : kind === 'waves'
+          ? items.map((p) => (
+              <ellipse key={p.i} cx={p.x} cy={p.y} rx={46} ry={10} fill="none" stroke="rgba(255,255,255,.45)" strokeWidth={3} style={{ animationDelay: `${p.d * 3}s` }} />
+            ))
+          : kind === 'fireflies'
+            ? items.map((p) => <circle key={p.i} cx={p.x} cy={p.y} r={4.5} fill="#fff6a8" style={{ animationDelay: `${p.d * 4}s` }} />)
+            : kind === 'petals'
+              ? items.map((p) => (
+                  <path key={p.i} d={`M${p.x} ${-half} q6 -8 12 0 q-6 8 -12 0z`} fill={['#ff7ac8', '#ffd54f', '#ff5a6e', '#fff'][p.i % 4]} style={{ animationDelay: `${p.d * 6}s`, ['--fall' as string]: `${half * 2 + 40}px` }} />
+                ))
+              : items.map((p) => <line key={p.i} x1={p.x} y1={p.y} x2={p.x - 60} y2={p.y + 30} stroke="url(#g-shoot)" strokeWidth={3.5} strokeLinecap="round" style={{ animationDelay: `${p.d * 5}s` }} />)}
+      {kind === 'shooting-stars' ? (
+        <defs>
+          <linearGradient id="g-shoot" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#fff" stopOpacity="1" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      ) : null}
+    </g>
+  );
+});

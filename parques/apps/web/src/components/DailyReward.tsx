@@ -3,7 +3,8 @@ import { motion, useAnimationControls } from 'framer-motion';
 import { Modal } from './Modal';
 import { CoinIcon } from './Counter';
 import { useT } from '../lib/i18n';
-import { DAILY_REWARDS, ROULETTE, dailyStatus, dayKey } from '@parques/engine';
+import { DAILY_REWARDS, ROULETTE, STREAK_SAVE_GEMS, dailyStatus, dayKey, daysBetween } from '@parques/engine';
+import { GemIcon } from './Counter';
 import { useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
 import { play } from '../audio/audio';
@@ -18,6 +19,15 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
   const canSpin = p.daily.lastSpin !== today;
   const [tab, setTab] = useState<'streak' | 'wheel'>('streak');
   const btn = useRef<HTMLButtonElement>(null);
+
+  // Racha en peligro: faltó exactamente un día (se puede salvar con gemas antes de reclamar).
+  const inDanger = !!p.daily.lastClaim && p.daily.streak >= 2 && daysBetween(p.daily.lastClaim, today) === 2;
+  const save = async () => {
+    const r = await p.saveStreak();
+    if (!r.ok) return fx.toast({ icon: '💎', title: t(r.error ?? 'No se pudo') });
+    play('levelup');
+    fx.toast({ icon: '🛡️', title: t('¡Racha salvada!'), sub: t('Reclama tu día para seguir sumando') });
+  };
 
   const claim = async () => {
     const res = await p.claimDaily();
@@ -62,6 +72,14 @@ export function DailyReward({ open, onClose }: { open: boolean; onClose: () => v
               );
             })}
           </div>
+          {inDanger ? (
+            <motion.div className="streak-save card" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+              <span>🔥 {t('¡Tu racha de {n} días está en peligro! Ayer no entraste.', { n: p.daily.streak })}</span>
+              <motion.button className="btn3d small purple" whileTap={{ scale: 0.9 }} animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1, repeat: Infinity }} onClick={() => void save()}>
+                🛡️ {t('Salvar racha')} · <GemIcon size={14} /> {STREAK_SAVE_GEMS}
+              </motion.button>
+            </motion.div>
+          ) : null}
           <motion.button ref={btn} className="btn3d green wide shine" whileTap={{ scale: 0.92 }} onClick={claim} disabled={!st.canClaim}>
             {st.canClaim ? t('Reclamar día {n}', { n: st.day }) : t('Vuelve mañana 😉')}
           </motion.button>

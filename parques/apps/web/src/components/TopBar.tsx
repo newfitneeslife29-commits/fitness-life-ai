@@ -1,3 +1,4 @@
+import { isVip } from '@parques/engine';
 import { motion } from 'framer-motion';
 import { useLevel, useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
@@ -22,6 +23,7 @@ export function TopBar({ back, title }: { back?: boolean; title?: string }) {
           <Avatar emoji={p.avatar} photo={p.photo} frameId={p.equipped.frame} size={46} level={lvl.level} ring={lvl.max ? 1 : lvl.into / lvl.need} />
           <div className="topbar-name">
             <span>{p.name}</span>
+            {isVip(p.vipUntil, Date.now()) ? <span className="vip-badge">💎 VIP</span> : null}
             <div className="xpbar">
               <motion.div className="xpbar-fill" initial={false} animate={{ width: `${lvl.max ? 100 : (lvl.into / lvl.need) * 100}%` }} />
             </div>

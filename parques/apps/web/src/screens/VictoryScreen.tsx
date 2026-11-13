@@ -9,7 +9,9 @@ import { humanSeat, useGame } from '../stores/gameStore';
 import { useApp } from '../stores/appStore';
 import { useLevel, useProfile } from '../stores/profileStore';
 import { centerOf, useFx } from '../stores/fxStore';
-import { levelFromXp, payouts } from '@parques/engine';
+import { item, levelFromXp, payouts } from '@parques/engine';
+import { VictoryFx } from '../components/VictoryFx';
+import { adsAvailable, showRewardedAd } from '../lib/ads';
 import { play } from '../audio/audio';
 import { useT } from '../lib/i18n';
 import { useOnline } from '../lib/online';
@@ -87,6 +89,7 @@ export function VictoryScreen() {
     <div className="screen victory-screen">
       <Background />
       {won || me < 0 ? <Confetti /> : null}
+      {won ? <VictoryFx style={item(profile.equipped.victory ?? 'victory-confeti').victory ?? 'confeti'} /> : null}
       <div className="victory-pills">
         <CurrencyPill kind="coin" value={profile.coins} />
         <CurrencyPill kind="gem" value={profile.gems} />
@@ -152,6 +155,8 @@ export function VictoryScreen() {
       ) : (
         <div ref={rewardsRef} className="rule-note">{me < 0 ? t('Partida entre máquinas: sin premios.') : config.mode === 'local' ? t('Partida local de varios jugadores: sin premios individuales.') : ''}</div>
       )}
+
+      <ExtraRewards outcome={outcome} />
 
       <div className="victory-actions">
         {!online || config.mode !== 'online' ? (
@@ -279,5 +284,54 @@ function Medal({ n }: { n: number }) {
         {n}
       </text>
     </svg>
+  );
+}
+
+type Special = { kind: string; coins: number; gems: number; itemIds?: string[]; stage?: number } | null | undefined;
+
+/** Premio del reto del día / la Historia y botón para duplicar la ganancia viendo un anuncio. */
+function ExtraRewards({ outcome }: { outcome: ReturnType<typeof useGame.getState>['outcome'] }) {
+  const t = useT();
+  const fx = useFx();
+  const p = useProfile();
+  const [busy, setBusy] = useState(false);
+  if (!outcome) return null;
+  const extra = outcome as typeof outcome & { matchId?: string; special?: Special };
+  const sp = extra.special;
+  const w = p.lastWin;
+  const canDouble = !!extra.matchId && !!w && w.id === extra.matchId && !w.doubled && w.net > 0 && adsAvailable();
+  const doubleIt = async (el: HTMLElement) => {
+    if (busy) return;
+    setBusy(true);
+    const seen = await showRewardedAd();
+    if (seen) {
+      const r = await p.doubleWin(extra.matchId!);
+      if (r.ok && r.result) {
+        play('coin');
+        fx.fly('coin', centerOf(el), 12);
+        fx.toast({ icon: '🪙', title: t('¡Premio duplicado! +{n}', { n: r.result.coins.toLocaleString() }) });
+      } else fx.toast({ icon: '⚠️', title: t(r.error ?? 'No se pudo') });
+    }
+    setBusy(false);
+  };
+  return (
+    <>
+      {sp ? (
+        <motion.div className="special-reward card glossy" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.1, type: 'spring', stiffness: 260, damping: 14 }}>
+          <span className="sr-icon">{sp.kind === 'challenge' ? '🎯' : '🗺️'}</span>
+          <div>
+            <b>{sp.kind === 'challenge' ? t('¡Reto del día superado!') : t('¡Región conquistada!')}</b>
+            <span className="sr-prize">
+              +{sp.coins.toLocaleString()} <CoinIcon size={14} /> · +{sp.gems} <GemIcon size={14} /> {sp.itemIds?.length ? `· ${sp.itemIds.map((id) => item(id).emoji).join(' ')}` : ''}
+            </span>
+          </div>
+        </motion.div>
+      ) : null}
+      {canDouble ? (
+        <motion.button className="btn3d play-btn wide shine double-btn" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1, scale: [1, 1.04, 1] }} transition={{ delay: 1.3, scale: { duration: 1.2, repeat: Infinity } }} disabled={busy} onClick={(e) => void doubleIt(e.currentTarget)}>
+          📺 {t('Ver anuncio y duplicar: +{n}', { n: w!.net.toLocaleString() })}
+        </motion.button>
+      ) : null}
+    </>
   );
 }

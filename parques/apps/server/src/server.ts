@@ -648,7 +648,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
 
     socket.on('league', async (ack) => {
       const id = me();
-      if (!id) return ack?.(null);
+      if (!id) return ack?.({ rating: 1000, games: 0, claimed: false });
       ack?.(await store.leagueInfo(id, weekKey(new Date())));
     });
 

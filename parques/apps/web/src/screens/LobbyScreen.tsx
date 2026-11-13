@@ -1,4 +1,5 @@
 import { CoachTour } from '../components/CoachTour';
+import { QuickCards } from '../components/QuickCards';
 import { LOBBY_TOUR } from '../game/tutorialData';
 import { TOUR_KEY } from './TutorialScreen';
 import { useEffect, useState } from 'react';
@@ -116,6 +117,8 @@ export function LobbyScreen() {
         </span>
         {evReady ? <span className="side-dot static">{evReady}</span> : <span className="sb-go">›</span>}
       </motion.button>
+
+      <QuickCards />
 
       {providers().length && !p.linked.length ? (
         <div className="save-progress card glossy">

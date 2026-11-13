@@ -54,3 +54,11 @@ export const MUSIC_TRACKS: { id: string; name: string; emoji: string }[] = [
   { id: 'champeta', name: 'Champeta', emoji: '🌴' },
   { id: 'porro', name: 'Porro y papayera', emoji: '🎺' },
 ];
+
+/** Ventajas del Pase VIP. */
+export const VIP_PERKS = [
+  { icon: '🎁', text: 'Recompensa diaria al doble' },
+  { icon: '🧰', text: 'Cofre de victorias cada 2 partidas ganadas (en vez de 3)' },
+  { icon: '💎', text: 'Marco VIP dorado exclusivo (es tuyo para siempre)' },
+  { icon: '👑', text: 'Insignia VIP junto a tu nombre' },
+];

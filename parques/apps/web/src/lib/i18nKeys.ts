@@ -9,7 +9,8 @@ import { DAILY_POOL, WEEKLY_POOL } from '@parques/engine';
 import { SEASONS, EVENTS, TOURNAMENT_TIERS, CHESTS } from '@parques/engine';
 import { REGIONS } from '../game/phrases';
 import { TIPS } from '../game/phrases';
-import { LOBBY_TOUR, MUSIC_TRACKS, TUTORIAL_STEPS } from '../game/tutorialData';
+import { LOBBY_TOUR, MUSIC_TRACKS, TUTORIAL_STEPS, VIP_PERKS } from '../game/tutorialData';
+import { CHALLENGES, DIVISIONS, STORY } from '@parques/engine';
 import { COUNTRIES } from './countries';
 
 export const SERVER_MESSAGES = [
@@ -26,6 +27,8 @@ export const SERVER_MESSAGES = [
   'Proveedor desconocido', 'No se pudo verificar la cuenta', 'Los premios de los torneos ahora se entregan solos al cerrar la semana',
   'No se pudo crear la mesa', 'No se pudo abrir', 'No se pudo', 'Te faltan monedas',
   'Cuenta no válida', 'Primero inicia sesión', 'Ya reclamaste hoy', 'Ya la reclamaste', 'Todavía no la completas', 'Todavía no llegas a ese nivel', 'Necesitas el Pase Premium', 'Ya lo reclamaste', 'Ese emote es del Pase Premium', 'Compras de prueba desactivadas', 'Foto inválida o muy grande', 'Ya es tu amigo', 'No tienes ese objeto', 'Solo disponible en su temporada', 'Cuenta no encontrada', 'Operación desconocida', 'No estás en una mesa',
+  'Todavía no tienes cofre de victorias', 'No hay premio para duplicar', 'Ya duplicaste este premio', 'No tienes racha que salvar', 'Tu racha no está en peligro', 'Etapa desconocida', 'Ya superaste esa etapa', 'Primero supera las etapas anteriores', 'Ya cobraste la liga de esta semana', 'Juega 3 partidas online esta semana para cobrar tu liga',
+  'Todavía no tienes cofre de victorias', 'No hay premio para duplicar', 'Ya duplicaste este premio', 'No tienes racha que salvar', 'Tu racha no está en peligro', 'Ya ganaste el reto de hoy', 'Etapa desconocida', 'Ya superaste esa etapa', 'Primero supera las etapas anteriores', 'Ya cobraste la liga de esta semana', 'Juega 3 partidas online esta semana para cobrar tu liga',
 ];
 
 export function dataKeys(): string[] {
@@ -46,6 +49,10 @@ export function dataKeys(): string[] {
     ...TUTORIAL_STEPS.map((s) => s.text),
     ...LOBBY_TOUR.flatMap((s) => [s.title, s.text]),
     ...MUSIC_TRACKS.map((m) => m.name),
+    ...VIP_PERKS.map((x) => x.text),
+    ...CHALLENGES.flatMap((c) => [c.name, c.desc]),
+    ...STORY.flatMap((s) => [s.region, s.boss, s.intro]),
+    ...DIVISIONS.map((d) => d.name),
     ...COUNTRIES.map((c) => c.name),
     'Amarillo', 'Azul', 'Rojo', 'Verde', 'Morado', 'Naranja',
     'Práctica libre', 'Partida local', 'Parejas 2 vs 2', 'Modo Rápido', 'Online',

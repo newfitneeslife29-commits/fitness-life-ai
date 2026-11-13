@@ -30,8 +30,8 @@ async function admob() {
   return (await ready) ? mod.AdMob : null;
 }
 
-/** Muestra un anuncio con premio; si se ve completo, el servidor entrega las monedas. */
-export async function watchAdForCoins(): Promise<boolean> {
+/** Muestra un anuncio con premio; true si se vio completo. */
+export async function showRewardedAd(): Promise<boolean> {
   const fx = useFx.getState();
   if (!adsAvailable()) {
     fx.toast({ icon: '📱', title: tr('Los anuncios con premio están en la app del celular') });
@@ -43,11 +43,17 @@ export async function watchAdForCoins(): Promise<boolean> {
     const { id, testing } = unitId();
     await ad.prepareRewardVideoAd({ adId: id, isTesting: testing, npa: true });
     const reward = await ad.showRewardVideoAd();
-    if (!reward) return false;
+    return !!reward;
   } catch {
     fx.toast({ icon: '📺', title: tr('No hay anuncios disponibles ahora, intenta en un rato') });
     return false;
   }
+}
+
+/** Muestra un anuncio con premio; si se ve completo, el servidor entrega las monedas. */
+export async function watchAdForCoins(): Promise<boolean> {
+  const fx = useFx.getState();
+  if (!(await showRewardedAd())) return false;
   const r = await useProfile.getState().watchedAd();
   if (r.ok && r.result) {
     fx.toast({ icon: '🪙', title: tr('+{n} monedas', { n: r.result.coins }), sub: tr('Te quedan {n} anuncios hoy', { n: r.result.left }) });

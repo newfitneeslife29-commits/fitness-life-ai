@@ -39,6 +39,7 @@ interface OnlineState {
   cups: () => Promise<CupInfo[] | null>;
   cupMatch: (tier: string) => Promise<string | null>;
   hallOfFame: () => Promise<HallOfFame | null>;
+  league: () => Promise<{ rating: number; games: number; claimed: boolean } | null>;
   rankRewards: () => Promise<RankRewardsInfo | null>;
   findPlayer: (id: string) => Promise<PublicPlayer | null>;
   friendsOnline: (ids: string[]) => Promise<string[]>;
@@ -348,6 +349,11 @@ export const useOnline = create<OnlineState>((set, get) => ({
   hallOfFame: async () => {
     if (!(await get().connect())) return null;
     return ack((cb) => socket!.emit('hall_of_fame', cb));
+  },
+
+  league: async () => {
+    if (!(await get().connect())) return null;
+    return ack((cb) => socket!.emit('league', cb));
   },
 
   rankRewards: async () => {

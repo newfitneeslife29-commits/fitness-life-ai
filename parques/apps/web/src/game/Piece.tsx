@@ -42,6 +42,7 @@ const FINISH: Partial<Record<PieceStyle, (fill: string) => { body: string; overl
   ceramica: () => ({ body: '#c8693a' }),
   muisca: () => ({ body: '#f2b81e' }),
   esmeralda: (f) => ({ body: f, overlay: 'url(#pc-pearl)' }),
+  neon: () => ({ body: '#0d0b22' }),
 };
 
 const IMG_COLORS = new Set<Color>(['amarillo', 'azul', 'rojo', 'verde']);
@@ -124,6 +125,29 @@ function PieceDrawn({ color, style, r = R }: { color: Color; style: PieceStyle; 
           <path d={`M${-headR * 0.75} ${headY - headR * 0.4} C${-headR * 0.7} ${headY - headR * 1.6} ${headR * 0.7} ${headY - headR * 1.6} ${headR * 0.75} ${headY - headR * 0.4} Z`} fill="#f3e6c4" stroke="#1a1a1a" strokeWidth={1.6} />
           <path d={`M${-headR * 0.72} ${headY - headR * 0.75} Q0 ${headY - headR * 0.95} ${headR * 0.72} ${headY - headR * 0.75}`} fill="none" stroke="#1a1a1a" strokeWidth={2.4} />
           <path d={`M${-headR * 0.55} ${headY - headR * 1.1} Q0 ${headY - headR * 1.3} ${headR * 0.55} ${headY - headR * 1.1}`} fill="none" stroke="#1a1a1a" strokeWidth={2} />
+        </g>
+      ) : null}
+      {style === 'neon' ? (
+        <motion.g animate={{ opacity: [0.55, 1, 0.55] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ filter: `drop-shadow(0 0 4px ${baseFill})` }}>
+          <path d={body} fill="none" stroke={baseFill} strokeWidth={2.6} />
+          <circle cx={0} cy={headY} r={headR} fill="none" stroke={baseFill} strokeWidth={2.6} />
+          <ellipse cx={0} cy={-1} rx={r} ry={r * 0.42} fill="none" stroke={baseFill} strokeWidth={2} />
+        </motion.g>
+      ) : null}
+      {style === 'cometa' ? (
+        <g>
+          {[1, 2, 3].map((k) => (
+            <motion.circle
+              key={k}
+              cx={-headR * 0.9 * k}
+              cy={headY + headR * 0.35 * k}
+              r={headR * (1 - k * 0.22)}
+              fill={fill}
+              animate={{ opacity: [0.5 / k, 0.15 / k, 0.5 / k], cx: [-headR * 0.9 * k, -headR * 1.1 * k, -headR * 0.9 * k] }}
+              transition={{ duration: 0.9, repeat: Infinity, delay: k * 0.1 }}
+            />
+          ))}
+          <circle cx={headR * 0.25} cy={headY - headR * 0.3} r={headR * 0.3} fill="#fff" opacity={0.85} />
         </g>
       ) : null}
       {style === 'muisca' ? (
