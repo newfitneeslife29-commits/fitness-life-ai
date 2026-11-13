@@ -23,7 +23,7 @@ if (import.meta.env.DEV && location.hash === '#galeria') {
 
 // Acceso de depuración solo en desarrollo.
 if (import.meta.env.DEV) {
-  void Promise.all([import('./stores/gameStore'), import('./lib/online')]).then(([g, o]) => {
-    (window as unknown as Record<string, unknown>).__parques = { game: g.useGame, online: o.useOnline };
+  void Promise.all([import('./stores/gameStore'), import('./lib/online'), import('./stores/appStore')]).then(([g, o, a]) => {
+    (window as unknown as Record<string, unknown>).__parques = { game: g.useGame, online: o.useOnline, app: a.useApp };
   });
 }

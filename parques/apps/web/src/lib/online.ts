@@ -158,6 +158,26 @@ setProfileSender(async (op) => {
   return (await ack((cb) => socket!.emit('profile_op', op, cb))) ?? { ok: false, error: 'El servidor no responde' };
 });
 
+/**
+ * Cierra la sesión en este celular: olvida la cuenta guardada y vuelve a la pantalla de bienvenida
+ * (ahí se puede entrar con Apple/Google, con un código de recuperación o crear un jugador nuevo).
+ */
+export function logout() {
+  try {
+    socket?.disconnect();
+  } catch {
+    /* ya desconectado */
+  }
+  socket = null;
+  saveSession(null);
+  try {
+    localStorage.removeItem('parques-onboarded');
+  } catch {
+    /* sin almacenamiento */
+  }
+  window.location.reload();
+}
+
 export const useOnline = create<OnlineState>((set, get) => ({
   status: 'off',
   error: null,

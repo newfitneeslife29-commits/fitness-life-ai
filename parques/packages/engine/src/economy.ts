@@ -202,6 +202,9 @@ export const ITEM_PRICES_USD: Record<string, number> = {
   'board-cano': 399,
   'board-ballenas': 299,
   'board-tayrona': 299,
+  'board-guatavita': 499,
+  'board-arrecife': 399,
+  'board-valledupar': 399,
   'board-paramo': 399,
   'board-mompox': 299,
   'board-sal': 499,
@@ -227,6 +230,14 @@ export const ITEM_PRICES_USD: Record<string, number> = {
   'avatar-salsero': 149,
   'avatar-tejo': 99,
   'avatar-congo': 199,
+  'dice-gema3d': 199,
+  'dice-arcoiris': 99,
+  'dice-jaguar': 149,
+  'dice-estrellas': 149,
+  'frame-esmeralda': 149,
+  'frame-selva': 99,
+  'frame-muisca': 199,
+  'frame-galaxia': 149,
 };
 
 export function productFor(id: string): Product | undefined {

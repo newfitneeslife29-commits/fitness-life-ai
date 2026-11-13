@@ -2,6 +2,7 @@ import { useT } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo } from '../components/Logo';
+import { FiestaBackdrop } from '../components/FiestaBackdrop';
 import { Mascot } from '../components/Mascot';
 import { TIPS } from '../game/phrases';
 import { loadAudio } from '../audio/audio';
@@ -55,6 +56,7 @@ export function SplashScreen() {
   if (offline) {
     return (
       <div className="screen splash-screen">
+        <FiestaBackdrop />
         <Logo size={0.9} />
         <div className="card glossy setup-card center offline-card">
           <span className="quick-hero">📡</span>
@@ -70,7 +72,7 @@ export function SplashScreen() {
 
   return (
     <div className="screen splash-screen">
-      <div className="splash-glow" />
+      <FiestaBackdrop />
       <Logo size={1.15} />
       <Mascot size={150} className="splash-mascot" />
       <div className="splash-bottom">

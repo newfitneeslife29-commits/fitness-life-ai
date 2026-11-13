@@ -92,6 +92,12 @@ export function TablesScreen() {
                 </span>
                 <span className="tc-meta">🏆 {prizeLine(t, tier.entry, players)}</span>
               </span>
+              {locked ? (
+                <motion.span className="tc-lockpill" animate={{ rotate: [0, -6, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.4 }}>
+                  <span className="tc-lockicon">🔒</span>
+                  <span>{t('Nivel')} {tier.minLevel}</span>
+                </motion.span>
+              ) : (
               <span className="tc-money">
                 <span className="tc-prize">
                   <CoinIcon size={18} /> {payouts(tier.entry, players)[0]!.toLocaleString()} <GemIcon size={16} />5
@@ -100,7 +106,7 @@ export function TablesScreen() {
                   {t('Entrada')}: <CoinIcon size={15} /> {tier.entry.toLocaleString()}
                 </span>
               </span>
-              {locked ? <span className="tc-lock">🔒 {t('Nivel')} {tier.minLevel}</span> : null}
+              )}
             </motion.button>
           );
         })}
