@@ -385,3 +385,5 @@
 .game-screen .seat.align-left .seat-sub { justify-content: flex-start; }
 .game-screen .seat.align-right .seat-sub { justify-content: flex-end; }
 .game-screen .seat .seat-name { font-size: 0.85rem; }
+/* Títulos de pantalla completos (antes se cortaban con "…" en celulares) */
+.topbar-title { font-size: clamp(0.95rem, 4.4vw, 1.3rem); white-space: normal; line-height: 1.05; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-width: 0; }
