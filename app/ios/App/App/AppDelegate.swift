@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import FacebookCore
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Meta SDK: logs the install and app opens for ad measurement. Only when
+        // the build carries a client token; without one it stays off.
+        let token = Bundle.main.object(forInfoDictionaryKey: "FacebookClientToken") as? String ?? ""
+        if !token.isEmpty && !token.hasPrefix("$(") {
+            ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+        }
         return true
     }
 

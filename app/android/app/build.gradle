@@ -11,6 +11,12 @@ android {
         versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
         versionName System.getenv("VERSION_NAME") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Meta SDK: tells Meta when someone installs or opens the app after an
+        // ad. Without a client token (META_CLIENT_TOKEN) the SDK stays off.
+        def metaToken = System.getenv("META_CLIENT_TOKEN") ?: ""
+        resValue "string", "facebook_app_id", "1083377077815719"
+        resValue "string", "facebook_client_token", metaToken
+        manifestPlaceholders += [metaSdkOn: metaToken ? "true" : "false"]
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -50,6 +56,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Meta SDK, app events only (installs and opens after an ad).
+    implementation "com.facebook.android:facebook-core:19.0.1"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

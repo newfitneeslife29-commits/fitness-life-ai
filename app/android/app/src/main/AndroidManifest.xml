@@ -171,6 +171,13 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today_info" />
         </receiver>
+        <!-- Meta SDK (ad installs): off unless the build has a client token. -->
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id" />
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token" />
+        <meta-data android:name="com.facebook.sdk.AutoInitEnabled" android:value="${metaSdkOn}" />
+        <meta-data android:name="com.facebook.sdk.AutoLogAppEventsEnabled" android:value="${metaSdkOn}" />
+        <meta-data android:name="com.facebook.sdk.AutoLogMetaDataEnabled" android:value="false" />
+        <meta-data android:name="com.facebook.sdk.AutoLogProductImprovementEnabled" android:value="false" />
     </application>
 
     <!-- Apps the share buttons open directly (Android 11+ package visibility). -->
