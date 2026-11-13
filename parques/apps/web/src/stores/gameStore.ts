@@ -296,6 +296,13 @@ export const useGame = create<GameStore>((set, get) => {
         case 'DICE_FORFEITED':
           await sleep(BASE.forfeit);
           break;
+        case 'PLAYER_LEFT': {
+          const v = get().view.map((row, i) => (i === e.player ? row.map(() => -1) : row));
+          set({ view: v });
+          showBanner('info', tr('{name} salió de la partida', { name: g.players[e.player]!.name }), tr('La partida sigue sin él'), 1600);
+          await sleep(900);
+          break;
+        }
         case 'PLAYER_FINISHED':
           showBanner('finish', tr('¡{name} coronó!', { name: g.players[e.player]!.name }), tr('Puesto {n}', { n: e.place }), 1400);
           await sleep(500);

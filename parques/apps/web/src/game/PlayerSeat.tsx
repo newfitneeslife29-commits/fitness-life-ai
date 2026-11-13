@@ -37,7 +37,8 @@ const RING = 2 * Math.PI * 30;
 export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin }: Props) {
   const color = `var(--${player.color})`;
   return (
-    <div className={`seat ${active ? 'active' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
+    <div className={`seat ${active ? 'active' : ''} ${player.left ? 'left-game' : ''} align-${align}`} style={{ ['--pc' as string]: color }}>
+      {player.left ? <span className="seat-left-tag">🚪 {tr('Se fue')}</span> : null}
       <div className="seat-avatar">
         <svg viewBox="0 0 68 68" className="seat-ring">
           <circle cx={34} cy={34} r={30} fill="none" stroke="rgba(255,255,255,.12)" strokeWidth={5} />

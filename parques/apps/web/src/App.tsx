@@ -23,6 +23,7 @@ import { TournamentScreen } from './screens/TournamentScreen';
 import { PassScreen } from './screens/PassScreen';
 import { AchievementsScreen } from './screens/AchievementsScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
+import { TutorialScreen } from './screens/TutorialScreen';
 import { setMusicTrack } from './audio/audio';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
@@ -43,10 +44,11 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   pass: PassScreen,
   achievements: AchievementsScreen,
   welcome: WelcomeScreen,
+  tutorial: TutorialScreen,
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */
-const OWN_BG: Screen[] = ['game', 'victory', 'welcome', 'splash'];
+const OWN_BG: Screen[] = ['game', 'victory', 'welcome', 'splash', 'tutorial'];
 
 export function App() {
   const screen = useApp((a) => a.screen);
@@ -83,6 +85,7 @@ export function App() {
         </motion.div>
       </AnimatePresence>
       <Overlays />
+      <div className="status-veil" aria-hidden />
     </>
   );
 }

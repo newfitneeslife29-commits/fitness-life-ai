@@ -27,6 +27,7 @@ export function checkFinish(state: GameState, player: number, events: GameEvent[
 
 /** Jugadores que todavía deben tomar turnos. */
 export function stillPlaying(state: GameState, player: number): boolean {
+  if (state.players[player]!.left) return false;
   return state.rules.teams ? !isTeamDone(state, player) : !state.players[player]!.finished;
 }
 
@@ -42,7 +43,12 @@ export function endGame(state: GameState, events: GameEvent[]): void {
   const rest = state.players
     .map((_, i) => i)
     .filter((i) => !state.ranking.includes(i))
-    .sort((a, b) => teamScore(state, b) - teamScore(state, a) || progressRatio(state, b) - progressRatio(state, a));
+    .sort(
+      (a, b) =>
+        Number(!!state.players[a]!.left) - Number(!!state.players[b]!.left) ||
+        teamScore(state, b) - teamScore(state, a) ||
+        progressRatio(state, b) - progressRatio(state, a),
+    );
   for (const i of rest) pushRank(state, i, events);
   state.phase = 'over';
   state.dice = null;

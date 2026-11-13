@@ -79,6 +79,8 @@ export interface PlayerState {
   pieces: Position[];
   /** Ya coronó todas sus fichas. */
   finished: boolean;
+  /** Abandonó una partida online: sus turnos se saltan y queda último. */
+  left?: boolean;
   stats: PlayerStats;
 }
 
@@ -147,7 +149,9 @@ export type Action =
   | { type: 'MOVE'; player: number; move: Move }
   | { type: 'SOPLAR'; player: number }
   | { type: 'DISMISS_SOPLO' }
-  | { type: 'TIME_UP' };
+  | { type: 'TIME_UP' }
+  /** Partida online: el jugador se fue; sus fichas vuelven a la cárcel y ya no juega. */
+  | { type: 'RESIGN'; player: number };
 
 export type GameEvent =
   | { type: 'ROLLED'; player: number; dice: [number, number]; pair: boolean; pairStreak: number }
@@ -164,7 +168,8 @@ export type GameEvent =
   | { type: 'EXTRA_TURN'; player: number; reason?: 'pair' | 'capture' }
   | { type: 'TURN_CHANGED'; player: number }
   | { type: 'PLAYER_FINISHED'; player: number; place: number }
-  | { type: 'GAME_OVER'; ranking: number[] };
+  | { type: 'GAME_OVER'; ranking: number[] }
+  | { type: 'PLAYER_LEFT'; player: number };
 
 export type ActionResult =
   | { ok: true; state: GameState; events: GameEvent[] }

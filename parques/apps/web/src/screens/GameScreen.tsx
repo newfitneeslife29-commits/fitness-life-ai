@@ -20,7 +20,7 @@ import { item } from '@parques/engine';
 import { Background } from '../components/Background';
 import { play } from '../audio/audio';
 import { useSettings } from '../stores/settingsStore';
-import { Toggle } from './SettingsScreen';
+import { MusicPicker, Toggle } from './SettingsScreen';
 
 const LEVEL_LABEL = { easy: 'Fácil', normal: 'Normal', expert: 'Experto' } as const;
 
@@ -326,6 +326,7 @@ export function GameScreen() {
               <p className="modal-text">{t('Reglas de esta mesa')}: {describeRules(game.rules, t)}</p>
               <Toggle label={`🔈 ${t('Sonido')}`} value={settings.sound} onChange={(v) => settings.set({ sound: v })} />
               <Toggle label={`🎵 ${t('Música')}`} value={settings.music} onChange={(v) => settings.set({ music: v })} />
+              {settings.music ? <MusicPicker /> : null}
               <Toggle label={`📳 ${t('Vibración')}`} value={settings.vibration} onChange={(v) => settings.set({ vibration: v })} />
               <button className="btn3d green" onClick={() => { setMenuOpen(false); s.setPaused(false); }}>
                 {t('Seguir jugando')}

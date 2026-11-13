@@ -9,6 +9,7 @@ import { DAILY_POOL, WEEKLY_POOL } from '@parques/engine';
 import { SEASONS, EVENTS, TOURNAMENT_TIERS, CHESTS } from '@parques/engine';
 import { REGIONS } from '../game/phrases';
 import { TIPS } from '../game/phrases';
+import { LOBBY_TOUR, MUSIC_TRACKS, TUTORIAL_STEPS } from '../game/tutorialData';
 import { COUNTRIES } from './countries';
 
 export const SERVER_MESSAGES = [
@@ -42,6 +43,9 @@ export function dataKeys(): string[] {
     ...CHESTS.map((c) => c.name),
     ...PRODUCTS.flatMap((p) => (p.badge ? [p.badge] : [])),
     ...REGIONS.map((r) => r.name),
+    ...TUTORIAL_STEPS.map((s) => s.text),
+    ...LOBBY_TOUR.flatMap((s) => [s.title, s.text]),
+    ...MUSIC_TRACKS.map((m) => m.name),
     ...COUNTRIES.map((c) => c.name),
     'Amarillo', 'Azul', 'Rojo', 'Verde', 'Morado', 'Naranja',
     'Práctica libre', 'Partida local', 'Parejas 2 vs 2', 'Modo Rápido', 'Online',

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { dailyStatus, dayKey } from '@parques/engine';
 import { Logo } from '../components/Logo';
 import { FiestaBackdrop } from '../components/FiestaBackdrop';
+import { tutorialDone } from './TutorialScreen';
 import { Mascot } from '../components/Mascot';
 import { Avatar } from '../components/Avatar';
 import { AVATARS } from '../lib/avatars';
@@ -71,6 +72,8 @@ export function WelcomeScreen() {
     if (!r.ok) return toast({ icon: '⚠️', title: t(r.error ?? 'Error') });
     markOnboarded();
     play('win');
+    // Jugador nuevo: primero la partida de práctica guiada y el recorrido por la app.
+    if (!tutorialDone()) return go('tutorial');
     const prof = useProfile.getState();
     if (dailyStatus(prof.daily.lastClaim, prof.daily.streak, dayKey()).canClaim) setDailyOpen(true);
     go('lobby');

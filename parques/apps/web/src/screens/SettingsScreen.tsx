@@ -8,7 +8,7 @@ import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
 import { LANGUAGES, useT } from '../lib/i18n';
-import { play } from '../audio/audio';
+import { MUSIC_TRACKS, play } from '../audio/audio';
 
 export function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -45,6 +45,7 @@ export function SettingsScreen() {
         <h3>🔊 {t('Audio y juego')}</h3>
         <Toggle label={`🔈 ${t('Sonido')}`} value={s.sound} onChange={(v) => s.set({ sound: v })} />
         <Toggle label={`🎵 ${t('Música')}`} value={s.music} onChange={(v) => s.set({ music: v })} />
+        {s.music ? <MusicPicker /> : null}
         <Toggle label={`📳 ${t('Vibración')}`} value={s.vibration} onChange={(v) => s.set({ vibration: v })} />
         <div className="row">
           <span>🌐 {t('Idioma')}</span>
@@ -89,6 +90,19 @@ export function SettingsScreen() {
         </div>
         <button className="btn3d small ghost" onClick={() => go('profile')}>
           ✏️ {t('Editar nombre, foto y país')}
+        </button>
+        <button
+          className="btn3d small blue"
+          onClick={() => {
+            try {
+              localStorage.removeItem('parques-tutorial-done');
+            } catch {
+              /* sin almacenamiento */
+            }
+            go('tutorial');
+          }}
+        >
+          🎓 {t('Cómo jugar: tutorial paso a paso')}
         </button>
         <AccountRecovery />
         <LogoutButton />
@@ -192,5 +206,32 @@ function LogoutButton() {
         ) : null}
       </AnimatePresence>
     </>
+  );
+}
+
+/** Elegir la canción de fondo (con animación de ecualizador en la que suena). */
+export function MusicPicker() {
+  const t = useT();
+  const track = useSettings((x) => x.musicTrack);
+  const set = useSettings((x) => x.set);
+  return (
+    <div className="music-picker">
+      {MUSIC_TRACKS.map((m) => {
+        const on = (track || 'auto') === m.id;
+        return (
+          <motion.button key={m.id} className={`music-chip ${on ? 'on' : ''}`} whileTap={{ scale: 0.92 }} onClick={() => { play('tap'); set({ musicTrack: m.id }); }}>
+            <span className="mc-emoji">{m.emoji}</span>
+            <span className="mc-name">{t(m.name)}</span>
+            {on ? (
+              <span className="mc-eq" aria-hidden>
+                {[0, 1, 2].map((k) => (
+                  <motion.i key={k} animate={{ scaleY: [0.3, 1, 0.5, 0.9, 0.3] }} transition={{ duration: 0.9, repeat: Infinity, delay: k * 0.15 }} />
+                ))}
+              </span>
+            ) : null}
+          </motion.button>
+        );
+      })}
+    </div>
   );
 }
