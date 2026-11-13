@@ -48,9 +48,12 @@ def splash(w, h):
     canvas = bg.crop((x, y, x + w, y + h)).convert('RGBA')
     veil = Image.new('RGBA', (w, h), (20, 6, 40, 90))
     canvas.alpha_composite(veil)
-    lw = int(min(w, h) * 0.72)
+    # El logo debe caber en la parte que el celular deja visible: la imagen cuadrada se recorta a lo alto
+    # (zona central de ~46 % del ancho en un iPhone), así que se calcula sobre esa zona segura.
+    safe_w = min(w, h * 0.46)
+    lw = int(safe_w * 0.86)
     lh = int(logo.height * lw / logo.width)
-    canvas.alpha_composite(logo.resize((lw, lh), Image.LANCZOS), ((w - lw) // 2, int(h * 0.42 - lh / 2)))
+    canvas.alpha_composite(logo.resize((lw, lh), Image.LANCZOS), ((w - lw) // 2, int(h * 0.45 - lh / 2)))
     return canvas.convert('RGB')
 
 

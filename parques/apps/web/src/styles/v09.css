@@ -352,3 +352,8 @@
 .coach-text p { margin: 0; font-weight: 600; line-height: 1.3; }
 .coach-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .coach-count { margin-right: auto; opacity: 0.7; font-weight: 800; font-size: 0.8rem; }
+/* Paquetes: si no cabe todo en una fila (paquetes con varios objetos), el botón baja y ocupa todo el ancho */
+.bundle { flex-wrap: wrap; }
+.bundle-body { flex: 1 1 150px; min-width: 0; }
+.bundle-body span { flex-wrap: wrap; white-space: nowrap; }
+.bundle > .btn3d { flex: 1 0 110px; position: relative; z-index: 1; }
