@@ -107,7 +107,7 @@ async function onlineResign() {
   const r = await wa;
   ok(r.results.length === 1, 'abandono online: A termina la partida y recibe su resultado');
   const pb = await b.ack('profile_op', { op: 'get' });
-  ok(pb.ok && pb.profile.coins === startB - 200, `abandono online: B pagó su entrada (${startB} → ${pb.profile?.coins}) y no recibe premio`);
+  ok(pb.ok && pb.profile.coins >= startB - 200 && pb.profile.coins < startB, `abandono online: B pagó su entrada y no recibe premio (solo logros) (${startB} → ${pb.profile?.coins})`);
   a.s.close();
   b.s.close();
 }
@@ -139,7 +139,7 @@ async function ops() {
       teams: () => playAi('Barrio parejas', { table: 'barrio', players: 4, teams: true, level: 'easy' }),
       quick: () => playAi('Barrio Modo Rápido', { table: 'barrio', players: 4, quick: true, level: 'easy' }),
       six: () => playAi('Barrio 6 jugadores', { table: 'barrio', players: 6, level: 'easy' }),
-      free: () => playAi('Práctica sin apuesta', { table: null, players: 4, level: 'easy' }),
+      free: () => playAi('Sin mesa = Barrio (siempre cobra)', { table: 'barrio', players: 4, level: 'easy' }),
       online: () => playOnlinePair(),
       resign: () => onlineResign(),
     };

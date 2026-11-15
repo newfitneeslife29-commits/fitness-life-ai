@@ -82,7 +82,7 @@ export function FlashScreen() {
           </>
         ) : !b || b.stage === 'done' ? (
           <motion.button className="btn3d play-btn wide shine" whileTap={{ scale: 0.94 }} onClick={() => void start()}>
-            {t('Entrar')} · <CoinIcon size={16} /> {FLASH.entry.toLocaleString()}
+            <span className="nowrap">{t('Entrar')} · <CoinIcon size={16} /> {FLASH.entry.toLocaleString()}</span>
           </motion.button>
         ) : null}
       </motion.section>
