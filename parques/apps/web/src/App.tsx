@@ -94,9 +94,10 @@ export function App() {
         <motion.div
           key={screen}
           className="screen-host"
-          initial={{ opacity: 0, y: 24, scale: 0.96, rotateX: 6 }}
+          // La partida entra solo con un fundido: sin zoom ni desplazamiento (el tablero no "salta").
+          initial={screen === 'game' ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.96, rotateX: 6 }}
           animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
-          exit={{ opacity: 0, y: -14, scale: 1.02 }}
+          exit={screen === 'game' ? { opacity: 0 } : { opacity: 0, y: -14, scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.8 }}
           style={{ transformPerspective: 900 }}
         >
