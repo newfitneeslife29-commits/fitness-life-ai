@@ -76,6 +76,7 @@ export function SettingsScreen() {
 
       <section className="card glossy setup-card">
         <h3>📜 {t('Reglas de la casa')}</h3>
+        <p className="rule-note">{t('Se usan en práctica, partidas en el mismo celular y tus mesas privadas. Las mesas con apuesta usan siempre las reglas oficiales (3 intentos).')}</p>
         <Toggle label={`🌬️ ${t('Soplar')}`} value={s.houseRules.soplar} onChange={(v) => s.setRules({ soplar: v })} />
         <Toggle label={`🚨 ${t('Tres pares a la cárcel')}`} value={s.houseRules.triplePairPenalty} onChange={(v) => s.setRules({ triplePairPenalty: v })} />
         <div className="row">

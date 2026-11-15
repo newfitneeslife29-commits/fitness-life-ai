@@ -179,6 +179,9 @@ export function SetupScreen() {
         <p className="rule-note">{t('Partida sin apuesta: no da monedas ni gemas.')}</p>
       )}
 
+      {staked ? (
+        <p className="rule-note">📜 {t('Mesa con apuesta: reglas oficiales (3 intentos para salir de la cárcel, soplar y tres pares a la cárcel).')}</p>
+      ) : (
       <section className="card setup-card">
         <h3>{t('Reglas de la casa')}</h3>
         <Toggle label={`🌬️ ${t('Soplar')}`} value={soplar} onChange={setSoplar} />
@@ -205,6 +208,7 @@ export function SetupScreen() {
         </div>
         <p className="rule-note">{t('Doble 1 o doble 6 sacan todas las fichas; cualquier otro par saca 1 o 2.')}</p>
       </section>
+      )}
 
       <motion.button className="btn3d play-btn" whileTap={{ scale: 0.93 }} onClick={onStart}>
         {humans === 0 ? `👀 ${t('Ver a la máquina jugar')}` : t('¡A jugar!')}

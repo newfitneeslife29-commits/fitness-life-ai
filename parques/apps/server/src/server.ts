@@ -738,7 +738,9 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       const players = ([2, 3, 4, 6] as const).includes(o?.players) ? o.players : 4;
       const teams = !!o?.teams && players === 4;
       const quick = !!o?.quick;
-      let r: Partial<HouseRules> = o?.rules ?? {};
+      // Mesas con apuesta: SIEMPRE las reglas oficiales (3 intentos para salir de la cárcel, soplar y tres pares),
+      // sin importar lo que tenga cada uno en "Reglas de la casa" (esas son para práctica, local y mesas privadas).
+      let r: Partial<HouseRules> = { soplar: true, triplePairPenalty: true, jailAttempts: 3 };
       // Reto del día y Historia: reglas y rivales los decide el servidor.
       let special: RoomOptions['special'] | undefined;
       let boss: RoomOptions['boss'] | undefined;
