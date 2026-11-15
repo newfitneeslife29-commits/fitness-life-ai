@@ -42,6 +42,24 @@ describe('Room (servidor autoritativo)', () => {
     room.destroy();
   });
 
+  it('un doble toque no gasta dos intentos de la cárcel', () => {
+    const room = new Room({ kind: 'private', seats: 2, timing: { ...timing, turnMs: 20000 } });
+    const a = fakeConn();
+    room.addPlayer(hello('AAAA'), a.conn);
+    room.start();
+    const first = room.handleAction('AAAA', { type: 'ROLL', player: 0 });
+    expect(first.ok).toBe(true);
+    const s1 = room.state!;
+    if (s1.current === 0 && s1.phase === 'roll') {
+      // Falló el primer intento: un segundo toque inmediato se ignora; pasado el medio segundo sí cuenta.
+      expect(room.handleAction('AAAA', { type: 'ROLL', player: 0 }).ok).toBe(false);
+      expect(room.state!.jailRollsUsed).toBe(1);
+      vi.advanceTimersByTime(600);
+      expect(room.handleAction('AAAA', { type: 'ROLL', player: 0 }).ok).toBe(true);
+    }
+    room.destroy();
+  });
+
   it('nunca acepta los dados que manda el cliente', () => {
     let notForced = 0;
     for (let i = 0; i < 20; i++) {

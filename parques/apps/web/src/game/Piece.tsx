@@ -262,7 +262,8 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
       animate={{ x: at.x, y: at.y }}
       transition={toJail ? { type: 'tween', ease: [0.3, 0, 0.3, 1], duration: 0.75 } : { type: 'tween', ease: [0.45, 0, 0.55, 1], duration: HOP_S }}
       onClick={movable ? onClick : undefined}
-      style={{ cursor: movable ? 'pointer' : 'default' }}
+      // Solo las fichas que se pueden mover reciben el toque: así una ficha rival o quieta nunca tapa a la que quieres mover.
+      style={{ cursor: movable ? 'pointer' : 'default', pointerEvents: movable ? 'auto' : 'none' }}
       data-piece={id}
       data-movable={movable || undefined}
     >
@@ -308,7 +309,7 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           {crowned ? (
             <path d="M-9 -44 L-9 -52 L-4.5 -48 L0 -54 L4.5 -48 L9 -52 L9 -44 Z" fill="#ffcf3f" stroke="#7a4b00" strokeWidth={1.5} strokeLinejoin="round" />
           ) : null}
-          <rect x={-r - 8} y={-r * 3} width={(r + 8) * 2} height={r * 3.6} fill="transparent" />
+          <rect x={-r - 4} y={-r * 2.6} width={(r + 4) * 2} height={r * 3.2} fill="transparent" />
         </motion.g>
       </g>
     </motion.g>
