@@ -19,6 +19,21 @@ afterAll(async () => {
 });
 const emit = (s: Socket, ev: string, ...a: unknown[]) => new Promise<any>((r) => (s.emit as any)(ev, ...a, r));
 
+describe('mesas con apuesta: reglas oficiales', () => {
+  it('siempre 3 intentos para salir de la cárcel aunque el celular mande otra cosa', async () => {
+    const s = connect(url, { transports: ['websocket'], forceNew: true });
+    sockets.push(s);
+    await new Promise<void>((r) => s.on('connect', () => r()));
+    await emit(s, 'auth', {});
+    const sync = new Promise<any>((r) => s.once('sync', r));
+    expect((await emit(s, 'play_ai', { table: 'barrio', players: 4, rules: { jailAttempts: 1, soplar: false } })).ok).toBe(true);
+    const m = await sync;
+    expect(m.state.rules.jailAttempts).toBe(3);
+    expect(m.state.rules.soplar).toBe(true);
+    s.emit('leave');
+  });
+});
+
 describe('sin monedas no se juega', () => {
   it('ninguna partida con premio empieza si no alcanza para la entrada', async () => {
     const s = connect(url, { transports: ['websocket'], forceNew: true });
