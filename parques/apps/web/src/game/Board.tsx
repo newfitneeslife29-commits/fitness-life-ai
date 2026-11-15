@@ -405,6 +405,26 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
           {theme.anim ? <BoardAnimLayer kind={theme.anim} half={boardBox(sides).w} rot={rot} /> : null}
           {game.phase !== 'over' ? <TurnGlow sides={sides} side={game.players[game.current]!.side} color={game.players[game.current]!.color} /> : null}
 
+          {ordered.map((p) => {
+            const key = `${p.ref.owner}-${p.ref.index}`;
+            return (
+              <Piece
+                key={key}
+                id={key}
+                at={p.at}
+                pos={p.pos}
+                color={p.color}
+                rot={rot}
+                movable={movable.has(key)}
+                selected={!!selected && selected.owner === p.ref.owner && selected.index === p.ref.index}
+                crowned={p.pos === homeFor(sides)}
+                style={pieceStyle}
+                img={pieceImg}
+                onClick={() => onPiece(p.ref)}
+              />
+            );
+          })}
+
           {targets.map((tg, i) => (
             <g key={`t-${i}`} onClick={() => onTarget(tg.move)} style={{ cursor: 'pointer' }} data-target={tg.label}>
               <motion.circle
@@ -425,29 +445,9 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
                   {tg.label}
                 </text>
               </g>
-              <circle cx={tg.at.x} cy={tg.at.y} r={34} fill="transparent" />
+              <circle cx={tg.at.x} cy={tg.at.y} r={40} fill="transparent" />
             </g>
           ))}
-
-          {ordered.map((p) => {
-            const key = `${p.ref.owner}-${p.ref.index}`;
-            return (
-              <Piece
-                key={key}
-                id={key}
-                at={p.at}
-                pos={p.pos}
-                color={p.color}
-                rot={rot}
-                movable={movable.has(key)}
-                selected={!!selected && selected.owner === p.ref.owner && selected.index === p.ref.index}
-                crowned={p.pos === homeFor(sides)}
-                style={pieceStyle}
-                img={pieceImg}
-                onClick={() => onPiece(p.ref)}
-              />
-            );
-          })}
 
           <FxLayer fx={fx} rot={rot} effect={effect} />
         </g>

@@ -116,6 +116,9 @@ export class Room {
   private soploEndsAt: number | null = null;
   private soploKey: string | null = null;
   private onEnd?: RoomOptions['onEnd'];
+  private lastHumanRoll: { seat: number; at: number } | null = null;
+  /** Tiempo mínimo entre dos tiradas del mismo jugador (la animación de los dados dura más). */
+  static ROLL_GAP_MS = 500;
 
   constructor(opts: RoomOptions) {
     this.kind = opts.kind;
@@ -337,6 +340,12 @@ export class Room {
         return { ok: false, error: 'Acción no permitida' };
     }
     if (clean.type !== 'SOPLAR' && this.state.current !== seat) return { ok: false, error: 'No es tu turno' };
+    // Doble toque: un segundo ROLL del mismo jugador casi al mismo tiempo se ignora (cada intento cuenta uno por uno).
+    if (clean.type === 'ROLL') {
+      const now = Date.now();
+      if (this.lastHumanRoll && this.lastHumanRoll.seat === seat && now - this.lastHumanRoll.at < Math.min(Room.ROLL_GAP_MS, this.timing.turnMs / 4)) return { ok: false, error: 'Espera a que caigan los dados' };
+      this.lastHumanRoll = { seat, at: now };
+    }
     return this.apply(clean);
   }
 

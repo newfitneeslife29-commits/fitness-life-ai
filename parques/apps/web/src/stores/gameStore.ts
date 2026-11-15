@@ -157,6 +157,9 @@ function later(fn: () => void, ms: number) {
 
 const colorVar = (state: GameState, owner: number) => `var(--${state.players[owner]!.color})`;
 
+let lastSentKey = '';
+let lastSentAt = 0;
+
 export const useGame = create<GameStore>((set, get) => {
   const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms / get().speed));
 
@@ -517,6 +520,13 @@ export const useGame = create<GameStore>((set, get) => {
       const link = get().online;
       if (link) {
         if (get().busy && action.type !== 'SOPLAR') return false;
+        // Un toque = una acción: no se manda otra hasta que el servidor responda (evita gastar 2 intentos con un doble toque).
+        if (action.type !== 'SOPLAR') {
+          const key = `${action.type}:${game.current}:${game.phase}:${game.jailRollsUsed}:${game.dice?.join('')}:${JSON.stringify(game.diceUsed)}`;
+          if (key === lastSentKey && Date.now() - lastSentAt < 2500) return false;
+          lastSentKey = key;
+          lastSentAt = Date.now();
+        }
         link.sendAction(action);
         return true;
       }
