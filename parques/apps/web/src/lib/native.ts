@@ -33,7 +33,7 @@ export async function initNative() {
   // Botón "atrás" de Android: vuelve al lobby; en el lobby minimiza la app.
   App.addListener('backButton', () => {
     const { screen, go } = useApp.getState();
-    if (screen === 'lobby' || screen === 'splash') {
+    if (screen === 'lobby' || screen === 'splash' || screen === 'welcome') {
       App.minimizeApp().catch(() => undefined);
     } else if (screen === 'game') {
       // En partida no se sale por accidente: se abre el menú de pausa del juego.
@@ -41,7 +41,9 @@ export async function initNative() {
     } else if (screen === 'victory') {
       useGame.getState().quit();
       go('lobby');
-    } else go('lobby');
+    } else if (screen === 'tutorial') {
+      // El tutorial se salta con su propio botón "Saltar".
+    } else useApp.getState().back();
   });
 }
 

@@ -522,7 +522,7 @@ export const useGame = create<GameStore>((set, get) => {
         if (get().busy && action.type !== 'SOPLAR') return false;
         // Un toque = una acción: no se manda otra hasta que el servidor responda (evita gastar 2 intentos con un doble toque).
         if (action.type !== 'SOPLAR') {
-          const key = `${action.type}:${game.current}:${game.phase}:${game.jailRollsUsed}:${game.dice?.join('')}:${JSON.stringify(game.diceUsed)}`;
+          const key = `${action.type}:${game.current}:${game.phase}:${game.jailRollsUsed}:${game.dice?.join('')}:${JSON.stringify(game.diceUsed)}:${action.type === 'MOVE' ? JSON.stringify(action.move) : ''}`;
           if (key === lastSentKey && Date.now() - lastSentAt < 2500) return false;
           lastSentKey = key;
           lastSentAt = Date.now();

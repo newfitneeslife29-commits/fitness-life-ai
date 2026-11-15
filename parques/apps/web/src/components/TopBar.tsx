@@ -12,10 +12,11 @@ export function TopBar({ back, title }: { back?: boolean; title?: string }) {
   const p = useProfile();
   const lvl = useLevel();
   const go = useApp((a) => a.go);
+  const back_ = useApp((a) => a.back);
   return (
     <header className="topbar">
       {back ? (
-        <motion.button className="round-btn" whileTap={{ scale: 0.85 }} onClick={() => { play('tap'); go('lobby'); }} aria-label="Volver">
+        <motion.button className="round-btn" whileTap={{ scale: 0.85 }} onClick={() => { play('tap'); back_(); }} aria-label="Volver">
           ←
         </motion.button>
       ) : (

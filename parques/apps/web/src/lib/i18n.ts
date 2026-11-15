@@ -28,6 +28,8 @@ export function translate(lang: Lang, text: string, vars?: Record<string, string
     }
   }
   if (vars) for (const [k, v] of Object.entries(vars)) out = out.split(`{${k}}`).join(String(v));
+  // "1 partidas" → "1 partida" (cuando la cantidad {n} es exactamente 1).
+  if (vars && String(vars.n) === '1') out = singularize(out, 1);
   return out;
 }
 
@@ -46,4 +48,31 @@ export function tr(text: string, vars?: Record<string, string | number>): string
 
 export function locale(lang: Lang): string {
   return { es: 'es-CO', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR' }[lang];
+}
+
+/** Plurales → singular cuando la cantidad es 1 ("Gana 1 partidas" → "Gana 1 partida"), en los 4 idiomas. */
+const SINGULAR: [RegExp, string][] = [
+  [/\bpartidas\b/g, 'partida'],
+  [/\bveces\b/g, 'vez'],
+  [/\bvezes\b/g, 'vez'],
+  [/\bfichas\b/g, 'ficha'],
+  [/\bmonedas\b/g, 'moneda'],
+  [/\bvictorias\b/g, 'victoria'],
+  [/\bvitórias\b/g, 'vitória'],
+  [/\brápidas\b/g, 'rápida'],
+  [/\bpeças\b/g, 'peça'],
+  [/\bmoedas\b/g, 'moeda'],
+  [/\bgames\b/g, 'game'],
+  [/\btimes\b/g, 'time'],
+  [/\bpieces\b/g, 'piece'],
+  [/\bcoins\b/g, 'coin'],
+  [/\bwins\b/g, 'win'],
+  [/\bparties\b/g, 'partie'],
+  [/\bpions\b/g, 'pion'],
+  [/\bpièces\b/g, 'pièce'],
+  [/\bvictoires\b/g, 'victoire'],
+];
+export function singularize(text: string, n: number): string {
+  if (n !== 1) return text;
+  return SINGULAR.reduce((s, [re, rep]) => s.replace(re, rep), text);
 }
