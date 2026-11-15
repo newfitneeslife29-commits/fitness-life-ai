@@ -584,8 +584,10 @@ html, body, #root { max-width: 100%; overflow-x: hidden; overscroll-behavior-x: 
 .rc-btns { display: flex; justify-content: center; align-items: center; gap: 12px; }
 /* Tablero más grande y menos inclinado (toques más precisos en el celular) */
 /* El tablero ocupa todo el espacio libre entre los asientos (ancho Y alto), sin empujar nada fuera de la pantalla. */
-.game-screen .board-wrap { container-type: size; flex: 1 1 0; min-height: 120px; }
-.game-screen .board-tilt { width: min(100cqw, calc(100vw - 8px), calc(100cqh * var(--ar)), 680px) !important; }
+.game-screen .board-wrap { flex: 1 1 0; min-height: 120px; }
+/* El ancho del tablero lo fija GameScreen (se mide una vez); queda arriba del espacio libre para no moverse. */
+.game-screen .board-wrap { place-items: start center; overflow: visible; }
+.game-screen .board-tilt { max-width: calc(100vw - 8px); }
 .game-screen .board-svg { transform: rotateX(7deg) !important; transform-origin: 50% 60% !important; }
 .game-screen .board-wrap { width: calc(100% + 26px); margin-left: -13px; margin-right: -13px; }
 /* Auditoría: textos de ejemplo de los campos de código sin mayúsculas ni espaciado (no se cortan) */
@@ -598,3 +600,8 @@ html, body, #root { max-width: 100%; overflow-x: hidden; overscroll-behavior-x: 
 html.big-text .side-btn small { font-size: 0.56rem; }
 html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; }
 .lobby-hero, .hero-side { min-width: 0; }
+/* Barra de estado de la partida: siempre UNA línea y alto fijo (no empuja el tablero). */
+.game-screen .game-top { flex: none; height: 46px; }
+.game-screen .game-status { height: 40px; padding-top: 0; padding-bottom: 0; font-size: clamp(0.72rem, 3.4vw, 0.95rem); }
+.game-screen .status-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.game-screen .seat-row, .game-screen .control-bar { flex: none; }

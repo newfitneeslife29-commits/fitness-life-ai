@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { homeFor, isActive } from '@parques/engine';
 import type { Move, PieceRef } from '@parques/engine';
@@ -86,6 +86,35 @@ export function GameScreen() {
         return { move: m, at: piecePoint(game.sides, side, pos + value, sel.index), label: mv.type === 'sum' ? `${dice[0]}+${dice[1]}` : String(value) };
       });
   }, [game, s.selected, legal, view]);
+
+  // Tamaño del tablero: se mide UNA vez al entrar (y si se gira o cambia el tamaño de la pantalla). Así no crece,
+  // se achica ni se mueve cuando cambian los botones de abajo (TIRAR, sacar fichas, etc.) o los textos.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [boardPx, setBoardPx] = useState<number | null>(null);
+  const sidesN = game?.sides ?? 4;
+  const boardAr = boardBox(sidesN).w / boardBox(sidesN).h;
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = wrapRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setBoardPx(Math.floor(Math.max(160, Math.min(r.width, window.innerWidth - 8, r.height * boardAr, 680))));
+    };
+    measure();
+    let last = `${window.innerWidth}x${window.innerHeight}`;
+    const onResize = () => {
+      const now = `${window.innerWidth}x${window.innerHeight}`;
+      if (now === last) return;
+      last = now;
+      measure();
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, [boardAr, !!game]);
 
   if (!game || !config) return null;
 
@@ -181,7 +210,7 @@ export function GameScreen() {
         </button>
         <div className="game-status" style={{ ['--pc' as string]: `var(--${current.color})` }}>
           <span className="status-dot" />
-          {status}
+          <span className="status-text">{status}</span>
         </div>
         {matchLeft !== null ? (
           <div className={`chip match-clock ${matchLeft < 30000 ? 'hurry' : ''}`}>⏱ {fmt(matchLeft * s.speed)}</div>
@@ -192,13 +221,13 @@ export function GameScreen() {
 
       <div className="seat-row">{topRow.map((p, k) => renderSeat(p.i, alignFor(k, topRow.length, p.x)))}</div>
 
-      <div className="board-wrap">
+      <div className="board-wrap" ref={wrapRef}>
         <motion.div
           className="board-tilt"
-          style={{ ['--ar' as string]: `${boardBox(game.sides).w / boardBox(game.sides).h}` }}
-          initial={{ scale: 0.55, rotate: -18, opacity: 0, y: 60 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 160, damping: 16, mass: 0.9 }}
+          style={{ ['--ar' as string]: `${boardAr}`, ...(boardPx ? { width: boardPx } : { visibility: 'hidden' as const }) }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: boardPx ? 1 : 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           <Board
             game={game}
