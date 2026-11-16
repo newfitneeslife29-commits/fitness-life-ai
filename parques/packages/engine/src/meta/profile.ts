@@ -309,10 +309,17 @@ export function buyWithCoins(p: Profile, itemId: string, now = new Date()): OpRe
   const it = item(itemId);
   if (it.id !== itemId) return fail('Objeto desconocido');
   if (p.owned.includes(itemId)) return fail('Ya lo tienes');
-  if (it.currency !== 'coins') return fail('Este objeto no se compra con monedas');
+  if (it.currency !== 'coins' && it.currency !== 'gems') return fail('Este objeto no se compra con monedas');
   if (it.season && activeSeason(now)?.id !== it.season) return fail('Solo disponible en su temporada');
-  if (p.coins < it.price) return fail('Te faltan monedas');
-  const u = unlock({ ...p, owned: [...p.owned, itemId], coins: p.coins - it.price, equipped: { ...p.equipped, [it.category]: itemId } });
+  const gems = it.currency === 'gems';
+  if (gems ? p.gems < it.price : p.coins < it.price) return fail(gems ? 'Te faltan gemas' : 'Te faltan monedas');
+  const u = unlock({
+    ...p,
+    owned: [...p.owned, itemId],
+    coins: gems ? p.coins : p.coins - it.price,
+    gems: gems ? p.gems - it.price : p.gems,
+    equipped: { ...p.equipped, [it.category]: itemId },
+  });
   return { ok: true, profile: u.profile };
 }
 

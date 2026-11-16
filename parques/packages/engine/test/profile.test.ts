@@ -28,15 +28,19 @@ describe('perfil (operaciones del servidor)', () => {
     expect(payEntry({ ...newProfile('A', now), coins: 100 }, 200).ok).toBe(false);
   });
 
-  it('compras con monedas solo de objetos de monedas; las de dinero real se entregan una vez', () => {
+  it('skins con monedas o con gemas; las compras con dinero real se entregan una vez', () => {
     const p = { ...newProfile('A', now), coins: 20000 };
-    expect(buyWithCoins(p, 'board-caribe', now).ok).toBe(false); // es de dinero real
+    expect(buyWithCoins(p, 'board-caribe', now)).toMatchObject({ ok: false, error: 'Te faltan gemas' }); // cuesta gemas
     const ok = buyWithCoins(p, 'board-cafetero', now);
     expect(ok.ok && ok.profile.equipped.board).toBe('board-cafetero');
-    const g = grantProduct(p, 'item:board-oro', 'cs_1', now);
+    const rich = { ...p, gems: 300 };
+    const g = buyWithCoins(rich, 'board-oro', now);
     expect(g.ok && g.profile.owned).toContain('board-oro');
-    if (!g.ok) return;
-    expect(grantProduct(g.profile, 'item:board-oro', 'cs_1', now).ok).toBe(false);
+    expect(g.ok && g.profile.gems).toBe(50);
+    expect(g.ok && g.profile.coins).toBeGreaterThanOrEqual(20000);
+    expect(grantProduct(p, 'item:board-oro', 'cs_1', now).ok).toBe(false); // ya no se vende con dinero
+    expect(grantProduct(p, 'gems-m', 'cs_3', now).ok).toBe(true);
+    expect(grantProduct((grantProduct(p, 'gems-m', 'cs_3', now) as { profile: typeof p }).profile, 'gems-m', 'cs_3', now).ok).toBe(false);
     const coins = grantProduct(p, 'coins-m', 'cs_2', now);
     expect(coins.ok && coins.profile.coins).toBe(50000 + 20) // + logro "Mecenas I";
     expect(equip(p, 'board-oro').ok).toBe(false);
