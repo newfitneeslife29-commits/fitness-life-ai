@@ -39,9 +39,11 @@ async function grant(id, token, productId) {
   ok(g2.ok && g2.profile.gems === p.gems + gp.gems, `paquete ${gp.id}: +${gp.gems} gemas (${p.gems} → ${g2.profile?.gems})`);
   p = g2.profile;
 
-  // 3) Objeto con dinero (prueba): queda en "owned" y no cambia monedas.
-  const g3 = await grant(a.id, a.token, 'item:board-caribe');
-  ok(g3.ok && g3.profile.owned.includes('board-caribe') && g3.profile.coins >= p.coins, 'tablero Caribe con dinero: queda tuyo y no descuenta monedas');
+  // 3) Skin premium con gemas: descuenta las gemas exactas y no toca las monedas.
+  const caribe = item('board-caribe');
+  const g3 = await op({ op: 'buy', itemId: 'board-caribe' });
+  ok(g3.ok && g3.profile.owned.includes('board-caribe') && g3.profile.gems === p.gems - caribe.price && g3.profile.coins >= p.coins, `tablero Caribe con ${caribe.price} gemas: ${p.gems} → ${g3.profile?.gems} gemas, monedas intactas`);
+  ok(!(await grant(a.id, a.token, 'item:board-caribe')).ok, 'las skins ya no se venden con dinero real (solo gemas)');
   p = g3.profile;
 
   // 4) Compra con monedas: descuenta exactamente el precio y se equipa.
@@ -54,11 +56,12 @@ async function grant(id, token, productId) {
   const b2 = await op({ op: 'buy', itemId: 'dice-panela' });
   ok(!b2.ok, 'no deja comprar dos veces lo mismo');
 
-  // 5) Objeto de dinero real no se compra con monedas.
+  // 5) Sin gemas suficientes no se compra una skin premium.
   const b3 = await op({ op: 'buy', itemId: 'board-oro' });
-  ok(!b3.ok, 'Oro 24K (con dinero) no se puede comprar con monedas');
+  ok(!b3.ok && b3.error === 'Te faltan gemas', `Oro 24K (${item('board-oro').price} gemas) sin gemas suficientes: rechazado`);
 
-  // 6) Oferta del día: precio con descuento.
+  // 6) Oferta del día: precio con descuento (antes se recargan monedas para poder pagar cualquiera).
+  p = (await grant(a.id, a.token, 'coins-xl')).profile ?? p;
   const deal = dailyDeals(dayKey()).find((d) => !p.owned.includes(d.itemId));
   if (deal) {
     const before = p.coins;

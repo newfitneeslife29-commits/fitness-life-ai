@@ -49,10 +49,12 @@ secretas `REVENUECAT_SECRET_KEY` y `STRIPE_SECRET_KEY` cuando las tengas. Los pa
    credenciales de servicio que usas en Fitness Life.
 3. Copia las **claves públicas** de cada app (`goog_…` y `appl_…`) → van a GitHub (paso 3).
    La **clave secreta** (`sk_…`) → va a Railway (`REVENUECAT_SECRET_KEY`).
-4. Crea los productos en **Play Console** (Monetizar → Productos integrados) y en **App Store Connect** (Compras dentro de la app)
-   con estos IDs exactos. Todos son **consumibles**, salvo tableros/dados/fichas/marcos/efectos, que son **no consumibles**:
+4. Crea los productos en **Play Console** (Monetizar → Productos → Productos integrados / *In-app products*) y en
+   **App Store Connect** (tu app → Monetización → Compras dentro de la app) con estos **15 IDs exactos**.
+   **Todos son consumibles** (en Google: producto integrado normal; en Apple: tipo *Consumible*).
+   Las skins (tableros, dados, fichas, marcos, efectos) **ya no son productos de las tiendas**: se compran con gemas dentro del juego.
 
-   | ID | Precio | Qué es |
+   | ID (igual en las dos tiendas) | Precio | Nombre para la tienda |
    |---|---|---|
    | `coins_s` | US$0.99 | 5.000 monedas |
    | `coins_m` | US$4.99 | 30.000 monedas |
@@ -62,16 +64,20 @@ secretas `REVENUECAT_SECRET_KEY` y `STRIPE_SECRET_KEY` cuando las tengas. Los pa
    | `gems_s` | US$0.99 | 20 gemas |
    | `gems_m` | US$4.99 | 120 gemas |
    | `gems_l` | US$9.99 | 260 gemas |
-   | `pass_premium` | US$4.99 | Pase Premium (consumible: hay uno por temporada) |
-   | `pass_elite` | US$9.99 | Pase Élite (+10 niveles) (consumible) |
-   | `item_board_caribe` · `item_board_madera` · `item_board_noche` · `item_board_marmol` · `item_board_oro` · `item_board_feria` · `item_board_carnaval` · `item_board_navidad` | 1.99 – 9.99 | tableros |
-   | `item_dice_cafe` · `item_dice_neon` · `item_dice_cristal` · `item_dice_navidad` · `item_dice_carnaval` · `item_dice_feria` | 0.99 – 1.99 | dados |
-   | `item_pieces_gema` · `item_pieces_brillante` · `item_pieces_cristal` · `item_pieces_estrella` | 0.99 – 2.99 | fichas |
-   | `item_frame_vueltiao` · `item_frame_tricolor` · `item_frame_fuego` · `item_frame_navidad` | 0.99 – 1.99 | marcos |
-   | `item_effect_confeti` · `item_effect_polvora` · `item_effect_nieve` | 0.99 – 1.99 | efectos |
+   | `gems_xl` | US$19.99 | 600 gemas |
+   | `vip_30` | US$6.99 | Pase VIP (30 días) |
+   | `bundle_inicio` | US$1.99 | Paquete de bienvenida |
+   | `bundle_semana` | US$4.99 | Combo parcero |
+   | `bundle_leyenda` | US$14.99 | Paquete Leyenda |
+   | `pass_premium` | US$4.99 | Pase Premium |
+   | `pass_elite` | US$9.99 | Pase Élite (+10 niveles) |
 
-   El precio exacto de cada artículo está en la tienda del juego (`packages/engine/src/economy.ts`).
-   Después, en RevenueCat → *Products* → importa los productos de cada tienda.
+   La app pide cada producto por su ID directamente (no hace falta armar "Offerings" en RevenueCat).
+5. Conecta las tiendas en RevenueCat para que pueda verificar las compras:
+   - **App Store**: App Store Connect → Usuarios y acceso → Integraciones → **Compras dentro de la app** → genera una clave
+     (archivo `.p8`) y súbela en RevenueCat (app iOS → *In-app purchase key*), con su Key ID y el Issuer ID.
+   - **Google Play**: la misma cuenta de servicio de Google Cloud que usas para subir la app (JSON) → súbela en RevenueCat
+     (app Android → *Service account credentials*) y dale en Play Console el permiso de ver datos financieros y gestionar pedidos.
 
 ## 3. GitHub (Settings → Secrets and variables → Actions)
 

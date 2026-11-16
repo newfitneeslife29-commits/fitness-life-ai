@@ -63,6 +63,7 @@ export function ShopScreen() {
     if (!r.ok) {
       fx.toast({ icon: '🙅', title: t(r.error ?? 'No se pudo comprar') });
       if (r.error === 'Te faltan monedas') setTab('coins');
+      if (r.error === 'Te faltan gemas') setTab('gems');
       return;
     }
     play('coin');
@@ -95,6 +96,7 @@ export function ShopScreen() {
     if (!r.ok) {
       fx.toast({ icon: '🙅', title: t(r.error ?? 'No se pudo comprar') });
       if (r.error === 'Te faltan monedas') setTab('coins');
+      if (r.error === 'Te faltan gemas') setTab('gems');
       return;
     }
     play('coin');
@@ -254,7 +256,6 @@ export function ShopScreen() {
                 const equipped = p.equipped[it.category] === it.id;
                 const seasonItem = it.season ? SEASONS.find((s) => s.id === it.season) : null;
                 const unavailable = !!it.season && season?.id !== it.season && !owned;
-                const usd = ITEM_PRICES_USD[it.id];
                 return (
                   <motion.div
                     key={it.id}
@@ -297,9 +298,9 @@ export function ShopScreen() {
                       <button className="btn3d small" onClick={(e) => buyCoins(it, e.currentTarget)}>
                         <CoinIcon size={16} /> {it.price.toLocaleString()}
                       </button>
-                    ) : usd ? (
-                      <button className="btn3d small green" onClick={() => buyReal(`item:${it.id}`)}>
-                        {formatUsd(usd)}
+                    ) : it.currency === 'gems' ? (
+                      <button className="btn3d small purple" onClick={(e) => buyCoins(it, e.currentTarget)}>
+                        <GemIcon size={16} /> {it.price.toLocaleString()}
                       </button>
                     ) : null}
                   </motion.div>

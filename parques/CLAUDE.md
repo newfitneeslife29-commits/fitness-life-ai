@@ -276,6 +276,12 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
   necesitarían Firebase/APNs), repetición de la última partida (`lib/replay.ts`, `ReplayScreen`) y "Compartir momento"
   (`lib/share.ts`: tarjeta PNG 1080×1350 con @capacitor/share + filesystem).
 
+## v1.3 (preparación para las tiendas)
+- **Skins con gemas**: las 86 skins que costaban dólares ahora cuestan gemas (`currency: 'gems'`, `gemsForUsdCents`:
+  ≈ 25 gemas por US$1, de a 5). `buyWithCoins` cobra monedas o gemas según la skin. `productFor('item:…')` ya no existe:
+  en las tiendas solo hay **15 productos consumibles** (monedas, gemas, VIP, paquetes y pases; tabla en `PUBLICAR.md`).
+- Mesas con apuesta (`play_ai`) siempre con reglas oficiales (3 intentos); las reglas de la casa solo en práctica/local/privadas.
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

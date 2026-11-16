@@ -99,13 +99,15 @@ describe('temporadas y tienda', () => {
     expect(activeSeason(new Date(2026, 4, 1))).toBeNull();
     expect(nextSeason(new Date(2026, 4, 1)).season.id).toBe('feria');
   });
-  it('la mayoría de tableros se pagan con dinero real y pocos con monedas', () => {
+  it('los tableros premium se pagan con gemas (≈ 25 por dólar) y algunos con monedas', () => {
     const boards = ITEMS.filter((i) => i.category === 'board');
-    const usd = boards.filter((b) => b.currency === 'usd').length;
+    const gems = boards.filter((b) => b.currency === 'gems');
     const coins = boards.filter((b) => b.currency === 'coins').length;
-    expect(usd).toBeGreaterThan(coins);
+    expect(gems.length).toBeGreaterThan(coins);
     expect(coins).toBeGreaterThanOrEqual(1);
-    for (const b of boards.filter((x) => x.currency === 'usd')) expect(ITEM_PRICES_USD[b.id]).toBeGreaterThan(0);
+    expect(ITEMS.some((i) => i.currency === 'usd')).toBe(false);
+    for (const b of gems) expect(b.price).toBe(Math.max(10, Math.round((ITEM_PRICES_USD[b.id]! / 100) * 25 / 5) * 5));
+    expect(ITEMS.find((i) => i.id === 'board-oro')!.price).toBe(250);
   });
   it('cada categoría tiene un objeto gratis equipado y los emotes cuestan gemas', () => {
     for (const id of Object.values(DEFAULT_EQUIPPED)) expect(item(id).currency).toBe('free');

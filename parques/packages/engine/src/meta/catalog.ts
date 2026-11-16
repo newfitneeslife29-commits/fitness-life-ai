@@ -7,7 +7,7 @@ import { ITEM_PRICES_USD } from '../economy';
 import type { Season } from './seasons';
 
 export type Category = 'board' | 'dice' | 'pieces' | 'frame' | 'effect' | 'avatar' | 'victory';
-export type Currency = 'coins' | 'usd' | 'pass' | 'free' | 'event' | 'vip';
+export type Currency = 'coins' | 'gems' | 'usd' | 'pass' | 'free' | 'event' | 'vip';
 /** Celebración al ganar (pantalla de victoria). */
 export type VictoryStyle = 'confeti' | 'papayera' | 'dadito' | 'chiva' | 'polvora' | 'mariposas' | 'silletas';
 /** Animación encima del escenario del tablero. */
@@ -320,9 +320,15 @@ const RAW: Raw[] = [
 
 export const ITEMS: Item[] = RAW.map(({ coins, passOnly, vipOnly, ...it }) => {
   const usd = ITEM_PRICES_USD[it.id];
-  const currency: Currency = vipOnly ? 'vip' : passOnly ? 'pass' : it.event ? 'event' : coins ? 'coins' : usd ? 'usd' : 'free';
-  return { ...it, currency, price: coins ?? 0 };
+  // Las skins premium se compran con GEMAS (las gemas sí se compran con dinero real en las tiendas).
+  const currency: Currency = vipOnly ? 'vip' : passOnly ? 'pass' : it.event ? 'event' : coins ? 'coins' : usd ? 'gems' : 'free';
+  return { ...it, currency, price: coins ?? (usd ? gemsForUsdCents(usd) : 0) };
 });
+
+/** Precio en gemas de una skin premium: ≈ 25 gemas por cada US$1 (redondeado de a 5). */
+export function gemsForUsdCents(cents: number): number {
+  return Math.max(10, Math.round((cents / 100) * 25 / 5) * 5);
+}
 
 export function usdPrice(id: string): number | undefined {
   return ITEM_PRICES_USD[id];

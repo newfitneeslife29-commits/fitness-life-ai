@@ -15,13 +15,13 @@ describe('pagos', () => {
   it('crea la sesión de pago con el precio del servidor (no del cliente)', async () => {
     const f = fakeFetch({ url: 'https://checkout.stripe.com/c/pay/abc' });
     const p = new Payments('sk_test_123', 'usd', f);
-    const r = await p.checkout('item:board-oro', 'AAAA', 'http://localhost:5173/');
+    const r = await p.checkout('coins-l', 'AAAA', 'http://localhost:5173/');
     expect(r).toEqual({ mode: 'stripe', url: 'https://checkout.stripe.com/c/pay/abc' });
     const [url, init] = f.mock.calls[0]!;
     expect(url).toBe('https://api.stripe.com/v1/checkout/sessions');
     const body = new URLSearchParams(String(init!.body));
     expect(body.get('line_items[0][price_data][unit_amount]')).toBe('999');
-    expect(body.get('metadata[productId]')).toBe('item:board-oro');
+    expect(body.get('metadata[productId]')).toBe('coins-l');
     expect(body.get('success_url')).toContain('session_id={CHECKOUT_SESSION_ID}');
   });
 

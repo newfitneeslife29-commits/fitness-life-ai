@@ -254,11 +254,7 @@ export const ITEM_PRICES_USD: Record<string, number> = {
 export function productFor(id: string): Product | undefined {
   const p = PRODUCTS.find((x) => x.id === id);
   if (p) return p;
-  if (id.startsWith('item:')) {
-    const itemId = id.slice(5);
-    const cents = ITEM_PRICES_USD[itemId];
-    if (cents) return { id, kind: 'item', usdCents: cents, name: itemId, itemId };
-  }
+  // Las skins ya no son productos de las tiendas: se compran con gemas dentro del juego.
   return undefined;
 }
 

@@ -63,7 +63,7 @@ describe('mesas y productos', () => {
   });
   it('los productos tienen precio en dólares', () => {
     expect(productFor('coins-s')?.usdCents).toBe(99);
-    expect(productFor('item:board-oro')?.usdCents).toBe(999);
+    expect(productFor('item:board-oro')).toBeUndefined(); // las skins ya no son productos de las tiendas
     expect(productFor('item:no-existe')).toBeUndefined();
   });
 });
