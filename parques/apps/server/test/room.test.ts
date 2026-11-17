@@ -42,6 +42,30 @@ describe('Room (servidor autoritativo)', () => {
     room.destroy();
   });
 
+  it('el reloj del turno arranca cuando el celular termina de animar (no se pierden intentos)', () => {
+    const room = new Room({ kind: 'private', seats: 2, timing: { ...timing, turnMs: 20000, animScale: 1 } });
+    const a = fakeConn();
+    room.addPlayer(hello('AAAA'), a.conn);
+    room.start();
+    // Fuerza un intento fallido en la cárcel: el turno sigue siendo mío.
+    const st = room.state!;
+    (room as any).state = { ...st };
+    const r = (room as any).apply({ type: 'ROLL', player: 0, dice: [1, 2] });
+    expect(r.ok).toBe(true);
+    const up = a.last('update');
+    expect(room.state!.current).toBe(0);
+    // El reloj que ve el celular incluye la animación del tiro (no solo los 20 s).
+    expect(up.deadlines.turnMs).toBeGreaterThan(20000);
+    // Pasados 20 s exactos el servidor NO juega por mí todavía (la animación cuenta aparte).
+    const updates = () => a.msgs.filter((m) => m.event === 'update').length;
+    const before = updates();
+    vi.advanceTimersByTime(20000);
+    expect(updates()).toBe(before);
+    vi.advanceTimersByTime(2000);
+    expect(updates()).toBeGreaterThan(before); // ahora sí, vencido el turno, juega la máquina por mí
+    room.destroy();
+  });
+
   it('un doble toque no gasta dos intentos de la cárcel', () => {
     const room = new Room({ kind: 'private', seats: 2, timing: { ...timing, turnMs: 20000 } });
     const a = fakeConn();

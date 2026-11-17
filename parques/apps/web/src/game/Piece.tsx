@@ -233,7 +233,7 @@ function StyleBody({ style, r, h, color }: { style: PieceStyle; r: number; h: nu
 }
 
 /** Duración de un salto de casilla (igual a la pausa entre pasos del gameStore). */
-export const HOP_S = 0.22;
+export const HOP_S = 0.13;
 
 /** Ficha en el tablero: salta en arco 3D de casilla en casilla (sombra que se achica) y rebota si se puede mover. */
 /** Figura de cada color (modo para daltónicos). */

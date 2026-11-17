@@ -17,6 +17,7 @@ import {
   squareOf,
 } from '@parques/engine';
 import type { Action, AiLevel, GameEvent, GameState, HouseRules, Move, PieceRef, UpdateMsg } from '@parques/engine';
+import { ANIM_MS, stepMs } from '@parques/engine';
 import { piecePoint, trackCell, type Pt } from '../game/boardLayout';
 import { BOT_LINES, pick } from '../game/phrases';
 import { play, vibrate } from '../audio/audio';
@@ -76,17 +77,8 @@ export interface Bubble {
 
 export const SOPLO_WINDOW_MS = 4500;
 
-const BASE = {
-  roll: 650,
-  step: 220,
-  exit: 420,
-  capture: 650,
-  crown: 750,
-  triple: 2100,
-  soplo: 1500,
-  turn: 250,
-  forfeit: 500,
-};
+// Mismas duraciones que usa el servidor para esperar las animaciones (motor: anim.ts).
+const BASE = ANIM_MS;
 
 function readSpeed(): number {
   if (typeof location === 'undefined') return 1;
@@ -221,7 +213,7 @@ export const useGame = create<GameStore>((set, get) => {
           break;
         }
         case 'JAIL_ATTEMPT_FAILED':
-          await sleep(250);
+          await sleep(BASE.jailFail);
           break;
         case 'EXITED_JAIL': {
           let view = get().view;
@@ -238,7 +230,7 @@ export const useGame = create<GameStore>((set, get) => {
             if (!alive()) return;
             set({ view: setPiece(get().view, e.piece, pos) });
             play('step', 1 + Math.min(0.6, k++ * 0.05));
-            await sleep(BASE.step);
+            await sleep(stepMs(e.path.length));
           }
           break;
         }
@@ -307,12 +299,12 @@ export const useGame = create<GameStore>((set, get) => {
           const v = get().view.map((row, i) => (i === e.player ? row.map(() => -1) : row));
           set({ view: v });
           showBanner('info', tr('{name} salió de la partida', { name: g.players[e.player]!.name }), tr('La partida sigue sin él'), 1600);
-          await sleep(900);
+          await sleep(BASE.left);
           break;
         }
         case 'PLAYER_FINISHED':
           showBanner('finish', tr('¡{name} coronó!', { name: g.players[e.player]!.name }), tr('Puesto {n}', { n: e.place }), 1400);
-          await sleep(500);
+          await sleep(BASE.finished);
           break;
         case 'TURN_CHANGED':
           if (isHuman(e.player)) {
