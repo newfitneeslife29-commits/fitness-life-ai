@@ -1,15 +1,20 @@
-import { Bike, ChevronRight, Columns2, Footprints, LineChart as ChartIcon, Moon, Play, Scale, Share2, Trash2, Trophy } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Bike, ChevronRight, Columns2, Footprints, LineChart as ChartIcon, Minus, Moon, Play, Scale, Share2, Trash2, Trophy } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { LineChart, TrainingCalendar, WeekBars } from '../components/Charts';
+import { LineChart, TrainingCalendar, VolumeBars, WeekBars } from '../components/Charts';
+import { RecoveryCard, WeightGoalCard } from '../components/BodyCards';
+import { Medal } from '../components/Medal';
+import { SourcesLink } from '../components/SourcesLink';
+import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
+import { useUnlocked } from '../lib/useAchievements';
 import { toast } from '../components/feedback';
 import { HeroStat, PageHeader, Section } from '../components/ui';
 import { exerciseName, getExercise, muscleLabel, type Muscle } from '../data/exercises';
-import { t, tp } from '../i18n';
+import { locale, t, tp } from '../i18n';
 import { sessionName } from '../lib/names';
 import { fmtDate, fmtNumber, fmtShortDate, fmtVolume, parseDecimal } from '../lib/format';
 import { displayToKg, kgToDisplay, personalRecords, volume } from '../lib/progression';
-import { durationMin, exerciseSeries, sessionsThisWeek, setsPerMuscle, streakWeeks, trainingCalendar, weekStart, weeklySeries } from '../lib/stats';
+import { durationMin, exerciseSeries, monthCompare, sessionsThisWeek, setsPerMuscle, strengthGains, streakWeeks, trainingCalendar, weekStart, weeklySeries } from '../lib/stats';
 import { localDay } from '../lib/activity';
 import { distUnit, toDist } from '../lib/cardio';
 import { cardioTotals, stepsOn } from '../lib/movement';
@@ -94,6 +99,99 @@ const MovementWeek = ({ unit }: { unit: Unit }) => {
     );
 };
 
+const compact = (n: number) => new Intl.NumberFormat(locale(), { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+
+// This month so far against the same days of last month.
+const MonthCompare = ({ unit }: { unit: Unit }) => {
+    const sessions = useStore(s => s.sessions);
+    const { current, previous } = useMemo(() => monthCompare(sessions), [sessions]);
+    const item = (label: string, now: number, before: number, fmt: (n: number) => string) => {
+        const diff = before > 0 ? (now - before) / before : now > 0 ? 1 : 0;
+        const pct = Math.round(diff * 100);
+        const tone = pct > 0 ? 'text-good bg-good/15' : pct < 0 ? 'text-rose-400 bg-rose-500/15' : 'text-white/50 bg-white/10';
+        const Icon = pct > 0 ? ArrowUpRight : pct < 0 ? ArrowDownRight : Minus;
+        const badge = before === 0 && now > 0 ? t('progress.new') : pct === 0 ? '0%' : `${pct > 0 ? '+' : '−'}${Math.min(999, Math.abs(pct))}%`;
+        return (
+            <div className="min-w-0 rounded-2xl bg-ink-3/60 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">{label}</p>
+                <p className="mt-1 truncate text-xl font-extrabold tabular-nums">{fmt(now)}</p>
+                <p className="truncate text-[11px] text-white/45">{t('progress.before', { value: fmt(before) })}</p>
+                <span className={`mt-2 inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${tone}`}>
+                    <Icon size={13} strokeWidth={2.5} />{badge}
+                </span>
+            </div>
+        );
+    };
+    return (
+        <div className="card p-3">
+            <div className="grid grid-cols-3 gap-2">
+                {item(t('progress.workouts'), current.workouts, previous.workouts, n => fmtNumber(n))}
+                {item(t('progress.minutes'), current.minutes, previous.minutes, n => fmtNumber(n))}
+                {item(t('progress.volume'), current.volumeKg, previous.volumeKg, n => `${compact(kgToDisplay(n, unit))} ${unit}`)}
+            </div>
+            <p className="px-1 pt-2 text-[11px] text-white/40">{t('progress.monthHint')}</p>
+        </div>
+    );
+};
+
+// Strength now against the first sessions, for the most trained lifts.
+const StrengthGains = ({ unit }: { unit: Unit }) => {
+    const sessions = useStore(s => s.sessions);
+    const gains = useMemo(() => strengthGains(sessions), [sessions]);
+    if (!gains.length) return <p className="card p-4 text-sm text-white/55">{t('progress.strengthEmpty')}</p>;
+    const max = Math.max(...gains.map(g => g.nowKg));
+    return (
+        <div className="card space-y-4 p-4">
+            {gains.map(g => (
+                <Link key={g.exerciseId} to={`/ejercicios/${g.exerciseId}`} className="block">
+                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-semibold">{exerciseName(g.exerciseId)}</span>
+                        <span className={`shrink-0 text-xs font-bold tabular-nums ${g.change > 0 ? 'text-good' : g.change < 0 ? 'text-rose-400' : 'text-white/50'}`}>
+                            {g.change > 0 ? '+' : ''}{Math.round(g.change * 100)}%
+                        </span>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <span className="w-12 shrink-0 text-[10px] uppercase text-white/40">{t('progress.start')}</span>
+                            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink-4"><div className="h-full rounded-full bg-white/30" style={{ width: `${(g.beforeKg / max) * 100}%` }} /></div>
+                            <span className="w-16 shrink-0 text-right text-xs tabular-nums text-white/50">{fmtNumber(kgToDisplay(g.beforeKg, unit))} {unit}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-12 shrink-0 text-[10px] uppercase text-white/40">{t('progress.now')}</span>
+                            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink-4"><div className="h-full rounded-full bg-gradient-to-r from-brand to-amber-400" style={{ width: `${(g.nowKg / max) * 100}%` }} /></div>
+                            <span className="w-16 shrink-0 text-right text-xs font-bold tabular-nums">{fmtNumber(kgToDisplay(g.nowKg, unit))} {unit}</span>
+                        </div>
+                    </div>
+                </Link>
+            ))}
+            <p className="text-[11px] text-white/40">{t('progress.strengthHint')}</p>
+        </div>
+    );
+};
+
+// The latest medal and how many are unlocked.
+const AchievementsRow = () => {
+    const unlocked = useUnlocked();
+    const seen = useStore(s => s.seenAchievements);
+    const latest = [...unlocked.values()].sort((a, b) => b.date.localeCompare(a.date))[0];
+    const medal = latest ? ACHIEVEMENTS.find(a => a.id === latest.id) : undefined;
+    const unseen = [...unlocked.keys()].filter(id => !seen.includes(id)).length;
+    return (
+        <Link to="/logros" className="card flex items-center gap-3 p-3 hover:bg-ink-3">
+            <Medal achievement={medal ?? ACHIEVEMENTS[0]} unlocked={!!medal} />
+            <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{medal ? achievementTitle(medal) : t('today.firstMedal')}</p>
+                <p className="text-sm text-white/50">{t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })}</p>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-4">
+                    <div className="h-full rounded-full bg-brand" style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />
+                </div>
+            </div>
+            {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-snow">{tp('today.newMedals', unseen)}</span>}
+            <ChevronRight className="shrink-0 text-white/40" />
+        </Link>
+    );
+};
+
 export default function Progress() {
     const sessions = useStore(s => s.sessions);
     const profile = useStore(s => s.profile)!;
@@ -133,8 +231,10 @@ export default function Progress() {
                         <Link to="/" className="btn-primary relative mt-4 w-full"><Play size={16} fill="currentColor" /> {t('progress.empty.cta')}</Link>
                     </div>
                 </Section>
-                <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
+                <Section title={t('weightGoal.title')} action={<SourcesLink topics={['weight', 'calories']} />}><WeightGoalCard /></Section>
                 <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
+                <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
+                <Section title={t('nav.achievements')}><AchievementsRow /></Section>
             </div>
         );
     }
@@ -149,6 +249,8 @@ export default function Progress() {
                 </div>
             </PageHeader>
 
+            <Section title={t('progress.monthTitle')}><MonthCompare unit={unit} /></Section>
+
             <Section title={t('progress.consistency')}>
                 <div className="card space-y-4 p-4">
                     <WeekBars weeks={weeks} target={profile.daysPerWeek} />
@@ -160,19 +262,23 @@ export default function Progress() {
                 <Link to="/resumen" className="flex items-center justify-between rounded-xl px-1 py-1 text-sm font-semibold text-brand">
                     {t('weekly.title')} <ChevronRight size={16} />
                 </Link>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 p-3.5 text-snow shadow-md shadow-sky-500/25">
-                        <p className="text-2xl font-extrabold tabular-nums">{thisWeek.length}</p>
-                        <p className="text-xs text-snow/85">{t('progress.thisWeek')}</p>
-                    </div>
-                    <div className="rounded-2xl bg-gradient-to-br from-brand to-amber-500 p-3.5 text-snow shadow-md shadow-brand/25">
-                        <p className="text-2xl font-extrabold tabular-nums">{fmtVolume(weeks[weeks.length - 1].volumeKg, unit)}</p>
-                        <p className="text-xs text-snow/85">{t('progress.volumeWeek')}</p>
-                    </div>
-                </div>
             </Section>
 
+            <Section title={t('progress.volumeWeeks')}>
+                <div className="card p-4"><VolumeBars weeks={weeks} format={kg => fmtVolume(kg, unit)} /></div>
+            </Section>
+
+            <Section title={t('progress.strengthTitle')}><StrengthGains unit={unit} /></Section>
+
+            <Section title={t('weightGoal.title')} action={<SourcesLink topics={['weight', 'calories']} />}><WeightGoalCard /></Section>
+
+            <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
+
+            <Section title={t('recovery.title')} action={<SourcesLink topics={['strength']} />}><RecoveryCard sessions={sessions} /></Section>
+
             <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
+
+            <Section title={t('nav.achievements')}><AchievementsRow /></Section>
 
             <Section title={t('share.section')}>
                 <div className="grid grid-cols-2 gap-2">
@@ -207,8 +313,6 @@ export default function Progress() {
                     </div>
                 </Section>
             )}
-
-            <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
 
             <Section title={t('section.records')}>
                 <div className="card divide-y divide-line">
