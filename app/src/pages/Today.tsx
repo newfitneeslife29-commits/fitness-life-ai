@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, Check, ChevronRight, Clock, Crown, Dumbbell, Flame, GraduationCap, PartyPopper, Play, Plus, Trophy } from 'lucide-react';
+import { ArrowRight, Bot, Check, ChevronRight, Clock, Crown, Dumbbell, Gift, Flame, GraduationCap, PartyPopper, Play, Plus, Trophy } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -16,6 +16,7 @@ import { currentPause } from '../lib/pause';
 import { PauseBanner } from '../components/PauseCard';
 import { challengeStatus } from '../lib/challenges';
 import { ShopCard } from '../components/ShopCard';
+import { PremiumKeepCard } from '../components/PremiumKeepCard';
 import { localDay } from '../lib/activity';
 import { stepGoalOf, stepsOn } from '../lib/movement';
 import { sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
@@ -257,7 +258,7 @@ const TrainerCard = ({ premium }: { premium: boolean }) => (
         <span className="relative min-w-0 flex-1">
             <span className="flex items-center gap-2 font-bold">
                 {t('trainer.title')}
-                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-bold text-neutral-900"><Crown size={11} /> Premium</span>}
+                {!premium && <span className="flex items-center gap-1 rounded-full bg-snow px-2 py-0.5 text-[11px] font-bold text-violet-700"><Gift size={11} /> {t('trainer.tryFree')}</span>}
             </span>
             <span className="block text-sm text-snow/85">{t('trainer.homeHint')}</span>
         </span>
@@ -369,6 +370,8 @@ export default function Today() {
             <AdventCard onStart={r => void start(r.id, r)} />
 
             {profile.createdAt && <WelcomeCard startedAt={profile.createdAt} />}
+
+            {premium && <Section><PremiumKeepCard /></Section>}
 
             <Section title={t('home.today')}>
                 <DayCard trained={trainedDays} thisWeek={thisWeek} />

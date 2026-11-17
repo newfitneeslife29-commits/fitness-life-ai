@@ -19,6 +19,9 @@ export const ANNUAL_SAVING = Math.round((1 - PRICES.annual / (PRICES.monthly * 1
 // supabase/functions/nutrition-coach (the server is what enforces it).
 // Free users get no AI.
 export const PREMIUM_AI_USES = 300;
+// Free users can try the personal trainer this many times a month; keep in
+// sync with FREE_TRAINER_LIMIT in the nutrition-coach function.
+export const FREE_TRAINER_TRIES = 3;
 
 export const money = (amount: number, currency = 'USD') =>
     new Intl.NumberFormat(locale(), { style: 'currency', currency }).format(amount);
@@ -78,6 +81,7 @@ interface Backend {
 interface EntitlementLike {
     expirationDate: string | Date | null;
     willRenew: boolean;
+    periodType?: string; // RevenueCat: TRIAL, INTRO or NORMAL
 }
 
 const toStatus = (active: Record<string, EntitlementLike>, manageUrl: string | null): PremiumStatus => {
@@ -87,6 +91,7 @@ const toStatus = (active: Record<string, EntitlementLike>, manageUrl: string | n
         active: Boolean(e),
         expiresAt: expires === null ? null : new Date(expires).toISOString(),
         willRenew: e?.willRenew ?? false,
+        trial: e?.periodType === 'TRIAL',
         manageUrl,
         checkedAt: new Date().toISOString(),
     };

@@ -19,7 +19,8 @@
 //   { action: 'mealplan', lang, context, text?, mealsPerDay: 3..6 }
 //       → { name, note, days: [{ meals: [{ slot, time, name, foods, kcal, protein, carbs, fat }] }] × 7, usage }
 //       (always HTTP 200 once it starts: an error then comes as { error, status } in the body)
-// Errors: 401 no session · 402 AI is Premium-only (offer Premium) · 429 Premium limit
+// Errors: 401 no session · 402 AI is Premium-only (offer Premium; free users get
+// FREE_TRAINER_LIMIT trainer questions a month first, in usage.trial) · 429 Premium limit
 //         · 422 declined · 400 bad input · 502/503 model errors.
 import Anthropic from 'npm:@anthropic-ai/sdk@0.132.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
@@ -38,6 +39,8 @@ const MODEL = 'claude-haiku-5-5';
 // limit against abuse; normal use stays far below it.
 const FREE_MONTHLY_LIMIT = Number(Deno.env.get('FREE_MONTHLY_LIMIT') ?? 0);
 const PREMIUM_MONTHLY_LIMIT = Number(Deno.env.get('PREMIUM_MONTHLY_LIMIT') ?? 300);
+// Free users can try the personal trainer: this many questions a month.
+const FREE_TRAINER_LIMIT = Number(Deno.env.get('FREE_TRAINER_LIMIT') ?? 3);
 const REVENUECAT_SECRET_KEY = Deno.env.get('REVENUECAT_SECRET_KEY') ?? '';
 const ENTITLEMENT = Deno.env.get('REVENUECAT_ENTITLEMENT') ?? 'premium';
 const MAX_MESSAGES = 20;
@@ -329,17 +332,19 @@ interface Usage {
   used: number;
   limit: number;
   premium: boolean;
+  // Free users: the personal trainer questions they can still try this month.
+  trial?: { used: number; limit: number };
 }
 
-// Requests this month.
-const usedThisMonth = async (userId: string) => {
+// Requests this month (all AI actions, or the ones matching `action`).
+const usedThisMonth = async (userId: string, action = 'nutrition_%') => {
   const now = new Date();
   const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const { count, error } = await admin
     .from('ai_usage')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .like('action', 'nutrition_%')
+    .like('action', action)
     .gte('created_at', since.toISOString());
   if (error) throw error;
   return count ?? 0;
@@ -347,7 +352,9 @@ const usedThisMonth = async (userId: string) => {
 
 async function usageOf(userId: string, smokeTest: boolean): Promise<Usage> {
   const [premium, used] = await Promise.all([smokeTest || isPremium(userId), usedThisMonth(userId)]);
-  return { used, limit: premium ? PREMIUM_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT, premium };
+  const usage: Usage = { used, limit: premium ? PREMIUM_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT, premium };
+  if (!premium && FREE_TRAINER_LIMIT > 0) usage.trial = { used: await usedThisMonth(userId, 'nutrition_trainer'), limit: FREE_TRAINER_LIMIT };
+  return usage;
 }
 
 const checkQuota = (usage: Usage) => {
@@ -358,16 +365,26 @@ const checkQuota = (usage: Usage) => {
 // Counts this request before asking the model, so many requests at once can't
 // go past the limit. Returns how to give it back if the model fails.
 const reserve = async (userId: string, usage: Usage, action: string) => {
-  checkQuota(usage);
+  // A free user trying the trainer: counted against the trial, not the plan.
+  const trial = action === 'trainer' && !usage.premium && usage.trial ? usage.trial : null;
+  const quota: Usage = trial ? { used: trial.used, limit: trial.limit, premium: false } : usage;
+  checkQuota(quota);
   const { data, error } = await admin.from('ai_usage').insert({ user_id: userId, action: `nutrition_${action}` }).select('id').single();
   if (error) throw error;
   const release = async () => { await admin.from('ai_usage').delete().eq('id', data.id); };
-  if (await usedThisMonth(userId) > usage.limit) {
+  if (await usedThisMonth(userId, trial ? 'nutrition_trainer' : 'nutrition_%') > quota.limit) {
     await release();
-    checkQuota({ ...usage, used: usage.limit });
+    checkQuota({ ...quota, used: quota.limit });
   }
   return release;
 };
+
+// The usage to send back after one more request of `action`.
+const after = (usage: Usage, action: string): Usage => ({
+  ...usage,
+  used: usage.used + 1,
+  ...(usage.trial && action === 'trainer' ? { trial: { ...usage.trial, used: usage.trial.used + 1 } } : {}),
+});
 
 // ---------- Handler ----------
 
@@ -476,7 +493,7 @@ Deno.serve(async req => {
     } else {
       throw new HttpError(400, 'unknown action');
     }
-    return json({ ...result, usage: { ...usage, used: usage.used + 1 } });
+    return json({ ...result, usage: after(usage, body.action) });
   } catch (error) {
     await release?.().catch(() => {});
     const { status, body } = failure(error, usage);

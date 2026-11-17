@@ -1,11 +1,11 @@
-import { Check, ChevronLeft, Minus } from 'lucide-react';
+import { Bot, Camera, Check, ChevronLeft, ChevronRight, Mic, Minus, ShieldCheck, ShoppingCart, Sparkles, UtensilsCrossed } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '../components/feedback';
 import { deviceStores } from '../components/GetTheApp';
 import PremiumArt from '../components/PremiumArt';
-import { AiCoachIcon, AiMealPlanIcon, AiTrainerIcon, CrownIcon, MealPhotoIcon } from '../components/PremiumIcons';
+import { CrownIcon } from '../components/PremiumIcons';
 import { Section } from '../components/ui';
 import { getLang, t } from '../i18n';
 import { refreshUsage } from '../lib/ai';
@@ -35,13 +35,38 @@ const ROWS: [string, Cell, Cell][] = [
     ['premium.row.weekly', false, true],
 ];
 const PLAN_IDS: PlanId[] = ['annual', 'monthly'];
-// The AI features Premium unlocks, shown as tiles with their own icons.
-const HIGHLIGHTS = [
-    ['premium.row.trainer', AiTrainerIcon],
-    ['premium.row.coach', AiCoachIcon],
-    ['premium.row.mealPlan', AiMealPlanIcon],
-    ['premium.row.estimate', MealPhotoIcon],
+// What Premium gets you, in plain words: what it is and what it does for you.
+const BENEFITS = [
+    { icon: Bot, key: 'trainer', to: '/entrenador', color: 'from-violet-500 to-indigo-600' },
+    { icon: UtensilsCrossed, key: 'meal', to: '/nutricion', color: 'from-emerald-500 to-teal-600' },
+    { icon: Camera, key: 'photo', to: '/nutricion', color: 'from-brand to-amber-500' },
+    { icon: Sparkles, key: 'routines', to: '/entrenador', color: 'from-fuchsia-500 to-pink-600' },
+    { icon: Mic, key: 'hands', to: '/rutinas', color: 'from-sky-500 to-blue-600' },
+    { icon: ShoppingCart, key: 'extras', to: '/nutricion', color: 'from-amber-500 to-orange-600' },
 ] as const;
+
+const Benefits = ({ links }: { links: boolean }) => (
+    <ul className="card divide-y divide-line overflow-hidden">
+        {BENEFITS.map(({ icon: Icon, key, to, color }) => {
+            const body = (
+                <>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-snow shadow-md ${color}`}><Icon size={21} /></span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block font-semibold leading-snug">{t(`premium.b.${key}.t` as Parameters<typeof t>[0])}</span>
+                        <span className="block text-[13px] leading-snug text-white/60">{t(`premium.b.${key}.d` as Parameters<typeof t>[0])}</span>
+                    </span>
+                    {links && <ChevronRight size={18} className="shrink-0 text-white/35" />}
+                </>
+            );
+            return (
+                <li key={key}>
+                    {links ? <Link to={to} className="flex items-center gap-3 p-3.5 hover:bg-ink-3">{body}</Link> : <div className="flex items-center gap-3 p-3.5">{body}</div>}
+                </li>
+            );
+        })}
+    </ul>
+);
+
 
 const Mark = ({ value }: { value: Cell }) =>
     typeof value === 'string' ? <span className="font-semibold">{value}</span>
@@ -143,6 +168,10 @@ export default function Premium() {
                 </Section>
             )}
 
+            <Section title={active ? t('premium.b.titleActive') : t('premium.b.title')}>
+                <Benefits links={active} />
+            </Section>
+
             {!active && (
                 <Section>
                     <>
@@ -192,21 +221,15 @@ export default function Premium() {
                                     {t('premium.trialTerms', { n: plan.trialDays, price: plan.price, period: t(plan.id === 'annual' ? 'premium.year' : 'premium.month'), store: Capacitor.getPlatform() === 'ios' ? 'App Store' : 'Google Play' })}
                                 </p>
                             )}
+                            <p className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/55">
+                                <span className="flex items-center gap-1"><ShieldCheck size={13} className="text-good" /> {t('premium.trust.cancel')}</span>
+                                <span className="flex items-center gap-1"><ShieldCheck size={13} className="text-good" /> {t('premium.trust.noAds')}</span>
+                                <span className="flex items-center gap-1"><ShieldCheck size={13} className="text-good" /> {t('premium.trust.free')}</span>
+                            </p>
                             {welcome && <button className="btn-ghost mt-3 w-full" onClick={() => navigate('/', { replace: true })}>{t('premium.notNow')}</button>}
                     </>
                 </Section>
             )}
-
-            <Section>
-                <ul className="grid grid-cols-2 gap-2">
-                    {HIGHLIGHTS.map(([key, Icon]) => (
-                        <li key={key} className="card flex flex-col gap-2.5 bg-gradient-to-br from-brand/[0.07] to-transparent to-60% p-3.5">
-                            <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-brand-soft ring-1 ring-inset ring-brand/15"><Icon size={26} /></span>
-                            <span className="text-[13px] font-semibold leading-snug text-white/90">{t(key)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </Section>
 
             <Section>
                 <table className="card w-full overflow-hidden text-sm">

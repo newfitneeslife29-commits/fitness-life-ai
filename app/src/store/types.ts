@@ -283,6 +283,8 @@ export interface AiUsage {
     used: number; // AI uses this month
     limit: number;
     premium: boolean;
+    // Free users: personal trainer questions to try this month.
+    trial?: { used: number; limit: number };
 }
 
 // Last known subscription state, for the UI. The server checks it again
@@ -291,6 +293,7 @@ export interface PremiumStatus {
     active: boolean;
     expiresAt: string | null; // null: no expiry known (or lifetime)
     willRenew: boolean;
+    trial?: boolean; // in the free trial
     manageUrl: string | null;
     checkedAt: string;
 }

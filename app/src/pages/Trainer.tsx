@@ -1,6 +1,6 @@
-import { ChevronLeft, Crown, Dumbbell, House, RotateCcw, Save, Send, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronLeft, Crown, Dumbbell, Gift, House, RotateCcw, Save, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AiUsageLine, ChatBubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { confirm, toast } from '../components/feedback';
 import { ReportAiButton } from '../components/ReportAi';
@@ -9,7 +9,7 @@ import { exerciseName, getExercise } from '../data/exercises';
 import { getLang, t } from '../i18n';
 import { aiAvailable, askTrainer, designRoutine, refreshUsage, type AiRoutine } from '../lib/ai';
 import { fmtRange, fmtRest } from '../lib/format';
-import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
+import { FREE_TRAINER_TRIES, premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premium';
 import { routineCatalog, trainerContext } from '../lib/trainer';
 import { actions, getState, useStore } from '../store/store';
 import type { AppState, Setup } from '../store/types';
@@ -20,7 +20,7 @@ import { SourcesLink } from '../components/SourcesLink';
 
 // A fixed empty list: a new [] on every read would re-render forever.
 const NO_CHAT: NonNullable<AppState['trainerChat']> = [];
-const SUGGESTIONS = ['trainer.s1', 'trainer.s2', 'trainer.s3', 'trainer.s4'] as const;
+const SUGGESTIONS = ['trainer.s1', 'trainer.s5', 'trainer.s3', 'trainer.s2', 'trainer.s6', 'trainer.s4'] as const;
 const IDEAS = ['trainer.idea1', 'trainer.idea2', 'trainer.idea3'] as const;
 // Training at home gets its own ideas: no equipment, short and effective.
 const HOME_IDEAS = ['trainer.home1', 'trainer.home2', 'trainer.home3', 'trainer.home4'] as const;
@@ -132,6 +132,12 @@ export default function Trainer() {
     const ai = aiAvailable();
     const premium = usePremiumActive();
     const onAiError = useAiErrorHandler();
+    // Free users try it: a few questions a month (counted by the server).
+    // Before the server answers, assume the trial is there.
+    const usage = useStore(s => s.aiUsage);
+    const trial = usage?.trial ?? (usage ? null : { used: 0, limit: FREE_TRAINER_TRIES });
+    const trialLeft = trial ? Math.max(0, trial.limit - trial.used) : 0;
+    const canAsk = premium || trialLeft > 0;
 
     // Whether this user has Premium (store and server) and how many AI uses are left.
     useEffect(() => {
@@ -173,7 +179,9 @@ export default function Trainer() {
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
                         {t('trainer.title')}
-                        <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={12} /> Premium</span>
+                        {premium
+                            ? <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"><Crown size={12} /> Premium</span>
+                            : <span className="flex items-center gap-1 rounded-full bg-good/15 px-2 py-0.5 text-[11px] font-bold text-good"><Gift size={12} /> {t('trainer.tryFree')}</span>}
                     </h1>
                     <p className="text-sm text-white/55">{t('trainer.subtitle')}</p>
                 </div>
@@ -227,14 +235,21 @@ export default function Trainer() {
                         )}
                     </div>
 
-                    {ai && !premium ? (
-                        <div className="border-t border-line p-4"><PremiumLock text={t('trainer.locked')} /></div>
+                    {ai && !canAsk ? (
+                        <div className="border-t border-line p-4"><PremiumLock text={trial ? t('trainer.trialUsed', { n: trial.limit }) : t('trainer.locked')} /></div>
                     ) : ai ? (
                         <>
-                            {chat.length === 0 && !pending && (
-                                <div className="flex flex-wrap gap-2 px-4 pb-3">
-                                    {(setup === 'casa' ? ['trainer.sHome', ...SUGGESTIONS.slice(0, 3)] as const : SUGGESTIONS).map(k => (
-                                        <button key={k} onClick={() => send(t(k))} className="chip text-left hover:text-white">{t(k)}</button>
+                            {!premium && trial && (
+                                <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl bg-good/10 px-3 py-2 text-xs font-medium text-white/80 ring-1 ring-inset ring-good/25">
+                                    <Gift size={15} className="shrink-0 text-good" />
+                                    <span className="min-w-0 flex-1">{t('trainer.trialLeft', { n: trialLeft, limit: trial.limit })}</span>
+                                    <Link to="/premium" className="shrink-0 font-bold text-brand">Premium</Link>
+                                </div>
+                            )}
+                            {!pending && (
+                                <div className="-mx-0 flex gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
+                                    {(setup === 'casa' ? ['trainer.sHome', ...SUGGESTIONS] as const : SUGGESTIONS).map(k => (
+                                        <button key={k} onClick={() => send(t(k))} className="chip shrink-0 whitespace-nowrap hover:text-white">{t(k)}</button>
                                     ))}
                                 </div>
                             )}
