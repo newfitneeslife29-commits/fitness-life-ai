@@ -16,6 +16,8 @@ const dataDir = databaseUrl ? null : (process.env.PARQUES_DATA ?? fileURLToPath(
 const timing = {
   ...(process.env.PARQUES_TURN_MS ? { turnMs: Number(process.env.PARQUES_TURN_MS) } : {}),
   ...(process.env.PARQUES_BOT_MS ? { botDelayMs: Number(process.env.PARQUES_BOT_MS) } : {}),
+  // Esperar las animaciones de los celulares (PARQUES_ANIM=0 para pruebas rápidas).
+  animScale: process.env.PARQUES_ANIM !== undefined ? Number(process.env.PARQUES_ANIM) : 1,
 };
 const server = startServer({ port, staticDir, databaseUrl, dataDir, timing });
 server.store.ready().then(

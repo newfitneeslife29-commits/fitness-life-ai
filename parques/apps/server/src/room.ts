@@ -11,6 +11,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import {
   applyAction,
   autoAction,
+  animDuration,
   canSoplar,
   cleanChat,
   createGame,
@@ -29,9 +30,18 @@ export interface Timing {
   soploMs: number;
   botDelayMs: number;
   graceMs: number;
+  /**
+   * Cuánto se esperan las animaciones del celular (1 = lo que duran de verdad, 0 = nada: pruebas).
+   * El servidor no hace jugar a la máquina ni arranca el reloj de una persona hasta que su celular
+   * terminó de mostrar lo anterior (si no, el reloj corre mientras el celular todavía anima).
+   */
+  animScale: number;
 }
 
-export const DEFAULT_TIMING: Timing = { turnMs: 20000, soploMs: 4500, botDelayMs: 900, graceMs: 30000 };
+export const DEFAULT_TIMING: Timing = { turnMs: 20000, soploMs: 4500, botDelayMs: 900, graceMs: 30000, animScale: 0 };
+
+/** Pausa corta de la máquina después de que se ven las animaciones (para que no juegue "de golpe"). */
+const BOT_THINK_MS = 220;
 
 interface Seat extends NetSeat {
   level: AiLevel;
@@ -370,6 +380,9 @@ export class Room {
     if (!r.ok) return { ok: false, error: r.error };
     this.state = r.state;
     this.lastActivity = Date.now();
+    // Los celulares animan los eventos en orden: lo que llega mientras animan se encola detrás.
+    const now = Date.now();
+    this.animUntil = Math.max(this.animUntil, now) + animDuration(r.events) * this.timing.animScale;
     this.schedule();
     this.broadcast(r.events);
     if (this.state.phase === 'over') this.finish();
@@ -460,7 +473,7 @@ export class Room {
       const key = JSON.stringify(g.pendingSoplo);
       if (key !== this.soploKey || !this.soploEndsAt) {
         this.soploKey = key;
-        this.soploEndsAt = Date.now() + this.timing.soploMs;
+        this.soploEndsAt = Date.now() + this.animLeft() + this.timing.soploMs;
       }
       this.later(() => this.apply({ type: 'DISMISS_SOPLO' }), Math.max(0, this.soploEndsAt - Date.now()));
       g.players.forEach((_, i) => {
@@ -468,7 +481,7 @@ export class Room {
         const level = this.seats[i]!.level;
         this.later(() => {
           if (this.state?.pendingSoplo && shouldSoplar(this.state, i, level)) this.apply({ type: 'SOPLAR', player: i });
-        }, Math.min(this.timing.soploMs * 0.8, this.timing.botDelayMs * (level === 'expert' ? 1 : 2)));
+        }, this.animLeft() + Math.min(this.timing.soploMs * 0.8, this.timing.botDelayMs * (level === 'expert' ? 1 : 2)));
       });
     } else {
       this.soploEndsAt = null;
@@ -483,16 +496,18 @@ export class Room {
         if (!this.state || this.state.current !== cur) return;
         const a = autoAction(this.state, level);
         if (a) this.apply(a);
-      }, this.timing.botDelayMs);
+      }, this.timing.animScale > 0 ? Math.max(this.animLeft() + BOT_THINK_MS, Math.min(this.timing.botDelayMs, 450)) : this.timing.botDelayMs);
       return;
     }
 
-    this.turnEndsAt = Date.now() + this.timing.turnMs;
+    // El reloj de una persona arranca cuando su celular terminó de mostrar lo anterior.
+    const wait = this.animLeft() + this.timing.turnMs;
+    this.turnEndsAt = Date.now() + wait;
     this.later(() => {
       if (!this.state || this.state.current !== cur) return;
       const a = autoAction(this.state, 'normal');
       if (a) this.apply(a);
-    }, this.timing.turnMs);
+    }, wait);
   }
 
   /** Momento en que termina el Modo Rápido (para el reloj del cliente). */
@@ -500,6 +515,11 @@ export class Room {
     return this.endTimer ? this.startedAt + this.timeLimitMs : null;
   }
   private startedAt = Date.now();
+  /** Hasta cuándo los celulares están animando lo último que pasó. */
+  private animUntil = 0;
+  private animLeft(): number {
+    return Math.max(0, this.animUntil - Date.now());
+  }
 
   private finish() {
     this.status = 'over';
