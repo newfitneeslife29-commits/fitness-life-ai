@@ -38,6 +38,8 @@ function done(productId: string) {
 // ---------------------------------------------------------------- Tiendas de apps (RevenueCat)
 let rcReady: Promise<boolean> | null = null;
 
+let rcUser: string | null = null;
+
 async function revenueCat() {
   const mod = await import('@revenuecat/purchases-capacitor');
   if (!rcReady) {
@@ -46,10 +48,22 @@ async function revenueCat() {
       const session = getSession();
       if (!key || !session) return false;
       await mod.Purchases.configure({ apiKey: String(key), appUserID: session.id });
+      rcUser = session.id;
       return true;
     })();
   }
-  return (await rcReady) ? mod : null;
+  if (!(await rcReady)) return null;
+  // Si se cambió de cuenta (cerrar sesión / código de recuperación), las compras van a la cuenta actual.
+  const current = getSession()?.id;
+  if (current && current !== rcUser) {
+    try {
+      await mod.Purchases.logIn({ appUserID: current });
+      rcUser = current;
+    } catch {
+      /* se reintenta en la próxima compra */
+    }
+  }
+  return mod;
 }
 
 async function purchaseInStore(productId: string): Promise<boolean> {

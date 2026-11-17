@@ -32,7 +32,7 @@ jobs:
       BUILD_NUMBER: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
       VITE_SERVER_URL: ${{ vars.PARQUES_SERVER_URL || 'https://parques-server-production.up.railway.app' }}
-      VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY }}
+      VITE_REVENUECAT_IOS_KEY: ${{ vars.PARQUES_RC_IOS_KEY || 'appl_cGgjAfcCRtSUrMQDXdidakciftf' }}
       VITE_REVENUECAT_ANDROID_KEY: ${{ vars.PARQUES_RC_ANDROID_KEY }}
       # Anuncios con premio (AdMob) e inicio de sesión con Google: opcionales.
       VITE_ADMOB_REWARDED_IOS: ${{ vars.PARQUES_ADMOB_IOS_REWARDED }}
