@@ -616,4 +616,12 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Sin apuesta ni premios: solo para practicar.": ["No bet, no prizes: just practice.", "Sem aposta nem prêmios: só para treinar.", "Sans mise ni prix : juste pour s'entraîner."],
   "Mesa con apuesta: reglas oficiales (3 intentos para salir de la cárcel, soplar y tres pares a la cárcel).": ["Bet table: official rules (3 tries to get out of jail, blowing and three pairs to jail).", "Mesa com aposta: regras oficiais (3 tentativas para sair da prisão, soprar e três pares para a prisão).", "Table avec mise : règles officielles (3 essais pour sortir de prison, souffler et trois doubles en prison)."],
   "Se usan en práctica, partidas en el mismo celular y tus mesas privadas. Las mesas con apuesta usan siempre las reglas oficiales (3 intentos).": ["Used in practice, same-phone games and your private tables. Bet tables always use the official rules (3 tries).", "Usadas no treino, partidas no mesmo celular e suas mesas privadas. As mesas com aposta usam sempre as regras oficiais (3 tentativas).", "Utilisées en entraînement, parties sur le même téléphone et tes tables privées. Les tables avec mise utilisent toujours les règles officielles (3 essais)."],
+  "Mis cosas": ["My stuff", "Minhas coisas", "Mes objets"],
+  "Tu colección": ["Your collection", "Sua coleção", "Ta collection"],
+  "{n} objetos · toca \"Usar\" para equiparlos": ["{n} items · tap \"Use\" to equip them", "{n} itens · toque em \"Usar\" para equipá-los", "{n} objets · touche « Utiliser » pour les équiper"],
+  "Todavía no tienes objetos de esta categoría.": ["You don't have items in this category yet.", "Você ainda não tem itens desta categoria.", "Tu n'as pas encore d'objets dans cette catégorie."],
+  "Ir a la tienda": ["Go to the shop", "Ir para a loja", "Aller à la boutique"],
+  "¡Listo! Ahora usas {name}": ["Done! You're now using {name}", "Pronto! Agora você usa {name}", "C'est fait ! Tu utilises {name}"],
+  "Mis cosas (tableros, dados, fichas…)": ["My stuff (boards, dice, pieces…)", "Minhas coisas (tabuleiros, dados, peças…)", "Mes objets (plateaux, dés, pions…)"],
+  "Tableros, dados y fichas que ya tienes": ["Boards, dice and pieces you already own", "Tabuleiros, dados e peças que você já tem", "Plateaux, dés et pions que tu possèdes"],
 };
