@@ -2203,7 +2203,7 @@ export const ja: Dict = {
     'progress.now': "今",
     'progress.new': "新規",
     'nutrition.qa.photo': "AI写真",
-    'nutrition.qa.add': "食事を追加",
+    'nutrition.qa.add': "食事を記録",
     'nutrition.qa.scan': "スキャン",
     'nutrition.qa.water': "+1杯",
     'nutrition.qa.waterDone': "水1杯を記録しました 💧",

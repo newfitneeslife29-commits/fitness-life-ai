@@ -2211,7 +2211,7 @@ export const es = {
     'progress.now': "Ahora",
     'progress.new': "Nuevo",
     'nutrition.qa.photo': "Foto con IA",
-    'nutrition.qa.add': "Añadir comida",
+    'nutrition.qa.add': "Anotar comida",
     'nutrition.qa.scan': "Escanear",
     'nutrition.qa.water': "+1 vaso",
     'nutrition.qa.waterDone': "Vaso de agua anotado 💧",

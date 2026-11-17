@@ -192,6 +192,17 @@ const AchievementsRow = () => {
     );
 };
 
+const ChallengesRow = () => (
+    <Link to="/retos" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
+        <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{t('challenges.title')}</span>
+            <span className="block text-sm text-white/50">{t('challenges.cardHint')}</span>
+        </span>
+        <ChevronRight className="shrink-0 text-white/40" />
+    </Link>
+);
+
 export default function Progress() {
     const sessions = useStore(s => s.sessions);
     const profile = useStore(s => s.profile)!;
@@ -234,7 +245,7 @@ export default function Progress() {
                 <Section title={t('weightGoal.title')} action={<SourcesLink topics={['weight', 'calories']} />}><WeightGoalCard /></Section>
                 <Section title={t('bw.title')}><BodyWeightCard unit={unit} /></Section>
                 <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
-                <Section title={t('nav.achievements')}><AchievementsRow /></Section>
+                <Section title={t('nav.achievements')}><AchievementsRow /><ChallengesRow /></Section>
             </div>
         );
     }
@@ -278,7 +289,10 @@ export default function Progress() {
 
             <Section title={t('move.title')}><MovementWeek unit={unit} /></Section>
 
-            <Section title={t('nav.achievements')}><AchievementsRow /></Section>
+            <Section title={t('nav.achievements')}>
+                <AchievementsRow />
+                <ChallengesRow />
+            </Section>
 
             <Section title={t('share.section')}>
                 <div className="grid grid-cols-2 gap-2">

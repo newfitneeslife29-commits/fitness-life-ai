@@ -2203,7 +2203,7 @@ export const hi: Dict = {
     'progress.now': "अब",
     'progress.new': "नया",
     'nutrition.qa.photo': "AI फ़ोटो",
-    'nutrition.qa.add': "खाना जोड़ें",
+    'nutrition.qa.add': "खाना लिखें",
     'nutrition.qa.scan': "स्कैन",
     'nutrition.qa.water': "+1 गिलास",
     'nutrition.qa.waterDone': "एक गिलास पानी दर्ज 💧",

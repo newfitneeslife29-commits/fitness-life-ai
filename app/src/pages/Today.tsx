@@ -14,7 +14,7 @@ import { fallbackPlan, usePremiumActive } from '../lib/premium';
 import { useStreak } from '../lib/streak';
 import { currentPause } from '../lib/pause';
 import { PauseBanner } from '../components/PauseCard';
-import { challengeStatus } from '../lib/challenges';
+import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
 import { ShopCard } from '../components/ShopCard';
 import { PremiumKeepCard } from '../components/PremiumKeepCard';
 import { localDay } from '../lib/activity';
@@ -115,6 +115,9 @@ const DayCard = ({ trained, thisWeek }: { trained: Set<number>; thisWeek: number
     const steps = stepsOn(state, localDay(day));
     const stepGoal = stepGoalOf(state);
     const left = targets ? targets.kcal - eaten.kcal : null;
+    // The first running 30-day challenge, in one line.
+    const challenge = (state.challenges ?? []).map(j => ({ j, st: challengeDef(j.id) ? challengeStatus(j, state) : null }))
+        .find(x => x.st?.state === 'running');
     const tile = (to: string, ring: ReactNode, label: string) => (
         <Link to={to} className="flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center active:scale-[0.97]">
             {ring}
@@ -124,9 +127,9 @@ const DayCard = ({ trained, thisWeek }: { trained: Set<number>; thisWeek: number
     return (
         <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>
             <div className="flex items-center justify-between gap-3">
-                <p className="font-bold leading-snug">
+                <h2 className="font-bold leading-snug">
                     {thisWeek >= profile.daysPerWeek ? t('today.weekDone') : t('today.title', { done: thisWeek, target: profile.daysPerWeek })}
-                </p>
+                </h2>
                 <Link to="/actividad" className="shrink-0 text-xs font-semibold text-brand">{t('home.seeAll')}</Link>
             </div>
             <WeekStrip trained={trained} />
@@ -146,6 +149,13 @@ const DayCard = ({ trained, thisWeek }: { trained: Set<number>; thisWeek: number
                     <MiniRing pct={steps / stepGoal} color="stroke-emerald-400">{steps >= 10_000 ? `${Math.floor(steps / 1000)}k` : fmtNumber(steps)}</MiniRing>
                 ), t('home.heroSteps'))}
             </div>
+            {challenge?.st && (
+                <Link to="/retos" className="mt-3 flex items-center gap-2 rounded-xl bg-amber-400/10 px-3 py-2 text-sm hover:bg-amber-400/15">
+                    <Trophy size={16} className="shrink-0 text-amber-500" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{challengeName(challenge.j.id)} · {t('challenges.progress', { n: challenge.st.progress, target: challenge.st.target })}</span>
+                    <ChevronRight size={16} className="shrink-0 text-white/40" />
+                </Link>
+            )}
         </div>
     );
 };
@@ -381,8 +391,9 @@ export default function Today() {
 
             <Section><TrainerCard premium={premium} /></Section>
 
-            {/* One promotion at a time: Premium for free users every other day, the shop otherwise. */}
-            <Section>{!premium && dayOfYear % 2 === 0 ? <PremiumBanner /> : <ShopCard />}</Section>
+            {/* One promotion at a time. Premium waits until they have trained twice
+                (value first), then takes turns with the shop. */}
+            <Section>{!premium && sessions.length >= 2 && dayOfYear % 2 === 0 ? <PremiumBanner /> : <ShopCard />}</Section>
         </div>
     );
 }

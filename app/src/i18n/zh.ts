@@ -2203,7 +2203,7 @@ export const zh: Dict = {
     'progress.now': "现在",
     'progress.new': "新增",
     'nutrition.qa.photo': "AI 拍照",
-    'nutrition.qa.add': "添加餐食",
+    'nutrition.qa.add': "记录餐食",
     'nutrition.qa.scan': "扫码",
     'nutrition.qa.water': "+1 杯",
     'nutrition.qa.waterDone': "已记录一杯水 💧",

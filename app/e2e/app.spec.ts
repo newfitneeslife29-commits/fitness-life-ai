@@ -109,8 +109,10 @@ test('beginner at home with sore knees: guided plan, guides, programs and the vo
     await expect(page.getByText(/Puente de glúteo/).first()).toBeVisible();
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
 
-    // Home: the beginner guide and the weight goal.
+    // Progress: the weight goal. Home: the beginner guide.
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await expect(page.getByText('Te faltan 5 kg')).toBeVisible();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
     await page.getByRole('link', { name: /¿Empiezas a entrenar\?/ }).click();
     await expect(page.getByRole('heading', { name: 'Empieza desde cero' })).toBeVisible();
     await page.getByRole('link', { name: /Cómo funciona un entreno/ }).click();
@@ -268,8 +270,10 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
     await expect(page.getByText('Primer paso')).toBeVisible();
     await page.getByLabel('Notas del entreno').fill('Buenas sensaciones');
     await page.getByRole('link', { name: 'Listo' }).click();
-    // Plus the first weigh-in, logged at sign-up.
+    // Plus the first weigh-in, logged at sign-up (shown in Progress).
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await expect(page.getByText(/^2 de \d+ conseguidos$/)).toBeVisible();
+    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
 
     await page.getByRole('link', { name: 'Último entreno' }).or(page.getByRole('link', { name: /Cuerpo completo A/ })).first().click();
     await expect(page.getByLabel('Notas del entreno')).toHaveValue('Buenas sensaciones');
@@ -755,6 +759,7 @@ test('weekly ranking with the people I follow', async ({ page }) => {
 test('30-day challenges: join, progress on the home screen, leaderboard and leaving', async ({ page }) => {
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await page.getByRole('link', { name: /Retos de 30 días/ }).click();
     await expect(page.getByRole('heading', { name: 'Retos de 30 días' })).toBeVisible();
 
@@ -806,7 +811,7 @@ test('movement: a walk of the walking plan with GPS, a ride by hand, steps and s
     await context.setGeolocation({ latitude: 40.4168, longitude: -3.7038, accuracy: 5 });
     await onboard(page);
     await page.getByRole('button', { name: 'Empezar con este plan' }).click();
-    await page.getByRole('link', { name: /Movimiento/ }).click();
+    await page.getByRole('link', { name: /pasos hoy/ }).first().click();
     await expect(page.getByRole('heading', { name: 'Movimiento' })).toBeVisible();
     await expect(page.getByLabel('0 pasos hoy')).toBeVisible();
 
@@ -1459,7 +1464,8 @@ test('workout extras: repeat the last set, machine taken, then recovery, activit
     await page.getByRole('alertdialog').getByRole('button', { name: 'Terminar' }).click();
     await page.getByRole('link', { name: 'Listo' }).click();
 
-    // Legs were trained hard: they are recovering.
+    // Legs were trained hard: they are recovering (shown in Progress).
+    await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Recuperación muscular' })).toBeVisible();
     await expect(page.getByText(/piernas/i).first()).toBeVisible();
 
