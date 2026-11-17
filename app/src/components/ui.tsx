@@ -81,7 +81,7 @@ export const BackHeader = ({ title, subtitle, icon }: { title: string; subtitle?
 
 // A small figure on a coloured header: big number, short label.
 export const HeroStat = ({ value, label }: { value: ReactNode; label: string }) => (
-    <div className="rounded-2xl bg-snow/15 px-3 py-2.5 backdrop-blur">
+    <div className="rounded-2xl bg-snow/15 px-3 py-2.5 ring-1 ring-inset ring-snow/15 backdrop-blur">
         <p className="text-xl font-extrabold tabular-nums leading-tight">{value}</p>
         <p className="text-[11px] font-medium uppercase tracking-wide text-snow/80">{label}</p>
     </div>
