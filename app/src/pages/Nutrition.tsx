@@ -1,6 +1,6 @@
-import { Camera, ChevronLeft, ChevronRight, ImageIcon, Lock, Pencil, Plus, RotateCcw, ScanBarcode, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Camera, ChevronLeft, ChevronRight, Crown, Droplets, ImageIcon, Lock, Pencil, Plus, RotateCcw, ScanBarcode, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { AiUsageLine, ChatBubble as Bubble, PremiumLock, useAiErrorHandler } from '../components/AiParts';
 import { MealPlanSection } from '../components/MealPlan';
@@ -17,7 +17,7 @@ import { premiumAvailable, refreshPremium, usePremiumActive } from '../lib/premi
 import { fmtDate, fmtNumber, fmtWeight, parseDecimal } from '../lib/format';
 import { FOOD_EMOJI, FOODS, foodMacros, foodName, getFood, portionLabel } from '../data/foods';
 import { foodHero } from '../data/photos';
-import { ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
+import { GLASS_ML, ageOf, autoTargets, bmiBand, bmiOf, healthyWeightRange, kcalFromMacros, mealsOn, onDay, sumMacros, waterTargetMl, type BmiBand } from '../lib/nutrition';
 import { displayToKg } from '../lib/progression';
 import { localDay } from '../lib/activity';
 import { useNow } from '../lib/useNow';
@@ -196,6 +196,7 @@ const EstimateView = ({ estimate, question }: { estimate: MealEstimate; question
     );
 };
 
+// "Photo with AI" opens it on the AI tab, where the camera is the first button.
 const AddMealSheet = ({ open, onClose, day }: { open: boolean; onClose: () => void; day: Date }) => {
     const ai = aiAvailable();
     const premium = usePremiumActive();
@@ -521,6 +522,21 @@ const FoodTablePreview = () => (
 
 // ---------- Page ----------
 
+// A big round shortcut above the day's meals.
+const QuickAction = ({ label, icon, color, onClick, to, premium }: { label: string; icon: ReactNode; color: string; onClick?: () => void; to?: string; premium?: boolean }) => {
+    const inner = (
+        <>
+            <span className={`relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-snow shadow-md ${color}`}>
+                {icon}
+                {premium && <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-300 text-neutral-900 ring-2 ring-ink"><Crown size={11} /></span>}
+            </span>
+            <span className="text-center text-[11px] font-semibold leading-tight text-white/75">{label}</span>
+        </>
+    );
+    const cls = 'flex flex-col items-center gap-1.5 rounded-2xl py-1 active:scale-[0.96] transition';
+    return to ? <Link to={to} className={cls}>{inner}</Link> : <button onClick={onClick} className={cls}>{inner}</button>;
+};
+
 export default function Nutrition() {
     const profile = useStore(s => s.profile)!;
     const meals = useStore(s => s.meals);
@@ -539,6 +555,8 @@ export default function Nutrition() {
     }, [now]);
     const [editTargets, setEditTargets] = useState(false);
     const [adding, setAdding] = useState(false);
+    const premium = usePremiumActive();
+    const navigate = useNavigate();
 
     // Whether this user has Premium (store and server) and how many AI uses are left.
     useEffect(() => {
@@ -594,38 +612,15 @@ export default function Nutrition() {
                 </div>
                 {targets ? <Summary totals={totals} targets={targets} onEdit={() => setEditTargets(true)} /> : <WeightPrompt />}
                 <div className="mt-2 flex justify-end"><SourcesLink topics={['calories', 'protein']} /></div>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                    <QuickAction label={t('nutrition.qa.photo')} icon={<Camera size={20} />} color="from-brand to-amber-500 shadow-brand/30" premium={!premium}
+                        onClick={() => (premium ? setAdding(true) : navigate('/premium'))} />
+                    <QuickAction label={t('nutrition.qa.add')} icon={<Plus size={20} />} color="from-emerald-500 to-teal-500 shadow-emerald-500/30" onClick={() => setAdding(true)} />
+                    <QuickAction label={t('nutrition.qa.scan')} icon={<ScanBarcode size={20} />} color="from-violet-500 to-indigo-500 shadow-violet-500/30" to="/nutricion/alimentos?escanear=1" />
+                    <QuickAction label={t('nutrition.qa.water')} icon={<Droplets size={20} />} color="from-sky-500 to-cyan-500 shadow-sky-500/30"
+                        onClick={() => { actions.addWater(localDay(day), GLASS_ML); toast(t('nutrition.qa.waterDone')); }} />
+                </div>
             </Section>
-
-            <Section title={t('water.title')} action={<SourcesLink topics={['water']} />}>
-                <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
-            </Section>
-
-            <Section title={t('fasting.title')} action={<SourcesLink topics={['fasting']} />}>
-                <FastingCard />
-            </Section>
-
-            <Section title={t('freePlans.title')} action={<SourcesLink topics={['calories', 'food']} />}>
-                <Link to="/nutricion/planes" className="card relative flex min-h-[7.5rem] items-end overflow-hidden p-4 text-snow active:scale-[0.99]">
-                    <Photo photo={{ src: './food/plato-7.webp', position: '50% 50%' }} />
-                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-800/90 via-emerald-700/60 to-transparent" />
-                    <span className="relative min-w-0 flex-1">
-                        <span className="mb-1 inline-block rounded-full bg-snow/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">{t('mom.free')}</span>
-                        <span className="block text-lg font-bold">{t('freePlans.card')}</span>
-                        <span className="block text-sm text-snow/85">{t('freePlans.cardHint')}</span>
-                    </span>
-                    <ChevronRight className="relative shrink-0" />
-                </Link>
-            </Section>
-
-            <Section title={t('mealPlan.section')} action={<SourcesLink topics={['calories', 'protein']} />}>
-                <MealPlanSection context={context} />
-            </Section>
-
-            {weightKg && (
-                <Section title={t('bmi.title')} action={<SourcesLink topics={['bmi']} />}>
-                    <BmiCard weightKg={weightKg} heightCm={profile.heightCm} unit={profile.unit} />
-                </Section>
-            )}
 
             <Section title={t('nutrition.meals')} action={<span className="text-xs tabular-nums text-white/45">{fmtNumber(totals.kcal)} kcal</span>}>
                 {dayMeals.length > 0 ? (
@@ -649,6 +644,37 @@ export default function Nutrition() {
                 )}
                 <button className="btn-primary mt-2 w-full" onClick={() => setAdding(true)}><Plus size={18} /> {t('meal.add')}</button>
             </Section>
+
+            <Section title={t('water.title')} action={<SourcesLink topics={['water']} />}>
+                <WaterCard day={day} targetMl={waterTarget} why={waterWhy} />
+            </Section>
+
+            <Section title={t('freePlans.title')} action={<SourcesLink topics={['calories', 'food']} />}>
+                <Link to="/nutricion/planes" className="card relative flex min-h-[7.5rem] items-end overflow-hidden p-4 text-snow active:scale-[0.99]">
+                    <Photo photo={{ src: './food/plato-7.webp', position: '50% 50%' }} />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-emerald-800/90 via-emerald-700/60 to-transparent" />
+                    <span className="relative min-w-0 flex-1">
+                        <span className="mb-1 inline-block rounded-full bg-snow/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">{t('mom.free')}</span>
+                        <span className="block text-lg font-bold">{t('freePlans.card')}</span>
+                        <span className="block text-sm text-snow/85">{t('freePlans.cardHint')}</span>
+                    </span>
+                    <ChevronRight className="relative shrink-0" />
+                </Link>
+            </Section>
+
+            <Section title={t('mealPlan.section')} action={<SourcesLink topics={['calories', 'protein']} />}>
+                <MealPlanSection context={context} />
+            </Section>
+
+            <Section title={t('fasting.title')} action={<SourcesLink topics={['fasting']} />}>
+                <FastingCard />
+            </Section>
+
+            {weightKg && (
+                <Section title={t('bmi.title')} action={<SourcesLink topics={['bmi']} />}>
+                    <BmiCard weightKg={weightKg} heightCm={profile.heightCm} unit={profile.unit} />
+                </Section>
+            )}
 
             <Section title={t('recipes.title')}>
                 <Recipes day={day} />

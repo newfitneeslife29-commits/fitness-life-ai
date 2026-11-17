@@ -2202,4 +2202,9 @@ export const fr: Dict = {
     'progress.start': "Début",
     'progress.now': "Maint.",
     'progress.new': "Nouveau",
+    'nutrition.qa.photo': "Photo IA",
+    'nutrition.qa.add': "Ajouter repas",
+    'nutrition.qa.scan': "Scanner",
+    'nutrition.qa.water': "+1 verre",
+    'nutrition.qa.waterDone': "Verre d'eau noté 💧",
 };

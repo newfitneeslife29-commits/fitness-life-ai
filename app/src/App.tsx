@@ -76,8 +76,8 @@ import { takeTrialOffer } from './lib/premium';
 const TABS = [
     { to: '/', label: () => t('nav.today'), icon: House },
     { to: '/rutinas', label: () => t('nav.routines'), icon: ListChecks },
-    { to: '/progreso', label: () => t('nav.progress'), icon: LineChart },
     { to: '/nutricion', label: () => t('nav.nutrition'), icon: Apple },
+    { to: '/progreso', label: () => t('nav.progress'), icon: LineChart },
     { to: '/comunidad', label: () => t('nav.community'), icon: Users },
     { to: '/ajustes', label: () => t('nav.settings'), icon: SettingsIcon },
 ];

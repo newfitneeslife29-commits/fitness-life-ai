@@ -2202,4 +2202,9 @@ export const ko: Dict = {
     'progress.start': "처음",
     'progress.now': "지금",
     'progress.new': "새로",
+    'nutrition.qa.photo': "AI 사진",
+    'nutrition.qa.add': "식사 추가",
+    'nutrition.qa.scan': "스캔",
+    'nutrition.qa.water': "+1잔",
+    'nutrition.qa.waterDone': "물 한 잔 기록 💧",
 };

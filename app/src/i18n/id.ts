@@ -2202,4 +2202,9 @@ export const id: Dict = {
     'progress.start': "Awal",
     'progress.now': "Kini",
     'progress.new': "Baru",
+    'nutrition.qa.photo': "Foto AI",
+    'nutrition.qa.add': "Tambah makan",
+    'nutrition.qa.scan': "Pindai",
+    'nutrition.qa.water': "+1 gelas",
+    'nutrition.qa.waterDone': "Segelas air dicatat 💧",
 };

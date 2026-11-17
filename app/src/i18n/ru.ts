@@ -2202,4 +2202,9 @@ export const ru: Dict = {
     'progress.start': "Старт",
     'progress.now': "Сейчас",
     'progress.new': "Новое",
+    'nutrition.qa.photo': "Фото с ИИ",
+    'nutrition.qa.add': "Добавить еду",
+    'nutrition.qa.scan': "Сканировать",
+    'nutrition.qa.water': "+1 стакан",
+    'nutrition.qa.waterDone': "Стакан воды записан 💧",
 };

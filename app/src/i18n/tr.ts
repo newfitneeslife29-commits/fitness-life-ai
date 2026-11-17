@@ -2202,4 +2202,9 @@ export const tr: Dict = {
     'progress.start': "Başta",
     'progress.now': "Şimdi",
     'progress.new': "Yeni",
+    'nutrition.qa.photo': "YZ fotoğraf",
+    'nutrition.qa.add': "Öğün ekle",
+    'nutrition.qa.scan': "Tara",
+    'nutrition.qa.water': "+1 bardak",
+    'nutrition.qa.waterDone': "Bir bardak su kaydedildi 💧",
 };
