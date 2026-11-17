@@ -2181,4 +2181,11 @@ export const pl: Dict = {
     'sources.topic.fasting': "Post przerywany",
     'sources.topic.sleep': "Sen",
     'sources.topic.food': "Wartości odżywcze produktów",
+    'home.today': "Twój dzień",
+    'home.seeAll': "Zobacz wszystko",
+    'quick.title': "Szybkie treningi",
+    'quick.hint': "Pojedynczy trening, bez zmiany planu",
+    'quick.gym': "Siłownia",
+    'quick.home': "W domu",
+    'quick.line': "{min} min · {n} ćwiczeń",
 };

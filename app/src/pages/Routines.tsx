@@ -7,7 +7,7 @@ import { HeroStat, PageHeader, Photo, Section } from '../components/ui';
 import { namedCover, routineCovers, type Cover } from '../data/covers';
 import { kindPhoto } from '../data/photos';
 import { exerciseName } from '../data/exercises';
-import { TRAVEL_WORKOUTS, travelRoutine, type TravelWorkout } from '../data/travel';
+import { QUICK_WORKOUTS, TRAVEL_WORKOUTS, travelRoutine, type QuickWorkout, type TravelWorkout } from '../data/travel';
 import { t, tp } from '../i18n';
 import { planName, routineName } from '../lib/names';
 import { weekPhase } from '../lib/plan';
@@ -56,6 +56,41 @@ const TravelRow = ({ workout, onStart }: { workout: TravelWorkout; onStart: () =
             </span>
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-amber-500 text-snow shadow-md shadow-brand/30"><Play size={18} fill="currentColor" /></span>
         </button>
+    );
+};
+
+// Quick workouts by muscle group, side by side on photos: tap to start.
+const QuickCard = ({ workout, onStart }: { workout: QuickWorkout; onStart: () => void }) => {
+    const name = routineName(travelRoutine(workout));
+    return (
+        <button onClick={onStart} aria-label={t('routines.start', { name })}
+            className="relative flex h-52 w-40 shrink-0 snap-start flex-col justify-end overflow-hidden rounded-2xl bg-black p-3 text-left text-snow shadow-md active:scale-[0.98]">
+            <Photo photo={namedCover(workout.cover)} />
+            <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/0" />
+            <span className="absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-brand text-snow shadow-md shadow-black/30"><Play size={15} fill="currentColor" /></span>
+            <span className="relative line-clamp-2 font-bold leading-tight">{name}</span>
+            <span className="relative mt-0.5 text-xs text-snow/75">{t('quick.line', { min: workout.minutes, n: workout.exercises.length })}</span>
+        </button>
+    );
+};
+
+const QuickWorkouts = ({ onStart }: { onStart: (w: QuickWorkout) => void }) => {
+    const [place, setPlace] = useState<'gym' | 'home'>('gym');
+    return (
+        <Section title={t('quick.title')}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="min-w-0 text-xs text-white/50">{t('quick.hint')}</p>
+                <div role="tablist" className="flex shrink-0 rounded-full bg-ink-3 p-1 text-xs font-semibold">
+                    {(['gym', 'home'] as const).map(p => (
+                        <button key={p} role="tab" aria-selected={place === p} onClick={() => setPlace(p)}
+                            className={`rounded-full px-3 py-1.5 transition ${place === p ? 'bg-brand text-snow shadow' : 'text-white/60'}`}>{t(`quick.${p}`)}</button>
+                    ))}
+                </div>
+            </div>
+            <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+                {QUICK_WORKOUTS.filter(w => w.place === place).map(w => <QuickCard key={w.id} workout={w} onStart={() => onStart(w)} />)}
+            </div>
+        </Section>
     );
 };
 
@@ -111,6 +146,8 @@ export default function Routines() {
                     <p className="mt-1 text-xs text-white/40">{t('routines.tapToEdit')}</p>
                 </Section>
             )}
+
+            <QuickWorkouts onStart={w => void start(w.id, travelRoutine(w))} />
 
             <Section title={t('routines.mine')}>
                 {custom.length ? (

@@ -2181,4 +2181,11 @@ export const fr: Dict = {
     'sources.topic.fasting': "Jeûne intermittent",
     'sources.topic.sleep': "Sommeil",
     'sources.topic.food': "Valeurs nutritionnelles des aliments",
+    'home.today': "Ta journée",
+    'home.seeAll': "Tout voir",
+    'quick.title': "Séances rapides",
+    'quick.hint': "Une séance ponctuelle, sans changer ton plan",
+    'quick.gym': "Salle",
+    'quick.home': "À la maison",
+    'quick.line': "{min} min · {n} exercices",
 };

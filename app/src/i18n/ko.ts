@@ -2181,4 +2181,11 @@ export const ko: Dict = {
     'sources.topic.fasting': "간헐적 단식",
     'sources.topic.sleep': "수면",
     'sources.topic.food': "식품 영양 정보",
+    'home.today': "오늘",
+    'home.seeAll': "모두 보기",
+    'quick.title': "빠른 운동",
+    'quick.hint': "플랜을 바꾸지 않는 단독 운동",
+    'quick.gym': "헬스장",
+    'quick.home': "집에서",
+    'quick.line': "{min}분 · 운동 {n}개",
 };

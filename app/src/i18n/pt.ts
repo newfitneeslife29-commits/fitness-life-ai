@@ -2189,4 +2189,11 @@ export const pt: Dict = {
     'sources.topic.fasting': "Jejum intermitente",
     'sources.topic.sleep': "Sono",
     'sources.topic.food': "Valores nutricionais dos alimentos",
+    'home.today': "Seu dia",
+    'home.seeAll': "Ver tudo",
+    'quick.title': "Treinos rápidos",
+    'quick.hint': "Um treino avulso, sem mudar seu plano",
+    'quick.gym': "Academia",
+    'quick.home': "Em casa",
+    'quick.line': "{min} min · {n} exercícios",
 };

@@ -2181,4 +2181,11 @@ export const ru: Dict = {
     'sources.topic.fasting': "Интервальное голодание",
     'sources.topic.sleep': "Сон",
     'sources.topic.food': "Пищевая ценность продуктов",
+    'home.today': "Твой день",
+    'home.seeAll': "Смотреть всё",
+    'quick.title': "Быстрые тренировки",
+    'quick.hint': "Разовая тренировка без изменения плана",
+    'quick.gym': "Зал",
+    'quick.home': "Дома",
+    'quick.line': "{min} мин · упражнений: {n}",
 };

@@ -2181,4 +2181,11 @@ export const ja: Dict = {
     'sources.topic.fasting': "断続的断食",
     'sources.topic.sleep': "睡眠",
     'sources.topic.food': "食品の栄養価",
+    'home.today': "今日",
+    'home.seeAll': "すべて見る",
+    'quick.title': "クイックワークアウト",
+    'quick.hint': "プランを変えずに単発のワークアウト",
+    'quick.gym': "ジム",
+    'quick.home': "自宅",
+    'quick.line': "{min}分 · {n}種目",
 };

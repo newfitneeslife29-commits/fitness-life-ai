@@ -2181,4 +2181,11 @@ export const nl: Dict = {
     'sources.topic.fasting': "Intermittent fasting",
     'sources.topic.sleep': "Slaap",
     'sources.topic.food': "Voedingswaarden van voedingsmiddelen",
+    'home.today': "Jouw dag",
+    'home.seeAll': "Alles bekijken",
+    'quick.title': "Snelle trainingen",
+    'quick.hint': "Een losse training, zonder je schema te wijzigen",
+    'quick.gym': "Sportschool",
+    'quick.home': "Thuis",
+    'quick.line': "{min} min · {n} oefeningen",
 };

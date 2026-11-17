@@ -2189,4 +2189,11 @@ export const es = {
     'sources.topic.fasting': "Ayuno intermitente",
     'sources.topic.sleep': "Sueño",
     'sources.topic.food': "Valores nutricionales de los alimentos",
+    'home.today': "Tu día",
+    'home.seeAll': "Ver todo",
+    'quick.title': "Entrenos rápidos",
+    'quick.hint': "Un entreno suelto, sin cambiar tu plan",
+    'quick.gym': "Gimnasio",
+    'quick.home': "En casa",
+    'quick.line': "{min} min · {n} ejercicios",
 };

@@ -2181,4 +2181,11 @@ export const zh: Dict = {
     'sources.topic.fasting': "间歇性断食",
     'sources.topic.sleep': "睡眠",
     'sources.topic.food': "食物营养成分",
+    'home.today': "今天",
+    'home.seeAll': "查看全部",
+    'quick.title': "快速训练",
+    'quick.hint': "单次训练，不改变你的计划",
+    'quick.gym': "健身房",
+    'quick.home': "在家",
+    'quick.line': "{min} 分钟 · {n} 个动作",
 };

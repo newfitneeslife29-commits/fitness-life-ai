@@ -2181,4 +2181,11 @@ export const hi: Dict = {
     'sources.topic.fasting': "इंटरमिटेंट फ़ास्टिंग",
     'sources.topic.sleep': "नींद",
     'sources.topic.food': "खाद्य पदार्थों के पोषण मान",
+    'home.today': "आपका दिन",
+    'home.seeAll': "सब देखें",
+    'quick.title': "झटपट वर्कआउट",
+    'quick.hint': "एक अलग वर्कआउट, आपका प्लान बदले बिना",
+    'quick.gym': "जिम",
+    'quick.home': "घर पर",
+    'quick.line': "{min} मिनट · {n} व्यायाम",
 };

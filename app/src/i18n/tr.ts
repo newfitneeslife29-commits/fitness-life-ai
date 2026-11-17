@@ -2181,4 +2181,11 @@ export const tr: Dict = {
     'sources.topic.fasting': "Aralıklı oruç",
     'sources.topic.sleep': "Uyku",
     'sources.topic.food': "Besinlerin besin değerleri",
+    'home.today': "Günün",
+    'home.seeAll': "Tümünü gör",
+    'quick.title': "Hızlı antrenmanlar",
+    'quick.hint': "Planını değiştirmeden tek seferlik antrenman",
+    'quick.gym': "Spor salonu",
+    'quick.home': "Evde",
+    'quick.line': "{min} dk · {n} egzersiz",
 };

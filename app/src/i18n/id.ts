@@ -2181,4 +2181,11 @@ export const id: Dict = {
     'sources.topic.fasting': "Puasa intermiten",
     'sources.topic.sleep': "Tidur",
     'sources.topic.food': "Nilai gizi makanan",
+    'home.today': "Harimu",
+    'home.seeAll': "Lihat semua",
+    'quick.title': "Latihan cepat",
+    'quick.hint': "Latihan sekali, tanpa mengubah rencanamu",
+    'quick.gym': "Gym",
+    'quick.home': "Di rumah",
+    'quick.line': "{min} mnt · {n} latihan",
 };
