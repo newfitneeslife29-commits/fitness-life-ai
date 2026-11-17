@@ -605,3 +605,15 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .game-screen .game-status { height: 40px; padding-top: 0; padding-bottom: 0; font-size: clamp(0.72rem, 3.4vw, 0.95rem); }
 .game-screen .status-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .game-screen .seat-row, .game-screen .control-bar { flex: none; }
+/* Mis cosas */
+.coll-head { display: flex; align-items: center; gap: 12px; width: min(100%, 560px); }
+.coll-icon { font-size: 2.2rem; }
+.coll-head b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.15rem; }
+.coll-head small { color: var(--text-soft); }
+.coll-tabs { display: flex; gap: 6px; overflow-x: auto; width: min(100%, 560px); padding-bottom: 4px; scrollbar-width: none; }
+.coll-tabs .chip-btn { white-space: nowrap; }
+.coll-tabs .chip-btn b { margin-left: 4px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 0 6px; }
+.coll-banner { display: flex; align-items: center; gap: 10px; width: min(100%, 560px); border: 0; color: inherit; font: inherit; cursor: pointer; padding: 10px 14px; text-align: left; background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(47, 123, 255, 0.3)); }
+.coll-banner > span:first-child { font-size: 1.6rem; }
+.coll-banner small { color: var(--text-soft); flex: 1; font-size: 0.75rem; }
+.coll-banner .chev { font-size: 1.4rem; opacity: 0.7; }

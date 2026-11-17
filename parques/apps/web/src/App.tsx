@@ -29,6 +29,7 @@ import { VipScreen } from './screens/VipScreen';
 import { ClubScreen } from './screens/ClubScreen';
 import { FlashScreen } from './screens/FlashScreen';
 import { ReplayScreen } from './screens/ReplayScreen';
+import { CollectionScreen } from './screens/CollectionScreen';
 import { startReplayRecorder } from './lib/replay';
 import { startNotifications } from './lib/notify';
 
@@ -60,6 +61,7 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   club: ClubScreen,
   flash: FlashScreen,
   replay: ReplayScreen,
+  collection: CollectionScreen,
 };
 
 /** Pantallas con su propio fondo (juego y victoria usan el del tablero). */

@@ -29,7 +29,7 @@ function untilMidnight(): string {
 }
 
 /** Vista previa 3D de un objeto. */
-function Preview({ it }: { it: Item }) {
+export function Preview({ it }: { it: Item }) {
   const p = useProfile();
   if (it.board) return <div className="si-board"><BoardMini theme={it.board} id={`shop-${it.id}`} /></div>;
   if (it.dice) return <div className="prev-dice"><DieFace value={5} skin={it.dice} size={48} /><DieFace value={6} skin={it.dice} size={48} /></div>;
@@ -116,6 +116,12 @@ export function ShopScreen() {
   return (
     <div className="screen shop-screen with-nav">
       <TopBar back title={t('Tienda')} />
+      <motion.button className="card glossy coll-banner" whileTap={{ scale: 0.97 }} onClick={() => { play('tap'); go('collection'); }}>
+        <span>🎒</span>
+        <b>{t('Mis cosas')}</b>
+        <small>{t('Tableros, dados y fichas que ya tienes')}</small>
+        <span className="chev">›</span>
+      </motion.button>
       {/* Banco: monedas y gemas siempre a la vista arriba */}
       <section className="bank-strip">
         <div className="bank-head">

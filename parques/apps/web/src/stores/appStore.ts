@@ -24,7 +24,8 @@ export type Screen =
   | 'vip'
   | 'club'
   | 'flash'
-  | 'replay';
+  | 'replay'
+  | 'collection';
 export type SetupMode = MatchConfig['mode'];
 
 interface AppStore {
