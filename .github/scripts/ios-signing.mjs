@@ -102,7 +102,19 @@ async function newCertificate(csr) {
         // Apple allows only a few distribution certificates at a time.
         console.log(`::warning::${e.message}. Removing every earlier CI certificate and trying again.`);
         await prune(0);
-        return api('POST', '/certificates', body);
+        try {
+            return await api('POST', '/certificates', body);
+        } catch (e2) {
+            // Still full: list the team's distribution certificates (read only),
+            // so it is clear which one to revoke.
+            const certs = await api('GET', '/certificates?limit=200').catch(() => ({ data: [] }));
+            console.log('Certificates of the team:');
+            for (const c of certs.data) {
+                const a = c.attributes;
+                console.log(`  ${a.certificateType} · ${a.displayName ?? a.name} · expires ${a.expirationDate?.slice(0, 10)}`);
+            }
+            throw e2;
+        }
     }
 }
 
