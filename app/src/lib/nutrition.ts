@@ -12,8 +12,13 @@ const PER_KG: Record<Goal, { kcal: number; protein: number; fat: number }> = {
     salud: { kcal: 30, protein: 1.6, fat: 0.8 },
 };
 
-// Activity outside training, plus the training itself (3–4 sessions a week).
-const ACTIVITY_FACTOR: Record<Activity, number> = { sedentario: 1.35, ligero: 1.5, moderado: 1.65, alto: 1.8 };
+// Activity outside training (the usual 1.2 / 1.375 / 1.55 / 1.725 multipliers),
+// plus the training itself: about 0.04 per weekly session, so 3 sessions add
+// roughly 200 kcal a day for an average adult.
+const ACTIVITY_BASE: Record<Activity, number> = { sedentario: 1.2, ligero: 1.375, moderado: 1.55, alto: 1.725 };
+const PER_SESSION = 0.04;
+export const activityFactor = (activity: Activity = 'ligero', daysPerWeek = 3) =>
+    Math.min(1.95, ACTIVITY_BASE[activity] + PER_SESSION * Math.min(7, Math.max(0, daysPerWeek)));
 
 // Daily surplus or deficit when there is no weight goal.
 const GOAL_ADJUST: Record<Goal, number> = { musculo: 250, fuerza: 150, grasa: -450, salud: 0 };
@@ -21,12 +26,26 @@ const GOAL_ADJUST: Record<Goal, number> = { musculo: 250, fuerza: 150, grasa: -4
 // Never suggest eating less than this.
 const MIN_KCAL: Record<Sex, number> = { hombre: 1500, mujer: 1200 };
 
-export const ageOf = (birthYear: number, now = new Date()) => now.getFullYear() - birthYear;
+// Kept to adult ranges: the equation is made for adults, and a typo in the
+// birth year shouldn't turn into a child's or a 120-year-old's targets.
+export const ageOf = (birthYear: number, now = new Date()) => Math.min(100, Math.max(15, now.getFullYear() - birthYear));
 
 export const bmr = (sex: Sex, weightKg: number, heightCm: number, age: number) =>
     10 * weightKg + 6.25 * heightCm - 5 * age + (sex === 'hombre' ? 5 : -161);
 
-export type TargetsProfile = Pick<Profile, 'goal'> & Partial<Pick<Profile, 'sex' | 'birthYear' | 'heightCm' | 'activity' | 'weightGoal'>>;
+export type TargetsProfile = Pick<Profile, 'goal'> & Partial<Pick<Profile, 'sex' | 'birthYear' | 'heightCm' | 'activity' | 'weightGoal' | 'daysPerWeek'>>;
+
+// Weight for the per-kg targets (protein, fat, water). With obesity (BMI over
+// 30) per-kg numbers on the full weight overshoot (2 g/kg at 130 kg is 260 g of
+// protein), so they use the adjusted body weight: the weight at BMI 22.5 plus
+// 40 % of the extra.
+export const referenceKg = (weightKg: number, heightCm?: number) => {
+    if (!heightCm) return weightKg;
+    const m2 = (heightCm / 100) ** 2;
+    if (weightKg / m2 <= 30) return weightKg;
+    const ideal = 22.5 * m2;
+    return ideal + 0.4 * (weightKg - ideal);
+};
 
 // Lose, keep or gain, from the weight goal (or the training goal without one).
 export const direction = (p: TargetsProfile, weightKg: number): 'bajar' | 'mantener' | 'subir' => {
@@ -43,18 +62,22 @@ const roundKcal = (kcal: number) => Math.round(kcal / 50) * 50;
 
 export const autoTargets = (profile: TargetsProfile, weightKg: number, now = new Date()): Macros => {
     const per = PER_KG[profile.goal];
+    const refKg = referenceKg(weightKg, profile.heightCm);
     let kcal: number;
     if (profile.sex && profile.birthYear && profile.heightCm) {
-        const tdee = bmr(profile.sex, weightKg, profile.heightCm, ageOf(profile.birthYear, now)) * ACTIVITY_FACTOR[profile.activity ?? 'ligero'];
+        const tdee = bmr(profile.sex, weightKg, profile.heightCm, ageOf(profile.birthYear, now)) * activityFactor(profile.activity, profile.daysPerWeek);
         const adjust = profile.weightGoal ? ADJUST[direction(profile, weightKg)] : GOAL_ADJUST[profile.goal];
         kcal = Math.max(MIN_KCAL[profile.sex], roundKcal(tdee + adjust));
     } else {
-        kcal = roundKcal(weightKg * per.kcal);
+        // Without height, age and sex: calories per kg, kept to a sane range.
+        kcal = Math.min(4500, Math.max(1200, roundKcal(weightKg * per.kcal)));
     }
     // Losing weight: keep protein high to hold on to muscle.
     const proteinPerKg = profile.weightGoal && direction(profile, weightKg) === 'bajar' ? Math.max(per.protein, 2.0) : per.protein;
-    const protein = Math.round(weightKg * proteinPerKg);
-    const fat = Math.round(weightKg * per.fat);
+    const protein = Math.round(refKg * proteinPerKg);
+    // Fat: the per-kg amount, but never under 20 % of the energy (hormones,
+    // vitamin absorption).
+    const fat = Math.round(Math.max(refKg * per.fat, (kcal * 0.2) / 9));
     const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
     return { kcal, protein, carbs, fat };
 };
@@ -120,11 +143,12 @@ export const GLASS_ML = 250;
 // a very active day, or with a high-protein diet (the kidneys need more water
 // for it). Rounded up to whole glasses.
 export const waterTargetMl = (
-    profile: { sex?: 'hombre' | 'mujer'; activity?: 'sedentario' | 'ligero' | 'moderado' | 'alto' },
+    profile: { sex?: 'hombre' | 'mujer'; activity?: 'sedentario' | 'ligero' | 'moderado' | 'alto'; heightCm?: number },
     weightKg: number | null,
     opts: { trained: boolean; proteinG?: number | null },
 ) => {
-    let ml = weightKg ? weightKg * 35 : profile.sex === 'mujer' ? 2000 : 2500;
+    // 35 ml per kg (the adjusted weight with obesity), at least 1.5 L.
+    let ml = weightKg ? Math.max(1500, referenceKg(weightKg, profile.heightCm) * 35) : profile.sex === 'mujer' ? 2000 : 2500;
     if (opts.trained) ml += 500;
     if (profile.activity === 'alto') ml += 250;
     if (weightKg && opts.proteinG && opts.proteinG / weightKg >= 1.8) ml += 250;

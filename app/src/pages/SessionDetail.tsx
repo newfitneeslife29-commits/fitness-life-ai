@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { confirm, toast } from '../components/feedback';
 import { Medal } from '../components/Medal';
+import { PremiumNudge } from '../components/PremiumNudge';
 import { Section, Stat } from '../components/ui';
 import { exerciseName, getExercise } from '../data/exercises';
 import { t, tp } from '../i18n';
@@ -137,6 +138,8 @@ export default function SessionDetail() {
                     </ul>
                 </Section>
             )}
+
+            {isNew && <Section><PremiumNudge workouts={sessions.length} /></Section>}
 
             <Section title={t('section.exercises')}>
                 <div className="space-y-2">

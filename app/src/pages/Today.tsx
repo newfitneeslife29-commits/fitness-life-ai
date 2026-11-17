@@ -1,88 +1,36 @@
-import { Apple, ArrowRight, BatteryCharging, Bot, CalendarDays, Check, ChevronRight, Clock, Columns2, Crown, Dumbbell, Flame, GraduationCap, Lightbulb, PartyPopper, Play, Plus, Share2, Sparkles, Target, Trophy, UserRound, Weight } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ArrowRight, Bot, Check, ChevronRight, Clock, Crown, Dumbbell, Gift, Flame, GraduationCap, PartyPopper, Play, Plus, Trophy } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { confirm } from '../components/feedback';
-import { Medal } from '../components/Medal';
-import { detailsMissing, ProfileDetailsSheet } from '../components/ProfileForm';
 import { Empty, HeroStat, Photo, Section } from '../components/ui';
 import { namedCover, routineCover } from '../data/covers';
 import { exerciseName } from '../data/exercises';
 import { locale, t, tp } from '../i18n';
-import { planName, routineName, sessionName } from '../lib/names';
-import { ACHIEVEMENTS, achievementTitle } from '../lib/achievements';
-import { useUnlocked } from '../lib/useAchievements';
-import { fmtDate, fmtNumber, fmtVolume, fmtWeight, greeting } from '../lib/format';
-import { autoTargets, goalProgress, liveGoal, mealsOn, sumMacros } from '../lib/nutrition';
+import { planName, routineName } from '../lib/names';
+import { fmtNumber, greeting } from '../lib/format';
+import { autoTargets, mealsOn, sumMacros, waterTargetMl } from '../lib/nutrition';
 import { fallbackPlan, usePremiumActive } from '../lib/premium';
-import { volume } from '../lib/progression';
 import { useStreak } from '../lib/streak';
 import { currentPause } from '../lib/pause';
 import { PauseBanner } from '../components/PauseCard';
 import { challengeDef, challengeName, challengeStatus } from '../lib/challenges';
-import { HealthCard } from '../components/HealthCard';
-import { MoveCard } from '../components/MoveCard';
 import { ShopCard } from '../components/ShopCard';
+import { PremiumKeepCard } from '../components/PremiumKeepCard';
 import { localDay } from '../lib/activity';
-import { stepsOn } from '../lib/movement';
-import { groupLabel, recoveryStatus } from '../lib/recovery';
-import { durationMin, sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
+import { stepGoalOf, stepsOn } from '../lib/movement';
+import { sessionsThisWeek, streakWeeks, weekStart } from '../lib/stats';
 import { actions, useStore } from '../store/store';
-import type { PlanUpdate, Routine, Session } from '../store/types';
+import type { PlanUpdate, Routine } from '../store/types';
 import { weekPhase } from '../lib/plan';
 import { useNow } from '../lib/useNow';
 import { estimateMinutes } from '../lib/reminders';
 import { WELCOME_STEPS, welcomeStatus } from '../lib/welcome';
 import { adventWorkout, isAdventKey, travelRoutine } from '../data/travel';
-import { SourcesLink } from '../components/SourcesLink';
 
-// Home: the next workout up front, then the week, the numbers, today's food and a daily tip.
-
-const TIPS = 12;
-
-// About how long a routine takes: every set plus its rest.
-
-// Numbers count up when the screen opens (not with reduced motion).
-const useCountUp = (target: number, ms = 700) => {
-    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const [value, setValue] = useState(reduce ? target : 0);
-    useEffect(() => {
-        if (reduce || target === 0) {
-            setValue(target);
-            return;
-        }
-        let frame = 0;
-        const start = performance.now();
-        const tick = (now: number) => {
-            const p = Math.min((now - start) / ms, 1);
-            setValue(Math.round(target * (1 - (1 - p) ** 3)));
-            if (p < 1) frame = requestAnimationFrame(tick);
-        };
-        frame = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(frame);
-    }, [target, ms, reduce]);
-    return value;
-};
-
-const CountUp = ({ value, format = fmtNumber }: { value: number; format?: (n: number) => string }) => <>{format(useCountUp(value))}</>;
-
-// Weekly goal as a segmented ring: one segment per planned day.
-const WeekRing = ({ done, target }: { done: number; target: number }) => {
-    const r = 34, c = 2 * Math.PI * r, gap = target > 1 ? 6 : 0;
-    const seg = c / target - gap;
-    return (
-        <svg viewBox="0 0 84 84" className="h-20 w-20 shrink-0 -rotate-90" role="img" aria-label={t('today.title', { done, target })}>
-            {Array.from({ length: target }, (_, i) => (
-                <circle key={i} cx={42} cy={42} r={r} fill="none" strokeWidth={9} strokeLinecap="round"
-                    className={`transition-colors duration-700 ${i < done ? 'stroke-brand' : 'stroke-ink-4'}`}
-                    strokeDasharray={`${Math.max(seg, 0.1)} ${c}`} strokeDashoffset={-i * (seg + gap)} />
-            ))}
-            <text x={42} y={-36} transform="rotate(90)" textAnchor="middle" fontSize={20} fontWeight={700} className="fill-white">
-                {Math.min(done, target)}/{target}
-            </text>
-        </svg>
-    );
-};
+// Home, kept short: the next workout up front, today at a glance (week,
+// food, water, steps), the AI trainer and one promotion. The rest lives in
+// Progress and Nutrition.
 
 // Monday to Sunday: trained days filled, today outlined.
 const WeekStrip = ({ trained }: { trained: Set<number> }) => {
@@ -110,14 +58,6 @@ const WeekStrip = ({ trained }: { trained: Set<number> }) => {
     );
 };
 
-const Tile = ({ icon, value, label, delay, color }: { icon: ReactNode; value: ReactNode; label: string; delay: number; color: string }) => (
-    <div className="welcome-in card p-3.5" style={{ animationDelay: `${delay}ms` }}>
-        <span className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-snow shadow-md ${color}`}>{icon}</span>
-        <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
-        <p className="text-xs text-white/50">{label}</p>
-    </div>
-);
-
 const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onStart: () => void; continuing: boolean }) => {
     const { plan, routines } = useStore();
     const planRoutines = (plan?.routineIds ?? []).map(id => routines.find(r => r.id === id)).filter((r): r is Routine => !!r);
@@ -143,108 +83,80 @@ const NextWorkout = ({ routine, onStart, continuing }: { routine: Routine; onSta
     );
 };
 
-const NutritionToday = () => {
-    const { profile, meals, nutritionTargets, bodyWeights } = useStore();
-    const weightKg = bodyWeights[0]?.weightKg;
-    const targets = nutritionTargets ?? (weightKg && profile ? autoTargets(profile, weightKg) : null);
-    const eaten = sumMacros(mealsOn(meals, new Date()));
-    if (!targets) {
-        return (
-            <Link to="/nutricion" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><Apple size={20} /></span>
-                <p className="min-w-0 flex-1 text-sm text-white/70">{t('home.setupNutrition')}</p>
-                <ChevronRight className="shrink-0 text-white/40" />
-            </Link>
-        );
-    }
-    const left = targets.kcal - eaten.kcal;
-    const pct = (n: number, of: number) => `${of > 0 ? Math.min((n / of) * 100, 100) : 0}%`;
+// A small progress ring with the number in the middle.
+const MiniRing = ({ pct, color, children }: { pct: number; color: string; children: ReactNode }) => {
+    const r = 26, c = 2 * Math.PI * r;
     return (
-        <Link to="/nutricion" className="card block p-4 hover:bg-ink-3">
-            <div className="flex items-baseline justify-between">
-                <p className="text-2xl font-bold tabular-nums"><CountUp value={Math.abs(left)} /></p>
-                <p className={`text-sm ${left < 0 ? 'text-red-400' : 'text-white/55'}`}>{left < 0 ? t('nutrition.kcalOver') : t('nutrition.kcalLeft')}</p>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink-4">
-                <div className={`h-full rounded-full transition-[width] duration-700 ${left < 0 ? 'bg-red-400' : 'bg-brand'}`} style={{ width: pct(eaten.kcal, targets.kcal) }} />
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-white/55">
-                <span>{t('macro.protein')}</span>
-                <span className="tabular-nums">{fmtNumber(eaten.protein)} / {fmtNumber(targets.protein)} g</span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-4">
-                <div className="h-full rounded-full bg-sky-400 transition-[width] duration-700" style={{ width: pct(eaten.protein, targets.protein) }} />
-            </div>
-        </Link>
+        <span className="relative flex h-[62px] w-[62px] items-center justify-center">
+            <svg viewBox="0 0 62 62" className="absolute inset-0 -rotate-90" aria-hidden>
+                <circle cx={31} cy={31} r={r} fill="none" strokeWidth={6} className="stroke-ink-4" />
+                <circle cx={31} cy={31} r={r} fill="none" strokeWidth={6} strokeLinecap="round" className={`${color} transition-[stroke-dasharray] duration-700`}
+                    strokeDasharray={`${Math.max(0.001, Math.min(1, pct)) * c} ${c}`} />
+            </svg>
+            <span className="relative text-[13px] font-extrabold tabular-nums leading-none">{children}</span>
+        </span>
     );
 };
 
-// The weight goal: how far along it is, or a nudge to set it (and the
-// details the calorie targets need).
-const WeightGoalCard = () => {
-    const { profile, bodyWeights } = useStore();
-    const [editing, setEditing] = useState(false);
+// Today at a glance: the week, food, protein, water and steps, each one a tap
+// away from its screen.
+const DayCard = ({ trained, thisWeek }: { trained: Set<number>; thisWeek: number }) => {
+    const state = useStore();
+    const { profile, meals, nutritionTargets, bodyWeights, sessions } = state;
+    const now = useNow(true, 60_000);
     if (!profile) return null;
-    const unit = profile.unit;
-    const current = bodyWeights[0]?.weightKg;
-    const savedGoal = profile.weightGoal;
-    const sheet = <ProfileDetailsSheet open={editing} onClose={() => setEditing(false)} />;
-
-    const prompt = (title: string, hint: string, icon: ReactNode) => (
-        <>
-            <button onClick={() => setEditing(true)} className="card flex w-full items-center gap-3 p-4 text-left hover:bg-ink-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">{icon}</span>
-                <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{title}</span>
-                    <span className="block text-sm text-white/55">{hint}</span>
-                </span>
-                <ChevronRight className="shrink-0 text-white/40" />
-            </button>
-            {sheet}
-        </>
+    const day = new Date(now);
+    const weightKg = bodyWeights[0]?.weightKg ?? null;
+    const targets = nutritionTargets ?? (weightKg ? autoTargets(profile, weightKg) : null);
+    const eaten = sumMacros(mealsOn(meals, day));
+    const trainedToday = sessions.some(x => new Date(x.startedAt).toDateString() === day.toDateString());
+    const waterDrunk = state.water?.[localDay(day)] ?? 0;
+    const waterTarget = waterTargetMl(profile, weightKg, { trained: trainedToday, proteinG: targets?.protein });
+    const steps = stepsOn(state, localDay(day));
+    const stepGoal = stepGoalOf(state);
+    const left = targets ? targets.kcal - eaten.kcal : null;
+    // The first running 30-day challenge, in one line.
+    const challenge = (state.challenges ?? []).map(j => ({ j, st: challengeDef(j.id) ? challengeStatus(j, state) : null }))
+        .find(x => x.st?.state === 'running');
+    const tile = (to: string, ring: ReactNode, label: string) => (
+        <Link to={to} className="flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center active:scale-[0.97]">
+            {ring}
+            <span className="text-[11px] font-medium leading-tight text-white/55">{label}</span>
+        </Link>
     );
-    if (detailsMissing(profile)) return prompt(t('profileDetails.incomplete'), t('profileDetails.incompleteHint'), <UserRound size={20} />);
-    if (!savedGoal) return prompt(t('weightGoal.set'), t('weightGoal.setHint'), <Target size={20} />);
-    if (current === undefined) {
-        return (
-            <Link to="/progreso" className="card flex items-center gap-3 p-4 hover:bg-ink-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><Weight size={20} /></span>
-                <p className="min-w-0 flex-1 text-sm text-white/70">{t('weightGoal.logWeight')}</p>
-                <ChevronRight className="shrink-0 text-white/40" />
-            </Link>
-        );
-    }
-
-    const goal = liveGoal(savedGoal, current);
-    const keep = Math.abs(goal.targetKg - goal.startKg) < 0.1;
-    const progress = goalProgress(goal, current);
-    const left = Math.abs(goal.targetKg - current);
-    const reached = !keep && (progress >= 1 || left < 0.25);
     return (
-        <>
-            <button onClick={() => setEditing(true)} className="card block w-full p-4 text-left hover:bg-ink-3">
-                <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-2xl font-bold tabular-nums">{fmtWeight(current, unit)}</p>
-                    <p className="flex items-center gap-1 text-sm text-white/55"><Target size={14} /> {fmtWeight(goal.targetKg, unit)}</p>
-                </div>
-                {keep ? (
-                    <p className="mt-1 text-sm text-white/55">{t('weightGoal.keep', { weight: fmtWeight(goal.targetKg, unit) })}</p>
-                ) : (
-                    <>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink-4">
-                            <div className={`h-full rounded-full transition-[width] duration-700 ${reached ? 'bg-good' : 'bg-brand'}`} style={{ width: `${Math.round(progress * 100)}%` }} />
-                        </div>
-                        <p className={`mt-2 text-sm ${reached ? 'font-semibold text-good' : 'text-white/55'}`}>
-                            {reached ? t('weightGoal.reached') : `${t('weightGoal.progress', {
-                                done: fmtWeight(progress * Math.abs(goal.targetKg - goal.startKg), unit),
-                                total: fmtWeight(Math.abs(goal.targetKg - goal.startKg), unit),
-                            })} · ${t('weightGoal.left', { n: fmtWeight(left, unit) })}`}
-                        </p>
-                    </>
-                )}
-            </button>
-            {sheet}
-        </>
+        <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>
+            <div className="flex items-center justify-between gap-3">
+                <h2 className="font-bold leading-snug">
+                    {thisWeek >= profile.daysPerWeek ? t('today.weekDone') : t('today.title', { done: thisWeek, target: profile.daysPerWeek })}
+                </h2>
+                <Link to="/actividad" className="shrink-0 text-xs font-semibold text-brand">{t('home.seeAll')}</Link>
+            </div>
+            <WeekStrip trained={trained} />
+            <div className="mt-4 grid grid-cols-4 gap-1 border-t border-line pt-4">
+                {tile('/nutricion', (
+                    <MiniRing pct={targets ? eaten.kcal / targets.kcal : 0} color={left !== null && left < 0 ? 'stroke-red-400' : 'stroke-brand'}>
+                        {left === null ? fmtNumber(eaten.kcal) : fmtNumber(Math.abs(left))}
+                    </MiniRing>
+                ), left === null ? t('nutrition.heroEaten') : left < 0 ? t('nutrition.kcalOver') : t('nutrition.heroLeft'))}
+                {tile('/nutricion', (
+                    <MiniRing pct={targets ? eaten.protein / targets.protein : 0} color="stroke-sky-400">{fmtNumber(eaten.protein)}g</MiniRing>
+                ), t('macro.protein'))}
+                {tile('/nutricion', (
+                    <MiniRing pct={waterDrunk / waterTarget} color="stroke-cyan-400">{(waterDrunk / 1000).toLocaleString(locale(), { maximumFractionDigits: 1 })}L</MiniRing>
+                ), t('water.title'))}
+                {tile('/movimiento', (
+                    <MiniRing pct={steps / stepGoal} color="stroke-emerald-400">{steps >= 10_000 ? `${Math.floor(steps / 1000)}k` : fmtNumber(steps)}</MiniRing>
+                ), t('home.heroSteps'))}
+            </div>
+            {challenge?.st && (
+                <Link to="/retos" className="mt-3 flex items-center gap-2 rounded-xl bg-amber-400/10 px-3 py-2 text-sm hover:bg-amber-400/15">
+                    <Trophy size={16} className="shrink-0 text-amber-500" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{challengeName(challenge.j.id)} · {t('challenges.progress', { n: challenge.st.progress, target: challenge.st.target })}</span>
+                    <ChevronRight size={16} className="shrink-0 text-white/40" />
+                </Link>
+            )}
+        </div>
     );
 };
 
@@ -356,48 +268,12 @@ const TrainerCard = ({ premium }: { premium: boolean }) => (
         <span className="relative min-w-0 flex-1">
             <span className="flex items-center gap-2 font-bold">
                 {t('trainer.title')}
-                {!premium && <span className="flex items-center gap-1 rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-bold text-neutral-900"><Crown size={11} /> Premium</span>}
+                {!premium && <span className="flex items-center gap-1 rounded-full bg-snow px-2 py-0.5 text-[11px] font-bold text-violet-700"><Gift size={11} /> {t('trainer.tryFree')}</span>}
             </span>
             <span className="block text-sm text-snow/85">{t('trainer.homeHint')}</span>
         </span>
         <ChevronRight className="relative shrink-0" />
     </Link>
-);
-
-// Which muscle groups are rested (green) and how long the others need.
-const RecoveryCard = ({ sessions }: { sessions: Session[] }) => {
-    const now = useNow(true, 60_000);
-    const status = recoveryStatus(sessions, now);
-    if (!status.length) return null;
-    return (
-        <div className="card p-4">
-            <div className="flex flex-wrap gap-2">
-                {status.map(s => (
-                    <span key={s.group} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${s.ready ? 'bg-good/15 text-good' : 'bg-amber-400/15 text-warn'}`}>
-                        {s.ready ? <Check size={14} strokeWidth={3} /> : <BatteryCharging size={14} />}
-                        <span className="capitalize">{groupLabel(s.group)}</span>
-                        <span className="text-xs opacity-80">{s.ready ? t('recovery.ready') : t('recovery.left', { hours: Math.ceil((s.readyAt - now) / 3_600_000) })}</span>
-                    </span>
-                ))}
-            </div>
-            <p className="mt-2 text-xs text-white/45">{t('recovery.hint')}</p>
-        </div>
-    );
-};
-
-const ShareLinks = () => (
-    <div className="grid grid-cols-2 gap-2">
-        <Link to="/wrapped" className="card flex flex-col gap-2 p-3 hover:bg-ink-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-fuchsia-500 text-snow"><Share2 size={20} /></span>
-            <span className="font-semibold leading-tight">{t('wrapped.cardTitle')}</span>
-            <span className="text-xs text-white/50">{t('wrapped.cardHint')}</span>
-        </Link>
-        <Link to="/antes-despues" className="card flex flex-col gap-2 p-3 hover:bg-ink-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-snow"><Columns2 size={20} /></span>
-            <span className="font-semibold leading-tight">{t('compare.title')}</span>
-            <span className="text-xs text-white/50">{t('compare.cardHint')}</span>
-        </Link>
-    </div>
 );
 
 // Shown once after a completed week moved the plan on.
@@ -423,20 +299,6 @@ const PlanUpdateCard = ({ update }: { update: PlanUpdate }) => (
     </div>
 );
 
-// Women's section, on the home screen for women.
-const WomenCard = () => (
-    <Link to="/mujeres" className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-pink-600 p-4 text-snow shadow-lg shadow-pink-500/20 active:scale-[0.99]">
-        <Photo photo={namedCover('mujer-disco')} />
-        <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-pink-700/95 via-rose-600/75 to-fuchsia-600/20" />
-        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/20 backdrop-blur"><Sparkles size={22} /></span>
-        <span className="relative min-w-0 flex-1">
-            <span className="block font-bold">{t('women.card')}</span>
-            <span className="block text-sm text-snow/90">{t('women.cardHint')}</span>
-        </span>
-        <ChevronRight className="relative shrink-0" />
-    </Link>
-);
-
 // For free users: what Premium unlocks, one tap away.
 const PremiumBanner = () => (
     <Link to="/premium" className="welcome-in flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-amber-600 p-4 text-snow shadow-lg shadow-brand/25 transition active:scale-[0.99]" style={{ animationDelay: '60ms' }}>
@@ -450,40 +312,19 @@ const PremiumBanner = () => (
 );
 
 export default function Today() {
-    const { profile, plan, routines, sessions, active, seenAchievements } = useStore();
+    const { profile, plan, routines, sessions, active } = useStore();
     const navigate = useNavigate();
     const premium = usePremiumActive();
-    const unlocked = useUnlocked();
     const week = useMemo(() => sessionsThisWeek(sessions), [sessions]);
-    const activeDays = useStore(s => s.activeDays);
-    const stepsMap = useStore(s => s.steps);
-    const cardio = useStore(s => s.cardio);
     const activity = useStreak();
-    // The first running challenge, in one line.
-    const joined = useStore(s => s.challenges);
-    const challengeLine = useMemo(() => {
-        for (const j of joined ?? []) {
-            if (!challengeDef(j.id)) continue;
-            const st = challengeStatus(j, { sessions, cardio, steps: stepsMap, activeDays });
-            if (st.state === 'running') return `${challengeName(j.id)} · ${t('challenges.progress', { n: st.progress, target: st.target })}`;
-        }
-        return null;
-    }, [joined, sessions, cardio, stepsMap, activeDays]);
     if (!profile) return null;
 
     const next = plan ? routines.find(r => r.id === plan.routineIds[plan.nextIndex]) : undefined;
     const thisWeek = week.length;
     const trainedDays = new Set(week.map(s => (new Date(s.startedAt).getDay() + 6) % 7));
-    const weekMinutes = week.reduce((m, s) => m + durationMin(s), 0);
-    const weekVolume = week.reduce((v, s) => v + volume(s.sets), 0);
     const streak = streakWeeks(sessions);
-    const lastSession = sessions[0];
-    const latestMedal = [...unlocked.values()].sort((a, b) => b.date.localeCompare(a.date))[0];
-    const unseen = [...unlocked.keys()].filter(id => !seenAchievements.includes(id)).length;
     const now = new Date();
     const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86_400_000);
-    const tip = (dayOfYear % TIPS) + 1;
-    const stepsToday = stepsOn({ steps: stepsMap, cardio }, localDay(now));
 
     const start = async (routineId: string | null, given?: Routine) => {
         if (active && (active.routineId === routineId || !(await confirm({ title: t('active.confirm.title'), message: t('active.confirm.message'), confirmLabel: t('active.confirm.start'), danger: true })))) {
@@ -514,7 +355,7 @@ export default function Today() {
                 </div>
                 <div className="relative mt-4 grid grid-cols-3 gap-2">
                     <HeroStat value={`${Math.min(thisWeek, profile.daysPerWeek)}/${profile.daysPerWeek}`} label={t('home.heroWeek')} />
-                    <HeroStat value={fmtNumber(stepsToday)} label={t('home.heroSteps')} />
+                    <HeroStat value={fmtNumber(streak)} label={t('progress.heroStreak')} />
                     <HeroStat value={fmtNumber(sessions.length)} label={t('home.heroTotal')} />
                 </div>
             </header>
@@ -540,118 +381,19 @@ export default function Today() {
 
             {profile.createdAt && <WelcomeCard startedAt={profile.createdAt} />}
 
+            {premium && <Section><PremiumKeepCard /></Section>}
+
+            <Section title={t('home.today')}>
+                <DayCard trained={trainedDays} thisWeek={thisWeek} />
+            </Section>
+
             {profile.level === 'principiante' && sessions.length < 6 && <Section><BeginnerCard /></Section>}
 
             <Section><TrainerCard premium={premium} /></Section>
 
-            {profile.sex === 'mujer' && <Section><WomenCard /></Section>}
-
-            {!premium && <Section><PremiumBanner /></Section>}
-
-            <Section><ShopCard /></Section>
-
-            <Section title={t('home.week')}>
-                <div className="welcome-in card p-4" style={{ animationDelay: '80ms' }}>
-                    <div className="flex items-center gap-4">
-                        <div className="min-w-0 flex-1">
-                            <h2 className="text-lg font-bold leading-snug">
-                                {thisWeek >= profile.daysPerWeek ? t('today.weekDone') : t('today.title', { done: thisWeek, target: profile.daysPerWeek })}
-                            </h2>
-                            <p className="mt-0.5 text-sm text-white/50">
-                                {thisWeek >= profile.daysPerWeek ? t('today.weekDoneHint') : tp('today.left', profile.daysPerWeek - thisWeek)}
-                            </p>
-                        </div>
-                        <WeekRing done={thisWeek} target={profile.daysPerWeek} />
-                    </div>
-                    <WeekStrip trained={trainedDays} />
-                </div>
-            </Section>
-
-            <Section><MoveCard /></Section>
-
-            <Section><HealthCard /></Section>
-
-            {sessions.length > 0 && (
-                <Section title={t('recovery.title')} action={<SourcesLink topics={['strength']} />}>
-                    <RecoveryCard sessions={sessions} />
-                </Section>
-            )}
-
-            <Section title={t('weightGoal.title')} action={<SourcesLink topics={['weight', 'calories']} />}>
-                <WeightGoalCard />
-            </Section>
-
-            <Section title={t('home.stats')}>
-                <div className="grid grid-cols-2 gap-2">
-                    <Tile delay={120} color="from-brand to-amber-500 shadow-brand/30" icon={<Flame size={16} />} value={<CountUp value={streak} />} label={tp('today.streak', streak)} />
-                    <Tile delay={160} color="from-amber-400 to-yellow-500 shadow-amber-400/30" icon={<Trophy size={16} />} value={<CountUp value={sessions.length} />} label={t('today.total')} />
-                    <Tile delay={200} color="from-sky-500 to-indigo-500 shadow-sky-500/30" icon={<Clock size={16} />} value={<CountUp value={weekMinutes} />} label={t('home.weekMinutes')} />
-                    <Tile delay={240} color="from-violet-500 to-fuchsia-500 shadow-violet-500/30" icon={<Weight size={16} />} value={<CountUp value={Math.round(weekVolume)} format={n => fmtVolume(n, profile.unit)} />} label={t('home.weekVolume')} />
-                </div>
-                <Link to="/actividad" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-snow"><CalendarDays size={20} /></span>
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{t('activity.card')}</p>
-                        <p className="text-sm text-white/50">{t('activity.cardLine', { active: tp('activity.days', activity.activeThisMonth), streak: tp('activity.days', activity.activeStreak) })}</p>
-                    </div>
-                    <ChevronRight className="shrink-0 text-white/40" />
-                </Link>
-                <Link to="/retos" className="card mt-2 flex items-center gap-3 p-3 hover:bg-ink-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-snow"><Trophy size={20} /></span>
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{t('challenges.title')}</p>
-                        <p className="text-sm text-white/50">{challengeLine ?? t('challenges.cardHint')}</p>
-                    </div>
-                    <ChevronRight className="shrink-0 text-white/40" />
-                </Link>
-            </Section>
-
-            {sessions.length > 0 && <Section title={t('share.section')}><ShareLinks /></Section>}
-
-            <Section title={t('home.nutrition')} action={<SourcesLink topics={['calories', 'protein']} />}>
-                <NutritionToday />
-            </Section>
-
-            <Section>
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 via-orange-400 to-rose-400 p-4 text-neutral-900 shadow-lg shadow-amber-400/25">
-                    <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-snow/30 blur-xl" />
-                    <p className="relative mb-1 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider"><Lightbulb size={15} /> {t('home.tip')}</p>
-                    <p className="relative text-[15px] font-medium leading-relaxed">{t(`tip.${tip}` as Parameters<typeof t>[0])}</p>
-                </div>
-            </Section>
-
-            <Section title={t('nav.achievements')}>
-                <Link to="/logros" className="card flex items-center gap-3 p-3 hover:bg-ink-3">
-                    {latestMedal
-                        ? <Medal achievement={ACHIEVEMENTS.find(a => a.id === latestMedal.id)!} unlocked />
-                        : <Medal achievement={ACHIEVEMENTS[0]} unlocked={false} />}
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">
-                            {latestMedal ? achievementTitle(ACHIEVEMENTS.find(a => a.id === latestMedal.id)!) : t('today.firstMedal')}
-                        </p>
-                        <p className="text-sm text-white/50">{t('achievements.count', { n: unlocked.size, total: ACHIEVEMENTS.length })}</p>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-4">
-                            <div className="h-full rounded-full bg-brand transition-[width] duration-700" style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />
-                        </div>
-                    </div>
-                    {unseen > 0 && <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">{tp('today.newMedals', unseen)}</span>}
-                    <ChevronRight className="shrink-0 text-white/40" />
-                </Link>
-            </Section>
-
-            {lastSession && (
-                <Section title={t('today.last')}>
-                    <Link to={`/sesion/${lastSession.id}`} className="card flex items-center justify-between gap-3 p-4 hover:bg-ink-3">
-                        <div className="min-w-0">
-                            <p className="truncate font-semibold">{sessionName(lastSession)}</p>
-                            <p className="text-sm text-white/50">
-                                {fmtDate(lastSession.startedAt)} · {durationMin(lastSession)} min · {fmtVolume(volume(lastSession.sets), profile.unit)}
-                            </p>
-                        </div>
-                        <ChevronRight className="shrink-0 text-white/40" />
-                    </Link>
-                </Section>
-            )}
+            {/* One promotion at a time. Premium waits until they have trained twice
+                (value first), then takes turns with the shop. */}
+            <Section>{!premium && sessions.length >= 2 && dayOfYear % 2 === 0 ? <PremiumBanner /> : <ShopCard />}</Section>
         </div>
     );
 }

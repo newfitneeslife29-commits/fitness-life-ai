@@ -4,7 +4,7 @@ import { setLang, t, tp } from '../i18n';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
 import { pt } from '../i18n/pt';
-import { autoTargets, bmr, goalProgress, liveGoal, kcalFromMacros, mealsOn, onDay, sumMacros, weeksToGoal } from './nutrition';
+import { activityFactor, ageOf, autoTargets, bmr, referenceKg, waterTargetMl, goalProgress, liveGoal, kcalFromMacros, mealsOn, onDay, sumMacros, weeksToGoal } from './nutrition';
 import { existsSync } from 'node:fs';
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
@@ -78,6 +78,32 @@ describe('nutrition', () => {
         // Never below a safe floor.
         const small = autoTargets({ goal: 'grasa', sex: 'mujer', birthYear: 1950, heightCm: 150, activity: 'sedentario' }, 45, now);
         expect(small.kcal).toBe(1200);
+    });
+
+    it('counts training days in the activity factor', () => {
+        expect(activityFactor('ligero', 3)).toBeCloseTo(1.495);
+        expect(activityFactor('sedentario', 0)).toBeCloseTo(1.2);
+        expect(activityFactor('alto', 6)).toBeCloseTo(1.95);
+        const now = new Date(2026, 9, 9);
+        const base = { goal: 'salud' as const, sex: 'mujer' as const, birthYear: 1996, heightCm: 165, activity: 'ligero' as const };
+        expect(autoTargets({ ...base, daysPerWeek: 6 }, 60, now).kcal).toBeGreaterThan(autoTargets({ ...base, daysPerWeek: 2 }, 60, now).kcal);
+    });
+
+    it('keeps per-kg targets sane with obesity, and ages to adult ranges', () => {
+        // 130 kg at 175 cm (BMI 42): adjusted weight 68.9 + 0.4 × 61.1 = 93.4 kg.
+        expect(referenceKg(130, 175)).toBeCloseTo(93.36, 1);
+        expect(referenceKg(80, 180)).toBe(80);
+        const now = new Date(2026, 9, 9);
+        const big = autoTargets({ goal: 'grasa', sex: 'hombre', birthYear: 1990, heightCm: 175, activity: 'ligero', daysPerWeek: 3 }, 130, now);
+        expect(big.protein).toBe(187); // not 260
+        expect(Math.abs(kcalFromMacros(big) - big.kcal)).toBeLessThan(5);
+        expect(big.carbs).toBeGreaterThan(100);
+        // Fat never under 20 % of the energy.
+        const lean = autoTargets({ goal: 'salud' }, 50);
+        expect(lean.fat * 9).toBeGreaterThanOrEqual(lean.kcal * 0.2 - 9);
+        expect(ageOf(2024, now)).toBe(15);
+        expect(ageOf(1900, now)).toBe(100);
+        expect(waterTargetMl({ heightCm: 175 }, 130, { trained: false })).toBeLessThan(130 * 35);
     });
 
     it('estimates time and progress towards a weight goal', () => {

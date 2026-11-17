@@ -4,7 +4,8 @@ import type { CatalogExercise, TrainerContext } from './ai';
 import { planName, routineName, sessionName } from './names';
 import { ageOf } from './nutrition';
 import { weekPhase } from './plan';
-import { sessionsThisWeek, streakWeeks } from './stats';
+import { lastPerformance, sessionsThisWeek, strengthGains, streakWeeks } from './stats';
+import { personalRecords } from './progression';
 import type { AppState, LoggedSet, Session, Setup } from '../store/types';
 
 // What the personal trainer knows: the profile, the current plan and the
@@ -35,7 +36,24 @@ export const trainerContext = (state: AppState): TrainerContext => {
         ...(custom.length ? [`Own routines: ${custom.map(r => routineName(r)).join(', ')}`] : []),
     ].join('\n');
     const sessions = [...state.sessions].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+    // The next workout with what the user did last time on each exercise, so
+    // "what do I lift today" gets real numbers.
+    const next = state.plan ? state.routines.find(r => r.id === state.plan!.routineIds[state.plan!.nextIndex]) : undefined;
+    const nextText = next ? [
+        `Next workout: ${routineName(next)}`,
+        ...next.exercises.map(e => {
+            const last = lastPerformance(sessions, e.exerciseId).filter(x => !x.warmup);
+            return `- ${exerciseName(e.exerciseId)} ${e.sets}×${e.repMin}–${e.repMax}${getExercise(e.exerciseId)?.timed ? ' s' : ''}; last time: ${last.length ? last.map(x => setText(e.exerciseId, x)).join(', ') : 'never done'}`;
+        }),
+    ].join('\n') : '';
+    const records = [...personalRecords(sessions.flatMap(x => x.sets)).values()]
+        .filter(r => r.bestWeightKg > 0).sort((a, b) => b.bestE1rm - a.bestE1rm).slice(0, 6)
+        .map(r => `${exerciseName(r.exerciseId)} ${fmtKg(r.bestWeightKg)} kg×${r.repsAtBestWeight} (est. 1RM ${fmtKg(r.bestE1rm)} kg)`);
+    const gains = strengthGains(sessions).map(g => `${exerciseName(g.exerciseId)} ${g.change >= 0 ? '+' : ''}${Math.round(g.change * 100)}%`);
     const history = [
+        ...(nextText ? [nextText] : []),
+        ...(records.length ? [`Best lifts: ${records.join('; ')}`] : []),
+        ...(gains.length ? [`Strength change since their first sessions: ${gains.join(', ')}`] : []),
         `Workouts logged: ${sessions.length}; this week: ${sessionsThisWeek(sessions).length} of ${p.daysPerWeek}; streak: ${streakWeeks(sessions)} weeks`,
         ...sessions.slice(0, RECENT).map(sessionText),
     ].join('\n');
