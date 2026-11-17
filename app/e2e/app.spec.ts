@@ -273,9 +273,9 @@ test('plate calculator, achievements, notes and body weight', async ({ page }) =
     // Plus the first weigh-in, logged at sign-up (shown in Progress).
     await page.getByRole('link', { name: 'Progreso', exact: true }).click();
     await expect(page.getByText(/^2 de \d+ conseguidos$/)).toBeVisible();
-    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
 
-    await page.getByRole('link', { name: 'Último entreno' }).or(page.getByRole('link', { name: /Cuerpo completo A/ })).first().click();
+    // The workout, from the history.
+    await page.getByRole('link', { name: /Cuerpo completo A/ }).first().click();
     await expect(page.getByLabel('Notas del entreno')).toHaveValue('Buenas sensaciones');
 
     await page.getByRole('link', { name: 'Progreso', exact: true }).click();
@@ -2364,13 +2364,16 @@ test('the Fitness Life Edition store opens from the home screen and from setting
     await expect(page.getByText('10% de descuento por usar la app · APP10')).toBeVisible();
     await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
     const shop = await fromHome;
+    await shop.waitForLoadState();
     // The link carries the app users' discount and lands on the home page with the app's utm tags.
     expect(shop.url()).toContain('https://fitnesslifeedition.com/discount/APP10?redirect=%2F%3Futm_source%3Dfitness-life-app');
     await shop.close();
     await page.goto('/#/ajustes');
     const fromSettings = page.waitForEvent('popup');
     await page.getByRole('button', { name: /Tienda Fitness Life Edition/ }).click();
-    expect((await fromSettings).url()).toContain('fitnesslifeedition.com');
+    const settingsShop = await fromSettings;
+    await settingsShop.waitForLoadState();
+    expect(settingsShop.url()).toContain('fitnesslifeedition.com');
 });
 
 test('steps: log a past day by hand and see it in the history', async ({ page }) => {
@@ -2418,7 +2421,9 @@ test('a finished 30-day challenge earns a store discount, and the streak protect
     await expect(page.getByText(/Código: CHALLENGE15/)).toBeVisible();
     const shop = page.waitForEvent('popup');
     await page.getByRole('button', { name: 'Usar mi premio' }).click();
-    expect((await shop).url()).toContain('fitnesslifeedition.com/discount/CHALLENGE15');
+    const reward = await shop;
+    await reward.waitForLoadState();
+    expect(reward.url()).toContain('fitnesslifeedition.com/discount/CHALLENGE15');
 
     // The missed day didn't break the streak.
     await page.goto('/#/actividad');
