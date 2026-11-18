@@ -16,7 +16,10 @@ export const ANIM_MS = {
   soplo: 1300,
   turn: 120,
   forfeit: 400,
-  jailFail: 180,
+  /** Intento fallido de salir de la cárcel (se ve el resultado y cuántos quedan). */
+  jailFail: 650,
+  /** Último intento fallido: aviso "sin par" antes de pasar el turno. */
+  jailOut: 1300,
   left: 900,
   finished: 500,
 };
@@ -35,7 +38,7 @@ export function animDuration(events: GameEvent[]): number {
         ms += ANIM_MS.roll;
         break;
       case 'JAIL_ATTEMPT_FAILED':
-        ms += ANIM_MS.jailFail;
+        ms += e.attemptsLeft > 0 ? ANIM_MS.jailFail : ANIM_MS.jailOut;
         break;
       case 'EXITED_JAIL':
         ms += ANIM_MS.exit;

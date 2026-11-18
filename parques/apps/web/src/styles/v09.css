@@ -690,3 +690,12 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 @keyframes pc-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 .pc-ring { animation: pulse-ring 0.9s ease-in-out infinite; }
 @keyframes pulse-ring { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+/* Tablero plano (sin inclinación 3D): con 3D el iPhone calculaba mal dónde caía el toque y la ficha no se movía. */
+.board-svg, .game-screen .board-svg { transform: none !important; will-change: auto !important; }
+.board-top { transform: none; pointer-events: none; }
+.board-stack { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+/* Los recuadros de los jugadores se montan un poco sobre el tablero: no deben robarle el toque a las fichas. */
+.game-screen .seat-row, .game-screen .seat { pointer-events: none; }
+.game-screen .seat button, .game-screen .seat .seat-dicebox, .game-screen .seat .seat-emote { pointer-events: auto; }
+.game-screen .banner, .game-screen .banner * { pointer-events: none; }
+.seat-jailtry { position: absolute; bottom: -11px; right: 12px; z-index: 5; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 900; white-space: nowrap; color: #fff; background: linear-gradient(160deg, #7c4dff, #4a1fb8); border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); pointer-events: none; }

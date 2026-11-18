@@ -214,9 +214,18 @@ export const useGame = create<GameStore>((set, get) => {
           }
           break;
         }
-        case 'JAIL_ATTEMPT_FAILED':
-          await sleep(BASE.jailFail);
+        case 'JAIL_ATTEMPT_FAILED': {
+          // Cada intento se ve: cuántos quedan y, en el último, un aviso claro antes de pasar el turno.
+          const who = isHuman(e.player) ? tr('Tú') : g.players[e.player]!.name;
+          if (e.attemptsLeft > 0) {
+            showBanner('info', tr('Sin par'), tr('{name}: intentos restantes {n}', { name: who, n: e.attemptsLeft }), BASE.jailFail);
+            await sleep(BASE.jailFail);
+          } else {
+            showBanner('info', tr('Sin par en {n} intentos', { n: final.rules.jailAttempts }), tr('{name} pasa el turno', { name: who }), BASE.jailOut);
+            await sleep(BASE.jailOut);
+          }
           break;
+        }
         case 'EXITED_JAIL': {
           let view = get().view;
           for (const p of e.pieces) view = setPiece(view, p, 0);
