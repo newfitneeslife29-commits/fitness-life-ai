@@ -136,6 +136,8 @@ interface GameStore {
 let uid = 1;
 let timers: ReturnType<typeof setTimeout>[] = [];
 let queue: Promise<void> = Promise.resolve();
+/** Jugadas del servidor que llegaron y aún no se terminan de animar (si se acumulan, se animan más rápido). */
+let pending = 0;
 /** Se incrementa al empezar/salir de una partida para invalidar animaciones pendientes. */
 let epoch = 0;
 
@@ -153,7 +155,7 @@ let lastSentKey = '';
 let lastSentAt = 0;
 
 export const useGame = create<GameStore>((set, get) => {
-  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms / get().speed));
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms / get().speed / (pending > 1 ? 3 : 1)));
 
   function seatOf(player: number): SeatConfig | undefined {
     const g = get().game;
@@ -451,6 +453,7 @@ export const useGame = create<GameStore>((set, get) => {
       epoch++;
       clearTimers();
       queue = Promise.resolve();
+      pending = 0;
       const game = createGame({
         sides: config.sides,
         rules: config.rules,
@@ -475,6 +478,7 @@ export const useGame = create<GameStore>((set, get) => {
       epoch++;
       clearTimers();
       queue = Promise.resolve();
+      pending = 0;
       set({ ...fresh(config, msg.state), matchDeadline: endsAt ?? null, online: link, mySeat, viewSide: viewSideFor(config, mySeat, msg.state) });
       applyDeadlines(msg);
       autoSelect();
@@ -483,14 +487,24 @@ export const useGame = create<GameStore>((set, get) => {
     receive(msg) {
       if (!get().online) return;
       const myEpoch = epoch;
-      set({ game: msg.state, busy: true, selected: null });
-      applyDeadlines(msg);
+      const at = Date.now();
+      pending++;
+      set({ busy: true, selected: null });
+      // Cada jugada del servidor se muestra completa y en orden: el estado (turno, dados, intentos) cambia
+      // cuando empieza SU animación, nunca antes. Así no se mezcla lo que se ve con jugadas que aún no se animan.
       queue = queue.then(async () => {
-        await animate(msg.events, msg.state, myEpoch);
+        if (myEpoch !== epoch) return;
+        set({ game: msg.state, busy: true, selected: null });
+        applyDeadlines(msg, at);
+        try {
+          await animate(msg.events, msg.state, myEpoch);
+        } finally {
+          pending = Math.max(0, pending - 1);
+        }
         if (myEpoch !== epoch) return;
         const g = get().game!;
-        set({ view: g.players.map((p) => [...p.pieces]), busy: false });
-        autoSelect();
+        set({ view: g.players.map((p) => [...p.pieces]), busy: pending > 0 });
+        if (pending === 0) autoSelect();
       });
     },
 
@@ -624,8 +638,7 @@ export const useGame = create<GameStore>((set, get) => {
 
   };
 
-  function applyDeadlines(msg: UpdateMsg) {
-    const now = Date.now();
+  function applyDeadlines(msg: UpdateMsg, now = Date.now()) {
     set({
       turnDeadline: msg.deadlines.turnMs !== null ? now + msg.deadlines.turnMs : null,
       soploDeadline: msg.deadlines.soploMs !== null ? now + msg.deadlines.soploMs : null,

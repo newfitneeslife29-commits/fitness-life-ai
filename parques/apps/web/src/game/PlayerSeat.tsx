@@ -1,5 +1,5 @@
 import { tr } from '../lib/i18n';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PlayerState } from '@parques/engine';
 import type { Bubble } from '../stores/gameStore';
@@ -43,7 +43,7 @@ interface Props {
 
 const RING = 2 * Math.PI * 30;
 
-export function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll }: Props) {
+export const PlayerSeat = memo(function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll }: Props) {
   const color = `var(--${player.color})`;
   const colorblind = useSettings((s) => s.colorblind);
   return (
@@ -102,7 +102,7 @@ export function PlayerSeat({ player, avatar, active, tag, frameId, level, place,
       </AnimatePresence>
     </div>
   );
-}
+});
 
 /** Segundos que le quedan al jugador en turno (se ve sobre su avatar). */
 function Countdown({ deadline }: { deadline: number }) {
@@ -156,8 +156,6 @@ function SeatDice({ dice, skin, active, used, rolling, canRoll, onRoll }: { dice
       onClick={canRoll ? onRoll : undefined}
       disabled={!canRoll}
       whileTap={canRoll ? { scale: 0.88 } : undefined}
-      animate={canRoll ? { scale: [1, 1.1, 1], rotate: [0, -4, 4, 0] } : { scale: 1, rotate: 0 }}
-      transition={canRoll ? { duration: 1.1, repeat: Infinity } : { duration: 0.2 }}
       aria-label={canRoll ? tr('Tirar los dados') : tr('Dados')}
     >
       <Cube value={a} skin={skin} size={26} rolling={rolling} used={!!dice && !!used?.[0]} />
