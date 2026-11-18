@@ -617,3 +617,24 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .coll-banner > span:first-child { font-size: 1.6rem; }
 .coll-banner small { color: var(--text-soft); flex: 1; font-size: 0.75rem; }
 .coll-banner .chev { font-size: 1.4rem; opacity: 0.7; }
+
+/* ===== Rendimiento en iPhone (v1.3.1) =====
+   En Safari/WKWebView un `filter` (drop-shadow) sobre el tablero obliga a repintar TODO el tablero
+   cada vez que algo se mueve dentro (fichas, escenarios animados): era lo que volvía lenta la partida.
+   Los filtros dentro de un cubo 3D (preserve-3d) lo aplanan y se re-rasterizan en cada cuadro: dados "laguiados". */
+.board-svg, .game-screen .board-svg { filter: none !important; }
+.board-tilt { position: relative; }
+.board-tilt::before { content: ''; position: absolute; left: 6%; right: 6%; bottom: -3%; height: 14%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)); pointer-events: none; }
+.board-svg { will-change: transform; }
+.cube-face { filter: none !important; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.game-screen .cube-face.anim-fire, .game-screen .cube-face.anim-rainbow { animation: none !important; }
+.cube { will-change: transform; }
+.cube-shadow { will-change: transform; }
+.cube-wrap.used { filter: none !important; }
+.cube-wrap.used .cube-face::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(40, 40, 50, 0.55); }
+.seat-dicebox, .seat-dicebox.active { filter: none !important; transition: opacity 0.25s, box-shadow 0.25s; }
+.game-status { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(28, 10, 58, 0.82); }
+.status-veil { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgb(25, 8, 50); }
+.banim-fireflies circle { filter: none !important; }
+.bg.still { background: radial-gradient(130% 90% at 50% 0%, var(--bg-a) 0%, var(--bg-b) 70%); }

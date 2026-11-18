@@ -6,15 +6,15 @@
 import type { GameEvent } from './types';
 
 export const ANIM_MS = {
-  roll: 460,
-  step: 125,
-  stepFast: 78,
-  exit: 330,
-  capture: 560,
+  roll: 400,
+  step: 100,
+  stepFast: 62,
+  exit: 280,
+  capture: 480,
   crown: 600,
   triple: 1800,
   soplo: 1300,
-  turn: 180,
+  turn: 120,
   forfeit: 400,
   jailFail: 180,
   left: 900,

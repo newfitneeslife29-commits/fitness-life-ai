@@ -103,7 +103,7 @@ export function Cube({ value, skin = DEFAULT_SKIN, size = 58, rolling = false, u
       </motion.div>
       <motion.div
         className="cube-shadow"
-        animate={rolling ? { scale: [1, 0.6, 0.9, 0.65, 1], opacity: [0.9, 0.5, 0.8, 0.55, 0.9] } : { scale: 1, opacity: 0.9 }}
+        animate={rolling ? { scale: [1, 0.6, 0.9, 0.65, 1] } : { scale: 1 }}
         transition={rolling ? { duration: 0.55, repeat: Infinity, delay } : { duration: 0.3 }}
       />
     </div>
