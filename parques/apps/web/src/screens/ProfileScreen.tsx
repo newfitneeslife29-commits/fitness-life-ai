@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { ITEMS } from '@parques/engine';
 
 import { useRef, useState } from 'react';
@@ -34,7 +35,7 @@ export function ProfileScreen() {
     ['👑', t('Coronadas'), s.crowned],
     ['🌬️', t('Soplos'), s.soplos],
     ['🔥', t('Mejor racha'), s.bestWinStreak],
-    ['🪙', t('Monedas ganadas'), s.coinsWon.toLocaleString()],
+    ['🪙', t('Monedas ganadas'), s.coinsWon.toLocaleString(numLocale())],
   ] as const;
   const recent = Object.entries(p.achievements)
     .sort((a, b) => b[1] - a[1])
@@ -66,7 +67,7 @@ export function ProfileScreen() {
           <h2>{p.name}</h2>
           <div className="pc-sub">
             {COUNTRIES.find((c) => c.code === p.country)?.flag} {t('Nivel')} {lvl.level}/{MAX_LEVEL}
-            {!lvl.max ? ` · ${lvl.into.toLocaleString()}/${lvl.need.toLocaleString()} XP` : ''}
+            {!lvl.max ? ` · ${lvl.into.toLocaleString(numLocale())}/${lvl.need.toLocaleString(numLocale())} XP` : ''}
           </div>
           <div className="pc-code">{t('Código de amigo')}: <b>{p.id}</b></div>
           <button className="btn3d small ghost" onClick={() => setEdit(true)}>
@@ -87,7 +88,7 @@ export function ProfileScreen() {
       </div>
 
       <h3 className="section-title">
-        {t('Logros')} <small>{Object.keys(p.achievements).length.toLocaleString()}/{ACHIEVEMENTS.length.toLocaleString()}</small>
+        {t('Logros')} <small>{Object.keys(p.achievements).length.toLocaleString(numLocale())}/{ACHIEVEMENTS.length.toLocaleString(numLocale())}</small>
       </h3>
       <div className="badge-grid">
         {recent.length === 0 ? <p className="rule-note">{t('Juega tu primera partida para desbloquear logros.')}</p> : null}

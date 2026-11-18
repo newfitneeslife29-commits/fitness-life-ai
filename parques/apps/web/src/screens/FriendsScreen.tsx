@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { inviteUrl, REFERRAL } from '@parques/engine';
@@ -116,7 +117,7 @@ export function FriendsScreen() {
       <motion.section className="card glossy setup-card ref-card" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <h3>🎁 {t('Invita amigos y gana')}</h3>
         <p className="rule-note">
-          {t('Por cada amigo que entre con tu enlace:')} <CoinIcon size={13} /> {REFERRAL.coins.toLocaleString()} + <GemIcon size={13} /> {REFERRAL.gems} · {t('Invitados: {n}/{m}', { n: p.referrals, m: REFERRAL.max })}
+          {t('Por cada amigo que entre con tu enlace:')} <CoinIcon size={13} /> {REFERRAL.coins.toLocaleString(numLocale())} + <GemIcon size={13} /> {REFERRAL.gems} · {t('Invitados: {n}/{m}', { n: p.referrals, m: REFERRAL.max })}
         </p>
         <div className="friend-code">{p.id}</div>
         <div className="row-btns">

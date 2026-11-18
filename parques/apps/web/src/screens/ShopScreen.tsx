@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { formatUsd, PRODUCTS, ITEM_PRICES_USD, dailyDeals, dayKey, CHESTS, GEM_EXCHANGE, item, EVENTS } from '@parques/engine';
@@ -145,7 +146,7 @@ export function ShopScreen() {
               <motion.span className="bank-icon" animate={{ y: [0, -4, 0], rotate: [0, -6, 6, 0] }} transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.2 }}>
                 {pack.kind === 'coins' ? <CoinIcon size={34} /> : <GemIcon size={34} />}
               </motion.span>
-              <b>{(pack.coins ?? pack.gems)!.toLocaleString()}</b>
+              <b>{(pack.coins ?? pack.gems)!.toLocaleString(numLocale())}</b>
               <span className="bank-price">{formatUsd(pack.usdCents)}</span>
             </motion.button>
           ))}
@@ -187,12 +188,12 @@ export function ShopScreen() {
                       <Preview it={it} />
                     </div>
                     <span className="si-name">{t(it.name)}</span>
-                    <span className="was"><CoinIcon size={12} /> {d.was.toLocaleString()}</span>
+                    <span className="was"><CoinIcon size={12} /> {d.was.toLocaleString(numLocale())}</span>
                     {owned ? (
                       <span className="si-state">✓ {t('Lo tienes')}</span>
                     ) : (
                       <button className="btn3d small shine" onClick={(e) => buyDeal(d.itemId, e.currentTarget)}>
-                        <CoinIcon size={16} /> {d.price.toLocaleString()}
+                        <CoinIcon size={16} /> {d.price.toLocaleString(numLocale())}
                       </button>
                     )}
                   </motion.div>
@@ -216,7 +217,7 @@ export function ShopScreen() {
                     <div className="bundle-body">
                       <b>{t(b.name)}</b>
                       <span>
-                        <CoinIcon size={16} /> {(b.coins ?? 0).toLocaleString()} · <GemIcon size={16} /> {b.gems}
+                        <CoinIcon size={16} /> {(b.coins ?? 0).toLocaleString(numLocale())} · <GemIcon size={16} /> {b.gems}
                       </span>
                       <small>{(b.itemIds ?? []).map((id) => t(item(id).name)).join(' · ')}</small>
                     </div>
@@ -251,7 +252,7 @@ export function ShopScreen() {
                 <motion.div key={pack.id} className={`shop-item card glossy pack ${i === 2 ? 'best' : ''}`} initial={{ y: 26, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.06 }} whileHover={{ y: -4 }}>
                   {i === 2 ? <span className="si-tag" style={{ background: '#e11d48' }}>{t('Más popular')}</span> : null}
                   <span className="pack-icon">{tab === 'coins' ? <span className="coin-stack">{Array.from({ length: Math.min(4, i + 1) }, (_, k) => <CoinIcon key={k} size={30 + i * 3} />)}</span> : <GemIcon size={48 + i * 8} />}</span>
-                  <span className="si-name">{(pack.coins ?? pack.gems)!.toLocaleString()} {tab === 'coins' ? t('monedas') : t('gemas')}</span>
+                  <span className="si-name">{(pack.coins ?? pack.gems)!.toLocaleString(numLocale())} {tab === 'coins' ? t('monedas') : t('gemas')}</span>
                   <button className="btn3d small green" onClick={() => buyReal(pack.id)}>
                     {formatUsd(pack.usdCents)}
                   </button>
@@ -302,11 +303,11 @@ export function ShopScreen() {
                       </button>
                     ) : it.currency === 'coins' ? (
                       <button className="btn3d small" onClick={(e) => buyCoins(it, e.currentTarget)}>
-                        <CoinIcon size={16} /> {it.price.toLocaleString()}
+                        <CoinIcon size={16} /> {it.price.toLocaleString(numLocale())}
                       </button>
                     ) : it.currency === 'gems' ? (
                       <button className="btn3d small purple" onClick={(e) => buyCoins(it, e.currentTarget)}>
-                        <GemIcon size={16} /> {it.price.toLocaleString()}
+                        <GemIcon size={16} /> {it.price.toLocaleString(numLocale())}
                       </button>
                     ) : null}
                   </motion.div>
@@ -321,7 +322,7 @@ export function ShopScreen() {
           <div className="exchange-row">
             {GEM_EXCHANGE.map((x) => (
               <button key={x.gems} className="btn3d small" onClick={(e) => exchange(x.gems, e.currentTarget)}>
-                <GemIcon size={14} /> {x.gems} → <CoinIcon size={14} /> {x.coins.toLocaleString()}
+                <GemIcon size={14} /> {x.gems} → <CoinIcon size={14} /> {x.coins.toLocaleString(numLocale())}
               </button>
             ))}
           </div>
@@ -344,7 +345,7 @@ export function ShopScreen() {
                 <b>{t('¡Ya tienes todo! Te damos monedas')}</b>
               )}
               <span className="reveal-coins">
-                + <CoinIcon size={18} /> {reveal.coins.toLocaleString()}
+                + <CoinIcon size={18} /> {reveal.coins.toLocaleString(numLocale())}
               </span>
               <button className="btn3d green" onClick={() => setReveal(null)}>
                 {t('¡Bacano!')}

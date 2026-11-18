@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FLASH } from '@parques/engine';
@@ -60,7 +61,7 @@ export function FlashScreen() {
             <span key={i} className={`fp fp-${i}`}>
               <b>{['🥇', '🥈', '🥉', '4º'][i]}</b>
               <span>
-                <CoinIcon size={12} /> {p.coins.toLocaleString()}
+                <CoinIcon size={12} /> {p.coins.toLocaleString(numLocale())}
               </span>
               {p.gems ? (
                 <span>
@@ -82,7 +83,7 @@ export function FlashScreen() {
           </>
         ) : !b || b.stage === 'done' ? (
           <motion.button className="btn3d play-btn wide shine" whileTap={{ scale: 0.94 }} onClick={() => void start()}>
-            <span className="nowrap">{t('Entrar')} · <CoinIcon size={16} /> {FLASH.entry.toLocaleString()}</span>
+            <span className="nowrap">{t('Entrar')} · <CoinIcon size={16} /> {FLASH.entry.toLocaleString(numLocale())}</span>
           </motion.button>
         ) : null}
       </motion.section>

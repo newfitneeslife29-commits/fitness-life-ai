@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
@@ -81,7 +82,7 @@ export function OnlineScreen() {
         >
           <span>{tt.emoji}</span>
           <b>{t(tt.name)}</b>
-          <small><CoinIcon size={13} /> {tt.entry.toLocaleString()}</small>
+          <small><CoinIcon size={13} /> {tt.entry.toLocaleString(numLocale())}</small>
           {lvl.level < tt.minLevel ? <em>🔒 {t('Nivel')} {tt.minLevel}</em> : tt.topOnly ? <em>🔥 Top 100</em> : null}
         </button>
       ))}
@@ -130,7 +131,7 @@ export function OnlineScreen() {
                 📤 {t('Compartir')}
               </button>
             </div>
-            <p className="rule-note">{t('Entrada')}: {room.entry.toLocaleString()} 🪙</p>
+            <p className="rule-note">{t('Entrada')}: {room.entry.toLocaleString(numLocale())} 🪙</p>
             <div className="room-seats">
               {room.seats.map((s, i) => (
                 <motion.div key={i} className={`room-seat ${s.playerId ? 'taken' : ''}`} style={{ ['--pc' as string]: `var(--${SIDE_COLORS[s.side]})` }} layout>
@@ -193,7 +194,7 @@ export function OnlineScreen() {
                 <h3>{t('Elige la sala')}</h3>
                 {tierPicker}
                 <p className="rule-note">
-                  {t('4 jugadores · el servidor tira los dados (sin trampas).')} {t('Premios')}: {payouts(tier.entry, 4).filter((x) => x > 0).map((x, i) => `${i + 1}º ${x.toLocaleString()}`).join(' · ')} · 💎5
+                  {t('4 jugadores · el servidor tira los dados (sin trampas).')} {t('Premios')}: {payouts(tier.entry, 4).filter((x) => x > 0).map((x, i) => `${i + 1}º ${x.toLocaleString(numLocale())}`).join(' · ')} · 💎5
                 </p>
                 <motion.button
                   className="btn3d play-btn shine"

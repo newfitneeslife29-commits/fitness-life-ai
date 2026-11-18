@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
@@ -23,7 +24,7 @@ export const TABLE_GRADS: Record<TableId, [string, string]> = {
 /** Texto del reparto del premio para una mesa. */
 export function prizeLine(t: (s: string, v?: Record<string, string | number>) => string, entry: number, players: number): string {
   return payouts(entry, players)
-    .map((x, i) => (x > 0 ? `${i + 1}º ${x.toLocaleString()}` : null))
+    .map((x, i) => (x > 0 ? `${i + 1}º ${x.toLocaleString(numLocale())}` : null))
     .filter(Boolean)
     .join(' · ');
 }
@@ -100,10 +101,10 @@ export function TablesScreen() {
               ) : (
               <span className="tc-money">
                 <span className="tc-prize">
-                  <CoinIcon size={18} /> {payouts(tier.entry, players)[0]!.toLocaleString()} <GemIcon size={16} />5
+                  <CoinIcon size={18} /> {payouts(tier.entry, players)[0]!.toLocaleString(numLocale())} <GemIcon size={16} />5
                 </span>
                 <span className={`tc-entry ${poor ? 'poor' : ''}`}>
-                  {t('Entrada')}: <CoinIcon size={15} /> {tier.entry.toLocaleString()}
+                  {t('Entrada')}: <CoinIcon size={15} /> {tier.entry.toLocaleString(numLocale())}
                 </span>
               </span>
               )}

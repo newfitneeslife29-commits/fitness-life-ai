@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
@@ -18,8 +19,8 @@ export function AchievementsScreen() {
     <div className="screen achievements-screen">
       <TopBar back title={t('Logros')} />
       <div className="ach-summary card glossy">
-        <span className="ach-big">🏅 {total.toLocaleString()}</span>
-        <span>/ {ACHIEVEMENTS.length.toLocaleString()} {t('logros')}</span>
+        <span className="ach-big">🏅 {total.toLocaleString(numLocale())}</span>
+        <span>/ {ACHIEVEMENTS.length.toLocaleString(numLocale())} {t('logros')}</span>
         <div className="xpbar big">
           <motion.div className="xpbar-fill" initial={false} animate={{ width: `${(total / ACHIEVEMENTS.length) * 100}%` }} />
         </div>
@@ -31,10 +32,10 @@ export function AchievementsScreen() {
               <span className="ach-emoji" style={{ background: tierColor(Math.max(1, done)) }}>{c.emoji}</span>
               <span className="ach-body">
                 <b>{t(c.name)}</b>
-                <small>{next !== undefined ? singularize(t(c.desc, { n: next.toLocaleString() }), next) : t('¡Categoría completa!')}</small>
+                <small>{next !== undefined ? singularize(t(c.desc, { n: next.toLocaleString(numLocale()) }), next) : t('¡Categoría completa!')}</small>
                 <span className="mi-bar">
                   <span className="mi-fill" style={{ width: `${next ? Math.min(100, (value / next) * 100) : 100}%`, display: 'block' }} />
-                  <span>{next !== undefined ? `${value.toLocaleString()} / ${next.toLocaleString()}` : '✓'}</span>
+                  <span>{next !== undefined ? `${value.toLocaleString(numLocale())} / ${next.toLocaleString(numLocale())}` : '✓'}</span>
                 </span>
               </span>
               <span className="ach-count">{done}/{n}</span>
@@ -45,10 +46,10 @@ export function AchievementsScreen() {
                   {c.thresholds.map((goal, i) => {
                     const got = !!p.achievements[`${c.key}-${i + 1}`];
                     return (
-                      <div key={i} className={`ach-tier ${got ? 'got' : ''}`} style={{ ['--tc' as string]: tierColor(i + 1) }} title={singularize(t(c.desc, { n: goal.toLocaleString() }), goal)}>
+                      <div key={i} className={`ach-tier ${got ? 'got' : ''}`} style={{ ['--tc' as string]: tierColor(i + 1) }} title={singularize(t(c.desc, { n: goal.toLocaleString(numLocale()) }), goal)}>
                         <span className="at-badge">{got ? c.emoji : '🔒'}</span>
                         <span className="at-num">{roman(i + 1)}</span>
-                        <span className="at-goal">{goal.toLocaleString()}</span>
+                        <span className="at-goal">{goal.toLocaleString(numLocale())}</span>
                       </div>
                     );
                   })}

@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { formatUsd, productFor } from '@parques/engine';
@@ -24,7 +25,7 @@ function left(ms: number): string {
 function rewardText(t: (s: string, v?: Record<string, string | number>) => string, r: PassReward): string {
   if (r.itemId) return t(item(r.itemId).name);
   if (r.gems) return t('{n} gemas', { n: r.gems });
-  return t('{n} monedas', { n: (r.coins ?? 0).toLocaleString() });
+  return t('{n} monedas', { n: (r.coins ?? 0).toLocaleString(numLocale()) });
 }
 
 function RewardArt({ r }: { r: PassReward }) {

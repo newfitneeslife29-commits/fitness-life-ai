@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
@@ -126,7 +127,7 @@ export function VictoryScreen() {
               </span>
               {entry > 0 ? (
                 <span className="pc-prize">
-                  {prize.toLocaleString()} <CoinIcon size={20} />
+                  {prize.toLocaleString(numLocale())} <CoinIcon size={20} />
                 </span>
               ) : null}
             </motion.div>
@@ -138,8 +139,8 @@ export function VictoryScreen() {
         <motion.div ref={rewardsRef} className="rewards card glossy" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
           <div className="reward">
             <span className="reward-icon"><CoinIcon size={30} /></span>
-            <span className="reward-val">{outcome.coins - outcome.entry >= 0 ? '+' : ''}{(outcome.coins - outcome.entry + outcome.levelCoins).toLocaleString()}</span>
-            <span className="reward-lbl">{outcome.entry ? t('ganancia (entrada {n})', { n: outcome.entry.toLocaleString() }) : t('monedas')}</span>
+            <span className="reward-val">{outcome.coins - outcome.entry >= 0 ? '+' : ''}{(outcome.coins - outcome.entry + outcome.levelCoins).toLocaleString(numLocale())}</span>
+            <span className="reward-lbl">{outcome.entry ? t('ganancia (entrada {n})', { n: outcome.entry.toLocaleString(numLocale()) }) : t('monedas')}</span>
           </div>
           <div className="reward grow">
             <span className="reward-lbl">{t('Nivel')} {xpLvl.level}</span>
@@ -172,7 +173,7 @@ export function VictoryScreen() {
             const st = me >= 0 ? game.players[me]!.stats : null;
             const ok = await shareMoment({
               title: won ? t('¡Gané!') : t('¡Quedé {n}º!', { n: myPlace + 1 }),
-              subtitle: outcome && outcome.coins > 0 ? `+${outcome.coins.toLocaleString()} 🪙` : 'Parqués Colombia',
+              subtitle: outcome && outcome.coins > 0 ? `+${outcome.coins.toLocaleString(numLocale())} 🪙` : 'Parqués Colombia',
               name: profile.name,
               avatar: profile.avatar,
               playerId: profile.id,
@@ -234,7 +235,7 @@ export function VictoryScreen() {
               <h2>{t('¡Subiste de nivel!')}</h2>
               <div className="lu-level">{levelUp}</div>
               <p>
-                +{outcome?.levelCoins.toLocaleString()} <CoinIcon size={16} />
+                +{outcome?.levelCoins.toLocaleString(numLocale())} <CoinIcon size={16} />
               </p>
               <small>{t('Toca para seguir')}</small>
             </motion.div>
@@ -345,7 +346,7 @@ function ExtraRewards({ outcome }: { outcome: ReturnType<typeof useGame.getState
       if (r.ok && r.result) {
         play('coin');
         fx.fly('coin', centerOf(el), 12);
-        fx.toast({ icon: '🪙', title: t('¡Premio duplicado! +{n}', { n: r.result.coins.toLocaleString() }) });
+        fx.toast({ icon: '🪙', title: t('¡Premio duplicado! +{n}', { n: r.result.coins.toLocaleString(numLocale()) }) });
       } else fx.toast({ icon: '⚠️', title: t(r.error ?? 'No se pudo') });
     }
     setBusy(false);
@@ -358,14 +359,14 @@ function ExtraRewards({ outcome }: { outcome: ReturnType<typeof useGame.getState
           <div>
             <b>{sp.kind === 'challenge' ? t('¡Reto del día superado!') : t('¡Región conquistada!')}</b>
             <span className="sr-prize">
-              +{sp.coins.toLocaleString()} <CoinIcon size={14} /> · +{sp.gems} <GemIcon size={14} /> {sp.itemIds?.length ? `· ${sp.itemIds.map((id) => item(id).emoji).join(' ')}` : ''}
+              +{sp.coins.toLocaleString(numLocale())} <CoinIcon size={14} /> · +{sp.gems} <GemIcon size={14} /> {sp.itemIds?.length ? `· ${sp.itemIds.map((id) => item(id).emoji).join(' ')}` : ''}
             </span>
           </div>
         </motion.div>
       ) : null}
       {canDouble ? (
         <motion.button className="btn3d play-btn wide shine double-btn" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1, scale: [1, 1.04, 1] }} transition={{ delay: 1.3, scale: { duration: 1.2, repeat: Infinity } }} disabled={busy} onClick={(e) => void doubleIt(e.currentTarget)}>
-          📺 {t('Ver anuncio y duplicar: +{n}', { n: w!.net.toLocaleString() })}
+          📺 {t('Ver anuncio y duplicar: +{n}', { n: w!.net.toLocaleString(numLocale()) })}
         </motion.button>
       ) : null}
     </>
