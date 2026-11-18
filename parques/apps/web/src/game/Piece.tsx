@@ -17,7 +17,6 @@ interface Props {
   crowned: boolean;
   style: PieceStyle;
   img?: string;
-  onPick: (id: string) => void;
 }
 
 const R = 19;
@@ -239,7 +238,7 @@ export const HOP_S = 0.13;
 /** Figura de cada color (modo para daltónicos). */
 export const COLOR_SHAPES: Record<Color, string> = { amarillo: '▲', rojo: '●', verde: '■', azul: '◆', naranja: '★', morado: '✚' };
 
-export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onPick }: Props) {
+export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img }: Props) {
   const r = crowned ? R * 0.72 : R;
   const colorblind = useSettings((s) => s.colorblind);
   const onBoard = pos >= 0;
@@ -261,9 +260,8 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
       initial={false}
       animate={{ x: at.x, y: at.y }}
       transition={toJail ? { type: 'tween', ease: [0.3, 0, 0.3, 1], duration: 0.75 } : { type: 'tween', ease: [0.45, 0, 0.55, 1], duration: HOP_S }}
-      onClick={movable ? () => onPick(id) : undefined}
       // Solo las fichas que se pueden mover reciben el toque: así una ficha rival o quieta nunca tapa a la que quieres mover.
-      style={{ cursor: movable ? 'pointer' : 'default', pointerEvents: movable ? 'auto' : 'none' }}
+      style={{ pointerEvents: 'none' }}
       data-piece={id}
       data-movable={movable || undefined}
     >
@@ -314,4 +312,4 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
   );
 }, (a, b) =>
   a.at.x === b.at.x && a.at.y === b.at.y && a.pos === b.pos && a.color === b.color && a.rot === b.rot && a.movable === b.movable &&
-  a.selected === b.selected && a.crowned === b.crowned && a.style === b.style && a.img === b.img && a.onPick === b.onPick && a.id === b.id);
+  a.selected === b.selected && a.crowned === b.crowned && a.style === b.style && a.img === b.img && a.id === b.id);

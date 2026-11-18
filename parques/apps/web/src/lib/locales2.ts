@@ -624,4 +624,9 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "¡Listo! Ahora usas {name}": ["Done! You're now using {name}", "Pronto! Agora você usa {name}", "C'est fait ! Tu utilises {name}"],
   "Mis cosas (tableros, dados, fichas…)": ["My stuff (boards, dice, pieces…)", "Minhas coisas (tabuleiros, dados, peças…)", "Mes objets (plateaux, dés, pions…)"],
   "Tableros, dados y fichas que ya tienes": ["Boards, dice and pieces you already own", "Tabuleiros, dados e peças que você já tem", "Plateaux, dés et pions que tu possèdes"],
+  "Sin par": ["No pair", "Sem par", "Pas de double"],
+  "{name}: intentos restantes {n}": ["{name}: tries left {n}", "{name}: tentativas restantes {n}", "{name} : essais restants {n}"],
+  "Sin par en {n} intentos": ["No pair in {n} tries", "Sem par em {n} tentativas", "Pas de double en {n} essais"],
+  "{name} pasa el turno": ["{name} loses the turn", "{name} passa a vez", "{name} passe son tour"],
+  "Intento {a}/{b}": ["Try {a}/{b}", "Tentativa {a}/{b}", "Essai {a}/{b}"],
 };

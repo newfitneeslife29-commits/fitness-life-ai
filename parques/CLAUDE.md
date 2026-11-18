@@ -282,6 +282,15 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
   en las tiendas solo hay **15 productos consumibles** (monedas, gemas, VIP, paquetes y pases; tabla en `PUBLICAR.md`).
 - Mesas con apuesta (`play_ai`) siempre con reglas oficiales (3 intentos); las reglas de la casa solo en práctica/local/privadas.
 
+## v1.3.1 (rendimiento y toques en iPhone)
+- Tablero en dos capas (`Board`: `StaticBoard` fija + capa de juego), plano (sin inclinación 3D). Los toques los recibe el
+  tablero entero y se elige lo más cercano al dedo (destino o ficha movible) con `getScreenCTM`; las fichas y destinos no
+  tienen onClick propio. Los asientos (`.seat`) no reciben toques salvo sus botones.
+- Dados: animaciones CSS (`cube-hop`, `cube-orient`, `cube-tumble`), sin framer.
+- Online: `receive` cambia `game` cuando empieza la animación de esa jugada; si se acumulan, se aceleran (`pending`).
+- Cárcel: aviso por cada intento fallido y "Sin par en N intentos" al pasar el turno (`ANIM_MS.jailFail/jailOut`),
+  etiqueta "🔒 Intento a/b" en el asiento.
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

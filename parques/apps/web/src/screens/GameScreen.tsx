@@ -175,6 +175,11 @@ export function GameScreen() {
         rolling={s.rolling && s.roller === i}
         canRoll={i === mySeatIndex && humanTurn && game.phase === 'roll'}
         onRoll={s.humanRoll}
+        jailTry={
+          game.current === i && game.phase === 'roll' && !p.pieces.some((x) => isActive(game.sides, x))
+            ? t('Intento {a}/{b}', { a: Math.min(game.jailRollsUsed + 1, game.rules.jailAttempts), b: game.rules.jailAttempts })
+            : null
+        }
       />
     );
   };
@@ -285,7 +290,7 @@ export function GameScreen() {
             </motion.button>
           ) : (
             <motion.span key={`${game.current}-${game.phase}`} className="roll-status" initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-              {s.rolling ? `🎲 ${t('Rodando…')}` : humanTurn ? `👆 ${t('Mueve una ficha')}` : `⏳ ${t('Turno de {name}', { name: current.name })}`}
+              {s.rolling ? `🎲 ${t('Rodando…')}` : humanTurn ? `👆 ${t('Mueve una ficha')}` : rollerIsHuman ? `⏳ ${t('¡Tu turno!')}` : `⏳ ${t('Turno de {name}', { name: current.name })}`}
             </motion.span>
           )}
         </div>

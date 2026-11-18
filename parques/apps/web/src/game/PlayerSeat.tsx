@@ -39,11 +39,13 @@ interface Props {
   /** Es mi turno de tirar: mis dados laten y se tocan para tirar. */
   canRoll?: boolean;
   onRoll?: () => void;
+  /** Intento de salir de la cárcel ("Intento 2/3"), solo para quien está tirando con todo en la cárcel. */
+  jailTry?: string | null;
 }
 
 const RING = 2 * Math.PI * 30;
 
-export const PlayerSeat = memo(function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll }: Props) {
+export const PlayerSeat = memo(function PlayerSeat({ player, avatar, active, tag, frameId, level, place, crowned, deadline, totalMs, bubble, align, team, onEmote, emoteOpen, dice, diceSkin, used, rolling, canRoll, onRoll, jailTry }: Props) {
   const color = `var(--${player.color})`;
   const colorblind = useSettings((s) => s.colorblind);
   return (
@@ -84,6 +86,7 @@ export const PlayerSeat = memo(function PlayerSeat({ player, avatar, active, tag
           {team !== null && team !== undefined ? <span>{tr('Pareja {n}', { n: team + 1 })}</span> : null}
         </div>
       </div>
+      {jailTry ? <span className="seat-jailtry">🔒 {jailTry}</span> : null}
       {diceSkin ? (
         <SeatDice dice={dice ?? null} skin={diceSkin} active={active} used={active ? used : undefined} rolling={!!rolling && active} canRoll={!!canRoll} onRoll={onRoll} />
       ) : null}

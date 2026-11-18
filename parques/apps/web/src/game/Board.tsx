@@ -1,6 +1,7 @@
 import { Idp } from './idp';
 import { BoardArt } from './BoardArt';
-import { memo, useCallback, useContext, useMemo } from 'react';
+import { memo, useCallback, useContext, useMemo, useRef } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import { COLORS_4, COLORS_6, homeFor, SQUARES_PER_SIDE, trackLength } from '@parques/engine';
 import type { Color, GameState, Move, PieceRef } from '@parques/engine';
@@ -360,13 +361,6 @@ export const Board = memo(function Board({ game, view, viewSide, movable, select
     for (const sd of activeKey.split(',')) a[Number(sd)] = true;
     return a;
   }, [activeKey, sides]);
-  const pick = useCallback(
-    (id: string) => {
-      const [o, i] = id.split('-');
-      onPiece({ owner: Number(o), index: Number(i) });
-    },
-    [onPiece],
-  );
 
   // Varias fichas en la misma casilla se reparten a lo largo de la casilla.
   const pieces = useMemo(() => {
@@ -396,6 +390,39 @@ export const Board = memo(function Board({ game, view, viewSide, movable, select
     return items;
   }, [view, game.players, sides]);
 
+  // Toques: en vez de exigir que el dedo caiga justo encima de una ficha pequeña, el tablero entero recibe el
+  // toque y elige lo más cercano al dedo (un destino o una ficha que se pueda mover). Funciona igual en todos
+  // los celulares y evita mover la ficha que no era cuando hay varias juntas.
+  const playRef = useRef<SVGGElement>(null);
+  const tapData = useRef({ pieces, movable, targets, onPiece, onTarget });
+  tapData.current = { pieces, movable, targets, onPiece, onTarget };
+  const onTap = useCallback((e: ReactMouseEvent) => {
+    const g = playRef.current;
+    const m = g?.getScreenCTM();
+    if (!m) return;
+    const d = tapData.current;
+    const unit = Math.hypot(m.a, m.b) || 1;
+    const toScreen = (pt: Pt) => ({ x: m.a * pt.x + m.c * pt.y + m.e, y: m.b * pt.x + m.d * pt.y + m.f });
+    const dist = (pt: { x: number; y: number }) => Math.hypot(pt.x - e.clientX, pt.y - e.clientY);
+    let best: { kind: 'target'; move: Move; d: number } | { kind: 'piece'; ref: PieceRef; d: number } | null = null;
+    const maxTarget = Math.max(44 * unit, 26);
+    for (const tg of d.targets) {
+      const dd = dist(toScreen(tg.at));
+      if (dd <= maxTarget && (!best || dd < best.d)) best = { kind: 'target', move: tg.move, d: dd };
+    }
+    const maxPiece = Math.max(52 * unit, 28);
+    for (const p of d.pieces) {
+      if (!d.movable.has(`${p.ref.owner}-${p.ref.index}`)) continue;
+      const c0 = toScreen(p.at);
+      // La ficha se dibuja hacia arriba desde su casilla: su centro visible queda un poco más arriba.
+      const dd = Math.min(dist(c0), dist({ x: c0.x, y: c0.y - 19 * unit }));
+      if (dd <= maxPiece && (!best || dd < best.d - (best.kind === 'target' ? 6 : 0))) best = { kind: 'piece', ref: p.ref, d: dd };
+    }
+    if (!best) return;
+    if (best.kind === 'target') d.onTarget(best.move);
+    else d.onPiece(best.ref);
+  }, []);
+
   // Orden de dibujo: las fichas más abajo en pantalla tapan a las de atrás (efecto 3D); las movibles encima.
   const t = (rot * Math.PI) / 180;
   const screenY = (p: Pt) => p.x * Math.sin(t) + p.y * Math.cos(t);
@@ -406,12 +433,12 @@ export const Board = memo(function Board({ game, view, viewSide, movable, select
   });
 
   return (
-    <div className="board-svg board-stack" role="img" aria-label={tr('Tablero de parqués')} style={{ ['--board-line' as string]: theme.line }}>
+    <div className="board-svg board-stack" role="img" aria-label={tr('Tablero de parqués')} style={{ ['--board-line' as string]: theme.line }} onClick={onTap}>
       {/* Capa fija: el tablero se dibuja una sola vez y no se vuelve a pintar cuando se mueven las fichas. */}
       <StaticBoard sides={sides} active={activeSides} theme={theme} rot={rot} />
       {/* Capa de juego (su propia capa en la GPU): fichas, destinos y efectos. */}
       <svg viewBox={viewBoxFor(sides)} className="board-layer board-top">
-        <g transform={`rotate(${rot})`}>
+        <g transform={`rotate(${rot})`} ref={playRef}>
           {theme.anim ? <BoardAnimLayer kind={theme.anim} half={boardBox(sides).w} rot={rot} /> : null}
           {game.phase !== 'over' ? <TurnGlow sides={sides} side={game.players[game.current]!.side} color={game.players[game.current]!.color} /> : null}
 
@@ -430,13 +457,12 @@ export const Board = memo(function Board({ game, view, viewSide, movable, select
                 crowned={p.pos === homeFor(sides)}
                 style={pieceStyle}
                 img={pieceImg}
-                onPick={pick}
               />
             );
           })}
 
           {targets.map((tg, i) => (
-            <g key={`t-${i}`} onClick={() => onTarget(tg.move)} style={{ cursor: 'pointer' }} data-target={tg.label}>
+            <g key={`t-${i}`} data-target={tg.label}>
               <motion.circle
                 cx={tg.at.x}
                 cy={tg.at.y}
