@@ -26,6 +26,8 @@ export interface Settings {
   serverUrl: string;
   /** Accesibilidad: figuras en las fichas para distinguir colores y letra más grande. */
   colorblind: boolean;
+  /** Letreros que explican las reglas en la partida: null = automático (solo jugadores nuevos). */
+  gameHints: boolean | null;
   bigText: boolean;
   /** Recordatorios en el celular (regalo diario, racha, cofre). */
   notifications: boolean;
@@ -46,6 +48,7 @@ export const useSettings = create<Settings>()(
       turnSeconds: 20,
       serverUrl: '',
       colorblind: false,
+      gameHints: null,
       bigText: false,
       notifications: true,
       set: (patch) => set(patch),

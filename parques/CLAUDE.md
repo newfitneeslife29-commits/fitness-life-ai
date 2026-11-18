@@ -293,6 +293,9 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 - Cárcel: aviso por cada intento fallido y "Sin par en N intentos" al pasar el turno (`ANIM_MS.jailFail/jailOut`),
   etiqueta "🔒 Intento a/b" en el asiento.
 
+- Letreros que explican reglas (tira otra vez, sin par, dos pares, captura, tu turno) solo para jugadores nuevos
+  (`NEW_PLAYER_GAMES` = 5 partidas) o si se activan en Ajustes (`gameHints`: null = automático).
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

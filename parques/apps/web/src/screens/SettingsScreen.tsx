@@ -7,6 +7,7 @@ import { TopBar } from '../components/TopBar';
 import { useSettings } from '../stores/settingsStore';
 import { useProfile } from '../stores/profileStore';
 import { useApp } from '../stores/appStore';
+import { NEW_PLAYER_GAMES } from '../stores/gameStore';
 import { LANGUAGES, useT } from '../lib/i18n';
 import { askNotificationPermission } from '../lib/notify';
 import { MUSIC_TRACKS, play } from '../audio/audio';
@@ -56,6 +57,12 @@ export function SettingsScreen() {
             if (v) void askNotificationPermission();
           }}
         />
+        <Toggle
+          label={`💡 ${t('Letreros de ayuda en la partida')}`}
+          value={s.gameHints ?? p.stats.games < NEW_PLAYER_GAMES}
+          onChange={(v) => s.set({ gameHints: v })}
+        />
+        <p className="rule-note">{t('Explican las reglas (tirar otra vez, intentos de la cárcel…). Salen solos en tus primeras {n} partidas.', { n: NEW_PLAYER_GAMES })}</p>
         <Toggle label={`🔷 ${t('Modo daltónico (figuras en las fichas)')}`} value={s.colorblind} onChange={(v) => s.set({ colorblind: v })} />
         <Toggle label={`🔠 ${t('Letra grande')}`} value={s.bigText} onChange={(v) => s.set({ bigText: v })} />
         <div className="row">
