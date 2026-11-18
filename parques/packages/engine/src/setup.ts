@@ -58,6 +58,7 @@ export function createGame(config: GameConfig): GameState {
     rng: (config.seed ?? randomSeed()) >>> 0,
     missedCapture: null,
     capturedThisRoll: false,
+    crownedThisRoll: false,
     pendingSoplo: null,
     ranking: [],
     turn: 1,

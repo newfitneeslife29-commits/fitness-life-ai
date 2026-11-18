@@ -104,6 +104,7 @@ function doRoll(state: GameState, player: number, forced: [number, number] | und
   state.diceUsed = [false, false];
   state.missedCapture = null;
   state.capturedThisRoll = false;
+  state.crownedThisRoll = false;
   events.push({ type: 'ROLLED', player, dice, pair, pairStreak: state.pairStreak });
 
   // Tres pares seguidos.
@@ -158,6 +159,7 @@ function doMove(state: GameState, player: number, move: Move, events: GameEvent[
       captureAt(state, move.piece, squareOf(state.sides, side, to)!, events);
     } else if (to === homeFor(state.sides)) {
       state.players[player]!.stats.crowned++;
+      state.crownedThisRoll = true;
       events.push({ type: 'CROWNED', piece: move.piece });
       checkFinish(state, move.piece.owner, events);
       if ((state.phase as GameState['phase']) === 'over') return null;

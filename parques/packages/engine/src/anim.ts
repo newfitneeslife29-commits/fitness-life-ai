@@ -17,6 +17,8 @@ export const ANIM_MS = {
   turn: 120,
   forfeit: 400,
   /** Intento fallido de salir de la cárcel (se ve el resultado y cuántos quedan). */
+  /** Aviso "¡Tira otra vez!" por capturar o coronar. */
+  bonus: 900,
   jailFail: 650,
   /** Último intento fallido: aviso "sin par" antes de pasar el turno. */
   jailOut: 1300,
@@ -47,7 +49,7 @@ export function animDuration(events: GameEvent[]): number {
         ms += e.path.length * stepMs(e.path.length);
         break;
       case 'EXTRA_TURN':
-        if (e.reason === 'capture') ms += ANIM_MS.turn;
+        if (e.reason === 'capture' || e.reason === 'crown') ms += ANIM_MS.bonus;
         break;
       case 'CAPTURED':
         ms += ANIM_MS.capture;
