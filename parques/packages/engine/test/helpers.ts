@@ -3,12 +3,16 @@ import type { GameEvent, GameState, HouseRules, Move, PieceRef } from '../src';
 
 export { JAIL };
 
-/** Partida de 4 jugadores (lados 0..3) con semilla fija. */
+/**
+ * Partida de 4 jugadores (lados 0..3) con semilla fija.
+ * Muchas pruebas usan una sola ficha en juego para probar otra regla: por eso aquí `singlePieceSum` va apagada
+ * salvo que la prueba la pida (se prueba aparte en singlePiece.test.ts).
+ */
 export function newGame(rules: Partial<HouseRules> = {}, sides: 4 | 6 = 4, players: number = sides): GameState {
   return createGame({
     sides,
     seed: 42,
-    rules,
+    rules: { singlePieceSum: false, ...rules },
     players: Array.from({ length: players }, (_, i) => ({ name: `J${i}`, side: i })),
   });
 }

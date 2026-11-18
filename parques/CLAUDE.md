@@ -176,6 +176,9 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
     `reason: 'capture' | 'crown'`); no cuentan para los tres pares. Prueba en `test/crown.test.ts`.
 14. La ficha que captura queda quieta el resto de esa tirada (`captureLock`, `state.capturers`): el otro dado lo juega
     otra ficha o se pierde. Prueba en `test/capture.test.ts`.
+15. Con UNA sola ficha en juego y los dos dados libres se mueve la suma completa (`singlePieceSum`); si la suma no cabe
+    se puede jugar un dado; con par y fichas en la cárcel se puede sacar. `test/helpers.ts` la apaga por defecto
+    (muchas pruebas usan una sola ficha); se prueba en `test/singlePiece.test.ts`.
 
 Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` (1–3), `allOutDoubles`/`pairExitMax`, `teams`, `piecesPerPlayer`.
 

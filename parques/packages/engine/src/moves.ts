@@ -44,6 +44,12 @@ export function getLegalMoves(state: GameState): Move[] {
     if (!u1 && pos + d1 <= home && !(d0 === d1 && !u0)) moves.push({ type: 'step', piece, die: 1 });
     if (!u0 && !u1 && pos + d0 + d1 <= home) moves.push({ type: 'sum', piece });
   });
+  // Con UNA sola ficha en juego (y los dos dados sin usar) se mueve la suma completa, no un dado solo.
+  // Si la suma no cabe (p. ej. cerca de la llegada), se puede jugar un dado.
+  if (state.rules.singlePieceSum && !u0 && !u1) {
+    const inPlay = pieces.filter((p) => isActive(state.sides, p)).length;
+    if (inPlay === 1 && moves.some((m) => m.type === 'sum')) return moves.filter((m) => m.type !== 'step');
+  }
   return moves;
 }
 
