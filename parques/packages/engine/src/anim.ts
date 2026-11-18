@@ -18,10 +18,10 @@ export const ANIM_MS = {
   forfeit: 400,
   /** Intento fallido de salir de la cárcel (se ve el resultado y cuántos quedan). */
   /** Aviso "¡Tira otra vez!" por capturar o coronar. */
-  bonus: 900,
-  jailFail: 650,
+  bonus: 350,
+  jailFail: 350,
   /** Último intento fallido: aviso "sin par" antes de pasar el turno. */
-  jailOut: 1300,
+  jailOut: 500,
   left: 900,
   finished: 500,
 };

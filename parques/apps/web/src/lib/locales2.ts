@@ -631,4 +631,6 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Intento {a}/{b}": ["Try {a}/{b}", "Tentativa {a}/{b}", "Essai {a}/{b}"],
   "¡{name} tira otra vez!": ["{name} rolls again!", "{name} joga de novo!", "{name} rejoue !"],
   "Coronar una ficha te da otra tirada": ["Crowning a piece gives you another roll", "Coroar uma peça te dá outra jogada", "Couronner un pion te donne un autre lancer"],
+  "Letreros de ayuda en la partida": ["Help messages during the game", "Avisos de ajuda na partida", "Messages d'aide pendant la partie"],
+  "Explican las reglas (tirar otra vez, intentos de la cárcel…). Salen solos en tus primeras {n} partidas.": ["They explain the rules (roll again, jail tries…). Shown automatically in your first {n} games.", "Explicam as regras (jogar de novo, tentativas da prisão…). Aparecem sozinhos nas suas primeiras {n} partidas.", "Ils expliquent les règles (rejouer, essais de la prison…). Affichés automatiquement pendant tes {n} premières parties."],
 };

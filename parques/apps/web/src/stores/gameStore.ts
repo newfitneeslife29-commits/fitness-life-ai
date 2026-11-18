@@ -23,6 +23,7 @@ import { BOT_LINES, pick } from '../game/phrases';
 import { play, vibrate } from '../audio/audio';
 import type { TableTier, MatchOutcome } from '@parques/engine';
 import { useProfile } from './profileStore';
+import { useSettings } from './settingsStore';
 import { tr } from '../lib/i18n';
 
 export interface SeatConfig {
@@ -133,6 +134,9 @@ interface GameStore {
   /** Aplica los premios de la partida al perfil (una sola vez). */
 }
 
+/** Partidas jugadas hasta las que se muestran los letreros que explican las reglas. */
+export const NEW_PLAYER_GAMES = 5;
+
 let uid = 1;
 let timers: ReturnType<typeof setTimeout>[] = [];
 let queue: Promise<void> = Promise.resolve();
@@ -180,6 +184,13 @@ export const useGame = create<GameStore>((set, get) => {
     }, ms / get().speed);
   }
 
+  /** ¿Mostrar letreros que explican las reglas? Solo a quien está aprendiendo (pocas partidas) o si lo activó en Ajustes. */
+  function hints(): boolean {
+    const pref = useSettings.getState().gameHints;
+    if (pref !== null && pref !== undefined) return pref;
+    return (useProfile.getState().stats?.games ?? 0) < NEW_PLAYER_GAMES;
+  }
+
   function botSay(player: number, lines: readonly string[], chance = 0.5) {
     if (get().online || isHuman(player) || Math.random() > chance) return;
     get().say(player, pick(lines));
@@ -209,7 +220,7 @@ export const useGame = create<GameStore>((set, get) => {
           play('land');
           if (e.pair) play('pair');
           if (e.pair && e.pairStreak === 2 && final.rules.triplePairPenalty) {
-            showBanner('pair', tr('¡Dos pares!'), tr('Pilas pues: un par más y a la cárcel'), 1300);
+            if (hints()) showBanner('pair', tr('¡Dos pares!'), tr('Pilas pues: un par más y a la cárcel'), 1300);
             botSay((e.player + 1) % final.players.length, BOT_LINES.pilas, 0.4);
           }
           break;
@@ -218,10 +229,10 @@ export const useGame = create<GameStore>((set, get) => {
           // Cada intento se ve: cuántos quedan y, en el último, un aviso claro antes de pasar el turno.
           const who = isHuman(e.player) ? tr('Tú') : g.players[e.player]!.name;
           if (e.attemptsLeft > 0) {
-            showBanner('info', tr('Sin par'), tr('{name}: intentos restantes {n}', { name: who, n: e.attemptsLeft }), BASE.jailFail);
+            if (hints()) showBanner('info', tr('Sin par'), tr('{name}: intentos restantes {n}', { name: who, n: e.attemptsLeft }), 900);
             await sleep(BASE.jailFail);
           } else {
-            showBanner('info', tr('Sin par en {n} intentos', { n: final.rules.jailAttempts }), tr('{name} pasa el turno', { name: who }), BASE.jailOut);
+            if (hints()) showBanner('info', tr('Sin par en {n} intentos', { n: final.rules.jailAttempts }), tr('{name} pasa el turno', { name: who }), 1300);
             await sleep(BASE.jailOut);
           }
           break;
@@ -251,7 +262,7 @@ export const useGame = create<GameStore>((set, get) => {
             const mine = isHuman(e.player);
             const title = mine ? tr('¡Tira otra vez!') : tr('¡{name} tira otra vez!', { name: g.players[e.player]!.name });
             const sub = e.reason === 'capture' ? tr('Capturar te da otra tirada') : tr('Coronar una ficha te da otra tirada');
-            showBanner('bonus', title, sub, BASE.bonus + 400);
+            if (hints()) showBanner('bonus', title, sub, 1300);
             play(mine ? 'pair' : 'tap');
             if (mine) vibrate(40);
             await sleep(BASE.bonus);
@@ -264,7 +275,7 @@ export const useGame = create<GameStore>((set, get) => {
           const at = sq === null ? pointOf(final, e.by, pos) : trackCell(g.sides, sq).center;
           pushFx('burst', at, colorVar(final, e.by.owner), 1000);
           play('capture');
-          showBanner('capture', tr('¡Captura!'), tr('{a} manda a la cárcel a {b}', { a: g.players[e.by.owner]!.name, b: g.players[e.victims[0]!.owner]!.name }), 1100);
+          if (hints()) showBanner('capture', tr('¡Captura!'), tr('{a} manda a la cárcel a {b}', { a: g.players[e.by.owner]!.name, b: g.players[e.victims[0]!.owner]!.name }), 1100);
           vibrate(60);
           await sleep(BASE.capture * 0.45);
           let view = get().view;
@@ -326,7 +337,7 @@ export const useGame = create<GameStore>((set, get) => {
         case 'TURN_CHANGED':
           if (isHuman(e.player)) {
             play('turn');
-            showBanner('info', tr('¡Tu turno!'), undefined, 700);
+            if (hints()) showBanner('info', tr('¡Tu turno!'), undefined, 700);
           }
           await sleep(BASE.turn);
           break;
