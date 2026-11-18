@@ -27,7 +27,7 @@ export const TUTORIAL_STEPS: Step[] = [
   { text: 'Las casillas con ⭐ y las SALIDAS son SEGUROS: ahí nadie te puede capturar.', wait: 'next' },
   { text: '¡Pilas! Si pudiste capturar y no lo hiciste, un rival te puede SOPLAR y mandar esa ficha a la cárcel.', wait: 'next' },
   { text: 'Tres pares seguidos castigan: tu ficha más adelantada se va a la cárcel. ¡No te emociones tanto!', wait: 'next' },
-  { text: 'Gana quien lleve primero sus 4 fichas al CIELO (el centro), con el número exacto. Cada partida da monedas, XP y gemas.', wait: 'next' },
+  { text: 'Gana quien lleve primero sus 4 fichas al CIELO (el centro), con el número exacto. Cada ficha que llega te da otra tirada. Cada partida da monedas, XP y gemas.', wait: 'next' },
 ];
 
 

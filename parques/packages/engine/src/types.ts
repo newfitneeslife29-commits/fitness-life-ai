@@ -40,6 +40,8 @@ export interface HouseRules {
   piecesPerPlayer: number;
   /** Capturar a un rival da otra tirada. */
   captureBonus: boolean;
+  /** Coronar una ficha (llevarla a la llegada) da otra tirada. */
+  crownBonus: boolean;
 }
 
 export const DEFAULT_RULES: HouseRules = {
@@ -51,6 +53,7 @@ export const DEFAULT_RULES: HouseRules = {
   teams: false,
   piecesPerPlayer: 4,
   captureBonus: true,
+  crownBonus: true,
 };
 
 export interface PlayerSetup {
@@ -127,6 +130,8 @@ export interface GameState {
   missedCapture: PieceRef | null;
   /** Hubo al menos una captura en esta tirada. */
   capturedThisRoll: boolean;
+  /** Coronó una ficha en esta tirada (da otra tirada si `crownBonus`). */
+  crownedThisRoll?: boolean;
   pendingSoplo: PendingSoplo | null;
   /** Orden de llegada (índices de jugadores). 1º, 2º, ... */
   ranking: number[];
@@ -165,7 +170,7 @@ export type GameEvent =
   | { type: 'SOPLO_AVAILABLE'; offender: number; piece: PieceRef }
   | { type: 'SOPLADO'; by: number; offender: number; piece: PieceRef }
   | { type: 'SOPLO_EXPIRED' }
-  | { type: 'EXTRA_TURN'; player: number; reason?: 'pair' | 'capture' }
+  | { type: 'EXTRA_TURN'; player: number; reason?: 'pair' | 'capture' | 'crown' }
   | { type: 'TURN_CHANGED'; player: number }
   | { type: 'PLAYER_FINISHED'; player: number; place: number }
   | { type: 'GAME_OVER'; ranking: number[] }

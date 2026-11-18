@@ -701,3 +701,7 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .seat-jailtry { position: absolute; bottom: -11px; right: 12px; z-index: 5; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 900; white-space: nowrap; color: #fff; background: linear-gradient(160deg, #7c4dff, #4a1fb8); border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); pointer-events: none; }
 /* El botón de soplar flota sobre la partida: nunca debe ocupar espacio en la columna (empujaba los asientos sobre el tablero). */
 .game-screen > .soplar-btn:not(.bg) { position: fixed; right: 14px; bottom: calc(var(--safe-bottom) + 120px); z-index: 40; }
+/* "¡Tira otra vez!" por capturar o coronar: verde y grande, que se note. */
+.banner-bonus { background: radial-gradient(circle at 50% 30%, #3ddc84, #0f7a3d); border-color: #fff; padding: 18px 26px; }
+.banner-bonus .banner-title { color: #fff; font-size: 2.4rem; -webkit-text-stroke: 1px #064020; }
+.banner-bonus .banner-sub { color: #eafff1; }

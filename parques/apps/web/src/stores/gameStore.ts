@@ -62,7 +62,7 @@ export interface Fx {
   color: string;
 }
 
-export type BannerKind = 'triple' | 'soplo' | 'pair' | 'capture' | 'finish' | 'info';
+export type BannerKind = 'triple' | 'soplo' | 'pair' | 'capture' | 'finish' | 'info' | 'bonus';
 export interface Banner {
   id: number;
   kind: BannerKind;
@@ -246,9 +246,15 @@ export const useGame = create<GameStore>((set, get) => {
           break;
         }
         case 'EXTRA_TURN': {
-          if (e.reason === 'capture') {
-            showBanner('info', tr('¡Tira otra vez!'), tr('Capturar te da otra tirada'), 1100);
-            await sleep(BASE.turn);
+          if (e.reason === 'capture' || e.reason === 'crown') {
+            // Aviso grande y claro: capturar o coronar da otra tirada.
+            const mine = isHuman(e.player);
+            const title = mine ? tr('¡Tira otra vez!') : tr('¡{name} tira otra vez!', { name: g.players[e.player]!.name });
+            const sub = e.reason === 'capture' ? tr('Capturar te da otra tirada') : tr('Coronar una ficha te da otra tirada');
+            showBanner('bonus', title, sub, BASE.bonus + 400);
+            play(mine ? 'pair' : 'tap');
+            if (mine) vibrate(40);
+            await sleep(BASE.bonus);
           }
           break;
         }

@@ -30,16 +30,19 @@ export function endRoll(state: GameState, events: GameEvent[]): void {
   }
   // Capturar a alguien da otra tirada (se lee antes de cerrar el soplo, que reinicia la marca).
   const captured = state.capturedThisRoll && state.rules.captureBonus;
+  // Coronar una ficha también da otra tirada.
+  const crowned = !!state.crownedThisRoll && state.rules.crownBonus;
+  state.crownedThisRoll = false;
   finalizeSoplo(state, events);
   if (state.phase === 'over') return;
   const pair = isPairRoll(state);
-  if ((pair || captured) && stillPlaying(state, state.current)) {
+  if ((pair || captured || crowned) && stillPlaying(state, state.current)) {
     state.phase = 'roll';
     state.diceUsed = [true, true];
     state.jailRollsUsed = 0;
-    // La tirada extra por captura no cuenta para los tres pares seguidos.
+    // La tirada extra por captura o corona no cuenta para los tres pares seguidos.
     if (!pair) state.pairStreak = 0;
-    events.push({ type: 'EXTRA_TURN', player: state.current, reason: pair ? 'pair' : 'capture' });
+    events.push({ type: 'EXTRA_TURN', player: state.current, reason: pair ? 'pair' : captured ? 'capture' : 'crown' });
   } else {
     nextPlayer(state, events);
   }
