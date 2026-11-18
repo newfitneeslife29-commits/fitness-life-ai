@@ -638,3 +638,55 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .status-veil { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgb(25, 8, 50); }
 .banim-fireflies circle { filter: none !important; }
 .bg.still { background: radial-gradient(130% 90% at 50% 0%, var(--bg-a) 0%, var(--bg-b) 70%); }
+
+/* Dado con animaciones CSS (GPU). Orden: .cube-hop (saltitos) > .cube-orient (cara final) > .cube-tumble (volteretas). */
+.cube-hop { position: relative; transform-style: preserve-3d; will-change: transform; }
+.cube-hop.rolling { animation: cube-hop 0.55s ease-in-out infinite; }
+.cube-hop.drop0 { animation: cube-drop0 0.75s ease-out both; }
+.cube-hop.drop1 { animation: cube-drop1 0.75s ease-out both; }
+.cube-orient { transition: transform 0.85s cubic-bezier(0.2, 1.25, 0.4, 1); will-change: transform; }
+.cube-tumble { position: relative; transform-style: preserve-3d; }
+.cube-tumble.rolling { animation: cube-tumble 0.55s linear infinite; }
+.cube-shadow { will-change: transform; }
+.cube-shadow.rolling { animation: cube-shadow 0.55s ease-in-out infinite; }
+@keyframes cube-tumble {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  33% { transform: rotateX(200deg) rotateY(300deg) rotateZ(90deg); }
+  66% { transform: rotateX(420deg) rotateY(480deg) rotateZ(-60deg); }
+  100% { transform: rotateX(720deg) rotateY(720deg) rotateZ(0deg); }
+}
+@keyframes cube-hop {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(calc(var(--cs) * 0.12), calc(var(--cs) * -0.45), 0); }
+  50% { transform: translate3d(calc(var(--cs) * -0.12), calc(var(--cs) * -0.1), 0); }
+  75% { transform: translate3d(0, calc(var(--cs) * -0.35), 0); }
+}
+@keyframes cube-drop0 {
+  0% { transform: translate3d(0, calc(var(--cs) * -0.9), 0); }
+  38% { transform: translate3d(0, 0, 0); }
+  58% { transform: translate3d(0, calc(var(--cs) * -0.28), 0); }
+  76% { transform: translate3d(0, 0, 0); }
+  88% { transform: translate3d(0, calc(var(--cs) * -0.08), 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes cube-drop1 {
+  0% { transform: translate3d(0, calc(var(--cs) * -0.9), 0); }
+  38% { transform: translate3d(0, 0, 0); }
+  58% { transform: translate3d(0, calc(var(--cs) * -0.28), 0); }
+  76% { transform: translate3d(0, 0, 0); }
+  88% { transform: translate3d(0, calc(var(--cs) * -0.08), 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes cube-shadow { 0%, 100% { transform: scale(1); } 25% { transform: scale(0.6); } 50% { transform: scale(0.9); } 75% { transform: scale(0.65); } }
+.pulse-soft { animation: pulse-soft 1.2s ease-in-out infinite; }
+@keyframes pulse-soft { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.seat-dicebox.can-roll { animation: dicebox-call 1.1s ease-in-out infinite; }
+@keyframes dicebox-call { 0%, 100% { transform: scale(1) rotate(0deg); } 30% { transform: scale(1.1) rotate(-4deg); } 60% { transform: scale(1.05) rotate(4deg); } }
+/* Tablero en dos capas: base fija + capa de juego encima (misma caja y mismo viewBox). */
+.board-stack { position: relative; }
+.board-layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.board-top { will-change: transform; transform: translateZ(0); }
+.pc-bounce { animation: pc-bounce 0.7s ease-in-out infinite; }
+@keyframes pc-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+.pc-ring { animation: pulse-ring 0.9s ease-in-out infinite; }
+@keyframes pulse-ring { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }

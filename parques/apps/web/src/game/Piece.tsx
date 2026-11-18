@@ -17,7 +17,7 @@ interface Props {
   crowned: boolean;
   style: PieceStyle;
   img?: string;
-  onClick: () => void;
+  onPick: (id: string) => void;
 }
 
 const R = 19;
@@ -239,7 +239,7 @@ export const HOP_S = 0.13;
 /** Figura de cada color (modo para daltónicos). */
 export const COLOR_SHAPES: Record<Color, string> = { amarillo: '▲', rojo: '●', verde: '■', azul: '◆', naranja: '★', morado: '✚' };
 
-export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onClick }: Props) {
+export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, selected, crowned, style, img, onPick }: Props) {
   const r = crowned ? R * 0.72 : R;
   const colorblind = useSettings((s) => s.colorblind);
   const onBoard = pos >= 0;
@@ -261,7 +261,7 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
       initial={false}
       animate={{ x: at.x, y: at.y }}
       transition={toJail ? { type: 'tween', ease: [0.3, 0, 0.3, 1], duration: 0.75 } : { type: 'tween', ease: [0.45, 0, 0.55, 1], duration: HOP_S }}
-      onClick={movable ? onClick : undefined}
+      onClick={movable ? () => onPick(id) : undefined}
       // Solo las fichas que se pueden mover reciben el toque: así una ficha rival o quieta nunca tapa a la que quieres mover.
       style={{ cursor: movable ? 'pointer' : 'default', pointerEvents: movable ? 'auto' : 'none' }}
       data-piece={id}
@@ -279,9 +279,7 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           animate={onBoard ? { scale: [1, 0.55, 1], opacity: [0.35, 0.15, 0.35] } : { scale: 1, opacity: 0.35 }}
           transition={{ duration: HOP_S, ease: 'easeInOut' }}
         />
-        {movable ? (
-          <motion.ellipse rx={r + 9} ry={(r + 9) * 0.5} cy={0} fill="none" stroke="#fff" strokeWidth={3.5} animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 0.9, repeat: Infinity }} />
-        ) : null}
+        {movable ? <ellipse className="pc-ring" rx={r + 9} ry={(r + 9) * 0.5} cy={0} fill="none" stroke="#fff" strokeWidth={3.5} /> : null}
         {selected ? <ellipse rx={r + 11} ry={(r + 11) * 0.5} fill="rgba(255,207,63,.35)" stroke="#ffcf3f" strokeWidth={4} /> : null}
         <motion.g
           key={pos}
@@ -289,14 +287,13 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
           animate={
             toJail
               ? { y: [0, -90, -40, 0], rotate: [0, 200, 340, 360], scaleX: 1, scaleY: 1 }
-              : movable
-              ? { y: [0, -9, 0], scaleX: 1, scaleY: 1 }
-              : onBoard
+              : onBoard && !movable
                 ? { y: [0, -30, 0, 0], scaleX: [1, 0.94, 1.12, 1], scaleY: [1, 1.1, 0.86, 1] }
                 : { y: 0, scaleX: 1, scaleY: 1 }
           }
-          transition={toJail ? { duration: 0.75, times: [0, 0.4, 0.75, 1], ease: 'easeOut' } : movable ? { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
+          transition={toJail ? { duration: 0.75, times: [0, 0.4, 0.75, 1], ease: 'easeOut' } : { duration: HOP_S + 0.08, times: [0, 0.45, 0.8, 1], ease: 'easeOut' }}
         >
+          <g className={movable ? 'pc-bounce' : undefined}>
           <PieceGlyph color={color} style={style} r={r} img={img} />
           {colorblind ? (
             <g className="cb-mark" transform={`translate(0 ${-r * 1.15})`}>
@@ -310,8 +307,11 @@ export const Piece = memo(function Piece({ id, at, pos, color, rot, movable, sel
             <path d="M-9 -44 L-9 -52 L-4.5 -48 L0 -54 L4.5 -48 L9 -52 L9 -44 Z" fill="#ffcf3f" stroke="#7a4b00" strokeWidth={1.5} strokeLinejoin="round" />
           ) : null}
           <rect x={-r - 4} y={-r * 2.6} width={(r + 4) * 2} height={r * 3.2} fill="transparent" />
+          </g>
         </motion.g>
       </g>
     </motion.g>
   );
-});
+}, (a, b) =>
+  a.at.x === b.at.x && a.at.y === b.at.y && a.pos === b.pos && a.color === b.color && a.rot === b.rot && a.movable === b.movable &&
+  a.selected === b.selected && a.crowned === b.crowned && a.style === b.style && a.img === b.img && a.onPick === b.onPick && a.id === b.id);

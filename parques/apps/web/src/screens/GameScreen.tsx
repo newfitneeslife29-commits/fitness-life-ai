@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { homeFor, isActive } from '@parques/engine';
 import type { Move, PieceRef } from '@parques/engine';
@@ -47,11 +47,14 @@ export function GameScreen() {
   const passPremium = useProfile((p) => p.pass.premium);
   const myLevel = useLevel().level;
 
-  // Reloj para contadores (Modo Rápido y soplo).
+  // Reloj para contadores (Modo Rápido y soplo): solo corre mientras hay uno en pantalla, para no
+  // redibujar toda la partida 4 veces por segundo.
+  const needClock = !!s.soploDeadline || !!s.matchDeadline;
   useEffect(() => {
+    if (!needClock) return;
     const id = setInterval(() => tick((t) => t + 1), 250);
     return () => clearInterval(id);
-  }, []);
+  }, [needClock]);
 
   // Al terminar, pasa a la pantalla de victoria.
   useEffect(() => {
@@ -86,6 +89,11 @@ export function GameScreen() {
         return { move: m, at: piecePoint(game.sides, side, pos + value, sel.index), label: mv.type === 'sum' ? `${dice[0]}+${dice[1]}` : String(value) };
       });
   }, [game, s.selected, legal, view]);
+
+  // Manejadores estables para el tablero (así el tablero no se redibuja entero en cada render).
+  const pieceTap = useRef<(ref: PieceRef) => void>(() => {});
+  const stablePiece = useCallback((ref: PieceRef) => pieceTap.current(ref), []);
+  const stableTarget = useCallback((m: Move) => useGame.getState().humanMove(m), []);
 
   // Tamaño del tablero: se mide UNA vez al entrar (y si se gira o cambia el tamaño de la pantalla). Así no crece,
   // se achica ni se mueve cuando cambian los botones de abajo (TIRAR, sacar fichas, etc.) o los textos.
@@ -172,7 +180,7 @@ export function GameScreen() {
   };
   const alignFor = (k: number, n: number, x = 0) => (n === 1 ? (x > 0 ? 'right' : 'left') : k === 0 ? 'left' : k === n - 1 ? 'right' : 'center');
 
-  const onPiece = (ref: PieceRef) => {
+  pieceTap.current = (ref: PieceRef) => {
     if (s.selected && s.selected.owner === ref.owner && s.selected.index === ref.index) {
       // Segundo toque: si solo hay un destino, mueve directo.
       if (targets.length === 1) s.humanMove(targets[0]!.move);
@@ -203,7 +211,7 @@ export function GameScreen() {
 
   return (
     <div className="screen game-screen">
-      <Background tint={theme.page} />
+      <Background tint={theme.page} still />
       <header className="game-top">
         <button className="btn3d ghost icon" onClick={() => { setMenuOpen(true); s.setPaused(true); play('tap'); }} aria-label="Menú">
           ☰
@@ -237,8 +245,8 @@ export function GameScreen() {
             selected={s.selected}
             targets={targets}
             fx={s.fx}
-            onPiece={onPiece}
-            onTarget={(m) => s.humanMove(m)}
+            onPiece={stablePiece}
+            onTarget={stableTarget}
             theme={theme}
             pieceStyle={pieceStyle}
             pieceImg={pieceImg}

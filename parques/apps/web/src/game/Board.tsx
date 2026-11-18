@@ -1,6 +1,6 @@
 import { Idp } from './idp';
 import { BoardArt } from './BoardArt';
-import { memo, useContext, useMemo } from 'react';
+import { memo, useCallback, useContext, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { COLORS_4, COLORS_6, homeFor, SQUARES_PER_SIDE, trackLength } from '@parques/engine';
 import type { Color, GameState, Move, PieceRef } from '@parques/engine';
@@ -349,15 +349,24 @@ export function BoardMini({ theme, id, labels = false, className = '' }: { theme
   );
 }
 
-export function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget, theme, pieceStyle, pieceImg, effect }: Props) {
+export const Board = memo(function Board({ game, view, viewSide, movable, selected, targets, fx, onPiece, onTarget, theme, pieceStyle, pieceImg, effect }: Props) {
   const sides = game.sides;
   const box = boardBox(sides);
   const rot = viewRotation(sides, viewSide);
+  // Clave estable: el estado del juego cambia en cada jugada, pero los lados ocupados no.
+  const activeKey = game.players.map((p) => p.side).join(',');
   const activeSides = useMemo(() => {
     const a = Array.from({ length: sides }, () => false);
-    for (const p of game.players) a[p.side] = true;
+    for (const sd of activeKey.split(',')) a[Number(sd)] = true;
     return a;
-  }, [game.players, sides]);
+  }, [activeKey, sides]);
+  const pick = useCallback(
+    (id: string) => {
+      const [o, i] = id.split('-');
+      onPiece({ owner: Number(o), index: Number(i) });
+    },
+    [onPiece],
+  );
 
   // Varias fichas en la misma casilla se reparten a lo largo de la casilla.
   const pieces = useMemo(() => {
@@ -397,11 +406,12 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
   });
 
   return (
-    <Idp.Provider value="g-">
-      <svg viewBox={`${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2 + 40}`} className="board-svg" role="img" aria-label={tr('Tablero de parqués')} style={{ ['--board-line' as string]: theme.line }}>
-        <BoardDefs theme={theme} />
+    <div className="board-svg board-stack" role="img" aria-label={tr('Tablero de parqués')} style={{ ['--board-line' as string]: theme.line }}>
+      {/* Capa fija: el tablero se dibuja una sola vez y no se vuelve a pintar cuando se mueven las fichas. */}
+      <StaticBoard sides={sides} active={activeSides} theme={theme} rot={rot} />
+      {/* Capa de juego (su propia capa en la GPU): fichas, destinos y efectos. */}
+      <svg viewBox={viewBoxFor(sides)} className="board-layer board-top">
         <g transform={`rotate(${rot})`}>
-          <BoardScene sides={sides} active={activeSides} theme={theme} rot={rot} />
           {theme.anim ? <BoardAnimLayer kind={theme.anim} half={boardBox(sides).w} rot={rot} /> : null}
           {game.phase !== 'over' ? <TurnGlow sides={sides} side={game.players[game.current]!.side} color={game.players[game.current]!.color} /> : null}
 
@@ -420,7 +430,7 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
                 crowned={p.pos === homeFor(sides)}
                 style={pieceStyle}
                 img={pieceImg}
-                onClick={() => onPiece(p.ref)}
+                onPick={pick}
               />
             );
           })}
@@ -452,36 +462,40 @@ export function Board({ game, view, viewSide, movable, selected, targets, fx, on
           <FxLayer fx={fx} rot={rot} effect={effect} />
         </g>
       </svg>
-    </Idp.Provider>
+    </div>
   );
+});
+
+function viewBoxFor(sides: 4 | 6) {
+  const box = boardBox(sides);
+  return `${-box.w} ${-box.h} ${box.w * 2} ${box.h * 2 + 40}`;
 }
 
+const StaticBoard = memo(function StaticBoard({ sides, active, theme, rot }: { sides: 4 | 6; active: boolean[]; theme: BoardTheme; rot: number }) {
+  return (
+    <Idp.Provider value="g-">
+      <svg viewBox={viewBoxFor(sides)} className="board-layer board-base">
+        <BoardDefs theme={theme} />
+        <g transform={`rotate(${rot})`}>
+          <BoardScene sides={sides} active={active} theme={theme} rot={rot} />
+        </g>
+      </svg>
+    </Idp.Provider>
+  );
+});
+
 /** La casa (cárcel) del jugador en turno se ilumina y late, para saber a quién le toca. */
-function TurnGlow({ sides, side, color }: { sides: 4 | 6; side: number; color: Color }) {
+const TurnGlow = memo(function TurnGlow({ sides, side, color }: { sides: 4 | 6; side: number; color: Color }) {
   const j = jailGeom(sides, side);
+  // Sin filtros ni animación infinita: en el iPhone eso obligaba a repintar el tablero en cada cuadro.
   return (
     <g pointerEvents="none" key={side}>
-      <motion.polygon
-        points={j.points}
-        fill={`var(--${color})`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.15, 0.45, 0.15] }}
-        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.polygon
-        points={j.points}
-        fill="none"
-        stroke="#fff"
-        strokeWidth={10}
-        strokeLinejoin="round"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.4, 1, 0.4] }}
-        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ filter: `drop-shadow(0 0 14px var(--${color}))` }}
-      />
+      <polygon points={j.points} fill={`var(--${color})`} opacity={0.32} />
+      <polygon points={j.points} fill="none" stroke={`var(--${color})`} strokeWidth={18} strokeLinejoin="round" opacity={0.45} />
+      <polygon points={j.points} fill="none" stroke="#fff" strokeWidth={7} strokeLinejoin="round" opacity={0.9} />
     </g>
   );
-}
+});
 
 /** Escenario pintado (arte en public/art/boards): fondo de todo el tablero; el recorrido se dibuja encima. */
 function BoardScenery({ image, half, rot, clipPoints }: { image: string; half: number; rot: number; clipPoints: string }) {
