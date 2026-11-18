@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { dailyChallenge, dayKey, isVip, STORY, vipDaysLeft, winsForChest } from '@parques/engine';
@@ -98,7 +99,7 @@ export function QuickCards() {
               </motion.div>
               <h2>{t('¡Cofre de victorias!')}</h2>
               <p className="reveal-prize">
-                <CoinIcon size={22} /> {opening.coins.toLocaleString()} · <GemIcon size={22} /> {opening.gems}
+                <CoinIcon size={22} /> {opening.coins.toLocaleString(numLocale())} · <GemIcon size={22} /> {opening.gems}
               </p>
               <button className="btn3d green wide" onClick={() => setOpening(null)}>
                 {t('¡Bacano!')}

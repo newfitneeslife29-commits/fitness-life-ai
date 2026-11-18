@@ -1,3 +1,4 @@
+import { compact } from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { motion, useAnimationControls } from 'framer-motion';
 
@@ -23,7 +24,7 @@ export function useCountUp(value: number, ms = 700): number {
 }
 
 export function fmtNum(n: number): string {
-  return n >= 100000 ? `${Math.floor(n / 1000)}k` : n.toLocaleString('es-CO');
+  return compact(n);
 }
 
 export function CurrencyPill({ kind, value, onPlus }: { kind: 'coin' | 'gem'; value: number; onPlus?: () => void }) {

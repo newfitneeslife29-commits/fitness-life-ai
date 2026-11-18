@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { motion } from 'framer-motion';
 import { TopBar } from '../components/TopBar';
 import { BottomNav } from '../components/BottomNav';
@@ -122,7 +123,7 @@ export function EventsScreen() {
               <motion.div key={i} className={`ev15-tier ${reached ? 'on' : ''} ${claimed ? 'done' : ''} ${tier.itemId ? 'big' : ''}`} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.05 * i }}>
                 <b>{tier.goal}</b>
                 {tier.itemId ? <span className="ev15-item">{item(tier.itemId).emoji}</span> : null}
-                <span><CoinIcon size={13} /> {tier.coins.toLocaleString()}</span>
+                <span><CoinIcon size={13} /> {tier.coins.toLocaleString(numLocale())}</span>
                 {tier.gems ? <span><GemIcon size={13} /> {tier.gems}</span> : null}
                 {claimed ? (
                   <span className="mi-ok">✓</span>

@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { LeagueCard } from '../components/LeagueCard';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -74,7 +75,7 @@ export function RankingScreen() {
           {RANK_PRIZES[scope].map((b, i) => (
             <span key={i} className="rp-band">
               <b>{b.upTo === 1 ? '1º' : `${(RANK_PRIZES[scope][i - 1]?.upTo ?? 0) + 1}º–${b.upTo}º`}</b>
-              <span><CoinIcon size={13} /> {b.coins.toLocaleString('es-CO')}</span>
+              <span><CoinIcon size={13} /> {b.coins.toLocaleString(numLocale())}</span>
               {b.gems ? <span><GemIcon size={13} /> {b.gems}</span> : null}
             </span>
           ))}
@@ -92,7 +93,7 @@ export function RankingScreen() {
             <p className="rule-note">{t('Queda en el top 3 entre al menos 3 amigos que jueguen y reclama tu premio cada semana.')}</p>
           )
         ) : mine ? (
-          <p className="rule-note won">🏅 {t('La semana pasada quedaste {n}º y ganaste {c} monedas', { n: mine.place, c: mine.coins.toLocaleString('es-CO') })}</p>
+          <p className="rule-note won">🏅 {t('La semana pasada quedaste {n}º y ganaste {c} monedas', { n: mine.place, c: mine.coins.toLocaleString(numLocale()) })}</p>
         ) : (
           <p className="rule-note">{t('Los premios se entregan solos cada lunes según tus trofeos.')}</p>
         )}

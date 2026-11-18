@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CLUB_CHEST, CLUB_COST, CLUB_EMOJIS, CLUB_MAX } from '@parques/engine';
@@ -202,7 +203,7 @@ export function ClubScreen() {
                           <span className="lg-fill" style={{ width: `${Math.min(100, (club.weekWins / c.wins) * 100)}%` }} />
                         </span>
                         <small>
-                          <CoinIcon size={12} /> {c.coins.toLocaleString()} · <GemIcon size={12} /> {c.gems}
+                          <CoinIcon size={12} /> {c.coins.toLocaleString(numLocale())} · <GemIcon size={12} /> {c.gems}
                         </small>
                       </span>
                       <button className="btn3d small green" disabled={!ready || done} onClick={(e) => void claim(i, e.currentTarget)}>
@@ -227,7 +228,7 @@ export function ClubScreen() {
               </button>
             </div>
             <button className="btn3d green wide" onClick={() => setCreating(true)}>
-              ➕ {t('Crear club')} · <CoinIcon size={14} /> {CLUB_COST.toLocaleString()}
+              ➕ {t('Crear club')} · <CoinIcon size={14} /> {CLUB_COST.toLocaleString(numLocale())}
             </button>
           </motion.section>
           <section className="card glossy">
@@ -265,7 +266,7 @@ export function ClubScreen() {
                 ))}
               </div>
               <button className="btn3d green wide" onClick={() => void create()}>
-                {t('Crear')} · <CoinIcon size={14} /> {CLUB_COST.toLocaleString()}
+                {t('Crear')} · <CoinIcon size={14} /> {CLUB_COST.toLocaleString(numLocale())}
               </button>
             </motion.div>
           </motion.div>

@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { motion } from 'framer-motion';
 import { STORY, item } from '@parques/engine';
 import { TopBar } from '../components/TopBar';
@@ -53,7 +54,7 @@ export function StoryScreen() {
                 {current ? <p className="story-intro">“{t(st.intro)}”</p> : null}
                 <div className="story-reward">
                   <span>
-                    <CoinIcon size={14} /> {st.reward.coins.toLocaleString()} · <GemIcon size={14} /> {st.reward.gems}
+                    <CoinIcon size={14} /> {st.reward.coins.toLocaleString(numLocale())} · <GemIcon size={14} /> {st.reward.gems}
                   </span>
                   <span className="story-items">{st.reward.itemIds.map((id) => item(id).emoji).join(' ')}</span>
                 </div>

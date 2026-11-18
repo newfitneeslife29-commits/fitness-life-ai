@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { isVip } from '@parques/engine';
 import { motion } from 'framer-motion';
 import { useLevel, useProfile } from '../stores/profileStore';
@@ -29,7 +30,7 @@ export function TopBar({ back, title }: { back?: boolean; title?: string }) {
               <motion.div className="xpbar-fill" initial={false} animate={{ width: `${lvl.max ? 100 : (lvl.into / lvl.need) * 100}%` }} />
             </div>
             <small className="topbar-xp">
-              {tr('Nivel {n}', { n: lvl.level })} · {lvl.max ? tr('MÁXIMO') : `${lvl.into.toLocaleString()}/${lvl.need.toLocaleString()} XP`}
+              {tr('Nivel {n}', { n: lvl.level })} · {lvl.max ? tr('MÁXIMO') : `${lvl.into.toLocaleString(numLocale())}/${lvl.need.toLocaleString(numLocale())} XP`}
             </small>
           </div>
         </motion.button>

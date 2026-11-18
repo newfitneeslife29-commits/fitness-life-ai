@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TOURNAMENT_TIERS, tournamentTier, type CupInfo, type HallOfFame } from '@parques/engine';
@@ -18,7 +19,7 @@ function left(ms: number): string {
   return `${d}d ${h}h ${m}m`;
 }
 
-const fmt = (n: number) => n.toLocaleString('es-CO');
+const fmt = (n: number) => n.toLocaleString(numLocale());
 
 /** Copas semanales con inscripción (el bote se reparte al top 10) y salón de la fama. */
 export function TournamentScreen() {

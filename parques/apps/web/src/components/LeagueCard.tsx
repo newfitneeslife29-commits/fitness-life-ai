@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { DIVISIONS, divisionOf, nextDivision } from '@parques/engine';
@@ -31,7 +32,7 @@ export function LeagueCard() {
     play('levelup');
     fx.fly('coin', centerOf(el), 12);
     setInfo((i) => (i ? { ...i, claimed: true } : i));
-    fx.toast({ icon: div.emoji, title: t('¡Premio de la liga {d}!', { d: t(div.name) }), sub: `+${div.coins.toLocaleString()} · +${div.gems} 💎` });
+    fx.toast({ icon: div.emoji, title: t('¡Premio de la liga {d}!', { d: t(div.name) }), sub: `+${div.coins.toLocaleString(numLocale())} · +${div.gems} 💎` });
   };
 
   return (
@@ -43,11 +44,11 @@ export function LeagueCard() {
         <div className="lg-info">
           <small>{t('Tu liga')}</small>
           <b>{t(div.name)}</b>
-          <span>🏆 {rating.toLocaleString()} {t('trofeos')}</span>
+          <span>🏆 {rating.toLocaleString(numLocale())} {t('trofeos')}</span>
         </div>
         <div className="lg-prize">
           <span>
-            <CoinIcon size={13} /> {div.coins.toLocaleString()}
+            <CoinIcon size={13} /> {div.coins.toLocaleString(numLocale())}
           </span>
           <span>
             <GemIcon size={13} /> {div.gems}

@@ -1,3 +1,4 @@
+import { numLocale } from '../lib/format';
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { AiLevel, Color } from '@parques/engine';
@@ -166,13 +167,13 @@ export function SetupScreen() {
               <button key={tt.id} className={`stake ${tt.id === tierId ? 'on' : ''} ${lvl.level < tt.minLevel ? 'locked' : ''}`} onClick={() => setTierId(tt.id)}>
                 <span>{tt.emoji}</span>
                 <b>{t(tt.name)}</b>
-                <small><CoinIcon size={13} /> {tt.entry.toLocaleString()}</small>
+                <small><CoinIcon size={13} /> {tt.entry.toLocaleString(numLocale())}</small>
                 {lvl.level < tt.minLevel ? <em>🔒 {t('Nivel')} {tt.minLevel}</em> : null}
               </button>
             ))}
           </div>
           <p className="rule-note">
-            {t('Entrada')}: {tier.entry.toLocaleString()} · {t('Premios')}: {payouts(tier.entry, count, mode === 'teams').filter((x) => x > 0).map((x, i) => `${i + 1}º ${x.toLocaleString()}`).join(' · ')} · {t('1º gana 5 gemas')}
+            {t('Entrada')}: {tier.entry.toLocaleString(numLocale())} · {t('Premios')}: {payouts(tier.entry, count, mode === 'teams').filter((x) => x > 0).map((x, i) => `${i + 1}º ${x.toLocaleString(numLocale())}`).join(' · ')} · {t('1º gana 5 gemas')}
           </p>
         </section>
       ) : (
