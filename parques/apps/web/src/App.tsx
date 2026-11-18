@@ -91,7 +91,7 @@ export function App() {
   return (
     <>
       <GlobalDefs />
-      {!OWN_BG.includes(screen) ? <Background /> : null}
+      {!OWN_BG.includes(screen) ? <Background still={screen === 'game'} /> : null}
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}

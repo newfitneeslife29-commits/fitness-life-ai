@@ -1,10 +1,13 @@
 import { memo } from 'react';
 
 /** Fondo festivo: degradado con manchas de color y figuritas flotando (CSS puro, liviano). */
-export const Background = memo(function Background({ tint }: { tint?: [string, string] }) {
+export const Background = memo(function Background({ tint, still = false }: { tint?: [string, string]; still?: boolean }) {
   const floaters = ['🎲', '🌺', '⭐', '☕', '🎲', '🌴', '✨', '🦜', '🎲', '🌼'];
   return (
-    <div className="bg" aria-hidden style={tint ? { ['--bg-a' as string]: tint[0], ['--bg-b' as string]: tint[1] } : undefined}>
+    <div className={`bg ${still ? 'still' : ''}`} aria-hidden style={tint ? { ['--bg-a' as string]: tint[0], ['--bg-b' as string]: tint[1] } : undefined}>
+      {/* En la partida el fondo queda quieto: manchas borrosas animadas cuestan mucho en el iPhone. */}
+      {still ? null : (
+        <>
       <div className="bg-blob b1" />
       <div className="bg-blob b2" />
       <div className="bg-blob b3" />
@@ -15,6 +18,8 @@ export const Background = memo(function Background({ tint }: { tint?: [string, s
           {f}
         </span>
       ))}
+        </>
+      )}
     </div>
   );
 });
