@@ -17,7 +17,8 @@ describe('IA', () => {
   });
 
   it('Normal y Experto capturan cuando pueden', () => {
-    const s = setup(newGame(), [[2, 30, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    // Una sola ficha en juego: capturar es claramente lo mejor (la ficha que captura queda quieta ese turno).
+    const s = setup(newGame(), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
     const r = roll(s, [3, 4]);
     for (const lvl of ['normal', 'expert'] as const) {
       const m = chooseMove(r.state, lvl, seededRandom(1))!;

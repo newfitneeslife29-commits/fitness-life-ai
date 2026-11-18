@@ -33,10 +33,12 @@ export function getLegalMoves(state: GameState): Move[] {
     for (const count of [...counts].sort((a, b) => a - b)) moves.push({ type: 'exit', count });
   }
   const pieces = state.players[owner]!.pieces;
+  // La ficha que capturó en esta tirada no se vuelve a mover con el otro dado.
+  const locked = (index: number) => state.rules.captureLock && !!state.capturers?.includes(`${owner}-${index}`);
   pieces.forEach((pos, index) => {
-    if (!isActive(state.sides, pos)) return;
-    // Fichas en la misma casilla son equivalentes: solo se ofrece la primera.
-    if (pieces.findIndex((p) => p === pos) !== index) return;
+    if (!isActive(state.sides, pos) || locked(index)) return;
+    // Fichas en la misma casilla son equivalentes: solo se ofrece la primera (de las que se pueden mover).
+    if (pieces.findIndex((p, i) => p === pos && !locked(i)) !== index) return;
     const piece: PieceRef = { owner, index };
     if (!u0 && pos + d0 <= home) moves.push({ type: 'step', piece, die: 0 });
     if (!u1 && pos + d1 <= home && !(d0 === d1 && !u0)) moves.push({ type: 'step', piece, die: 1 });

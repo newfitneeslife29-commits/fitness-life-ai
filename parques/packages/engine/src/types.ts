@@ -42,6 +42,8 @@ export interface HouseRules {
   captureBonus: boolean;
   /** Coronar una ficha (llevarla a la llegada) da otra tirada. */
   crownBonus: boolean;
+  /** La ficha que captura ya no se mueve en esa tirada: el otro dado lo juega otra ficha. */
+  captureLock: boolean;
 }
 
 export const DEFAULT_RULES: HouseRules = {
@@ -54,6 +56,7 @@ export const DEFAULT_RULES: HouseRules = {
   piecesPerPlayer: 4,
   captureBonus: true,
   crownBonus: true,
+  captureLock: true,
 };
 
 export interface PlayerSetup {
@@ -132,6 +135,8 @@ export interface GameState {
   capturedThisRoll: boolean;
   /** Coronó una ficha en esta tirada (da otra tirada si `crownBonus`). */
   crownedThisRoll?: boolean;
+  /** Fichas que capturaron en esta tirada ("owner-index"): no se pueden volver a mover hasta la próxima tirada. */
+  capturers?: string[];
   pendingSoplo: PendingSoplo | null;
   /** Orden de llegada (índices de jugadores). 1º, 2º, ... */
   ranking: number[];

@@ -74,8 +74,8 @@ describe('capturas', () => {
 describe('capturar da otra tirada', () => {
   it('al capturar, el mismo jugador vuelve a tirar (sin par)', () => {
     const s = setup(newGame(), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
-    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
-    const r2 = move(r1.state, step(0, 0, 1));
+    // El 5 no lo puede jugar la ficha que capturó (y no hay otra): se pierde y vuelve a tirar.
+    const r2 = move(roll(s, [3, 5]).state, step(0, 0, 0));
     const extra = r2.events.find((e) => e.type === 'EXTRA_TURN');
     expect(extra).toMatchObject({ player: 0, reason: 'capture' });
     expect(r2.state.current).toBe(0);
@@ -93,8 +93,42 @@ describe('capturar da otra tirada', () => {
 
   it('se puede desactivar como regla de la casa', () => {
     const s = setup(newGame({ captureBonus: false }), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
-    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
-    const r2 = move(r1.state, step(0, 0, 1));
+    const r2 = move(roll(s, [3, 5]).state, step(0, 0, 0));
     expect(r2.state.current).toBe(1);
+  });
+});
+
+describe('la ficha que captura no se mueve con el otro dado', () => {
+  it('capturar con el 3: el 5 lo tiene que jugar otra ficha', () => {
+    // J0 en 2 (casilla 7) y otra en 20; rival J1 en casilla 10 (no seguro).
+    const s = setup(newGame(), [[2, 20, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    expect(types(r1.events)).toContain('CAPTURED');
+    const legal = getLegalMoves(r1.state);
+    expect(legal.length).toBeGreaterThan(0);
+    expect(legal.every((m) => m.type !== 'exit' && m.piece.index === 1)).toBe(true);
+  });
+
+  it('si no hay otra ficha que pueda jugar el dado, ese dado se pierde', () => {
+    const s = setup(newGame(), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    expect(types(r1.events)).toContain('DICE_FORFEITED');
+    // Igual tira otra vez por capturar.
+    expect(r1.state.current).toBe(0);
+    expect(r1.state.phase).toBe('roll');
+  });
+
+  it('con otra ficha en la misma casilla, esa sí puede jugar el dado', () => {
+    const s = setup(newGame(), [[2, 2, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    const legal = getLegalMoves(r1.state);
+    expect(legal.some((m) => m.type !== 'exit' && m.piece.index === 1)).toBe(true);
+    expect(legal.some((m) => m.type !== 'exit' && m.piece.index === 0)).toBe(false);
+  });
+
+  it('se puede desactivar como regla de la casa', () => {
+    const s = setup(newGame({ captureLock: false }), [[2, JAIL, JAIL, JAIL], [progressAt(1, 10), JAIL, JAIL, JAIL]]);
+    const r1 = move(roll(s, [3, 5]).state, step(0, 0, 0));
+    expect(getLegalMoves(r1.state).some((m) => m.type !== 'exit' && m.piece.index === 0)).toBe(true);
   });
 });

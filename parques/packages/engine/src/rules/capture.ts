@@ -27,6 +27,7 @@ export function captureAt(
   const credit = areTeammates(state, mover, by.owner) ? mover : by.owner;
   state.players[credit]!.stats.captures += victims.length;
   state.capturedThisRoll = true;
+  state.capturers = [...(state.capturers ?? []), `${by.owner}-${by.index}`];
   events.push({ type: 'CAPTURED', by, victims });
   return victims;
 }
