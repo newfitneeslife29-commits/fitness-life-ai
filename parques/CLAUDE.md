@@ -301,6 +301,15 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 - Letreros que explican reglas (tira otra vez, sin par, dos pares, captura, tu turno) solo para jugadores nuevos
   (`NEW_PLAYER_GAMES` = 5 partidas) o si se activan en Ajustes (`gameHints`: null = automático).
 
+## v1.4 (publicación en la App Store)
+- **Eliminar cuenta** (exigido por Apple/Google): Ajustes → Cuenta → Eliminar mi cuenta (escribir ELIMINAR). Socket
+  `delete_account` → `store.deleteAccount` (borra perfil, sesiones, identidades, mensajes, clubes propios, reportes,
+  referidos, resultados; las compras quedan anónimas con player = 'eliminada'). Prueba `test/delete.test.ts`.
+- **Páginas legales** (`apps/server/src/legal.ts`): `/privacidad`, `/terminos`, `/soporte` (y en inglés `/privacy`, `/terms`,
+  `/support`); correo de contacto en la variable `PARQUES_SUPPORT_EMAIL`. Enlaces en Ajustes → Cuenta.
+- Anuncios: `adsAvailable()` solo con ids propios de AdMob (sin ellos se ocultan; nunca anuncios de prueba en la tienda).
+- Ficha de la App Store, respuestas de privacidad/edad y capturas 1320×2868 en `store-assets/app-store/`.
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

@@ -705,3 +705,6 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .banner-bonus { background: radial-gradient(circle at 50% 30%, #3ddc84, #0f7a3d); border-color: #fff; padding: 18px 26px; }
 .banner-bonus .banner-title { color: #fff; font-size: 2.4rem; -webkit-text-stroke: 1px #064020; }
 .banner-bonus .banner-sub { color: #eafff1; }
+.delete-account-btn { margin-top: 6px; background: none; border: 0; color: #ff8a8a; font: inherit; font-weight: 800; font-size: 0.85rem; text-decoration: underline; cursor: pointer; padding: 6px; }
+.legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; font-size: 0.78rem; opacity: 0.85; }
+.legal-links a { color: inherit; }

@@ -49,6 +49,7 @@ import {
 import type { ClientToServer, FlashBracket, HouseRules, Hello, Profile, ProfileOp, ProfileOpResult, ServerToClient, TableId } from '@parques/engine';
 import { Social } from './social';
 import { adminRoute } from './admin';
+import { legalRoute } from './legal';
 
 /** Identidad verificada de Apple o Google. */
 export interface VerifiedIdentity {
@@ -287,6 +288,7 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
         },
       };
       if (await adminRoute(req, res, ctx)) return;
+      if (legalRoute(req, res)) return;
       // Enlace de invitación: /r/<ID> abre la app con el código de quien invita.
       const m = /^\/r\/([A-Za-z0-9]{4,16})\/?$/.exec((req.url ?? '').split('?')[0]!);
       if (m) {
@@ -718,6 +720,18 @@ export function startServer(opts: ServerOptions = {}): { http: HttpServer; io: S
       socket.data.uid = id;
       sockets.set(id!, socket.id);
       ack?.({ ok: true, id, token, profile: profile! });
+    });
+
+    socket.on('delete_account', async (confirm, ack) => {
+      const uid = me();
+      if (!uid) return ack?.({ ok: false, error: 'Primero inicia sesión' });
+      if (confirm !== 'ELIMINAR') return ack?.({ ok: false, error: 'Confirmación inválida' });
+      leaveCurrent(uid);
+      dequeue(uid);
+      const ok = await store.deleteAccount(uid);
+      socket.data.uid = undefined;
+      sockets.delete(uid);
+      ack?.(ok ? { ok: true } : { ok: false, error: 'No se pudo eliminar la cuenta' });
     });
 
     socket.on('profile_op', async (op, ack) => {

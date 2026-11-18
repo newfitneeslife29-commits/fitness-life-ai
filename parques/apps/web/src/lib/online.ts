@@ -206,6 +206,14 @@ setProfileSender(async (op) => {
  * Cierra la sesión en este celular: olvida la cuenta guardada y vuelve a la pantalla de bienvenida
  * (ahí se puede entrar con Apple/Google, con un código de recuperación o crear un jugador nuevo).
  */
+export async function deleteAccount(): Promise<string | null> {
+  if (!(await useOnline.getState().connect())) return 'Sin conexión';
+  const r = await ack<{ ok: boolean; error?: string }>((cb) => socket!.emit('delete_account', 'ELIMINAR', cb));
+  if (!r?.ok) return r?.error ?? 'El servidor no responde';
+  logout();
+  return null;
+}
+
 export function logout() {
   try {
     socket?.disconnect();

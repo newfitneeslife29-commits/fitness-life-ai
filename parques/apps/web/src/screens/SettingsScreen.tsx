@@ -1,7 +1,8 @@
 import { providers, signIn } from '../lib/auth';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getSession, logout, useOnline } from '../lib/online';
+import { deleteAccount, getSession, logout, serverUrl, useOnline } from '../lib/online';
 import { useFx } from '../stores/fxStore';
 import { TopBar } from '../components/TopBar';
 import { useSettings } from '../stores/settingsStore';
@@ -125,6 +126,14 @@ export function SettingsScreen() {
         </button>
         <AccountRecovery />
         <LogoutButton />
+        <DeleteAccountButton />
+        <div className="legal-links">
+          <a href={legalUrl('privacidad')} target="_blank" rel="noreferrer">{t('Política de privacidad')}</a>
+          <span>·</span>
+          <a href={legalUrl('terminos')} target="_blank" rel="noreferrer">{t('Términos de uso')}</a>
+          <span>·</span>
+          <a href={legalUrl('soporte')} target="_blank" rel="noreferrer">{t('Soporte')}</a>
+        </div>
       </section>
       <p className="rule-note">{t('Parqués Colombia · tu progreso se guarda en el servidor')}</p>
     </div>
@@ -194,6 +203,7 @@ function LogoutButton() {
       <motion.button className="btn3d red wide logout-btn" whileTap={{ scale: 0.95 }} onClick={() => { play('tap'); setAsk(true); }}>
         🚪 {t('Cerrar sesión')}
       </motion.button>
+      {createPortal(
       <AnimatePresence>
         {ask ? (
           <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAsk(false)}>
@@ -223,7 +233,61 @@ function LogoutButton() {
             </motion.div>
           </motion.div>
         ) : null}
-      </AnimatePresence>
+      </AnimatePresence>,
+        document.body,
+      )}
+    </>
+  );
+}
+
+/** Páginas legales que sirve el servidor (privacidad, términos, soporte). */
+function legalUrl(page: string): string {
+  return `${serverUrl() || location.origin}/${page}`;
+}
+
+/** Eliminar la cuenta (exigido por Apple y Google): pide escribir ELIMINAR para confirmar. */
+function DeleteAccountButton() {
+  const t = useT();
+  const fx = useFx();
+  const [ask, setAsk] = useState(false);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const word = t('ELIMINAR');
+  const go = async () => {
+    setBusy(true);
+    const err = await deleteAccount();
+    setBusy(false);
+    if (err) fx.toast({ icon: '⚠️', title: t(err) });
+  };
+  return (
+    <>
+      <button className="delete-account-btn" onClick={() => { play('tap'); setText(''); setAsk(true); }}>
+        🗑️ {t('Eliminar mi cuenta')}
+      </button>
+      {createPortal(
+      <AnimatePresence>
+        {ask ? (
+          <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !busy && setAsk(false)}>
+            <motion.div className="modal card glossy" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-icon">🗑️</div>
+              <h2>{t('¿Eliminar tu cuenta?')}</h2>
+              <p className="modal-text">
+                {t('Se borrarán para siempre tu jugador, monedas, gemas, objetos, amigos, mensajes y progreso. Las compras hechas no se pueden recuperar. Esto no se puede deshacer.')}
+              </p>
+              <p className="modal-text">{t('Escribe {w} para confirmar:', { w: word })}</p>
+              <input className="text-input" value={text} onChange={(e) => setText(e.target.value)} placeholder={word} autoCapitalize="characters" />
+              <button className="btn3d red wide" disabled={busy || text.trim().toUpperCase() !== word.toUpperCase()} onClick={() => void go()}>
+                {busy ? '…' : t('Eliminar para siempre')}
+              </button>
+              <button className="btn3d ghost wide" disabled={busy} onClick={() => setAsk(false)}>
+                {t('Cancelar')}
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 }
