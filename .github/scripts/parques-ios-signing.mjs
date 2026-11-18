@@ -8,11 +8,14 @@
 //        (se ejecuta antes de compilar, para no gastar tiempo si falta algo).
 // setup / cleanup: como en ios-signing.mjs (certificado de distribución + perfil App Store por ejecución).
 //
+// El certificado de distribución es el compartido con Fitness Life (ios-shared-cert.mjs); aquí nunca se borra.
+//
 // Lee KEY_ID, ISSUER_ID, TEAM_ID, KEY_PATH (el .p8), SIGNING_DIR (con csr.pem), RUN y UPLOADED del entorno.
 import { createHash, createPrivateKey, sign } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { sharedCertificate, sharedCertificateId } from './ios-shared-cert.mjs';
 
 const BUNDLE_ID = 'parques.app';
 const APP_NAME = 'Parqués';
@@ -109,6 +112,8 @@ async function prune(keep) {
     }
     const ordered = [...runs.entries()].sort((a, b) => b[0] - a[0]);
     const kept = new Set(ordered.slice(0, keep).flatMap(([, e]) => [...e.certs]));
+    const shared = sharedCertificateId();
+    if (shared) kept.add(shared);
     for (const [run, e] of ordered.slice(keep)) {
         for (const id of e.profiles) await api('DELETE', `/profiles/${id}`);
         for (const id of e.certs) if (!kept.has(id)) await api('DELETE', `/certificates/${id}`);
@@ -142,8 +147,9 @@ async function setup() {
 
     await prune(1);
     const csr = readFileSync(join(SIGNING_DIR, 'csr.pem'), 'utf8');
-    const cert = await newCertificate(csr);
+    const { cert, shared } = await sharedCertificate(api, () => newCertificate(csr), SIGNING_DIR);
     state.certificateId = cert.data.id;
+    state.shared = shared;
     save();
     const der = Buffer.from(cert.data.attributes.certificateContent, 'base64');
     writeFileSync(join(SIGNING_DIR, 'cert.cer'), der);
@@ -206,8 +212,9 @@ async function cleanup() {
         return;
     }
     for (const id of state.profileIds) await api('DELETE', `/profiles/${id}`);
-    if (state.certificateId) await api('DELETE', `/certificates/${state.certificateId}`);
-    console.log('Removed the CI certificate and profiles');
+    // El certificado compartido se queda: Fitness Life también firma con él.
+    if (state.certificateId && !state.shared) await api('DELETE', `/certificates/${state.certificateId}`);
+    console.log(state.shared ? 'Removed the CI profiles' : 'Removed the CI certificate and profiles');
 }
 
 const command = process.argv[2];

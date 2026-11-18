@@ -4,6 +4,8 @@
 // the capabilities set on its App ID (App Groups included, which Xcode's own
 // cloud signing can't read with an API key).
 //
+// The certificate is the one shared with the other apps built here
+// (ios-shared-cert.mjs); it is never removed here.
 // A build stays valid only while its certificate does: Apple rejects one whose
 // certificate was revoked (ITMS-90035). So "cleanup" keeps them after an upload
 // (UPLOADED=true), and "setup" removes those of older runs, keeping the latest
@@ -19,6 +21,7 @@ import { createHash, createPrivateKey, sign } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { sharedCertificate, sharedCertificateId } from './ios-shared-cert.mjs';
 
 const BUNDLES = ['com.fitnesslife.app', 'com.fitnesslife.app.widget'];
 const API = 'https://api.appstoreconnect.apple.com/v1';
@@ -87,6 +90,8 @@ async function prune(keep) {
     }
     const ordered = [...runs.entries()].sort((a, b) => b[0] - a[0]);
     const kept = new Set(ordered.slice(0, keep).flatMap(([, e]) => [...e.certs]));
+    const shared = sharedCertificateId();
+    if (shared) kept.add(shared);
     for (const [run, e] of ordered.slice(keep)) {
         for (const id of e.profiles) await api('DELETE', `/profiles/${id}`);
         for (const id of e.certs) if (!kept.has(id)) await api('DELETE', `/certificates/${id}`);
@@ -98,6 +103,13 @@ async function newCertificate(csr) {
     const body = { data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } } };
     try {
         return await api('POST', '/certificates', body);
+    } catch (e) {
+        // "Apple Distribution" is full: "iOS Distribution" has its own room
+        // and also signs App Store profiles.
+        console.log(`::warning::${e.message}. Trying an iOS Distribution certificate.`);
+    }
+    try {
+        return await api('POST', '/certificates', { data: { ...body.data, attributes: { ...body.data.attributes, certificateType: 'IOS_DISTRIBUTION' } } });
     } catch (e) {
         // Apple allows only a few distribution certificates at a time.
         console.log(`::warning::${e.message}. Removing every earlier CI certificate and trying again.`);
@@ -124,8 +136,9 @@ async function setup() {
 
     await prune(1);
     const csr = readFileSync(join(SIGNING_DIR, 'csr.pem'), 'utf8');
-    const cert = await newCertificate(csr);
+    const { cert, shared } = await sharedCertificate(api, () => newCertificate(csr), SIGNING_DIR);
     state.certificateId = cert.data.id;
+    state.shared = shared;
     save();
     const der = Buffer.from(cert.data.attributes.certificateContent, 'base64');
     writeFileSync(join(SIGNING_DIR, 'cert.cer'), der);
@@ -191,8 +204,9 @@ async function cleanup() {
         return;
     }
     for (const id of state.profileIds) await api('DELETE', `/profiles/${id}`);
-    if (state.certificateId) await api('DELETE', `/certificates/${state.certificateId}`);
-    console.log('Removed the CI certificate and profiles');
+    // The shared certificate stays: the other apps sign with it too.
+    if (state.certificateId && !state.shared) await api('DELETE', `/certificates/${state.certificateId}`);
+    console.log(state.shared ? 'Removed the CI profiles' : 'Removed the CI certificate and profiles');
 }
 
 const command = process.argv[2];
