@@ -44,6 +44,8 @@ export interface HouseRules {
   crownBonus: boolean;
   /** La ficha que captura ya no se mueve en esa tirada: el otro dado lo juega otra ficha. */
   captureLock: boolean;
+  /** Con una sola ficha en juego se mueve la suma de los dos dados (no un dado solo). */
+  singlePieceSum: boolean;
 }
 
 export const DEFAULT_RULES: HouseRules = {
@@ -57,6 +59,7 @@ export const DEFAULT_RULES: HouseRules = {
   captureBonus: true,
   crownBonus: true,
   captureLock: true,
+  singlePieceSum: true,
 };
 
 export interface PlayerSetup {
