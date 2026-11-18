@@ -23,7 +23,7 @@ export const TUTORIAL_STEPS: Step[] = [
   { text: 'Si te sobra un dado, mueves con él. Toca una ficha que brille y luego el número para moverla.', wait: 'move' },
   { text: 'Sacar par te da OTRA tirada. ¡Tira otra vez!', wait: 'roll', dice: [2, 3] },
   { text: '¡Mira! Hay una ficha verde a 5 casillas. Toca tu ficha y elige 2+3 para caerle encima y CAPTURARLA.', wait: 'capture' },
-  { text: '¡La capturaste! La ficha rival vuelve a su cárcel y tú ganas otra tirada. ¡Así se juega!', wait: 'next' },
+  { text: '¡La capturaste! La ficha rival vuelve a su cárcel y tú ganas otra tirada. Ojo: si capturas con un solo dado, el otro dado lo juega OTRA ficha. ¡Así se juega!', wait: 'next' },
   { text: 'Las casillas con ⭐ y las SALIDAS son SEGUROS: ahí nadie te puede capturar.', wait: 'next' },
   { text: '¡Pilas! Si pudiste capturar y no lo hiciste, un rival te puede SOPLAR y mandar esa ficha a la cárcel.', wait: 'next' },
   { text: 'Tres pares seguidos castigan: tu ficha más adelantada se va a la cárcel. ¡No te emociones tanto!', wait: 'next' },

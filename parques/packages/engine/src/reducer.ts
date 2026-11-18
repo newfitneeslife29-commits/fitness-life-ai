@@ -105,6 +105,7 @@ function doRoll(state: GameState, player: number, forced: [number, number] | und
   state.missedCapture = null;
   state.capturedThisRoll = false;
   state.crownedThisRoll = false;
+  state.capturers = [];
   events.push({ type: 'ROLLED', player, dice, pair, pairStreak: state.pairStreak });
 
   // Tres pares seguidos.

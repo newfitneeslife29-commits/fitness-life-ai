@@ -174,6 +174,8 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 12. `TIME_UP` (Modo Rápido): ordena por fichas coronadas y luego por avance.
 13. Capturar (`captureBonus`) y coronar una ficha (`crownBonus`) dan otra tirada al terminar la tirada (`EXTRA_TURN` con
     `reason: 'capture' | 'crown'`); no cuentan para los tres pares. Prueba en `test/crown.test.ts`.
+14. La ficha que captura queda quieta el resto de esa tirada (`captureLock`, `state.capturers`): el otro dado lo juega
+    otra ficha o se pierde. Prueba en `test/capture.test.ts`.
 
 Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` (1–3), `allOutDoubles`/`pairExitMax`, `teams`, `piecesPerPlayer`.
 

@@ -59,6 +59,7 @@ export function createGame(config: GameConfig): GameState {
     missedCapture: null,
     capturedThisRoll: false,
     crownedThisRoll: false,
+    capturers: [],
     pendingSoplo: null,
     ranking: [],
     turn: 1,
