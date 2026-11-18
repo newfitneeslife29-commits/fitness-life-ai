@@ -311,7 +311,8 @@ export function GameScreen() {
             className="soplar-btn"
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: [1, 1.08, 1], rotate: 0 }}
-            exit={{ scale: 0, opacity: 0 }}
+            // La salida lleva su propia transición: con el latido infinito nunca terminaba y el botón quedaba invisible ocupando espacio.
+            exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
             transition={{ scale: { duration: 0.6, repeat: Infinity } }}
             onClick={s.humanSoplar}
           >

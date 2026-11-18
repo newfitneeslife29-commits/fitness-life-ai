@@ -699,3 +699,5 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .game-screen .seat button, .game-screen .seat .seat-dicebox, .game-screen .seat .seat-emote { pointer-events: auto; }
 .game-screen .banner, .game-screen .banner * { pointer-events: none; }
 .seat-jailtry { position: absolute; bottom: -11px; right: 12px; z-index: 5; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 900; white-space: nowrap; color: #fff; background: linear-gradient(160deg, #7c4dff, #4a1fb8); border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); pointer-events: none; }
+/* El botón de soplar flota sobre la partida: nunca debe ocupar espacio en la columna (empujaba los asientos sobre el tablero). */
+.game-screen > .soplar-btn:not(.bg) { position: fixed; right: 14px; bottom: calc(var(--safe-bottom) + 120px); z-index: 40; }
