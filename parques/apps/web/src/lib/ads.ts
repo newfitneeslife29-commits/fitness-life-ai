@@ -12,7 +12,13 @@ const TEST_IDS = { ios: 'ca-app-pub-3940256099942544/1712485313', android: 'ca-a
 
 let ready: Promise<boolean> | null = null;
 
-export const adsAvailable = () => Capacitor.isNativePlatform();
+/**
+ * Hay anuncios solo en la app y con ids PROPIOS de AdMob (variables VITE_ADMOB_REWARDED_*).
+ * Sin ids propios la opción se oculta: un anuncio de prueba en la versión de la tienda puede causar rechazo.
+ */
+export const adsAvailable = () =>
+  Capacitor.isNativePlatform() &&
+  !!(Capacitor.getPlatform() === 'ios' ? import.meta.env.VITE_ADMOB_REWARDED_IOS : import.meta.env.VITE_ADMOB_REWARDED_ANDROID);
 
 function unitId(): { id: string; testing: boolean } {
   const ios = Capacitor.getPlatform() === 'ios';

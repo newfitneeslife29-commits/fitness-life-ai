@@ -411,6 +411,34 @@ export class Store {
     return rows.length > 0;
   }
 
+  /**
+   * Elimina la cuenta y sus datos personales (exigido por Apple y Google): perfil, sesiones, identidades de
+   * Apple/Google, mensajes, clubes que creó, reportes, referidos y resultados. Solo se conserva el registro
+   * anónimo de compras (id de transacción y producto), necesario por contabilidad y para no entregar dos veces.
+   */
+  async deleteAccount(id: string): Promise<boolean> {
+    return (await this.db).tx(async (q) => {
+      const found = await q.query('SELECT id FROM parques.accounts WHERE id = $1 FOR UPDATE', [id]);
+      if (!found.length) return false;
+      await q.query('DELETE FROM parques.messages WHERE sender = $1 OR receiver = $1', [id]);
+      await q.query('DELETE FROM parques.club_messages WHERE sender = $1', [id]);
+      await q.query('DELETE FROM parques.clubs WHERE owner = $1', [id]);
+      await q.query('DELETE FROM parques.club_members WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.club_wins WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.club_claims WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.reports WHERE reporter = $1 OR target = $1', [id]);
+      await q.query('DELETE FROM parques.bans WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.referrals WHERE newbie = $1 OR referrer = $1', [id]);
+      await q.query('DELETE FROM parques.claims WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.cup_results WHERE player = $1', [id]);
+      await q.query('DELETE FROM parques.rank_results WHERE player = $1', [id]);
+      await q.query("UPDATE parques.purchases SET player = 'eliminada' WHERE player = $1", [id]);
+      // accounts arrastra (ON DELETE CASCADE) torneo, copas, identidades y sesiones.
+      await q.query('DELETE FROM parques.accounts WHERE id = $1', [id]);
+      return true;
+    });
+  }
+
   /** Abre una sesión nueva para la cuenta (otro dispositivo) y devuelve su token. */
   async newSession(account: string): Promise<string> {
     const token = randomBytes(24).toString('base64url');

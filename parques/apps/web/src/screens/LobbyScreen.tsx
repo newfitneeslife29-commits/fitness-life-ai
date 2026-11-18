@@ -18,7 +18,7 @@ import { BoardMini } from '../game/Board';
 import { Mascot } from '../components/Mascot';
 import { item } from '@parques/engine';
 import { passSeasonId, tierFromXp, eventAt, AD_MAX_BALANCE } from '@parques/engine';
-import { watchAdForCoins } from '../lib/ads';
+import { adsAvailable, watchAdForCoins } from '../lib/ads';
 import { providers, signIn } from '../lib/auth';
 import { useOnline } from '../lib/online';
 import { askNotificationsOnce } from '../lib/notify';
@@ -141,7 +141,7 @@ export function LobbyScreen() {
         </motion.button>
       ) : null}
 
-      {lowCoins ? (
+      {lowCoins && adsAvailable() ? (
         <motion.button className="free-coins" whileTap={{ scale: 0.95 }} animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 1.3, repeat: Infinity }} onClick={() => { play('tap'); void watchAdForCoins(); }}>
           📺 {t('¿Sin monedas? Mira un anuncio y gana {n}', { n: 300 })}
         </motion.button>

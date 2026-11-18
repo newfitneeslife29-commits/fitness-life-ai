@@ -162,6 +162,8 @@ export interface PlayAiOpts {
 export interface ClientToServer {
   auth: (a: { id?: string; token?: string }, ack: (r: AuthResult) => void) => void;
   profile_op: (op: ProfileOp, ack: (r: ProfileOpResult) => void) => void;
+  /** Elimina la cuenta y sus datos (hay que mandar el texto de confirmación "ELIMINAR"). */
+  delete_account: (confirm: string, ack: (r: { ok: boolean; error?: string }) => void) => void;
   play_ai: (o: PlayAiOpts, ack: (r: { ok: boolean; error?: string }) => void) => void;
   quick_match: (table: TableId, ack: (r: { ok: boolean; error?: string }) => void) => void;
   cancel_match: () => void;
