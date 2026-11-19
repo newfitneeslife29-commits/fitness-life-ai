@@ -749,3 +749,24 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .topbar-right .pill-plus { width: 18px; height: 18px; font-size: 0.8rem; }
 .topbar-right .round-btn { width: 38px; height: 38px; font-size: 1.05rem; }
 .topbar-right .pill svg, .topbar-right .pill img { width: 18px; height: 18px; }
+
+/* ===== Menos calor (v1.4.2) =====
+   Siempre: el brillo de los botones se mueve con transform (antes con `left`: recalculaba y repintaba en cada cuadro),
+   y las manchas del fondo y el halo son degradados (antes `filter: blur` gigante, lo más caro para la GPU). */
+.btn3d.shine::after { left: 0 !important; inset: -40% auto -40% 0; animation-name: shine-x; }
+@keyframes shine-x { 0%, 60% { transform: translateX(-150%) skewX(-20deg); } 100% { transform: translateX(330%) skewX(-20deg); } }
+.bg-blob { filter: none !important; background: radial-gradient(circle, var(--blob, currentColor) 0%, transparent 65%) !important; opacity: 0.45; }
+.b1 { --blob: #ff3b8a; } .b2 { --blob: #2f7bff; } .b3 { --blob: #ffc928; } .b4 { --blob: #22c55e; }
+.hero-halo { filter: none !important; background: radial-gradient(circle, rgba(255, 201, 40, 0.45), rgba(255, 59, 78, 0.25) 45%, transparent 70%) !important; }
+.pulse-btn { animation: pulse-btn 1s ease-in-out infinite; }
+@keyframes pulse-btn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.seat-emote:not(.on) { animation: emote-wiggle 6.6s ease-in-out infinite; }
+@keyframes emote-wiggle { 0%, 91% { transform: rotate(0deg); } 94% { transform: rotate(-12deg); } 97% { transform: rotate(12deg); } 100% { transform: rotate(0deg); } }
+
+/* Ahorro de batería (por defecto): nada decorativo se anima sin parar. */
+html.saver .bg-blob, html.saver .bg-rays, html.saver .floater, html.saver .hero-halo, html.saver .hero-3d-inner,
+html.saver .season-banner::after, html.saver .event-banner::after, html.saver .pill-icon, html.saver .seat-emote,
+html.saver .fiesta-photo { animation: none !important; }
+html.saver .floater { display: none; }
+html.saver .btn3d.shine::after { animation-iteration-count: 2; }
+html.saver .hero-3d-inner { transform: rotateX(38deg) rotateZ(-8deg); }

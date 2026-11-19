@@ -84,6 +84,10 @@ export function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('big-text', bigText);
   }, [bigText]);
+  const saver = useSettings((s) => s.batterySaver ?? true);
+  useEffect(() => {
+    document.documentElement.classList.toggle('saver', saver);
+  }, [saver]);
   useEffect(() => {
     void resumePurchase();
   }, []);

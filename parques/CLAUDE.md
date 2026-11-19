@@ -313,6 +313,12 @@ Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` 
 - Anuncios: `adsAvailable()` solo con ids propios de AdMob (sin ellos se ocultan; nunca anuncios de prueba en la tienda).
 - Ficha de la App Store, respuestas de privacidad/edad y capturas 1320×2868 en `store-assets/app-store/`.
 
+## v1.4.2 (menos calor)
+- **Ahorro de batería** (Ajustes, `batterySaver`, por defecto activo → clase `html.saver`): sin animaciones decorativas
+  infinitas (manchas y rayos del fondo, figuritas, halo y giro del tablero del inicio, brillos de banners). Siempre: el
+  brillo de los botones usa `transform` (no `left`), manchas y halo son degradados (sin `filter: blur`), TIRAR y el
+  botón de emotes laten con CSS (no framer). Medido: inicio 22 → 0 animaciones infinitas.
+
 ## Pendiente / ideas
 - Iniciar sesión con Google / Apple (hoy: cuenta de invitado + código de recuperación).
 - Para muchos jugadores a la vez: varias instancias del servidor (Socket.IO adapter; hoy las salas viven en memoria → 1 réplica).

@@ -64,6 +64,7 @@ export function SettingsScreen() {
           onChange={(v) => s.set({ gameHints: v })}
         />
         <p className="rule-note">{t('Explican las reglas (tirar otra vez, intentos de la cárcel…). Salen solos en tus primeras {n} partidas.', { n: NEW_PLAYER_GAMES })}</p>
+        <Toggle label={`🔋 ${t('Ahorro de batería (menos animaciones de fondo)')}`} value={s.batterySaver ?? true} onChange={(v) => s.set({ batterySaver: v })} />
         <Toggle label={`🔷 ${t('Modo daltónico (figuras en las fichas)')}`} value={s.colorblind} onChange={(v) => s.set({ colorblind: v })} />
         <Toggle label={`🔠 ${t('Letra grande')}`} value={s.bigText} onChange={(v) => s.set({ bigText: v })} />
         <div className="row">
