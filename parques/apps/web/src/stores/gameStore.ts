@@ -331,6 +331,8 @@ export const useGame = create<GameStore>((set, get) => {
           break;
         }
         case 'PLAYER_FINISHED':
+          // Solo se anuncia a quien llegó con todas sus fichas; los demás puestos (por avance) se ven en la victoria.
+          if (e.crowned === false) break;
           showBanner('finish', tr('¡{name} coronó!', { name: g.players[e.player]!.name }), tr('Puesto {n}', { n: e.place }), 1400);
           await sleep(BASE.finished);
           break;

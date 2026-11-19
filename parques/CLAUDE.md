@@ -179,6 +179,9 @@ npm run icons -w @parques/web    # regenera los íconos PNG desde public/icon.sv
 15. Con UNA sola ficha en juego y los dos dados libres se mueve la suma completa (`singlePieceSum`); si la suma no cabe
     se puede jugar un dado; con par y fichas en la cárcel se puede sacar. `test/helpers.ts` la apaga por defecto
     (muchas pruebas usan una sola ficha); se prueba en `test/singlePiece.test.ts`.
+16. Sin parejas, la partida termina cuando alguien gana (`endOnWinner`): los demás puestos por fichas coronadas y
+    avance (`endGame`). `PLAYER_FINISHED.crowned = false` para esos puestos (la app no anuncia "coronó").
+    `test/helpers.ts` la apaga por defecto; prueba en `test/endOnWinner.test.ts`.
 
 Reglas de la casa (`HouseRules`): `soplar`, `triplePairPenalty`, `jailAttempts` (1–3), `allOutDoubles`/`pairExitMax`, `teams`, `piecesPerPlayer`.
 

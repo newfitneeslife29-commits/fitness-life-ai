@@ -134,6 +134,9 @@ export function VictoryScreen() {
           );
         })}
       </div>
+      {!game.rules.teams && game.rules.endOnWinner && ranking.slice(1).some((i) => !game.players[i]!.finished) ? (
+        <p className="rule-note">{t('Los demás puestos se definen por fichas coronadas y avance.')}</p>
+      ) : null}
 
       {outcome ? (
         <motion.div ref={rewardsRef} className="rewards card glossy" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
