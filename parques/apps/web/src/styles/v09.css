@@ -708,3 +708,44 @@ html.big-text .topbar-name small, html.big-text .topbar-xp { font-size: 0.6rem; 
 .delete-account-btn { margin-top: 6px; background: none; border: 0; color: #ff8a8a; font: inherit; font-weight: 800; font-size: 0.85rem; text-decoration: underline; cursor: pointer; padding: 6px; }
 .legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; font-size: 0.78rem; opacity: 0.85; }
 .legal-links a { color: inherit; }
+
+/* ===== Inicio compacto (v1.4.1): todo lo importante cabe en una pantalla ===== */
+.pill-val { white-space: nowrap; }
+.lobby-screen { gap: 9px; }
+.lobby-banners { width: min(100%, 560px); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lobby-banners > * { width: 100%; min-width: 0; padding: 7px 9px; gap: 6px; border-radius: 16px; }
+.lobby-banners .sb-emoji { font-size: 1.4rem; }
+.lobby-banners .sb-text { min-width: 0; }
+.lobby-banners .sb-text b { font-size: 0.8rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lobby-banners .sb-text small { font-size: 0.62rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lobby-banners .sb-go { display: none; }
+.lobby-banners .side-dot.static { position: static; flex: none; }
+.lobby-screen .quick-cards { gap: 6px; }
+.lobby-screen .qc { padding: 5px 3px 6px; border-radius: 14px; }
+.lobby-screen .qc-icon { font-size: 1.25rem; }
+.lobby-screen .qc b { font-size: 0.66rem; }
+.lobby-screen .qc small { font-size: 0.56rem; }
+.lobby-screen .hero-side { gap: 7px; }
+.lobby-screen .side-btn { width: 54px; height: 54px; border-radius: 16px; font-size: 1.35rem; }
+.lobby-screen .side-btn small { font-size: 0.52rem; max-width: 52px; }
+.lobby-screen .hero-3d { width: min(40vw, 175px); }
+.lobby-screen .lobby-mascot { right: -6px; bottom: -8px; }
+.lobby-screen .play-btn.mega { font-size: 1.75rem; padding: 10px 18px 13px; }
+.lobby-screen .play-btn.mega small { font-size: 0.75rem; }
+.lobby-screen .mode-grid3 { gap: 7px; }
+.lobby-screen .mode-tile { padding: 7px 4px 7px; border-radius: 15px; }
+.lobby-screen .mt-icon { font-size: 1.35rem; }
+.lobby-screen .mt-title { font-size: 0.82rem; }
+.lobby-screen .mt-sub { font-size: 0.58rem; }
+/* Barra de arriba más compacta: que el nombre del jugador quepa. */
+.topbar { gap: 6px; }
+.topbar-me { flex: 1 1 auto; gap: 6px; }
+.topbar-name { flex: 1 1 auto; }
+.topbar-name span { max-width: none !important; font-size: 0.9rem; }
+.topbar .xpbar { width: 100%; max-width: 90px; }
+.topbar-right { flex: none; gap: 4px; }
+.topbar-right .pill { font-size: 0.78rem; padding: 2px 3px 2px 2px; gap: 3px; }
+.topbar-right .pill-val { min-width: 0; padding-right: 1px; }
+.topbar-right .pill-plus { width: 18px; height: 18px; font-size: 0.8rem; }
+.topbar-right .round-btn { width: 38px; height: 38px; font-size: 1.05rem; }
+.topbar-right .pill svg, .topbar-right .pill img { width: 18px; height: 18px; }
