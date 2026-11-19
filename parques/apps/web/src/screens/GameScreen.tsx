@@ -279,10 +279,10 @@ export function GameScreen() {
         <div className="roll-center">
           {humanTurn && game.phase === 'roll' ? (
             <motion.button
-              className="btn3d play-btn roll-big shine"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: [1, 1.06, 1], opacity: 1 }}
-              transition={{ scale: { duration: 1, repeat: Infinity }, opacity: { duration: 0.2 } }}
+              className="btn3d play-btn roll-big shine pulse-btn"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ opacity: { duration: 0.2 } }}
               whileTap={{ scale: 0.9 }}
               onClick={s.humanRoll}
             >

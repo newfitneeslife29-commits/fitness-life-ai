@@ -29,6 +29,8 @@ export interface Settings {
   /** Letreros que explican las reglas en la partida: null = automático (solo jugadores nuevos). */
   gameHints: boolean | null;
   bigText: boolean;
+  /** Ahorro de batería: quita las animaciones decorativas que nunca paran (fondos, brillos, halo). */
+  batterySaver: boolean;
   /** Recordatorios en el celular (regalo diario, racha, cofre). */
   notifications: boolean;
   set: (patch: Partial<Omit<Settings, 'set' | 'setRules'>>) => void;
@@ -50,6 +52,7 @@ export const useSettings = create<Settings>()(
       colorblind: false,
       gameHints: null,
       bigText: false,
+      batterySaver: true,
       notifications: true,
       set: (patch) => set(patch),
       setRules: (patch) => set((s) => ({ houseRules: { ...s.houseRules, ...patch } })),

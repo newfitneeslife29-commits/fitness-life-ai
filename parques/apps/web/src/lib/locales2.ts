@@ -645,4 +645,5 @@ export const LOCALES_2: Record<string, [string, string, string]> = {
   "Confirmación inválida": ["Invalid confirmation", "Confirmação inválida", "Confirmation invalide"],
   "No se pudo eliminar la cuenta": ["The account couldn't be deleted", "Não foi possível excluir a conta", "Impossible de supprimer le compte"],
   "Los demás puestos se definen por fichas coronadas y avance.": ["The other places are decided by crowned pieces and progress.", "As outras posições são definidas por peças coroadas e avanço.", "Les autres places sont décidées par les pions couronnés et l'avancée."],
+  "Ahorro de batería (menos animaciones de fondo)": ["Battery saver (fewer background animations)", "Economia de bateria (menos animações de fundo)", "Économie de batterie (moins d'animations de fond)"],
 };

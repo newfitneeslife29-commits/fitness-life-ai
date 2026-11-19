@@ -67,8 +67,6 @@ export const PlayerSeat = memo(function PlayerSeat({ player, avatar, active, tag
             className={`seat-emote ${emoteOpen ? 'on' : ''}`}
             onClick={onEmote}
             whileTap={{ scale: 0.85 }}
-            animate={emoteOpen ? { rotate: 0 } : { rotate: [0, -12, 12, 0] }}
-            transition={emoteOpen ? undefined : { duration: 0.6, repeat: Infinity, repeatDelay: 6 }}
             aria-label={tr('Emotes')}
           >
             😀
