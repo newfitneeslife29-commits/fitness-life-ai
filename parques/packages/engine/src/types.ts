@@ -46,6 +46,8 @@ export interface HouseRules {
   captureLock: boolean;
   /** Con una sola ficha en juego se mueve la suma de los dos dados (no un dado solo). */
   singlePieceSum: boolean;
+  /** La partida termina cuando alguien gana: los demás puestos se dan por fichas coronadas y avance. */
+  endOnWinner: boolean;
 }
 
 export const DEFAULT_RULES: HouseRules = {
@@ -60,6 +62,7 @@ export const DEFAULT_RULES: HouseRules = {
   crownBonus: true,
   captureLock: true,
   singlePieceSum: true,
+  endOnWinner: true,
 };
 
 export interface PlayerSetup {
@@ -180,7 +183,7 @@ export type GameEvent =
   | { type: 'SOPLO_EXPIRED' }
   | { type: 'EXTRA_TURN'; player: number; reason?: 'pair' | 'capture' | 'crown' }
   | { type: 'TURN_CHANGED'; player: number }
-  | { type: 'PLAYER_FINISHED'; player: number; place: number }
+  | { type: 'PLAYER_FINISHED'; player: number; place: number; /** Llegó con todas sus fichas (false = puesto por avance al terminar). */ crowned?: boolean }
   | { type: 'GAME_OVER'; ranking: number[] }
   | { type: 'PLAYER_LEFT'; player: number };
 

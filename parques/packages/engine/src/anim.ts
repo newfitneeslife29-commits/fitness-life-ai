@@ -70,7 +70,7 @@ export function animDuration(events: GameEvent[]): number {
         ms += ANIM_MS.left;
         break;
       case 'PLAYER_FINISHED':
-        ms += ANIM_MS.finished;
+        if (e.crowned !== false) ms += ANIM_MS.finished;
         break;
       case 'TURN_CHANGED':
         ms += ANIM_MS.turn;

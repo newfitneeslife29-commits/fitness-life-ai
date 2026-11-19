@@ -6,7 +6,7 @@ import type { GameEvent, GameState } from '../types';
 function pushRank(state: GameState, player: number, events: GameEvent[]): void {
   if (state.ranking.includes(player)) return;
   state.ranking.push(player);
-  events.push({ type: 'PLAYER_FINISHED', player, place: state.ranking.length });
+  events.push({ type: 'PLAYER_FINISHED', player, place: state.ranking.length, crowned: !!state.players[player]!.finished });
 }
 
 /** Revisa si `player` (dueño de la ficha que llegó) terminó, y si la partida acabó. */
@@ -35,7 +35,10 @@ export function checkGameOver(state: GameState, events: GameEvent[]): void {
   if (state.phase === 'over') return;
   const remaining = state.players.map((_, i) => i).filter((i) => stillPlaying(state, i));
   const groups = new Set(remaining.map((i) => (state.rules.teams ? `t${state.players[i]!.team}` : `p${i}`)));
-  if (groups.size <= 1) endGame(state, events);
+  // Con `endOnWinner`, en cuanto alguien gana se acaba: no hay que esperar a que los demás terminen para el 2º, 3º…
+  // (se ordenan por fichas coronadas y avance, igual que en TIME_UP).
+  const someoneWon = !state.rules.teams && state.rules.endOnWinner && state.ranking.length > 0;
+  if (groups.size <= 1 || someoneWon) endGame(state, events);
 }
 
 /** Termina la partida: los que faltan se ordenan por avance (también para TIME_UP). */
