@@ -85,6 +85,7 @@ export function LobbyScreen() {
     <div className="screen lobby-screen with-nav">
       <TopBar />
 
+      <div className="lobby-banners">
       {season ? (
         <motion.button className="season-banner" style={{ ['--sa' as string]: season.colors[0], ['--sb' as string]: season.colors[1] }} whileTap={{ scale: 0.97 }} onClick={() => go('shop')}>
           <span className="sb-emoji">{season.emoji}</span>
@@ -121,6 +122,7 @@ export function LobbyScreen() {
         </span>
         {evReady ? <span className="side-dot static">{evReady}</span> : <span className="sb-go">›</span>}
       </motion.button>
+      </div>
 
       <QuickCards />
 
@@ -169,7 +171,7 @@ export function LobbyScreen() {
           <div className="hero-3d-inner">
             <BoardMini theme={item(p.equipped.board).board!} id="lobby" className="spin" />
           </div>
-          <Mascot size={78} className="lobby-mascot" />
+          <Mascot size={60} className="lobby-mascot" />
         </div>
         <div className="hero-side">
           <motion.button className="side-btn" whileTap={{ scale: 0.88 }} onClick={() => go('tournament')}>
