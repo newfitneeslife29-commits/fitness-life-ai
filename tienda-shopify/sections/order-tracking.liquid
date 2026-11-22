@@ -1,0 +1,64 @@
+{%- assign s = section.settings -%}
+<section class="section">
+  <div class="page-width">
+    <div class="track">
+      <div class="empty-state__icon" style="background:color-mix(in srgb, var(--trust) 10%, var(--paper));color:var(--trust)">{% render 'icon', name: 'truck' %}</div>
+      <h1>{{ page.title | default: s.title }}</h1>
+      <p class="muted">{{ s.intro | escape }}</p>
+
+      {%- for block in section.blocks -%}
+        {%- if block.type == '@app' -%}<div style="margin:24px 0;text-align:left">{% render block %}</div>{%- endif -%}
+      {%- endfor -%}
+
+      <ol class="track__steps">
+        <li><strong>{{ 'tracking.step1' | t }}</strong><span>{{ 'tracking.step1_text' | t }}</span></li>
+        <li><strong>{{ 'tracking.step2' | t }}</strong><span>{{ 'tracking.step2_text' | t }}</span></li>
+        <li><strong>{{ 'tracking.step3' | t }}</strong><span>{{ 'tracking.step3_text' | t }}</span></li>
+      </ol>
+
+      <div class="track__actions">
+        {%- if shop.customer_accounts_enabled -%}
+          <a class="btn btn--accent btn--lg" href="{% if customer %}{{ routes.account_url }}{% else %}{{ routes.account_login_url }}{% endif %}">{% render 'icon', name: 'account', stroke: 2 %}{{ 'tracking.my_orders' | t }}</a>
+        {%- endif -%}
+        {%- if s.contact_page != blank -%}
+          <a class="btn btn--outline btn--lg" href="{{ s.contact_page.url }}">{{ 'tracking.help' | t }}</a>
+        {%- endif -%}
+      </div>
+      {%- if page.content != blank -%}<div class="rte" style="text-align:left;margin-top:40px">{{ page.content }}</div>{%- endif -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Seguimiento de pedidos",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Si instalas una app de seguimiento (ParcelPanel, Track123, 17TRACK…), añade su bloque aquí para que el cliente busque por número de pedido o de envío."
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Order tracking"
+    },
+    {
+      "type": "text",
+      "id": "intro",
+      "label": "Introducción",
+      "default": "Check where your order is at any time."
+    },
+    {
+      "type": "page",
+      "id": "contact_page",
+      "label": "Página de contacto"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    }
+  ]
+}
+{% endschema %}

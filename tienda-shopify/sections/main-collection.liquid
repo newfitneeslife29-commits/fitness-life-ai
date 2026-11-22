@@ -1,0 +1,109 @@
+{%- assign s = section.settings -%}
+<div class="page-width">
+  <nav class="crumbs" aria-label="{{ 'general.breadcrumbs' | t }}">
+    <ol>
+      <li><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a></li>
+      <li><a href="{{ routes.collections_url }}">{{ 'collections.all_categories' | t }}</a></li>
+      <li aria-current="page">{{ collection.title }}</li>
+    </ol>
+  </nav>
+
+  {%- if s.show_banner -%}
+    <div class="coll-hero" data-reveal>
+      {%- if collection.image -%}
+        <div class="coll-hero__img">{{ collection.image | image_url: width: 2000 | image_tag: loading: 'eager', widths: '750,1100,1500,2000', sizes: '100vw', alt: collection.image.alt | escape }}</div>
+      {%- else -%}
+        <div class="brand-canvas" aria-hidden="true">
+          <span class="brand-canvas__blob brand-canvas__blob--1"></span>
+          <span class="brand-canvas__blob brand-canvas__blob--2"></span>
+          <span class="brand-canvas__grid"></span>
+        </div>
+      {%- endif -%}
+      <div class="coll-hero__inner">
+        <h1>{{ collection.title }}</h1>
+        {%- if collection.description != blank -%}<div class="coll-hero__desc rte">{{ collection.description }}</div>{%- endif -%}
+      </div>
+    </div>
+  {%- else -%}
+    <div class="page-hero" style="padding-bottom:0"><h1>{{ collection.title }}</h1></div>
+  {%- endif -%}
+
+  {%- paginate collection.products by s.per_page -%}
+    {% render 'results-toolbar', results: collection, id: section.id, count: collection.products_count %}
+
+    <div class="coll-layout{% if s.sidebar and collection.filters.size > 0 %} coll-layout--sidebar{% endif %}">
+      {%- if s.sidebar and collection.filters.size > 0 -%}
+        <aside class="facets-side" data-facets-side aria-label="{{ 'collections.filters.title' | t }}">
+          {% render 'facets', results: collection, id: section.id, section_id: section.id %}
+        </aside>
+      {%- else -%}
+        <div hidden data-facets-side>{% render 'facets', results: collection, id: section.id, section_id: section.id %}</div>
+      {%- endif -%}
+
+      <div data-results>
+        {%- if collection.products.size > 0 -%}
+          <div class="grid" style="--cols-desktop: {% if s.sidebar and collection.filters.size > 0 %}{{ s.columns | at_most: 4 }}{% else %}{{ s.columns }}{% endif %}">
+            {%- for product in collection.products -%}
+              {%- liquid
+                assign lazy = true
+                if forloop.index < 5
+                  assign lazy = false
+                endif
+              -%}
+              {% render 'product-card', product: product, index: forloop.index0, lazy: lazy %}
+            {%- endfor -%}
+          </div>
+          {% render 'pagination', paginate: paginate %}
+        {%- else -%}
+          <div class="empty-state">
+            <div class="empty-state__icon">{% render 'icon', name: 'search' %}</div>
+            <h2 class="h3">{{ 'collections.empty' | t }}</h2>
+            <p>{{ 'collections.empty_text' | t }}</p>
+            <a class="btn" href="{{ collection.url }}">{{ 'collections.filters.clear' | t }}</a>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  {%- endpaginate -%}
+</div>
+<div style="height:64px"></div>
+
+{% schema %}
+{
+  "name": "Colección",
+  "class": "section-main-collection",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_banner",
+      "label": "Mostrar banner con imagen y descripción",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "sidebar",
+      "label": "Filtros en columna lateral (ordenador)",
+      "default": true,
+      "info": "Configura los filtros con la app gratuita Search & Discovery de Shopify."
+    },
+    {
+      "type": "range",
+      "id": "per_page",
+      "label": "Productos por página",
+      "min": 8,
+      "max": 48,
+      "step": 4,
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Columnas en ordenador",
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "default": 4
+    }
+  ]
+}
+{% endschema %}

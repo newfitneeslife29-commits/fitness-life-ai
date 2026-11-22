@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-cart",
+      "settings": {}
+    },
+    "suggest": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Before you go",
+        "title": "You may also like",
+        "limit": 8,
+        "columns": 4,
+        "layout": "slider",
+        "style": "surface",
+        "show_link": false,
+        "pt": 56,
+        "pb": 56
+      }
+    }
+  },
+  "order": [
+    "main",
+    "suggest"
+  ]
+}

@@ -1,0 +1,88 @@
+{%- liquid
+  assign msgs = section.blocks | where: 'type', 'message'
+  assign animated = section.settings.animated
+  if msgs.size < 2
+    assign animated = false
+  endif
+-%}
+{%- if msgs.size > 0 -%}
+  <div class="announcement{% unless animated %} announcement--static{% endunless %}" style="--marquee-speed: {{ section.settings.speed }}s" role="region" aria-label="{{ 'sections.announcement.label' | t }}">
+    <div class="announcement__track">
+      {%- for n in (1..2) -%}
+        <div class="announcement__group"{% if forloop.index == 2 %} aria-hidden="true"{% endif %}>
+          {%- for i in (1..2) -%}
+            {%- for block in msgs -%}
+              <span class="announcement__item" {{ block.shopify_attributes }}>
+                <span class="announcement__dot"></span>
+                {%- if block.settings.link != blank -%}
+                  <a href="{{ block.settings.link }}"{% if forloop.parentloop.index > 1 or n > 1 %} tabindex="-1"{% endif %}>{{ block.settings.text | escape }}</a>
+                {%- else -%}
+                  {{ block.settings.text | escape }}
+                {%- endif -%}
+              </span>
+            {%- endfor -%}
+            {%- unless animated -%}{%- break -%}{%- endunless -%}
+          {%- endfor -%}
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Barra de anuncios",
+  "class": "section-announcement",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "animated",
+      "label": "Desplazamiento continuo",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Velocidad (segundos por vuelta)",
+      "min": 15,
+      "max": 90,
+      "step": 5,
+      "default": 40
+    },
+    {
+      "type": "paragraph",
+      "content": "Escribe solo promesas que cumplas de verdad (envíos, devoluciones, cupones vigentes)."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "message",
+      "name": "Mensaje",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Texto",
+          "default": "100% secure payment with Shopify checkout"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Enlace"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Barra de anuncios",
+      "blocks": [
+        {
+          "type": "message"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

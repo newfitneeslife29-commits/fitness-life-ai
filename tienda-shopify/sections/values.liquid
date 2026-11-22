@@ -1,0 +1,198 @@
+{%- assign s = section.settings -%}
+<section class="section{% if s.style == 'dark' %} section--dark{% elsif s.style == 'surface' %} section--surface{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="section-head" data-reveal>
+      <div>
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        <h2 class="section-head__title">{{ s.title | escape }}</h2>
+        {%- if s.subtitle != blank -%}<p class="section-head__sub">{{ s.subtitle | escape }}</p>{%- endif -%}
+      </div>
+    </div>
+    <div class="values" style="--cols: {{ section.blocks.size | at_most: 4 | at_least: 1 }}">
+      {%- for block in section.blocks -%}
+        <div class="value" data-reveal style="--i: {{ forloop.index0 }}" {{ block.shopify_attributes }}>
+          <div class="value__icon">{% render 'icon', name: block.settings.icon %}</div>
+          <h3>{{ block.settings.title | escape }}</h3>
+          <div>{{ block.settings.text }}</div>
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Por qué comprar aquí",
+  "max_blocks": 8,
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Shop with confidence"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "How shopping with us works"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtítulo"
+    },
+    {
+      "type": "select",
+      "id": "style",
+      "label": "Fondo",
+      "default": "dark",
+      "options": [
+        {
+          "value": "none",
+          "label": "Normal"
+        },
+        {
+          "value": "surface",
+          "label": "Suave"
+        },
+        {
+          "value": "dark",
+          "label": "Oscuro"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 64
+    }
+  ],
+  "blocks": [
+    {
+      "type": "value",
+      "name": "Ventaja",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icono",
+          "default": "shield",
+          "options": [
+            {
+              "value": "shield",
+              "label": "Escudo"
+            },
+            {
+              "value": "lock",
+              "label": "Candado"
+            },
+            {
+              "value": "truck",
+              "label": "Camión"
+            },
+            {
+              "value": "return",
+              "label": "Devolución"
+            },
+            {
+              "value": "chat",
+              "label": "Chat"
+            },
+            {
+              "value": "box",
+              "label": "Caja"
+            },
+            {
+              "value": "card",
+              "label": "Tarjeta"
+            },
+            {
+              "value": "globe",
+              "label": "Mundo"
+            },
+            {
+              "value": "gift",
+              "label": "Regalo"
+            },
+            {
+              "value": "sparkle",
+              "label": "Destello"
+            },
+            {
+              "value": "star",
+              "label": "Estrella"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Título",
+          "default": "Protected payment"
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Texto",
+          "default": "<p>You pay through Shopify's secure checkout. We never see or store your card details.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Por qué comprar aquí",
+      "blocks": [
+        {
+          "type": "value",
+          "settings": {
+            "icon": "lock",
+            "title": "Protected payment",
+            "text": "<p>You pay through Shopify's secure checkout. We never see or store your card details.</p>"
+          }
+        },
+        {
+          "type": "value",
+          "settings": {
+            "icon": "truck",
+            "title": "Tracked orders",
+            "text": "<p>When your order ships, you get an email with a tracking number so you always know where it is.</p>"
+          }
+        },
+        {
+          "type": "value",
+          "settings": {
+            "icon": "return",
+            "title": "Clear policies",
+            "text": "<p>Shipping and return terms are published before you pay. No hidden fine print.</p>"
+          }
+        },
+        {
+          "type": "value",
+          "settings": {
+            "icon": "chat",
+            "title": "Real people",
+            "text": "<p>Questions before or after you buy? Message us through the contact page.</p>"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

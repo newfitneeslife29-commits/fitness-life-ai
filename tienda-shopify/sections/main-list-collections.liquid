@@ -1,0 +1,38 @@
+<div class="page-width">
+  <div class="page-hero">
+    <span class="eyebrow">{{ shop.name }}</span>
+    <h1>{{ section.settings.title | escape }}</h1>
+  </div>
+  <div class="cats" style="--cols: 4; padding-bottom: 80px">
+    {%- for c in collections -%}
+      {%- if c.handle == 'all' or c.handle == 'frontpage' or c.products_count == 0 -%}{%- continue -%}{%- endif -%}
+      <a class="tile{% if c.featured_image == blank %} tile--empty{% endif %}" href="{{ c.url }}" data-reveal style="--i: {{ forloop.index0 | modulo: 8 }}; --tile-a: var(--ink); --tile-b: #3A4A66">
+        <div class="tile__media">
+          {%- if c.featured_image -%}
+            {{ c.featured_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '300,450,600,900', sizes: '(min-width: 1100px) 25vw, (min-width: 750px) 33vw, 50vw', alt: c.title | escape }}
+          {%- else -%}
+            <span class="tile__glyph">{% render 'icon', name: 'sparkle', stroke: 1.2 %}</span>
+          {%- endif -%}
+        </div>
+        <div class="tile__label">
+          <span class="tile__name">{{ c.title }}<span class="tile__count">{{ 'sections.collections.count' | t: count: c.products_count }}</span></span>
+          <span class="tile__arrow">{% render 'icon', name: 'arrow-up-right', stroke: 2.2 %}</span>
+        </div>
+      </a>
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Todas las categorías",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "All categories"
+    }
+  ]
+}
+{% endschema %}

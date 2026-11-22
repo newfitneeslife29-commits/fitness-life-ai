@@ -1,0 +1,13 @@
+{%- comment -%}
+  Valoración REAL: lee los metacampos estándar reviews.rating y reviews.rating_count,
+  que rellenan automáticamente las apps de reseñas (Judge.me, Loox, Okendo, Shopify Product Reviews…).
+  Si el producto no tiene reseñas, no se muestra nada.
+{%- endcomment -%}
+{%- assign r = product.metafields.reviews.rating.value -%}
+{%- assign n = product.metafields.reviews.rating_count.value -%}
+{%- if r != blank and n > 0 -%}
+  <span class="rating" aria-label="{{ 'products.product.rating' | t: rating: r.rating, max: r.scale_max, count: n }}">
+    <span class="rating__stars" style="--rating: {{ r.rating }}; --rating-max: {{ r.scale_max }};" aria-hidden="true"></span>
+    <span aria-hidden="true">{{ r.rating | round: 1 }} ({{ n }})</span>
+  </span>
+{%- endif -%}

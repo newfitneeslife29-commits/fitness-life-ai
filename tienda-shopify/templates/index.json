@@ -1,0 +1,366 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "blocks": {
+        "s1": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Now open",
+            "heading": "Everything you're looking for, <em>in one place.</em>",
+            "text": "<p>Tech, home, beauty, fashion and much more. Hand-picked products, secure checkout and order tracking from start to finish.</p>",
+            "button_label": "Shop now",
+            "button2_label": "Browse categories",
+            "button2_link": "/collections",
+            "align": "left",
+            "shade": 55
+          }
+        },
+        "s2": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Just in",
+            "heading": "New ideas that <em>make life easier.</em>",
+            "text": "<p>Discover the latest products we have added to the store.</p>",
+            "button_label": "See new arrivals",
+            "button_link": "/collections/all?sort_by=created-descending",
+            "button2_label": "",
+            "align": "left",
+            "shade": 55
+          }
+        }
+      },
+      "block_order": [
+        "s1",
+        "s2"
+      ],
+      "settings": {
+        "inset": true,
+        "height": 82,
+        "height_mobile": 74,
+        "autoplay": true,
+        "speed": 6
+      }
+    },
+    "trust": {
+      "type": "trust-bar",
+      "blocks": {
+        "t1": {
+          "type": "item",
+          "settings": {
+            "icon": "lock",
+            "title": "100% secure payment",
+            "text": "Encrypted Shopify checkout"
+          }
+        },
+        "t2": {
+          "type": "item",
+          "settings": {
+            "icon": "truck",
+            "title": "Order tracking",
+            "text": "We email you the tracking number"
+          }
+        },
+        "t3": {
+          "type": "item",
+          "settings": {
+            "icon": "return",
+            "title": "Returns",
+            "text": "<a href=\"/policies/refund-policy\">Read our policy</a>"
+          }
+        },
+        "t4": {
+          "type": "item",
+          "settings": {
+            "icon": "chat",
+            "title": "Customer support",
+            "text": "<a href=\"/pages/contact\">Message us</a>"
+          }
+        }
+      },
+      "block_order": [
+        "t1",
+        "t2",
+        "t3",
+        "t4"
+      ],
+      "settings": {
+        "surface": false
+      }
+    },
+    "categories": {
+      "type": "collection-list",
+      "blocks": {
+        "c0": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Tech & Electronics",
+            "icon": "cat-tech"
+          }
+        },
+        "c1": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Home & Decor",
+            "icon": "cat-home"
+          }
+        },
+        "c2": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Beauty & Personal Care",
+            "icon": "cat-beauty"
+          }
+        },
+        "c3": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Accessories",
+            "icon": "cat-accessories"
+          }
+        },
+        "c4": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Kitchen",
+            "icon": "cat-kitchen"
+          }
+        },
+        "c5": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Sports & Fitness",
+            "icon": "cat-sport"
+          }
+        },
+        "c6": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Pets",
+            "icon": "cat-pets"
+          }
+        },
+        "c7": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Toys & Entertainment",
+            "icon": "cat-toys"
+          }
+        },
+        "c8": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Fashion",
+            "icon": "cat-fashion"
+          }
+        },
+        "c9": {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Innovative Products",
+            "icon": "cat-innovation"
+          }
+        }
+      },
+      "block_order": [
+        "c0",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+        "c6",
+        "c7",
+        "c8",
+        "c9"
+      ],
+      "settings": {
+        "eyebrow": "Explore",
+        "title": "Popular categories",
+        "columns": 5,
+        "bento": false,
+        "surface": false,
+        "pt": 56,
+        "pb": 40
+      }
+    },
+    "bestsellers": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Best sellers",
+        "title": "Our customers' favorites",
+        "limit": 8,
+        "columns": 4,
+        "layout": "slider",
+        "style": "none",
+        "show_link": true,
+        "link_label": "View all",
+        "pt": 40,
+        "pb": 56
+      }
+    },
+    "marquee": {
+      "type": "marquee-text",
+      "settings": {
+        "words": "Tech, Home, Beauty, Fashion, Sports, Pets, Kitchen, Toys",
+        "speed": 45
+      }
+    },
+    "offer": {
+      "type": "special-offer",
+      "settings": {
+        "eyebrow": "Special offer",
+        "title": "Deals of the week",
+        "text": "<p>Describe the offer exactly as you set it up in Shopify: how much it takes off, which products it applies to and when it ends.</p>",
+        "code": "",
+        "end_date": "",
+        "timezone_offset": "-05:00",
+        "hide_expired": true,
+        "button_label": "See deals",
+        "fine_print": "Promotion terms are shown at checkout.",
+        "pt": 56,
+        "pb": 40
+      }
+    },
+    "new": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Just in",
+        "title": "New arrivals",
+        "limit": 8,
+        "columns": 4,
+        "layout": "grid",
+        "style": "none",
+        "show_link": true,
+        "link_label": "View all",
+        "pt": 56,
+        "pb": 56
+      }
+    },
+    "weekly": {
+      "type": "featured-product",
+      "settings": {
+        "eyebrow": "Pick of the week",
+        "surface": true,
+        "pt": 64,
+        "pb": 64
+      }
+    },
+    "deals": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Deals",
+        "title": "Price drops",
+        "subtitle": "Products shown with their real previous price crossed out.",
+        "limit": 8,
+        "columns": 4,
+        "layout": "slider",
+        "style": "none",
+        "show_link": true,
+        "link_label": "View all deals",
+        "pt": 56,
+        "pb": 56
+      }
+    },
+    "values": {
+      "type": "values",
+      "blocks": {
+        "v1": {
+          "type": "value",
+          "settings": {
+            "icon": "lock",
+            "title": "Protected payment",
+            "text": "<p>You pay through Shopify's secure checkout. We never see or store your card details.</p>"
+          }
+        },
+        "v2": {
+          "type": "value",
+          "settings": {
+            "icon": "truck",
+            "title": "Tracked orders",
+            "text": "<p>When your order ships, you get an email with a tracking number so you always know where it is.</p>"
+          }
+        },
+        "v3": {
+          "type": "value",
+          "settings": {
+            "icon": "return",
+            "title": "Clear policies",
+            "text": "<p>Shipping and return terms are published before you pay. No hidden fine print.</p>"
+          }
+        },
+        "v4": {
+          "type": "value",
+          "settings": {
+            "icon": "chat",
+            "title": "Real people",
+            "text": "<p>Questions before or after you buy? Message us through the contact page.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "settings": {
+        "eyebrow": "Shop with confidence",
+        "title": "How shopping with us works",
+        "style": "dark",
+        "pt": 72,
+        "pb": 72
+      }
+    },
+    "recommended": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "For you",
+        "title": "Recommended",
+        "limit": 10,
+        "columns": 5,
+        "layout": "slider",
+        "style": "none",
+        "show_link": true,
+        "link_label": "View all",
+        "pt": 64,
+        "pb": 40
+      }
+    },
+    "recent": {
+      "type": "recently-viewed",
+      "settings": {
+        "title": "Recently viewed",
+        "limit": 8,
+        "pt": 24,
+        "pb": 40
+      }
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "settings": {
+        "eyebrow": "Newsletter",
+        "title": "Be the first to know",
+        "text": "<p>New arrivals, launches and real deals straight to your inbox. Unsubscribe anytime.</p>",
+        "button": "Subscribe",
+        "pt": 40,
+        "pb": 72
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "trust",
+    "categories",
+    "bestsellers",
+    "marquee",
+    "offer",
+    "new",
+    "weekly",
+    "deals",
+    "values",
+    "recommended",
+    "recent",
+    "newsletter"
+  ]
+}

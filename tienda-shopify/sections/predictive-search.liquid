@@ -1,0 +1,49 @@
+{%- comment -%} Se renderiza por la API /search/suggest. No se añade desde el editor. {%- endcomment -%}
+{%- if predictive_search.performed -%}
+  {%- assign r = predictive_search.resources -%}
+  <div class="predictive" id="predictive-search-results" role="listbox">
+    {%- if r.products.size > 0 or r.collections.size > 0 or r.queries.size > 0 -%}
+      {%- if r.queries.size > 0 -%}
+        <p class="predictive__heading">{{ 'general.search.suggestions' | t }}</p>
+        <div class="predictive__chips">
+          {%- for q in r.queries -%}
+            <a class="chip" href="{{ q.url }}">{{ q.styled_text }}</a>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+      {%- if r.collections.size > 0 -%}
+        <p class="predictive__heading">{{ 'general.search.collections' | t }}</p>
+        <div class="predictive__chips">
+          {%- for c in r.collections -%}
+            <a class="chip" href="{{ c.url }}">{{ c.title }}</a>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+      {%- if r.products.size > 0 -%}
+        <p class="predictive__heading">{{ 'general.search.products' | t }}</p>
+        <ul class="predictive__list">
+          {%- for p in r.products -%}
+            <li class="predictive__item">
+              <a href="{{ p.url }}" role="option">
+                {%- if p.featured_media -%}
+                  {{ p.featured_media | image_url: width: 120 | image_tag: alt: '', loading: 'lazy', width: 52, height: 52 }}
+                {%- else -%}
+                  <span style="width:52px;height:52px;border-radius:10px;background:var(--surface);flex:none"></span>
+                {%- endif -%}
+                <span>
+                  <span class="predictive__name">{{ p.title }}</span><br>
+                  <span class="predictive__price">{{ p.price | money }}{% if p.compare_at_price_min > p.price %} · <s>{{ p.compare_at_price_min | money }}</s>{% endif %}</span>
+                </span>
+              </a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+      <a class="predictive__all" href="{{ routes.search_url }}?q={{ predictive_search.terms | url_encode }}&options%5Bprefix%5D=last">
+        {{ 'general.search.see_all' | t: terms: predictive_search.terms }}
+      </a>
+    {%- else -%}
+      <p class="predictive__empty">{{ 'general.search.no_results' | t: terms: predictive_search.terms }}</p>
+    {%- endif -%}
+  </div>
+{%- endif -%}

@@ -1,0 +1,245 @@
+{%- liquid
+  assign slides = section.blocks
+-%}
+<section class="hero{% if section.settings.inset %} hero--inset{% endif %}" data-hero data-autoplay="{{ section.settings.autoplay }}" data-speed="{{ section.settings.speed }}" aria-roledescription="carousel" aria-label="{{ 'sections.hero.label' | t }}"
+  style="--hero-h: {{ section.settings.height }}vh; --hero-h-mobile: {{ section.settings.height_mobile }}svh;">
+  <div class="hero__viewport">
+    <div class="hero__track">
+      {%- for block in slides -%}
+        {%- liquid
+          assign b = block.settings
+          assign loading = 'lazy'
+          assign fetch = 'auto'
+          if forloop.first
+            assign loading = 'eager'
+            assign fetch = 'high'
+          endif
+        -%}
+        <div class="hero__slide hero__slide--{{ b.align }}{% if forloop.first %} is-active{% endif %}" role="group" aria-roledescription="slide" aria-label="{{ forloop.index }} / {{ forloop.length }}" style="--shade: {{ b.shade | divided_by: 100.0 }}; {% if b.text_dark %}--hero-fg: var(--ink);{% endif %}" {{ block.shopify_attributes }}>
+          <div class="hero__media">
+            {%- if b.video != blank -%}
+              {{ b.video | video_tag: autoplay: true, loop: true, muted: true, playsinline: true, controls: false, image_size: '1600x' }}
+            {%- elsif b.image != blank -%}
+              {%- if b.image_mobile != blank -%}
+                <picture>
+                  <source media="(max-width: 749px)" srcset="{{ b.image_mobile | image_url: width: 750 }} 750w, {{ b.image_mobile | image_url: width: 1100 }} 1100w" sizes="100vw">
+                  {{ b.image | image_url: width: 2400 | image_tag: loading: loading, fetchpriority: fetch, widths: '750,1100,1500,1920,2400', sizes: '100vw', alt: b.image.alt | escape }}
+                </picture>
+              {%- else -%}
+                {{ b.image | image_url: width: 2400 | image_tag: loading: loading, fetchpriority: fetch, widths: '750,1100,1500,1920,2400', sizes: '100vw', alt: b.image.alt | escape }}
+              {%- endif -%}
+            {%- else -%}
+              <div class="brand-canvas" aria-hidden="true">
+                <span class="brand-canvas__blob brand-canvas__blob--1"></span>
+                <span class="brand-canvas__blob brand-canvas__blob--2"></span>
+                <span class="brand-canvas__blob brand-canvas__blob--3"></span>
+                <span class="brand-canvas__grid"></span>
+                <span class="brand-canvas__grain"></span>
+              </div>
+            {%- endif -%}
+          </div>
+          {%- if b.image != blank or b.video != blank -%}<div class="hero__shade"></div>{%- endif -%}
+          <div class="hero__content page-width">
+            <div class="hero__inner">
+              {%- if b.kicker != blank -%}<div class="hero__kicker hero__anim"><i></i>{{ b.kicker | escape }}</div>{%- endif -%}
+              {%- if b.heading != blank -%}
+                {%- if forloop.first and request.page_type != 'index' -%}
+                  <h1 class="hero__title display hero__anim">{{ b.heading }}</h1>
+                {%- else -%}
+                  <h2 class="hero__title display hero__anim">{{ b.heading }}</h2>
+                {%- endif -%}
+              {%- endif -%}
+              {%- if b.text != blank -%}<div class="hero__text hero__anim">{{ b.text }}</div>{%- endif -%}
+              {%- if b.button_label != blank or b.button2_label != blank -%}
+                <div class="hero__ctas hero__anim">
+                  {%- if b.button_label != blank -%}
+                    <a class="btn btn--accent btn--lg" href="{{ b.button_link | default: routes.all_products_collection_url }}">{{ b.button_label | escape }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+                  {%- endif -%}
+                  {%- if b.button2_label != blank -%}
+                    <a class="btn btn--outline btn--lg" href="{{ b.button2_link | default: routes.collections_url }}">{{ b.button2_label | escape }}</a>
+                  {%- endif -%}
+                </div>
+              {%- endif -%}
+            </div>
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+
+    {%- if slides.size > 1 -%}
+      <div class="hero__controls">
+        <div class="page-width">
+          <div class="hero__dots">
+            {%- for block in slides -%}
+              <button class="hero__dot{% if forloop.first %} is-active{% endif %}" type="button" aria-label="{{ 'sections.hero.go_to' | t: n: forloop.index }}"></button>
+            {%- endfor -%}
+          </div>
+          <div class="hero__arrows">
+            <button class="hero__arrow" type="button" data-hero-prev aria-label="{{ 'general.previous' | t }}">{% render 'icon', name: 'chevron-left', stroke: 2 %}</button>
+            <button class="hero__arrow" type="button" data-hero-next aria-label="{{ 'general.next' | t }}">{% render 'icon', name: 'chevron-right', stroke: 2 %}</button>
+          </div>
+        </div>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Banner principal",
+  "class": "section-hero",
+  "max_blocks": 5,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "inset",
+      "label": "Bordes redondeados con margen",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "height",
+      "label": "Altura en ordenador",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "vh",
+      "default": 82
+    },
+    {
+      "type": "range",
+      "id": "height_mobile",
+      "label": "Altura en móvil",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "vh",
+      "default": 74
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Cambiar de diapositiva automáticamente",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Segundos por diapositiva",
+      "min": 3,
+      "max": 12,
+      "step": 1,
+      "unit": "s",
+      "default": 6
+    }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Diapositiva",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Imagen (ordenador)",
+          "info": "2400 × 1200 px recomendado. Sin imagen se muestra el fondo animado de la marca."
+        },
+        {
+          "type": "image_picker",
+          "id": "image_mobile",
+          "label": "Imagen (móvil, opcional)",
+          "info": "1080 × 1440 px recomendado."
+        },
+        {
+          "type": "video",
+          "id": "video",
+          "label": "Vídeo de fondo (opcional)"
+        },
+        {
+          "type": "range",
+          "id": "shade",
+          "label": "Oscurecer imagen",
+          "min": 0,
+          "max": 90,
+          "step": 5,
+          "unit": "%",
+          "default": 55
+        },
+        {
+          "type": "checkbox",
+          "id": "text_dark",
+          "label": "Texto oscuro (para fotos claras)",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "kicker",
+          "label": "Etiqueta superior",
+          "default": "New season"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "heading",
+          "label": "Título",
+          "default": "Everything you're looking for, <em>in one place.</em>",
+          "info": "Pon una palabra en cursiva para resaltarla con el color de acción."
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Texto",
+          "default": "<p>Tech, home, beauty, fashion and much more. Hand-picked products, secure checkout and order tracking from start to finish.</p>"
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Botón principal",
+          "default": "Shop now"
+        },
+        {
+          "type": "url",
+          "id": "button_link",
+          "label": "Enlace del botón principal"
+        },
+        {
+          "type": "text",
+          "id": "button2_label",
+          "label": "Botón secundario",
+          "default": "Browse categories"
+        },
+        {
+          "type": "url",
+          "id": "button2_link",
+          "label": "Enlace del botón secundario"
+        },
+        {
+          "type": "select",
+          "id": "align",
+          "label": "Alineación del texto",
+          "options": [
+            {
+              "value": "left",
+              "label": "Izquierda"
+            },
+            {
+              "value": "center",
+              "label": "Centro"
+            }
+          ],
+          "default": "left"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Banner principal",
+      "blocks": [
+        {
+          "type": "slide"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

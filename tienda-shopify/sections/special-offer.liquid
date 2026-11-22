@@ -1,0 +1,173 @@
+{%- liquid
+  assign s = section.settings
+  assign end_ok = false
+  if s.end_date != blank
+    assign end_ts = s.end_date | date: '%s' | plus: 0
+    assign now_ts = 'now' | date: '%s' | plus: 0
+    if end_ts > now_ts
+      assign end_ok = true
+    endif
+  endif
+  assign expired = false
+  if s.end_date != blank and end_ok == false
+    assign expired = true
+  endif
+-%}
+{%- unless expired and s.hide_expired and request.design_mode == false -%}
+<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="promo" data-offer data-hide-expired="{{ s.hide_expired }}" data-reveal>
+      <div class="promo__content">
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        <h2 class="h1">{{ s.title }}</h2>
+        {%- if s.text != blank -%}<div class="promo__text">{{ s.text }}</div>{%- endif -%}
+
+        {%- if end_ok -%}
+          <div class="countdown" data-countdown="{{ s.end_date | strip | replace: ' ', 'T' }}:00{{ s.timezone_offset | strip }}" aria-label="{{ 'sections.offer.ends_in' | t }}">
+            <div class="countdown__unit"><span class="countdown__num" data-d>00</span><span class="countdown__lbl">{{ 'sections.offer.days' | t }}</span></div>
+            <div class="countdown__unit"><span class="countdown__num" data-h>00</span><span class="countdown__lbl">{{ 'sections.offer.hours' | t }}</span></div>
+            <div class="countdown__unit"><span class="countdown__num" data-m>00</span><span class="countdown__lbl">{{ 'sections.offer.minutes' | t }}</span></div>
+            <div class="countdown__unit"><span class="countdown__num" data-s>00</span><span class="countdown__lbl">{{ 'sections.offer.seconds' | t }}</span></div>
+          </div>
+        {%- elsif expired and request.design_mode -%}
+          <p class="notice" style="color:var(--ink)">{{ 'sections.offer.expired_admin' | t }}</p>
+        {%- endif -%}
+
+        {%- if s.code != blank -%}
+          <div class="promo__code">
+            <span>{{ 'sections.offer.use_code' | t }}</span>
+            <strong>{{ s.code | escape }}</strong>
+            <button type="button" data-copy="{{ s.code | escape }}">{{ 'general.copy' | t }}</button>
+          </div>
+        {%- endif -%}
+
+        <div class="hero__ctas">
+          {%- if s.button_label != blank -%}
+            {%- if s.code != blank -%}
+              {%- capture target -%}{{ s.button_link | default: routes.all_products_collection_url }}{%- endcapture -%}
+              <a class="btn btn--accent btn--lg" href="/discount/{{ s.code | url_encode }}?redirect={{ target | url_encode }}">{{ s.button_label | escape }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+            {%- else -%}
+              <a class="btn btn--accent btn--lg" href="{{ s.button_link | default: routes.all_products_collection_url }}">{{ s.button_label | escape }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+            {%- endif -%}
+          {%- endif -%}
+        </div>
+        {%- if s.fine_print != blank -%}<p class="promo__fine">{{ s.fine_print | escape }}</p>{%- endif -%}
+      </div>
+      <div class="promo__media">
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600,900,1200,1400', sizes: '(min-width: 990px) 45vw, 100vw', alt: s.image.alt | escape }}
+        {%- else -%}
+          <div class="brand-canvas" aria-hidden="true">
+            <span class="brand-canvas__blob brand-canvas__blob--1"></span>
+            <span class="brand-canvas__blob brand-canvas__blob--3"></span>
+            <span class="brand-canvas__grid"></span>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+{%- endunless -%}
+
+{% schema %}
+{
+  "name": "Oferta especial",
+  "class": "section-offer",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Solo publica ofertas reales: crea antes el descuento en Shopify › Descuentos. El código y la fecha de fin deben coincidir con los de Shopify."
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Special offer"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "label": "Título",
+      "default": "A discount on your first order"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Texto",
+      "default": "<p>Describe the offer exactly as you set it up in Shopify: how much it takes off, which products it applies to and when it ends.</p>"
+    },
+    {
+      "type": "text",
+      "id": "code",
+      "label": "Código de descuento (opcional)",
+      "info": "Al pulsar el botón, el código se aplica automáticamente al carrito."
+    },
+    {
+      "type": "text",
+      "id": "end_date",
+      "label": "Fecha y hora de fin (opcional)",
+      "info": "Formato AAAA-MM-DD HH:MM, por ejemplo 2026-12-31 23:59. Activa la cuenta atrás. Pon la misma fecha de fin que el descuento en Shopify."
+    },
+    {
+      "type": "text",
+      "id": "timezone_offset",
+      "label": "Zona horaria de la fecha",
+      "default": "-05:00",
+      "info": "Diferencia con UTC. Colombia/Perú/Ecuador: -05:00 · México: -06:00 · España: +01:00"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_expired",
+      "label": "Ocultar la sección cuando termine la oferta",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Botón",
+      "default": "Shop now"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Enlace del botón"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Imagen"
+    },
+    {
+      "type": "text",
+      "id": "fine_print",
+      "label": "Letra pequeña",
+      "default": "Promotion terms are shown at checkout."
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "Oferta especial"
+    }
+  ]
+}
+{% endschema %}

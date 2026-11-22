@@ -1,0 +1,39 @@
+<div class="page-width">
+  <div class="auth">
+    <div id="login">
+      <h1>{{ 'customer.login.title' | t }}</h1>
+      <p class="auth__sub">{{ 'customer.login.sub' | t }}</p>
+      {%- form 'customer_login', novalidate: 'novalidate', class: 'form-grid' -%}
+        {%- if form.errors -%}<div class="form-message form-message--error" role="alert">{{ form.errors | default_errors }}</div>{%- endif -%}
+        <label><span class="field__label">{{ 'customer.email' | t }}</span><input class="field__input" type="email" name="customer[email]" autocomplete="email" autocapitalize="off" required></label>
+        {%- if form.password_needed -%}
+          <label><span class="field__label">{{ 'customer.password' | t }}</span><input class="field__input" type="password" name="customer[password]" autocomplete="current-password" required></label>
+          <a href="#recover" style="font-size:.88rem">{{ 'customer.login.forgot' | t }}</a>
+        {%- endif -%}
+        <button class="btn btn--accent btn--full btn--lg" type="submit">{{ 'customer.login.submit' | t }}</button>
+      {%- endform -%}
+      <p class="auth__alt">{{ 'customer.login.new' | t }} <a href="{{ routes.account_register_url }}">{{ 'customer.register.title' | t }}</a></p>
+      {%- if shop.checkout.guest_login -%}
+        {%- form 'guest_login' -%}<button class="btn btn--outline btn--full" type="submit" style="margin-top:12px">{{ 'customer.login.guest' | t }}</button>{%- endform -%}
+      {%- endif -%}
+    </div>
+
+    <div id="recover" style="margin-top:56px">
+      <h2 class="h3">{{ 'customer.recover.title' | t }}</h2>
+      <p class="muted">{{ 'customer.recover.sub' | t }}</p>
+      {%- form 'recover_customer_password', class: 'form-grid' -%}
+        {%- if form.posted_successfully? -%}<p class="form-message form-message--success">{{ 'customer.recover.success' | t }}</p>{%- endif -%}
+        {%- if form.errors -%}<div class="form-message form-message--error">{{ form.errors | default_errors }}</div>{%- endif -%}
+        <label><span class="field__label">{{ 'customer.email' | t }}</span><input class="field__input" type="email" name="email" autocomplete="email" required></label>
+        <button class="btn btn--full" type="submit">{{ 'customer.recover.submit' | t }}</button>
+      {%- endform -%}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Iniciar sesión",
+  "settings": []
+}
+{% endschema %}

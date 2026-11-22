@@ -1,0 +1,45 @@
+<div class="page-width">
+  <div class="page-hero" style="padding-bottom:8px">
+    <a href="{{ routes.account_url }}">&larr; {{ 'customer.account.back' | t }}</a>
+    <h1 style="margin-top:12px">{{ 'customer.addresses.title' | t }}</h1>
+  </div>
+  <div class="account">
+    <div style="display:grid;gap:16px">
+      {%- paginate customer.addresses by 10 -%}
+        {%- for address in customer.addresses -%}
+          <div class="card-box">
+            {%- if address == customer.default_address -%}<span class="badge badge--new" style="margin-bottom:10px">{{ 'customer.addresses.default' | t }}</span>{%- endif -%}
+            {{ address | format_address }}
+            <details style="margin-top:12px">
+              <summary style="cursor:pointer;font-weight:700">{{ 'customer.addresses.edit' | t }}</summary>
+              {%- form 'customer_address', address, class: 'form-grid', style: 'margin-top:14px' -%}
+                {% render 'address-fields', form: form, id: address.id %}
+                <button class="btn" type="submit">{{ 'customer.addresses.save' | t }}</button>
+              {%- endform -%}
+            </details>
+            <form method="post" action="{{ routes.account_addresses_url }}/{{ address.id }}" style="margin-top:10px" onsubmit="return confirm({{ 'customer.addresses.confirm_delete' | t | json | escape }})">
+              <input type="hidden" name="_method" value="delete">
+              <button class="link-btn" type="submit" style="color:var(--sale)">{{ 'customer.addresses.delete' | t }}</button>
+            </form>
+          </div>
+        {%- endfor -%}
+        {% render 'pagination', paginate: paginate %}
+      {%- endpaginate -%}
+    </div>
+    <aside class="card-box">
+      <h2 class="h4">{{ 'customer.addresses.add' | t }}</h2>
+      {%- form 'customer_address', customer.new_address, class: 'form-grid' -%}
+        {%- if form.errors -%}<div class="form-message form-message--error">{{ form.errors | default_errors }}</div>{%- endif -%}
+        {% render 'address-fields', form: form, id: 'new' %}
+        <button class="btn btn--accent" type="submit">{{ 'customer.addresses.add' | t }}</button>
+      {%- endform -%}
+    </aside>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Direcciones",
+  "settings": []
+}
+{% endschema %}

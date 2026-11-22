@@ -1,0 +1,16 @@
+<div class="page-width">
+  <div class="empty-state" style="padding:96px 16px">
+    <p class="display" style="color:var(--accent);margin-bottom:12px">404</p>
+    <h1 class="h2">{{ 'general.404.title' | t }}</h1>
+    <p>{{ 'general.404.text' | t }}</p>
+    <div style="max-width:520px;margin:0 auto 24px">{% render 'search-bar', id: '404' %}</div>
+    <a class="btn btn--accent btn--lg" href="{{ routes.all_products_collection_url }}">{{ 'cart.continue' | t }}</a>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Página no encontrada",
+  "settings": []
+}
+{% endschema %}

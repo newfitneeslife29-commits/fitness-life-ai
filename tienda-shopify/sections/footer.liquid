@@ -1,0 +1,120 @@
+{%- assign menus = section.blocks | where: 'type', 'menu' -%}
+<footer class="footer" style="--menus: {{ menus.size | at_least: 1 }}">
+  <div class="page-width">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <a href="{{ routes.root_url }}" style="color:#fff">{% render 'wordmark' %}</a>
+        {%- if section.settings.about != blank -%}<p>{{ section.settings.about }}</p>{%- endif -%}
+        {%- liquid
+          assign socials = 'instagram,tiktok,facebook,youtube,pinterest,x' | split: ','
+        -%}
+        <ul class="social" aria-label="{{ 'general.social' | t }}">
+          {%- for s in socials -%}
+            {%- assign key = 'social_' | append: s -%}
+            {%- if settings[key] != blank -%}
+              <li><a href="{{ settings[key] }}" target="_blank" rel="noopener" aria-label="{{ s | capitalize }}">{% render 'social-icon', name: s %}</a></li>
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      </div>
+
+      {%- for block in menus -%}
+        <details class="footer__col" {{ block.shopify_attributes }} open>
+          <summary><h2 class="footer__heading">{{ block.settings.title | default: block.settings.menu.title }}</h2>{% render 'icon', name: 'chevron-down', stroke: 2.5 %}</summary>
+          <ul class="footer__list">
+            {%- for link in block.settings.menu.links -%}
+              <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+            {%- endfor -%}
+          </ul>
+        </details>
+      {%- endfor -%}
+    </div>
+
+    <div class="footer__bottom">
+      <div>
+        <div class="footer__legal">
+          <span>&copy; {{ 'now' | date: '%Y' }} {{ shop.name }}</span>
+          {%- for policy in shop.policies -%}
+            {%- if policy != blank -%}<a href="{{ policy.url }}">{{ policy.title }}</a>{%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+
+      {%- if localization.available_countries.size > 1 or localization.available_languages.size > 1 -%}
+        {%- form 'localization', class: 'localization' -%}
+          {%- if localization.available_countries.size > 1 -%}
+            <div class="select">
+              <label class="visually-hidden" for="FooterCountry">{{ 'general.country' | t }}</label>
+              <select class="select__select" id="FooterCountry" name="country_code" onchange="this.form.submit()">
+                {%- for c in localization.available_countries -%}
+                  <option value="{{ c.iso_code }}"{% if c.iso_code == localization.country.iso_code %} selected{% endif %}>{{ c.name }} ({{ c.currency.iso_code }} {{ c.currency.symbol }})</option>
+                {%- endfor -%}
+              </select>
+            </div>
+          {%- endif -%}
+          {%- if localization.available_languages.size > 1 -%}
+            <div class="select">
+              <label class="visually-hidden" for="FooterLang">{{ 'general.language' | t }}</label>
+              <select class="select__select" id="FooterLang" name="language_code" onchange="this.form.submit()">
+                {%- for l in localization.available_languages -%}
+                  <option value="{{ l.iso_code }}"{% if l.iso_code == localization.language.iso_code %} selected{% endif %}>{{ l.endonym_name | capitalize }}</option>
+                {%- endfor -%}
+              </select>
+            </div>
+          {%- endif -%}
+          <noscript><button class="btn btn--sm btn--light" type="submit">OK</button></noscript>
+        {%- endform -%}
+      {%- endif -%}
+
+      {%- if shop.enabled_payment_types.size > 0 -%}
+        <ul class="payments" aria-label="{{ 'general.payment_methods' | t }}">
+          {%- for type in shop.enabled_payment_types -%}<li>{{ type | payment_type_svg_tag }}</li>{%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Pie de página",
+  "class": "section-footer",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "textarea",
+      "id": "about",
+      "label": "Texto bajo el logo",
+      "default": "Hand-picked products across many categories, with secure checkout and tracking on every order."
+    },
+    {
+      "type": "paragraph",
+      "content": "Las redes sociales se configuran en Ajustes del tema › Redes sociales. Los métodos de pago se muestran solos según los que actives en Shopify. Las políticas legales salen de Configuración › Políticas."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "menu",
+      "name": "Menú",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Título"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Menú",
+          "default": "footer"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Pie de página"
+    }
+  ]
+}
+{% endschema %}

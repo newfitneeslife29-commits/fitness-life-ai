@@ -1,0 +1,79 @@
+<div class="drawer drawer--right" id="CartDrawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="{{ 'cart.title' | t }}">
+  <div class="drawer__overlay" data-close-drawer></div>
+  <div class="drawer__panel" data-cart-drawer-inner>
+    <span hidden data-cart-count-value="{{ cart.item_count }}"></span>
+    <div class="drawer__head">
+      <h2 class="drawer__title">{{ 'cart.title' | t }}{% if cart.item_count > 0 %} <span class="muted" style="font-weight:500">({{ cart.item_count }})</span>{% endif %}</h2>
+      <button class="icon-btn" type="button" data-close-drawer aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+    </div>
+
+    {%- if cart.item_count > 0 -%}
+      <div class="drawer__body">
+        {% render 'free-shipping-bar' %}
+        {% render 'cart-lines' %}
+
+        {%- if section.settings.upsell_collection != blank -%}
+          {%- liquid
+            assign cart_ids = cart.items | map: 'product_id'
+            assign shown = 0
+          -%}
+          {%- capture upsell -%}
+            {%- for p in section.settings.upsell_collection.products limit: 12 -%}
+              {%- if cart_ids contains p.id or p.available == false or shown >= 6 -%}{%- continue -%}{%- endif -%}
+              {%- assign shown = shown | plus: 1 -%}
+              <div class="cart-upsell__item">
+                {%- if p.featured_media -%}{{ p.featured_media | image_url: width: 120 | image_tag: alt: '', loading: 'lazy' }}{%- endif -%}
+                <div>
+                  <a href="{{ p.url }}">{{ p.title }}</a>
+                  {% render 'price', product: p %}
+                </div>
+                {%- if p.variants.size == 1 -%}
+                  <button class="quick-add" type="button" style="width:36px;height:36px;box-shadow:none;background:var(--surface)" data-quick-add="{{ p.selected_or_first_available_variant.id }}" aria-label="{{ 'products.product.add_to_cart' | t }}: {{ p.title | escape }}">{% render 'icon', name: 'plus', stroke: 2.2 %}</button>
+                {%- else -%}
+                  <a class="quick-add" style="width:36px;height:36px;box-shadow:none;background:var(--surface)" href="{{ p.url }}" aria-label="{{ p.title | escape }}">{% render 'icon', name: 'arrow-right', stroke: 2 %}</a>
+                {%- endif -%}
+              </div>
+            {%- endfor -%}
+          {%- endcapture -%}
+          {%- if shown > 0 -%}
+            <div class="cart-upsell">
+              <p class="cart-upsell__title">{{ section.settings.upsell_title }}</p>
+              <div class="cart-upsell__list">{{ upsell }}</div>
+            </div>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+      <div class="drawer__foot" style="display:grid;gap:12px">
+        {% render 'cart-summary', id: 'drawer', show_express: false %}
+        <a class="link-btn center" href="{{ routes.cart_url }}" style="font-size:.85rem">{{ 'cart.view_cart' | t }}</a>
+      </div>
+    {%- else -%}
+      <div class="drawer__body cart-empty">
+        <div class="empty-state__icon" style="margin:0 auto 18px">{% render 'icon', name: 'cart' %}</div>
+        <h3>{{ 'cart.empty' | t }}</h3>
+        <p>{{ 'cart.empty_text' | t }}</p>
+        <a class="btn btn--accent" href="{{ routes.all_products_collection_url }}">{{ 'cart.continue' | t }}</a>
+      </div>
+    {%- endif -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Carrito lateral",
+  "settings": [
+    {
+      "type": "text",
+      "id": "upsell_title",
+      "label": "Título de recomendaciones",
+      "default": "Goes well with your order"
+    },
+    {
+      "type": "collection",
+      "id": "upsell_collection",
+      "label": "Colección para recomendar en el carrito",
+      "info": "Por ejemplo, accesorios o productos de bajo precio. Se ocultan los que ya están en el carrito."
+    }
+  ]
+}
+{% endschema %}

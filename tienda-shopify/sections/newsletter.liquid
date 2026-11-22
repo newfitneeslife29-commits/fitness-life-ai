@@ -1,0 +1,94 @@
+{%- assign s = section.settings -%}
+<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="newsletter" data-reveal>
+      <div class="brand-canvas" aria-hidden="true">
+        <span class="brand-canvas__blob brand-canvas__blob--1"></span>
+        <span class="brand-canvas__blob brand-canvas__blob--2"></span>
+        <span class="brand-canvas__grid"></span>
+      </div>
+      {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+      <h2 class="h1">{{ s.title | escape }}</h2>
+      {%- if s.text != blank -%}<div class="newsletter__text">{{ s.text }}</div>{%- endif -%}
+      {%- assign nl_id = 'Newsletter-' | append: section.id -%}
+      {%- form 'customer', id: nl_id -%}
+        <input type="hidden" name="contact[tags]" value="newsletter">
+        {%- if form.posted_successfully? -%}
+          <p class="form-message form-message--success" role="status" tabindex="-1" autofocus>{{ 'sections.newsletter.success' | t }}</p>
+        {%- else -%}
+          {%- if form.errors -%}
+            <p class="form-message form-message--error" role="alert">{{ form.errors.translated_fields.email | capitalize }} {{ form.errors.messages.email }}</p>
+          {%- endif -%}
+          <div class="newsletter__form">
+            <label class="visually-hidden" for="NewsletterEmail-{{ section.id }}">{{ 'sections.newsletter.label' | t }}</label>
+            <input class="newsletter__input" id="NewsletterEmail-{{ section.id }}" type="email" name="contact[email]" required autocomplete="email" autocapitalize="off" placeholder="{{ 'sections.newsletter.placeholder' | t }}">
+            <button class="btn btn--accent" type="submit">{{ s.button | escape }}</button>
+          </div>
+        {%- endif -%}
+      {%- endform -%}
+      <p class="newsletter__legal">{{ 'sections.newsletter.legal' | t }}{% if shop.privacy_policy %} <a href="{{ shop.privacy_policy.url }}">{{ shop.privacy_policy.title }}</a>{% endif %}</p>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Suscripción por correo",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Los suscriptores se guardan en Shopify › Clientes con consentimiento de marketing, y se sincronizan con Shopify Email, Klaviyo u Omnisend."
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Newsletter"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Be the first to know"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Texto",
+      "default": "<p>New arrivals, launches and real deals straight to your inbox. Unsubscribe anytime.</p>",
+      "info": "Si ofreces un cupón de bienvenida, créalo antes en Shopify › Descuentos y envíalo con un correo automático."
+    },
+    {
+      "type": "text",
+      "id": "button",
+      "label": "Botón",
+      "default": "Subscribe"
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 72
+    }
+  ],
+  "presets": [
+    {
+      "name": "Suscripción por correo"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,45 @@
+{%- comment -%}
+  Precio con precio anterior real (compare_at_price de Shopify).
+  Parámetros: product (opcional), variant (opcional), size: 'lg', show_save: true
+{%- endcomment -%}
+{%- liquid
+  if variant
+    assign target = variant
+    assign price = variant.price
+    assign compare = variant.compare_at_price
+    assign varies = false
+  else
+    assign target = product.selected_or_first_available_variant
+    assign price = product.price_min
+    assign compare = product.compare_at_price_min
+    assign varies = product.price_varies
+    if product.compare_at_price_varies
+      assign compare = target.compare_at_price
+      assign price = target.price
+      assign varies = false
+    endif
+  endif
+  assign on_sale = false
+  if compare > price
+    assign on_sale = true
+  endif
+-%}
+<div class="price{% if size == 'lg' %} price--lg{% endif %}" data-price>
+  {%- if varies -%}<span class="price__from">{{ 'products.product.price.from' | t }}</span>{%- endif -%}
+  <span class="{% if on_sale %}price__sale{% endif %}">
+    <span class="visually-hidden">{% if on_sale %}{{ 'products.product.price.sale_price' | t }}{% else %}{{ 'products.product.price.regular_price' | t }}{% endif %}</span>
+    {{- price | money -}}
+  </span>
+  {%- if on_sale -%}
+    <s class="price__compare"><span class="visually-hidden">{{ 'products.product.price.compare_price' | t }}</span>{{ compare | money }}</s>
+    {%- if show_save -%}
+      {%- assign saved = compare | minus: price | money -%}
+      <span class="price__save">{{ 'products.product.price.save_amount' | t: amount: saved }}</span>
+    {%- endif -%}
+  {%- endif -%}
+  {%- if target.unit_price_measurement -%}
+    <span class="price__unit">
+      {{ target.unit_price | money }}/{%- if target.unit_price_measurement.reference_value != 1 -%}{{ target.unit_price_measurement.reference_value }}{%- endif -%}{{ target.unit_price_measurement.reference_unit }}
+    </span>
+  {%- endif -%}
+</div>

@@ -1,0 +1,151 @@
+{%- liquid
+  assign menu = section.settings.menu
+  assign logo = settings.logo
+-%}
+<header class="site-header" data-header>
+  <div class="page-width">
+    <div class="header">
+      <button class="header__menu-toggle" type="button" data-open-drawer="MenuDrawer" aria-controls="MenuDrawer" aria-label="{{ 'sections.header.menu' | t }}">
+        {% render 'icon', name: 'menu', stroke: 1.9 %}
+      </button>
+
+      {%- if request.page_type == 'index' -%}<h1 class="visually-hidden">{{ shop.name }}</h1>{%- endif -%}
+      <a class="header__logo" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+        {%- if logo != blank -%}
+          {{ logo | image_url: width: 520 | image_tag: alt: shop.name, widths: '260,390,520', sizes: settings.logo_width | append: 'px', loading: 'eager' }}
+        {%- else -%}
+          {% render 'wordmark' %}
+        {%- endif -%}
+      </a>
+
+      <nav class="header__nav" aria-label="{{ 'sections.header.nav' | t }}">
+        <ul class="nav-list">
+          {%- for link in menu.links -%}
+            <li>
+              {%- if link.links.size > 0 -%}
+                <details>
+                  <summary>{{ link.title }}{% render 'icon', name: 'chevron-down', stroke: 2.5 %}</summary>
+                  <div class="mega">
+                    <div class="page-width mega__inner">
+                      {%- for child in link.links -%}
+                        <div>
+                          <a class="mega__title" href="{{ child.url }}">{{ child.title }}</a>
+                          {%- if child.links.size > 0 -%}
+                            <ul class="mega__list">
+                              {%- for grand in child.links -%}
+                                <li><a href="{{ grand.url }}"{% if grand.current %} aria-current="page"{% endif %}>{{ grand.title }}</a></li>
+                              {%- endfor -%}
+                            </ul>
+                          {%- endif -%}
+                        </div>
+                      {%- endfor -%}
+                      <div>
+                        <a class="btn btn--sm" href="{{ link.url }}">{{ 'sections.header.see_all' | t: title: link.title }}</a>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              {%- else -%}
+                <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title }}</a>
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+
+      <div class="header__search header__search-desktop">
+        {% render 'search-bar', id: 'desktop', placeholder: section.settings.search_placeholder %}
+      </div>
+
+      <div class="header__icons">
+        {%- if shop.customer_accounts_enabled -%}
+          <a class="icon-btn header__account-desktop" href="{% if customer %}{{ routes.account_url }}{% else %}{{ routes.account_login_url }}{% endif %}" aria-label="{% if customer %}{{ 'customer.account.title' | t }}{% else %}{{ 'customer.login.title' | t }}{% endif %}">
+            {% render 'icon', name: 'account' %}
+          </a>
+        {%- endif -%}
+        <a class="icon-btn" href="{{ routes.cart_url }}" data-open-drawer="{% if settings.cart_type == 'drawer' and request.page_type != 'cart' %}CartDrawer{% endif %}" aria-label="{{ 'sections.header.cart' | t }}">
+          {% render 'icon', name: 'cart' %}
+          <span class="cart-count" data-cart-count{% if cart.item_count == 0 %} hidden{% endif %}>{{ cart.item_count }}</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="header__search-mobile">
+      {% render 'search-bar', id: 'mobile', placeholder: section.settings.search_placeholder %}
+    </div>
+  </div>
+</header>
+
+<div class="drawer drawer--left" id="MenuDrawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="{{ 'sections.header.menu' | t }}">
+  <div class="drawer__overlay" data-close-drawer></div>
+  <div class="drawer__panel">
+    <div class="drawer__head">
+      <a class="header__logo" href="{{ routes.root_url }}">{% render 'wordmark' %}</a>
+      <button class="icon-btn" type="button" data-close-drawer aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+    </div>
+    <div class="drawer__body">
+      <ul class="mnav">
+        {%- for link in menu.links -%}
+          <li>
+            {%- if link.links.size > 0 -%}
+              <details>
+                <summary>{{ link.title }}{% render 'icon', name: 'chevron-down', stroke: 2.5 %}</summary>
+                <ul class="mnav">
+                  <li><a href="{{ link.url }}"><strong>{{ 'sections.header.see_all' | t: title: link.title }}</strong></a></li>
+                  {%- for child in link.links -%}
+                    <li><a href="{{ child.url }}">{{ child.title }}</a></li>
+                  {%- endfor -%}
+                </ul>
+              </details>
+            {%- else -%}
+              <a href="{{ link.url }}">{{ link.title }}</a>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ul>
+      <div class="mnav__extra">
+        {%- if shop.customer_accounts_enabled -%}
+          <a href="{% if customer %}{{ routes.account_url }}{% else %}{{ routes.account_login_url }}{% endif %}">{% render 'icon', name: 'account' %}{% if customer %}{{ 'customer.account.title' | t }}{% else %}{{ 'customer.login.title' | t }}{% endif %}</a>
+        {%- endif -%}
+        {%- if section.settings.tracking_page != blank -%}
+          <a href="{{ section.settings.tracking_page.url }}">{% render 'icon', name: 'truck' %}{{ section.settings.tracking_page.title }}</a>
+        {%- endif -%}
+        {%- if section.settings.help_page != blank -%}
+          <a href="{{ section.settings.help_page.url }}">{% render 'icon', name: 'chat' %}{{ section.settings.help_page.title }}</a>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Cabecera",
+  "class": "section-header",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Menú principal",
+      "default": "main-menu",
+      "info": "Crea submenús (2 niveles) en Tienda online › Navegación para el megamenú de categorías."
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder",
+      "label": "Texto del buscador",
+      "default": "Search products, brands and categories…"
+    },
+    {
+      "type": "page",
+      "id": "tracking_page",
+      "label": "Página de seguimiento de pedidos (menú móvil)"
+    },
+    {
+      "type": "page",
+      "id": "help_page",
+      "label": "Página de ayuda / contacto (menú móvil)"
+    }
+  ]
+}
+{% endschema %}

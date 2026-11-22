@@ -1,0 +1,66 @@
+{%- comment -%} Barra de orden + filtros. Parámetros: results, id, count {%- endcomment -%}
+{%- assign active_count = 0 -%}
+{%- for f in results.filters -%}
+  {%- assign active_count = active_count | plus: f.active_values.size -%}
+  {%- if f.min_value.value or f.max_value.value -%}{%- assign active_count = active_count | plus: 1 -%}{%- endif -%}
+{%- endfor -%}
+<div class="toolbar">
+  <div style="display:flex;gap:10px;align-items:center">
+    {%- if results.filters.size > 0 -%}
+      <button class="filter-btn filter-btn--mobile" type="button" data-open-drawer="FacetsDrawer">
+        {% render 'icon', name: 'filter', stroke: 2 %}{{ 'collections.filters.title' | t }}
+        {%- if active_count > 0 -%}<span class="filter-btn__count">{{ active_count }}</span>{%- endif -%}
+      </button>
+    {%- endif -%}
+    <span class="toolbar__count" data-count>{{ 'collections.count' | t: count: count }}</span>
+  </div>
+  <div class="toolbar__right">
+    <div class="select">
+      <label class="visually-hidden" for="Sort-{{ id }}">{{ 'collections.sort' | t }}</label>
+      <select class="select__select" id="Sort-{{ id }}" name="sort_by" form="Facets-{{ id }}" data-sort>
+        {%- assign sort_by = results.sort_by | default: results.default_sort_by -%}
+        {%- for option in results.sort_options -%}
+          <option value="{{ option.value | escape }}"{% if option.value == sort_by %} selected{% endif %}>{{ option.name | escape }}</option>
+        {%- endfor -%}
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="active-filters" data-active-filters>
+  {%- for f in results.filters -%}
+    {%- for v in f.active_values -%}
+      <a class="chip" href="{{ v.url_to_remove }}" data-facet-remove>{{ v.label | escape }} {% render 'icon', name: 'close', stroke: 3 %}</a>
+    {%- endfor -%}
+    {%- if f.type == 'price_range' -%}
+      {%- if f.min_value.value != nil or f.max_value.value != nil -%}
+        <a class="chip" href="{{ f.url_to_remove }}" data-facet-remove>
+          {{ f.min_value.value | default: 0 | money }} – {{ f.max_value.value | default: f.range_max | money }} {% render 'icon', name: 'close', stroke: 3 %}
+        </a>
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if active_count > 0 -%}
+    {%- capture clear_url -%}{% if results.terms %}{{ routes.search_url }}?q={{ results.terms | url_encode }}&type=product{% else %}{{ results.url }}?sort_by={{ results.sort_by }}{% endif %}{%- endcapture -%}
+    <a class="chip chip--link" href="{{ clear_url }}" data-facet-remove>{{ 'collections.filters.clear' | t }}</a>
+  {%- endif -%}
+</div>
+
+{%- if results.filters.size > 0 -%}
+  <div class="drawer drawer--left" id="FacetsDrawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="{{ 'collections.filters.title' | t }}">
+    <div class="drawer__overlay" data-close-drawer></div>
+    <div class="drawer__panel">
+      <div class="drawer__head">
+        <h2 class="drawer__title">{{ 'collections.filters.title' | t }}</h2>
+        <button class="icon-btn" type="button" data-close-drawer aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+      </div>
+      <div class="drawer__body" style="padding:0 20px" data-facets-drawer>
+        {%- assign mobile_id = id | append: '-m' -%}
+        {% render 'facets', results: results, id: mobile_id, section_id: section_id %}
+      </div>
+      <div class="drawer__foot">
+        <button class="btn btn--full" type="button" data-close-drawer>{{ 'collections.filters.show' | t }}</button>
+      </div>
+    </div>
+  </div>
+{%- endif -%}

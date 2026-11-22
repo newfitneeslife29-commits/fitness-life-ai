@@ -1,0 +1,262 @@
+{%- liquid
+  assign s = section.settings
+  assign palettes = '#FF4F2E,#FF9A3C|#2251FF,#6B8CFF|#0B1220,#3A4A66|#12805C,#41C493|#8B3DFF,#C08BFF|#E0336F,#FF8AB0|#0F7C8C,#4FC3D1|#B25E00,#F5B041|#3B3B3B,#8A8A8A|#5B4BDB,#FF6FB5' | split: '|'
+-%}
+<section class="section{% if s.surface %} section--surface{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="section-head" data-reveal>
+      <div>
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        <h2 class="section-head__title">{{ s.title | escape }}</h2>
+      </div>
+      <a class="section-head__link" href="{{ routes.collections_url }}">{{ 'general.see_all' | t }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+    </div>
+
+    <div class="cats{% if s.bento %} cats--bento{% endif %}" style="--cols: {{ s.columns }}">
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign c = block.settings.collection
+          assign name = block.settings.title | default: c.title | default: block.settings.fallback_name
+          assign img = block.settings.image | default: c.featured_image
+          assign url = c.url | default: routes.collections_url
+          assign pal = palettes[forloop.index0] | default: palettes[0] | split: ','
+        -%}
+        <a class="tile{% if img == blank %} tile--empty{% endif %}" href="{{ url }}" data-reveal style="--i: {{ forloop.index0 }}; --tile-a: {{ pal[0] }}; --tile-b: {{ pal[1] }}" {{ block.shopify_attributes }}>
+          <div class="tile__media">
+            {%- if img != blank -%}
+              {{ img | image_url: width: 900 | image_tag: loading: 'lazy', widths: '300,450,600,900', sizes: '(min-width: 1100px) 20vw, (min-width: 750px) 33vw, 50vw', alt: name | escape }}
+            {%- else -%}
+              <span class="tile__glyph">{% render 'icon', name: block.settings.icon, stroke: 1.2 %}</span>
+            {%- endif -%}
+          </div>
+          <div class="tile__label">
+            <span class="tile__name">
+              {{ name | escape }}
+              {%- if c != blank and c.products_count > 0 -%}<span class="tile__count">{{ 'sections.collections.count' | t: count: c.products_count }}</span>{%- endif -%}
+            </span>
+            <span class="tile__arrow">{% render 'icon', name: 'arrow-up-right', stroke: 2.2 %}</span>
+          </div>
+        </a>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Categorías",
+  "class": "section-collections",
+  "max_blocks": 15,
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Explore"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Popular categories"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Columnas en ordenador",
+      "min": 3,
+      "max": 6,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "checkbox",
+      "id": "bento",
+      "label": "Primera categoría grande",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "surface",
+      "label": "Fondo suave",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Categoría",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Colección"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Nombre (opcional)",
+          "info": "Si lo dejas vacío se usa el nombre de la colección."
+        },
+        {
+          "type": "text",
+          "id": "fallback_name",
+          "label": "Nombre mientras no hay colección",
+          "default": "Category"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Imagen (opcional)",
+          "info": "Sin imagen se usa la de la colección o, si no hay, un diseño con icono."
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icono si no hay imagen",
+          "default": "cat-tech",
+          "options": [
+            {
+              "value": "cat-tech",
+              "label": "Tecnología"
+            },
+            {
+              "value": "cat-home",
+              "label": "Hogar"
+            },
+            {
+              "value": "cat-beauty",
+              "label": "Belleza"
+            },
+            {
+              "value": "cat-accessories",
+              "label": "Accesorios"
+            },
+            {
+              "value": "cat-kitchen",
+              "label": "Cocina"
+            },
+            {
+              "value": "cat-sport",
+              "label": "Deporte"
+            },
+            {
+              "value": "cat-pets",
+              "label": "Mascotas"
+            },
+            {
+              "value": "cat-toys",
+              "label": "Juguetes"
+            },
+            {
+              "value": "cat-fashion",
+              "label": "Moda"
+            },
+            {
+              "value": "cat-innovation",
+              "label": "Innovación"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Categorías",
+      "blocks": [
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Tech & Electronics",
+            "icon": "cat-tech"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Home & Decor",
+            "icon": "cat-home"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Beauty & Personal Care",
+            "icon": "cat-beauty"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Accessories",
+            "icon": "cat-accessories"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Kitchen",
+            "icon": "cat-kitchen"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Sports & Fitness",
+            "icon": "cat-sport"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Pets",
+            "icon": "cat-pets"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Toys & Entertainment",
+            "icon": "cat-toys"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Fashion",
+            "icon": "cat-fashion"
+          }
+        },
+        {
+          "type": "collection",
+          "settings": {
+            "fallback_name": "Innovative Products",
+            "icon": "cat-innovation"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

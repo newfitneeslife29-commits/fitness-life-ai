@@ -1,0 +1,4 @@
+{%- comment -%} Uso interno: /products/HANDLE?section_id=card-render devuelve la tarjeta del producto (vistos recientemente). {%- endcomment -%}
+{%- if product -%}
+  <div data-card-render data-handle="{{ product.handle }}">{% render 'product-card', product: product %}</div>
+{%- endif -%}

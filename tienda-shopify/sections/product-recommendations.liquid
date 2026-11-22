@@ -1,0 +1,87 @@
+{%- assign s = section.settings -%}
+<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width" data-recs data-hide-empty="true" data-url="{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{ s.limit }}&intent=related">
+    {%- if recommendations.performed and recommendations.products_count > 0 -%}
+      <div data-slider>
+        <div class="section-head">
+          <div>
+            {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+            <h2 class="section-head__title">{{ s.title | escape }}</h2>
+          </div>
+          <div class="slider-nav">
+            <button type="button" data-slider-prev aria-label="{{ 'general.previous' | t }}">{% render 'icon', name: 'chevron-left', stroke: 2 %}</button>
+            <button type="button" data-slider-next aria-label="{{ 'general.next' | t }}">{% render 'icon', name: 'chevron-right', stroke: 2 %}</button>
+          </div>
+        </div>
+        <div class="slider" data-slider-track style="--cols-desktop: {{ s.columns }}; --slider-mobile: 1.7">
+          {%- for p in recommendations.products -%}
+            {% render 'product-card', product: p, index: forloop.index0 %}
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Productos relacionados",
+  "class": "section-recommendations",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Recomendaciones automáticas de Shopify según lo que compran tus clientes. Puedes ajustarlas con la app gratuita Search & Discovery."
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "You may also like"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Related products"
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Número de productos",
+      "min": 2,
+      "max": 10,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Columnas en ordenador",
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ]
+}
+{% endschema %}

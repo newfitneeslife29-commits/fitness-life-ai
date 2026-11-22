@@ -1,0 +1,322 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Vantora Store",
+    "theme_version": "1.0.0",
+    "theme_author": "Vantora Store",
+    "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
+    "theme_support_url": "https://help.shopify.com"
+  },
+  {
+    "name": "Marca",
+    "settings": [
+      {
+        "type": "text",
+        "id": "brand_name",
+        "label": "Nombre de la marca",
+        "default": "VANTORA",
+        "info": "Se muestra como logotipo cuando no subes una imagen de logo."
+      },
+      {
+        "type": "text",
+        "id": "brand_suffix",
+        "label": "Segunda palabra del logotipo",
+        "default": "STORE"
+      },
+      {
+        "type": "image_picker",
+        "id": "logo",
+        "label": "Logo (opcional)"
+      },
+      {
+        "type": "range",
+        "id": "logo_width",
+        "label": "Ancho del logo",
+        "min": 60,
+        "max": 260,
+        "step": 5,
+        "unit": "px",
+        "default": 130
+      },
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "Favicon",
+        "info": "Cuadrado, 64 × 64 px o más."
+      },
+      {
+        "type": "text",
+        "id": "brand_tagline",
+        "label": "Lema corto",
+        "default": "The best of every category, in one place."
+      }
+    ]
+  },
+  {
+    "name": "Colores",
+    "settings": [
+      {
+        "type": "color",
+        "id": "color_ink",
+        "label": "Texto y fondo oscuro",
+        "default": "#0B1220"
+      },
+      {
+        "type": "color",
+        "id": "color_paper",
+        "label": "Fondo principal",
+        "default": "#FAFAF7"
+      },
+      {
+        "type": "color",
+        "id": "color_surface",
+        "label": "Fondo de tarjetas y bloques",
+        "default": "#F1EEE7"
+      },
+      {
+        "type": "color",
+        "id": "color_accent",
+        "label": "Color de acción (botones de compra)",
+        "default": "#FF4F2E"
+      },
+      {
+        "type": "color",
+        "id": "color_accent_text",
+        "label": "Texto sobre el color de acción",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "color_trust",
+        "label": "Color de confianza (azul)",
+        "default": "#2251FF"
+      },
+      {
+        "type": "color",
+        "id": "color_sale",
+        "label": "Precio de oferta",
+        "default": "#D6261F"
+      },
+      {
+        "type": "color",
+        "id": "color_success",
+        "label": "Disponible / éxito",
+        "default": "#12805C"
+      }
+    ]
+  },
+  {
+    "name": "Tipografía",
+    "settings": [
+      {
+        "type": "font_picker",
+        "id": "font_heading",
+        "label": "Títulos",
+        "default": "inter_n7"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_body",
+        "label": "Texto",
+        "default": "inter_n4"
+      },
+      {
+        "type": "range",
+        "id": "heading_scale",
+        "label": "Tamaño de los títulos",
+        "min": 80,
+        "max": 130,
+        "step": 5,
+        "unit": "%",
+        "default": 100
+      }
+    ]
+  },
+  {
+    "name": "Diseño",
+    "settings": [
+      {
+        "type": "range",
+        "id": "page_width",
+        "label": "Ancho máximo de página",
+        "min": 1100,
+        "max": 1800,
+        "step": 20,
+        "unit": "px",
+        "default": 1440
+      },
+      {
+        "type": "range",
+        "id": "radius",
+        "label": "Redondeo de esquinas",
+        "min": 0,
+        "max": 28,
+        "step": 2,
+        "unit": "px",
+        "default": 16
+      },
+      {
+        "type": "checkbox",
+        "id": "animations",
+        "label": "Animaciones al hacer scroll",
+        "default": true,
+        "info": "Se desactivan solas si el visitante tiene activado \"reducir movimiento\"."
+      }
+    ]
+  },
+  {
+    "name": "Tarjetas de producto",
+    "settings": [
+      {
+        "type": "select",
+        "id": "card_image_ratio",
+        "label": "Proporción de la imagen",
+        "options": [
+          {
+            "value": "square",
+            "label": "Cuadrada"
+          },
+          {
+            "value": "portrait",
+            "label": "Vertical"
+          },
+          {
+            "value": "natural",
+            "label": "Original"
+          }
+        ],
+        "default": "square"
+      },
+      {
+        "type": "checkbox",
+        "id": "card_hover_image",
+        "label": "Mostrar la segunda foto al pasar el ratón",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "card_show_vendor",
+        "label": "Mostrar marca",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "card_show_rating",
+        "label": "Mostrar valoración",
+        "default": true,
+        "info": "Solo aparece si una app de reseñas (Judge.me, Loox, Shopify Product Reviews…) guarda la valoración real del producto. Sin reseñas, no se muestra nada."
+      },
+      {
+        "type": "checkbox",
+        "id": "card_quick_add",
+        "label": "Botón de añadir rápido",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "card_show_savings",
+        "label": "Etiqueta con el % de descuento",
+        "default": true,
+        "info": "Se calcula con el \"precio de comparación\" que pongas en Shopify. Pon solo precios anteriores reales."
+      }
+    ]
+  },
+  {
+    "name": "Carrito",
+    "settings": [
+      {
+        "type": "select",
+        "id": "cart_type",
+        "label": "Al añadir al carrito",
+        "options": [
+          {
+            "value": "drawer",
+            "label": "Abrir carrito lateral"
+          },
+          {
+            "value": "page",
+            "label": "Ir a la página del carrito"
+          }
+        ],
+        "default": "drawer"
+      },
+      {
+        "type": "number",
+        "id": "free_shipping_threshold",
+        "label": "Barra de envío gratis: importe mínimo",
+        "default": 0,
+        "info": "En la moneda principal de tu tienda, sin decimales. Déjalo en 0 para ocultar la barra. IMPORTANTE: crea la misma tarifa de envío gratis en Configuración › Envíos, o la promesa no se cumplirá en el checkout."
+      },
+      {
+        "type": "checkbox",
+        "id": "cart_show_note",
+        "label": "Permitir nota del pedido",
+        "default": false
+      },
+      {
+        "type": "checkbox",
+        "id": "cart_show_discount",
+        "label": "Campo de cupón de descuento en el carrito",
+        "default": true,
+        "info": "Aplica el cupón al pasar al checkout. Los cupones se crean en Shopify › Descuentos."
+      },
+      {
+        "type": "richtext",
+        "id": "cart_trust_text",
+        "label": "Texto de confianza bajo el botón de pago",
+        "default": "<p>Encrypted payment processed by Shopify's secure checkout.</p>"
+      }
+    ]
+  },
+  {
+    "name": "Redes sociales",
+    "settings": [
+      {
+        "type": "text",
+        "id": "social_instagram",
+        "label": "Instagram",
+        "info": "https://instagram.com/tu-cuenta"
+      },
+      {
+        "type": "text",
+        "id": "social_tiktok",
+        "label": "TikTok"
+      },
+      {
+        "type": "text",
+        "id": "social_facebook",
+        "label": "Facebook"
+      },
+      {
+        "type": "text",
+        "id": "social_youtube",
+        "label": "YouTube"
+      },
+      {
+        "type": "text",
+        "id": "social_pinterest",
+        "label": "Pinterest"
+      },
+      {
+        "type": "text",
+        "id": "social_x",
+        "label": "X (Twitter)"
+      }
+    ]
+  },
+  {
+    "name": "SEO y redes",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "share_image",
+        "label": "Imagen al compartir (Open Graph)",
+        "info": "1200 × 628 px. Se usa en páginas sin imagen propia."
+      },
+      {
+        "type": "paragraph",
+        "content": "Píxeles: instala las apps oficiales \"Facebook & Instagram\" (Meta Pixel + API de conversiones), \"Google & YouTube\" (GA4 y Google Ads) y \"TikTok\". Ellas inyectan el seguimiento de forma segura; no pegues códigos de píxel en el tema o contarás las compras dos veces."
+      }
+    ]
+  }
+]

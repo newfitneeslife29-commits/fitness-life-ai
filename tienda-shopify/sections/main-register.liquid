@@ -1,0 +1,30 @@
+<div class="page-width">
+  <div class="auth">
+    <h1>{{ 'customer.register.title' | t }}</h1>
+    <p class="auth__sub">{{ 'customer.register.sub' | t }}</p>
+    <ul class="auth__perks">
+      <li>{% render 'icon', name: 'check', stroke: 2.4 %}{{ 'customer.register.perk1' | t }}</li>
+      <li>{% render 'icon', name: 'check', stroke: 2.4 %}{{ 'customer.register.perk2' | t }}</li>
+      <li>{% render 'icon', name: 'check', stroke: 2.4 %}{{ 'customer.register.perk3' | t }}</li>
+    </ul>
+    {%- form 'create_customer', novalidate: 'novalidate', class: 'form-grid' -%}
+      {%- if form.errors -%}<div class="form-message form-message--error" role="alert">{{ form.errors | default_errors }}</div>{%- endif -%}
+      <div class="form-grid form-grid--2">
+        <label><span class="field__label">{{ 'customer.first_name' | t }}</span><input class="field__input" type="text" name="customer[first_name]" autocomplete="given-name"></label>
+        <label><span class="field__label">{{ 'customer.last_name' | t }}</span><input class="field__input" type="text" name="customer[last_name]" autocomplete="family-name"></label>
+      </div>
+      <label><span class="field__label">{{ 'customer.email' | t }}</span><input class="field__input" type="email" name="customer[email]" autocomplete="email" autocapitalize="off" required></label>
+      <label><span class="field__label">{{ 'customer.password' | t }}</span><input class="field__input" type="password" name="customer[password]" autocomplete="new-password" required minlength="5"></label>
+      <label class="facet__check"><input type="checkbox" name="customer[accepts_marketing]" value="true"> {{ 'customer.register.marketing' | t }}</label>
+      <button class="btn btn--accent btn--full btn--lg" type="submit">{{ 'customer.register.submit' | t }}</button>
+    {%- endform -%}
+    <p class="auth__alt">{{ 'customer.register.have' | t }} <a href="{{ routes.account_login_url }}">{{ 'customer.login.title' | t }}</a></p>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Crear cuenta",
+  "settings": []
+}
+{% endschema %}

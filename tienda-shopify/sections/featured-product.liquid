@@ -1,0 +1,108 @@
+{%- liquid
+  assign s = section.settings
+  assign product = s.product
+-%}
+<section class="section{% if s.surface %} section--surface{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    {%- if product != blank -%}
+      {%- assign variant = product.selected_or_first_available_variant -%}
+      <div class="split" data-reveal>
+        <div class="split__media" style="aspect-ratio: 1 / 1">
+          <div class="card__badges" style="top:16px;left:16px">
+            {%- if s.eyebrow != blank -%}<span class="badge badge--accent">{{ s.eyebrow | escape }}</span>{%- endif -%}
+            {%- if product.compare_at_price > product.price -%}
+              {%- assign pct = product.compare_at_price | minus: product.price | times: 100.0 | divided_by: product.compare_at_price | round -%}
+              <span class="badge badge--sale">-{{ pct }}%</span>
+            {%- endif -%}
+          </div>
+          {%- if product.featured_media -%}
+            {{ product.featured_media | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600,900,1200,1400', sizes: '(min-width: 990px) 50vw, 100vw', alt: product.featured_media.alt | default: product.title | escape }}
+          {%- endif -%}
+        </div>
+        <div>
+          {%- if product.vendor != blank and product.vendor != shop.name -%}<span class="pinfo__vendor">{{ product.vendor }}</span>{%- endif -%}
+          <h2 class="h1" style="margin-top:8px">{{ product.title }}</h2>
+          <div style="margin:-4px 0 14px">{% render 'rating', product: product %}</div>
+          <div style="margin-bottom:18px">{% render 'price', product: product, size: 'lg', show_save: true %}</div>
+          {%- if product.description != blank -%}<p class="split__text">{{ product.description | strip_html | truncatewords: 40 }}</p>{%- endif -%}
+          {%- form 'product', product, data-product-form: '', class: 'buy', novalidate: 'novalidate' -%}
+            {%- unless product.has_only_default_variant -%}
+              <div class="select">
+                <label class="visually-hidden" for="FP-{{ section.id }}">{{ 'products.product.variant' | t }}</label>
+                <select class="select__select" id="FP-{{ section.id }}" name="id">
+                  {%- for v in product.variants -%}
+                    <option value="{{ v.id }}"{% if v == variant %} selected{% endif %}{% unless v.available %} disabled{% endunless %}>{{ v.title }} — {{ v.price | money }}{% unless v.available %} ({{ 'products.product.sold_out' | t }}){% endunless %}</option>
+                  {%- endfor -%}
+                </select>
+              </div>
+            {%- else -%}
+              <input type="hidden" name="id" value="{{ variant.id }}">
+            {%- endunless -%}
+            <input type="hidden" name="quantity" value="1">
+            <div class="buy__row">
+              <button class="btn btn--accent btn--lg buy__add" type="submit"{% unless product.available %} disabled{% endunless %}>
+                {% render 'icon', name: 'cart', stroke: 2 %}
+                <span>{% if product.available %}{{ 'products.product.add_to_cart' | t }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}</span>
+              </button>
+              <a class="btn btn--outline btn--lg" href="{{ product.url }}">{{ 'products.product.view_details' | t }}</a>
+            </div>
+            <p class="buy__error" role="alert"></p>
+          {%- endform -%}
+        </div>
+      </div>
+    {%- elsif request.design_mode -%}
+      <div class="notice">{{ 'sections.featured_product.empty_admin' | t }}</div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Producto destacado",
+  "class": "section-featured-product",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Producto"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Pick of the week"
+    },
+    {
+      "type": "checkbox",
+      "id": "surface",
+      "label": "Fondo suave",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "presets": [
+    {
+      "name": "Producto destacado"
+    }
+  ]
+}
+{% endschema %}

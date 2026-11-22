@@ -1,0 +1,90 @@
+{%- assign s = section.settings -%}
+<div class="page-width">
+  <div class="page-hero">
+    <span class="eyebrow">{{ s.eyebrow | escape }}</span>
+    <h1>{{ page.title }}</h1>
+    {%- if page.content != blank -%}<div class="rte" style="max-width:60ch;color:var(--muted)">{{ page.content }}</div>{%- endif -%}
+  </div>
+  <div class="contact" style="padding-bottom:80px">
+    <div class="contact__cards">
+      {%- if s.email != blank -%}
+        <a class="contact__card" href="mailto:{{ s.email }}">{% render 'icon', name: 'mail' %}<div><strong>{{ 'contact.email' | t }}</strong><span>{{ s.email }}</span></div></a>
+      {%- endif -%}
+      {%- if s.whatsapp != blank -%}
+        <a class="contact__card" href="https://wa.me/{{ s.whatsapp | remove: '+' | remove: ' ' | remove: '-' }}" target="_blank" rel="noopener">{% render 'icon', name: 'whatsapp' %}<div><strong>WhatsApp</strong><span>{{ s.whatsapp }}</span></div></a>
+      {%- endif -%}
+      {%- if s.hours != blank -%}
+        <div class="contact__card">{% render 'icon', name: 'clock' %}<div><strong>{{ 'contact.hours' | t }}</strong><span>{{ s.hours }}</span></div></div>
+      {%- endif -%}
+      {%- if s.tracking_page != blank -%}
+        <a class="contact__card" href="{{ s.tracking_page.url }}">{% render 'icon', name: 'truck' %}<div><strong>{{ s.tracking_page.title }}</strong><span>{{ 'contact.tracking_hint' | t }}</span></div></a>
+      {%- endif -%}
+      {%- if s.faq_page != blank -%}
+        <a class="contact__card" href="{{ s.faq_page.url }}">{% render 'icon', name: 'chat' %}<div><strong>{{ s.faq_page.title }}</strong><span>{{ 'contact.faq_hint' | t }}</span></div></a>
+      {%- endif -%}
+    </div>
+
+    <div class="card-box" style="background:var(--paper);border:1px solid var(--line)">
+      {%- form 'contact', id: 'ContactForm' -%}
+        {%- if form.posted_successfully? -%}
+          <p class="form-message form-message--success" role="status" tabindex="-1" autofocus>{{ 'contact.success' | t }}</p>
+        {%- elsif form.errors -%}
+          <div class="form-message form-message--error" role="alert">{{ form.errors | default_errors }}</div>
+        {%- endif -%}
+        <div class="form-grid form-grid--2">
+          <label><span class="field__label">{{ 'contact.name' | t }}</span><input class="field__input" type="text" name="contact[{{ 'contact.name' | t }}]" autocomplete="name" value="{{ form.name | default: customer.name }}"></label>
+          <label><span class="field__label">{{ 'contact.email' | t }} *</span><input class="field__input" type="email" name="contact[email]" required autocomplete="email" autocapitalize="off" value="{{ form.email | default: customer.email }}"></label>
+          <label><span class="field__label">{{ 'contact.phone' | t }}</span><input class="field__input" type="tel" name="contact[{{ 'contact.phone' | t }}]" autocomplete="tel" value="{{ form.phone }}"></label>
+          <label><span class="field__label">{{ 'contact.order' | t }}</span><input class="field__input" type="text" name="contact[{{ 'contact.order' | t }}]" placeholder="#1001"></label>
+        </div>
+        <label style="display:block;margin-top:14px"><span class="field__label">{{ 'contact.message' | t }} *</span><textarea class="field__input" name="contact[body]" required>{{ form.body }}</textarea></label>
+        <button class="btn btn--accent btn--lg" type="submit" style="margin-top:18px">{{ 'contact.send' | t }}</button>
+      {%- endform -%}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Contacto",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Los mensajes del formulario llegan al correo de la tienda (Configuración › Notificaciones)."
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "We are here to help"
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "Correo de atención al cliente"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp",
+      "label": "WhatsApp (con prefijo internacional)",
+      "info": "Ej.: +57 300 000 0000. Déjalo vacío si no atiendes por WhatsApp."
+    },
+    {
+      "type": "text",
+      "id": "hours",
+      "label": "Horario de atención",
+      "info": "Ej.: Lunes a viernes, 9:00–18:00"
+    },
+    {
+      "type": "page",
+      "id": "tracking_page",
+      "label": "Página de seguimiento"
+    },
+    {
+      "type": "page",
+      "id": "faq_page",
+      "label": "Página de preguntas frecuentes"
+    }
+  ]
+}
+{% endschema %}

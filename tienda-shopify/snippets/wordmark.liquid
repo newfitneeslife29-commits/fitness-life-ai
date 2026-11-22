@@ -1,0 +1,12 @@
+{%- comment -%} Logotipo de texto con símbolo propio. Se usa cuando no hay imagen de logo. {%- endcomment -%}
+<span class="wordmark">
+  <svg class="wordmark__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="9" fill="currentColor"/>
+    <path d="M8 9.5h4.3l3.7 9.8 3.7-9.8H24l-6.1 13.6h-3.8L8 9.5Z" fill="var(--paper)"/>
+    <circle cx="24.2" cy="22.6" r="2.4" fill="var(--accent)"/>
+  </svg>
+  <span>{{ settings.brand_name | default: shop.name }}</span>
+  {%- if settings.brand_suffix != blank -%}
+    <span class="wordmark__suffix">{{ settings.brand_suffix }}</span>
+  {%- endif -%}
+</span>

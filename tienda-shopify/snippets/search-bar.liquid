@@ -1,0 +1,28 @@
+{%- comment -%} Buscador grande con sugerencias en vivo (API de búsqueda predictiva de Shopify). Parámetro: id {%- endcomment -%}
+<div class="searchbar" data-predictive>
+  <form class="searchbar__form" action="{{ routes.search_url }}" method="get" role="search">
+    <label class="visually-hidden" for="Search-{{ id }}">{{ 'general.search.label' | t }}</label>
+    {% render 'icon', name: 'search' %}
+    <input
+      class="searchbar__input"
+      id="Search-{{ id }}"
+      type="search"
+      name="q"
+      value="{{ search.terms | escape }}"
+      placeholder="{% if placeholder != blank %}{{ placeholder | escape }}{% else %}{{ 'general.search.placeholder' | t }}{% endif %}"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      role="combobox"
+      aria-expanded="false"
+      aria-controls="SearchResults-{{ id }}"
+      aria-autocomplete="list"
+    >
+    <input type="hidden" name="options[prefix]" value="last">
+    <button class="searchbar__submit" type="submit" aria-label="{{ 'general.search.submit' | t }}">
+      {% render 'icon', name: 'arrow-right', stroke: 2.2 %}
+    </button>
+  </form>
+  <div class="searchbar__results" id="SearchResults-{{ id }}" data-predictive-results hidden></div>
+</div>

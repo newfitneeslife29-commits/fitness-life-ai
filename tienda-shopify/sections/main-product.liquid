@@ -1,0 +1,701 @@
+{%- liquid
+  assign variant = product.selected_or_first_available_variant
+  assign form_id = 'ProductForm-' | append: section.id
+  assign media_count = product.media.size
+  assign ratio = '1 / 1'
+  if section.settings.ratio == 'portrait'
+    assign ratio = '4 / 5'
+  endif
+-%}
+
+<div class="page-width" data-product data-section-id="{{ section.id }}" data-recent-handle="{{ product.handle }}">
+  <nav class="crumbs" aria-label="{{ 'general.breadcrumbs' | t }}">
+    <ol>
+      <li><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a></li>
+      {%- if collection -%}
+        <li><a href="{{ collection.url }}">{{ collection.title }}</a></li>
+      {%- elsif product.collections.first -%}
+        <li><a href="{{ product.collections.first.url }}">{{ product.collections.first.title }}</a></li>
+      {%- endif -%}
+      <li aria-current="page">{{ product.title | truncate: 48 }}</li>
+    </ol>
+  </nav>
+
+  <div class="product">
+    {%- comment -%} ===== Galería ===== {%- endcomment -%}
+    <div class="gallery" data-gallery style="--gallery-ratio: {{ ratio }}">
+      <div class="gallery__badge">
+        {%- if variant.compare_at_price > variant.price -%}
+          {%- assign pct = variant.compare_at_price | minus: variant.price | times: 100.0 | divided_by: variant.compare_at_price | round -%}
+          <span class="badge badge--sale" data-swap="badge">-{{ pct }}%</span>
+        {%- else -%}
+          <span data-swap="badge"></span>
+        {%- endif -%}
+      </div>
+      <div class="gallery__main" data-gallery-main>
+        {%- for media in product.media -%}
+          <div class="gallery__slide{% if section.settings.cover %} gallery__slide--cover{% endif %}" data-media-id="{{ media.id }}" data-media-type="{{ media.media_type }}">
+            {%- case media.media_type -%}
+              {%- when 'image' -%}
+                {%- liquid
+                  assign loading = 'lazy'
+                  assign fp = 'auto'
+                  if forloop.first
+                    assign loading = 'eager'
+                    assign fp = 'high'
+                  endif
+                  assign zoom_src = media | image_url: width: 2400
+                  assign media_alt = media.alt | default: product.title | escape
+                -%}
+                {{ media | image_url: width: 1600 | image_tag: loading: loading, fetchpriority: fp, widths: '450,650,900,1200,1600', sizes: '(min-width: 990px) 55vw, 100vw', alt: media_alt, data-zoom-src: zoom_src }}
+              {%- when 'video' -%}
+                {{ media | video_tag: controls: true, playsinline: true, preload: 'metadata', image_size: '1200x' }}
+              {%- when 'external_video' -%}
+                {{ media | external_video_tag: loading: 'lazy' }}
+              {%- when 'model' -%}
+                {{ media | model_viewer_tag: reveal: 'interaction', toggleable: true }}
+            {%- endcase -%}
+          </div>
+        {%- else -%}
+          <div class="gallery__slide" data-media-id="0" data-media-type="placeholder">{{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}</div>
+        {%- endfor -%}
+      </div>
+      {%- if media_count > 1 -%}
+        <span class="gallery__counter" data-gallery-counter>1 / {{ media_count }}</span>
+        <div class="gallery__thumbs" role="list">
+          {%- for media in product.media -%}
+            <button class="gallery__thumb{% if forloop.first %} is-active{% endif %}" type="button" data-thumb role="listitem" aria-label="{{ 'products.product.media.show' | t: n: forloop.index }}">
+              {{ media.preview_image | image_url: width: 200 | image_tag: loading: 'lazy', alt: '' }}
+            </button>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- comment -%} ===== Información y compra ===== {%- endcomment -%}
+    <div class="pinfo">
+      {%- for block in section.blocks -%}
+        {%- assign b = block.settings -%}
+        {%- case block.type -%}
+
+          {%- when '@app' -%}
+            {% render block %}
+
+          {%- when 'title' -%}
+            <div {{ block.shopify_attributes }}>
+              {%- if b.show_vendor and product.vendor != blank and product.vendor != shop.name -%}
+                <a class="pinfo__vendor" href="{{ product.vendor | url_for_vendor }}">{{ product.vendor }}</a>
+              {%- endif -%}
+              <h1 class="pinfo__title">{{ product.title }}</h1>
+              {%- assign r = product.metafields.reviews.rating.value -%}
+              {%- if r != blank -%}
+                <a class="pinfo__rating" href="#reviews" style="margin-top:10px">{% render 'rating', product: product %}</a>
+              {%- endif -%}
+            </div>
+
+          {%- when 'price' -%}
+            <div class="pinfo__price" {{ block.shopify_attributes }}>
+              <div data-swap="price">{% render 'price', variant: variant, size: 'lg', show_save: true %}</div>
+              <div class="pinfo__tax">
+                {%- if cart.taxes_included -%}{{ 'products.product.taxes_included' | t }}{%- else -%}{{ 'products.product.taxes_excluded' | t }}{%- endif -%}
+                {%- if shop.shipping_policy.body != blank %} · <a href="{{ shop.shipping_policy.url }}">{{ 'products.product.shipping_policy_html' | t }}</a>{%- else %} · {{ 'products.product.shipping_at_checkout' | t }}{%- endif -%}
+              </div>
+              {%- assign terms_id = 'PaymentTerms-' | append: section.id -%}
+              {%- form 'product', product, id: terms_id -%}
+                <input type="hidden" name="id" value="{{ variant.id }}" data-variant-id>
+                {{ form | payment_terms }}
+              {%- endform -%}
+            </div>
+
+          {%- when 'text' -%}
+            <div class="pinfo__short rte" {{ block.shopify_attributes }}>{{ b.text }}</div>
+
+          {%- when 'divider' -%}
+            <hr class="pinfo__divider" {{ block.shopify_attributes }}>
+
+          {%- when 'variant_picker' -%}
+            {%- unless product.has_only_default_variant -%}
+              <div data-variant-picker {{ block.shopify_attributes }} style="display:grid;gap:18px">
+                {%- for option in product.options_with_values -%}
+                  {%- liquid
+                    assign oname = option.name | downcase
+                    assign is_color = false
+                    assign color_names = 'color,colour,colores,colors,couleur,cor' | split: ','
+                    if b.swatches and color_names contains oname
+                      assign is_color = true
+                    endif
+                  -%}
+                  <fieldset class="option" data-option>
+                    <legend class="option__legend">{{ option.name }}: <span data-option-value>{{ option.selected_value }}</span></legend>
+                    <div class="option__values">
+                      {%- for value in option.values -%}
+                        {%- assign input_id = section.id | append: '-' | append: option.position | append: '-' | append: forloop.index0 -%}
+                        <input type="radio" id="{{ input_id }}" name="{{ option.name | escape }}-{{ section.id }}" value="{{ value | escape }}" form="{{ form_id }}-options"{% if option.selected_value == value %} checked{% endif %}>
+                        {%- if is_color -%}
+                          {%- capture swatch_style -%}
+                            {%- if value.swatch.image -%}--swatch: url({{ value.swatch.image | image_url: width: 100 }});{%- elsif value.swatch.color -%}--swatch: {{ value.swatch.color }};{%- else -%}--swatch: {{ value | handle | split: '-' | last }};{%- endif -%}
+                          {%- endcapture -%}
+                          <label class="pill swatch" for="{{ input_id }}" style="{{ swatch_style }}" title="{{ value | escape }}"><span class="visually-hidden">{{ value }}</span></label>
+                        {%- else -%}
+                          <label class="pill" for="{{ input_id }}">{{ value }}</label>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </div>
+                  </fieldset>
+                {%- endfor -%}
+                <script type="application/json" data-product-json>
+                  {
+                    "id": {{ product.id }},
+                    "variants": [
+                      {%- for v in product.variants -%}
+                        { "id": {{ v.id }}, "available": {{ v.available | json }}, "options": {{ v.options | json }}, "featured_media": {% if v.featured_media %}{ "id": {{ v.featured_media.id }} }{% else %}null{% endif %} }{% unless forloop.last %},{% endunless %}
+                      {%- endfor -%}
+                    ]
+                  }
+                </script>
+              </div>
+            {%- endunless -%}
+
+          {%- when 'stock' -%}
+            <div data-swap="stock" {{ block.shopify_attributes }}>
+              {%- liquid
+                assign tracked = false
+                if variant.inventory_management == 'shopify'
+                  assign tracked = true
+                endif
+                assign qty = variant.inventory_quantity
+              -%}
+              {%- if variant.available == false -%}
+                <span class="stock stock--out"><span class="stock__dot"></span>{{ 'products.product.stock.out' | t }}</span>
+              {%- elsif tracked and qty > 0 and qty <= b.low_threshold -%}
+                <div class="stock stock--low" style="display:block">
+                  <span style="display:inline-flex;gap:10px;align-items:center"><span class="stock__dot"></span>{{ 'products.product.stock.low' | t: count: qty }}</span>
+                  {%- assign w = qty | times: 100 | divided_by: b.low_threshold | at_least: 8 -%}
+                  <span class="stock__bar"><i style="--w: {{ w }}%"></i></span>
+                </div>
+              {%- else -%}
+                <span class="stock"><span class="stock__dot"></span>{{ 'products.product.stock.in' | t }}</span>
+              {%- endif -%}
+            </div>
+
+          {%- when 'quantity_breaks' -%}
+            {%- comment -%}
+              Muestra los descuentos por cantidad. Formato en el editor: "2:10,3:15" (2 uds = 10 %, 3 uds = 15 %).
+              DEBES crear el descuento automático equivalente en Shopify › Descuentos (Cantidad mínima de artículos),
+              porque es Shopify quien lo aplica en el carrito y el checkout.
+            {%- endcomment -%}
+            {%- assign tiers_src = product.metafields.custom.quantity_breaks.value | default: b.tiers -%}
+            {%- if tiers_src != blank -%}
+              <div class="breaks" data-breaks {{ block.shopify_attributes }}>
+                <div class="breaks__title">{% render 'icon', name: 'tag' %}{{ b.title | escape }}</div>
+                <div class="break" data-min="1">
+                  <span class="break__radio"></span>
+                  <span class="break__label">{{ 'products.product.breaks.one' | t }}<small>{{ variant.price | money }} / {{ 'products.product.breaks.unit' | t }}</small></span>
+                </div>
+                {%- assign tiers = tiers_src | split: ',' -%}
+                {%- for t in tiers -%}
+                  {%- assign parts = t | strip | split: ':' -%}
+                  {%- assign q = parts[0] | plus: 0 -%}
+                  {%- assign off = parts[1] | plus: 0 -%}
+                  {%- if q > 1 and off > 0 -%}
+                    {%- assign unit = 100 | minus: off | times: variant.price | divided_by: 100 -%}
+                    <div class="break" data-min="{{ q }}">
+                      <span class="break__radio"></span>
+                      <span class="break__label">{{ 'products.product.breaks.n' | t: count: q }}<small>{{ unit | money }} / {{ 'products.product.breaks.unit' | t }}</small></span>
+                      <span class="break__tag">-{{ off }}%</span>
+                    </div>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+            {%- endif -%}
+
+          {%- when 'buy_buttons' -%}
+            <div {{ block.shopify_attributes }}>
+              <form id="{{ form_id }}-options" hidden></form>
+              {%- form 'product', product, id: form_id, class: 'buy', data-product-form: '', novalidate: 'novalidate' -%}
+                <input type="hidden" name="id" value="{{ variant.id }}" data-variant-id>
+                <div class="buy__row">
+                  {%- if b.show_quantity -%}
+                    <div class="qty">
+                      <button type="button" data-step="down" aria-label="{{ 'products.product.quantity.decrease' | t: product: product.title | escape }}">{% render 'icon', name: 'minus', stroke: 2 %}</button>
+                      <input type="number" name="quantity" value="1" min="1" inputmode="numeric" data-product-qty aria-label="{{ 'products.product.quantity.label' | t }}">
+                      <button type="button" data-step="up" aria-label="{{ 'products.product.quantity.increase' | t: product: product.title | escape }}">{% render 'icon', name: 'plus', stroke: 2 %}</button>
+                    </div>
+                  {%- else -%}
+                    <input type="hidden" name="quantity" value="1" data-product-qty>
+                  {%- endif -%}
+                  <button class="btn btn--accent btn--lg buy__add" type="submit" data-add-button data-main-atc{% unless variant.available %} disabled{% endunless %}>
+                    {% render 'icon', name: 'cart', stroke: 2 %}
+                    <span>{% if variant.available %}{{ 'products.product.add_to_cart' | t }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}</span>
+                  </button>
+                </div>
+                {%- if b.show_dynamic_checkout -%}
+                  {{ form | payment_button }}
+                {%- endif -%}
+                <p class="buy__error" role="alert"></p>
+              {%- endform -%}
+            </div>
+
+          {%- when 'complementary' -%}
+            {%- comment -%} Usa los productos complementarios de la app gratuita Search & Discovery de Shopify. {%- endcomment -%}
+            <div class="compl" data-recs data-hide-empty="false" data-url="{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{ b.limit }}&intent=complementary" {{ block.shopify_attributes }} hidden>
+              {%- if recommendations.performed and recommendations.products_count > 0 -%}
+                <p class="compl__title">{{ b.title | escape }}</p>
+                {%- for p in recommendations.products -%}
+                  <div class="compl__item">
+                    {%- if p.featured_media -%}{{ p.featured_media | image_url: width: 160 | image_tag: alt: '', loading: 'lazy' }}{%- endif -%}
+                    <div class="compl__info">
+                      <a href="{{ p.url }}">{{ p.title }}</a>
+                      {% render 'price', product: p %}
+                    </div>
+                    {%- if p.variants.size == 1 and p.available -%}
+                      <button class="btn btn--sm btn--outline" type="button" data-quick-add="{{ p.selected_or_first_available_variant.id }}">{{ 'products.product.add_short' | t }}</button>
+                    {%- else -%}
+                      <a class="btn btn--sm btn--outline" href="{{ p.url }}">{{ 'products.product.view' | t }}</a>
+                    {%- endif -%}
+                  </div>
+                {%- endfor -%}
+              {%- endif -%}
+            </div>
+
+          {%- when 'perks' -%}
+            <div class="perks" {{ block.shopify_attributes }}>
+              {%- if b.delivery_min > 0 and b.delivery_max > 0 -%}
+                {%- liquid
+                  assign min_s = b.delivery_min | times: 86400
+                  assign max_s = b.delivery_max | times: 86400
+                  assign d1 = 'now' | date: '%s' | plus: min_s | date: format: 'day_month'
+                  assign d2 = 'now' | date: '%s' | plus: max_s | date: format: 'day_month'
+                -%}
+                <div class="perk">{% render 'icon', name: 'truck' %}<div><strong>{{ 'products.product.perks.delivery' | t: from: d1, to: d2 }}</strong><span>{{ b.delivery_note | escape }}</span></div></div>
+              {%- endif -%}
+              {%- if b.shipping_text != blank -%}
+                <div class="perk">{% render 'icon', name: 'box' %}<div><strong>{{ 'products.product.perks.shipping' | t }}</strong><span>{{ b.shipping_text }}</span></div></div>
+              {%- endif -%}
+              {%- if b.returns_text != blank -%}
+                <div class="perk">{% render 'icon', name: 'return' %}<div><strong>{{ 'products.product.perks.returns' | t }}</strong><span>{{ b.returns_text }}{% if shop.refund_policy.body != blank %} <a href="{{ shop.refund_policy.url }}">{{ 'general.read_more' | t }}</a>{% endif %}</span></div></div>
+              {%- endif -%}
+              <div class="perk">{% render 'icon', name: 'lock' %}<div><strong>{{ 'products.product.perks.secure' | t }}</strong><span>{{ 'products.product.perks.secure_text' | t }}</span></div></div>
+            </div>
+
+          {%- when 'description' -%}
+            {%- if product.description != blank -%}
+              <details class="accordion" {% if b.open %}open{% endif %} {{ block.shopify_attributes }}>
+                <summary><span class="accordion__icon">{% render 'icon', name: 'sparkle' %}{{ 'products.product.description' | t }}</span><span class="accordion__plus"></span></summary>
+                <div class="accordion__content rte">{{ product.description }}</div>
+              </details>
+            {%- endif -%}
+
+          {%- when 'specs' -%}
+            {%- comment -%}
+              Especificaciones: metacampo de producto custom.specs (texto multilínea, "Clave: valor" por línea)
+              o tabla en el campo de texto del bloque.
+            {%- endcomment -%}
+            {%- assign specs = product.metafields.custom.specs.value -%}
+            {%- if specs != blank or variant.sku != blank or variant.weight > 0 -%}
+              <details class="accordion" {{ block.shopify_attributes }}>
+                <summary><span class="accordion__icon">{% render 'icon', name: 'box' %}{{ b.title | escape }}</span><span class="accordion__plus"></span></summary>
+                <div class="accordion__content">
+                  <table class="specs">
+                    {%- if specs != blank -%}
+                      {%- assign lines = specs | newline_to_br | split: '<br />' -%}
+                      {%- for line in lines -%}
+                        {%- assign kv = line | strip | split: ':' -%}
+                        {%- if kv.size > 1 -%}
+                          <tr><th scope="row">{{ kv[0] | strip }}</th><td>{{ line | strip | remove_first: kv[0] | remove_first: ':' | strip }}</td></tr>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    {%- endif -%}
+                    {%- if product.vendor != blank -%}<tr><th scope="row">{{ 'products.product.specs.brand' | t }}</th><td>{{ product.vendor }}</td></tr>{%- endif -%}
+                    {%- if variant.sku != blank -%}<tr><th scope="row">SKU</th><td data-swap="sku">{{ variant.sku }}</td></tr>{%- endif -%}
+                    {%- if variant.weight > 0 -%}<tr><th scope="row">{{ 'products.product.specs.weight' | t }}</th><td>{{ variant.weight | weight_with_unit }}</td></tr>{%- endif -%}
+                  </table>
+                </div>
+              </details>
+            {%- endif -%}
+
+          {%- when 'collapsible' -%}
+            {%- assign body = b.content | default: b.page.content -%}
+            {%- if body != blank -%}
+              <details class="accordion" {{ block.shopify_attributes }}>
+                <summary><span class="accordion__icon">{% render 'icon', name: b.icon %}{{ b.heading | escape }}</span><span class="accordion__plus"></span></summary>
+                <div class="accordion__content rte">{{ body }}</div>
+              </details>
+            {%- endif -%}
+
+          {%- when 'policy' -%}
+            {%- liquid
+              case b.policy
+                when 'refund'
+                  assign pol = shop.refund_policy
+                when 'shipping'
+                  assign pol = shop.shipping_policy
+                else
+                  assign pol = shop.terms_of_service
+              endcase
+            -%}
+            {%- if pol.body != blank -%}
+              <details class="accordion" {{ block.shopify_attributes }}>
+                <summary><span class="accordion__icon">{% if b.policy == 'shipping' %}{% render 'icon', name: 'truck' %}{% else %}{% render 'icon', name: 'return' %}{% endif %}{{ pol.title }}</span><span class="accordion__plus"></span></summary>
+                <div class="accordion__content rte">{{ pol.body | strip_html | truncatewords: 70 }} <a href="{{ pol.url }}">{{ 'general.read_more' | t }}</a></div>
+              </details>
+            {%- endif -%}
+
+          {%- when 'share' -%}
+            <div class="share" {{ block.shopify_attributes }}>
+              <button type="button" data-share="{{ request.origin }}{{ product.url }}">{% render 'icon', name: 'share' %}{{ 'general.share' | t }}</button>
+            </div>
+        {%- endcase -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+
+{%- comment -%} Botón fijo de compra en móvil {%- endcomment -%}
+<div class="sticky-atc" data-sticky-atc aria-hidden="true">
+  <div class="sticky-atc__inner">
+    {%- if product.featured_media -%}{{ product.featured_media | image_url: width: 120 | image_tag: class: 'sticky-atc__img', alt: '', loading: 'lazy' }}{%- endif -%}
+    <div class="sticky-atc__info">
+      <div class="sticky-atc__title">{{ product.title }}</div>
+      <div class="sticky-atc__price" data-swap="sticky-price">{% render 'price', variant: variant %}</div>
+    </div>
+    <button class="btn btn--accent" type="button" data-sticky-submit="{{ form_id }}" data-add-button{% unless variant.available %} disabled{% endunless %}>
+      <span>{% if variant.available %}{{ 'products.product.add_to_cart' | t }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}</span>
+    </button>
+  </div>
+</div>
+
+<div class="zoom" data-zoom role="dialog" aria-modal="true" aria-label="{{ 'products.product.media.zoom' | t }}">
+  <button class="zoom__close" type="button" aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+  <div class="zoom__track"></div>
+</div>
+
+{% schema %}
+{
+  "name": "Producto",
+  "class": "section-main-product",
+  "settings": [
+    {
+      "type": "select",
+      "id": "ratio",
+      "label": "Proporción de las fotos",
+      "default": "square",
+      "options": [
+        {
+          "value": "square",
+          "label": "Cuadrada"
+        },
+        {
+          "value": "portrait",
+          "label": "Vertical"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "cover",
+      "label": "Recortar fotos para llenar el marco",
+      "default": false
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    },
+    {
+      "type": "title",
+      "name": "Título",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_vendor",
+          "label": "Mostrar marca",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "price",
+      "name": "Precio",
+      "limit": 1,
+      "settings": []
+    },
+    {
+      "type": "text",
+      "name": "Texto",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Texto"
+        }
+      ]
+    },
+    {
+      "type": "divider",
+      "name": "Separador",
+      "settings": []
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variantes",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "swatches",
+          "label": "Muestras de color para la opción \"Color\"",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "stock",
+      "name": "Disponibilidad",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Muestra el stock real de Shopify. Si la variante tiene seguimiento de inventario y quedan pocas unidades, avisa de cuántas quedan."
+        },
+        {
+          "type": "range",
+          "id": "low_threshold",
+          "label": "Avisar de pocas unidades a partir de",
+          "min": 1,
+          "max": 30,
+          "step": 1,
+          "default": 10
+        }
+      ]
+    },
+    {
+      "type": "quantity_breaks",
+      "name": "Descuento por cantidad",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "IMPORTANTE: crea antes el descuento automático en Shopify › Descuentos (\"Cantidad mínima de artículos\"). Este bloque solo lo muestra; quien lo aplica es Shopify."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Título",
+          "default": "Buy more, save more"
+        },
+        {
+          "type": "text",
+          "id": "tiers",
+          "label": "Escalones (cantidad:% de descuento)",
+          "info": "Ejemplo: 2:10,3:15. Puedes definirlos por producto con el metacampo custom.quantity_breaks."
+        }
+      ]
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Botones de compra",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_quantity",
+          "label": "Selector de cantidad",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_dynamic_checkout",
+          "label": "Botón de compra inmediata",
+          "default": true,
+          "info": "Muestra \"Comprar ahora\" o el pago exprés (Shop Pay, PayPal, Apple Pay…) según los métodos activos en tu tienda."
+        }
+      ]
+    },
+    {
+      "type": "complementary",
+      "name": "Completa tu compra",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Elige los productos complementarios con la app gratuita Search & Discovery de Shopify."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Título",
+          "default": "Complete your order"
+        },
+        {
+          "type": "range",
+          "id": "limit",
+          "label": "Máximo de productos",
+          "min": 1,
+          "max": 4,
+          "step": 1,
+          "default": 3
+        }
+      ]
+    },
+    {
+      "type": "perks",
+      "name": "Envío y devoluciones",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Pon plazos reales según tu proveedor. Si los dejas en 0, no se muestra la fecha estimada."
+        },
+        {
+          "type": "number",
+          "id": "delivery_min",
+          "label": "Entrega estimada: días mínimos",
+          "default": 0
+        },
+        {
+          "type": "number",
+          "id": "delivery_max",
+          "label": "Entrega estimada: días máximos",
+          "default": 0
+        },
+        {
+          "type": "text",
+          "id": "delivery_note",
+          "label": "Nota de entrega",
+          "default": "Estimated time; you will receive your tracking number by email."
+        },
+        {
+          "type": "inline_richtext",
+          "id": "shipping_text",
+          "label": "Texto de envío",
+          "default": "The exact cost is calculated at checkout based on your address."
+        },
+        {
+          "type": "inline_richtext",
+          "id": "returns_text",
+          "label": "Texto de devoluciones",
+          "default": "See time limits and conditions in our policy."
+        }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Descripción",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "open",
+          "label": "Abierta por defecto",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "specs",
+      "name": "Especificaciones",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Crea el metacampo de producto custom.specs (texto de varias líneas) y escribe una característica por línea: \"Material: Aluminio\"."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Título",
+          "default": "Features & specifications"
+        }
+      ]
+    },
+    {
+      "type": "collapsible",
+      "name": "Pestaña desplegable",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Título",
+          "default": "Frequently asked questions"
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icono",
+          "default": "chat",
+          "options": [
+            {
+              "value": "chat",
+              "label": "Chat"
+            },
+            {
+              "value": "truck",
+              "label": "Camión"
+            },
+            {
+              "value": "return",
+              "label": "Devolución"
+            },
+            {
+              "value": "shield",
+              "label": "Escudo"
+            },
+            {
+              "value": "box",
+              "label": "Caja"
+            },
+            {
+              "value": "sparkle",
+              "label": "Destello"
+            }
+          ]
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Contenido"
+        },
+        {
+          "type": "page",
+          "id": "page",
+          "label": "O contenido de una página"
+        }
+      ]
+    },
+    {
+      "type": "policy",
+      "name": "Política",
+      "settings": [
+        {
+          "type": "select",
+          "id": "policy",
+          "label": "Política",
+          "default": "refund",
+          "options": [
+            {
+              "value": "refund",
+              "label": "Devoluciones"
+            },
+            {
+              "value": "shipping",
+              "label": "Envíos"
+            },
+            {
+              "value": "terms",
+              "label": "Términos"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "share",
+      "name": "Compartir",
+      "limit": 1,
+      "settings": []
+    }
+  ]
+}
+{% endschema %}

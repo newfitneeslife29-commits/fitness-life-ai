@@ -1,0 +1,35 @@
+<div class="page-width" data-main-cart data-section-id="{{ section.id }}">
+  <div class="page-hero" style="padding-bottom:24px">
+    <h1>{{ 'cart.title' | t }}</h1>
+  </div>
+  {%- if cart.item_count > 0 -%}
+    <div class="cart-page">
+      <div>
+        {% render 'free-shipping-bar' %}
+        {% render 'cart-lines' %}
+        <a class="section-head__link" style="margin-top:24px" href="{{ routes.all_products_collection_url }}">{{ 'cart.continue' | t }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+      </div>
+      <div class="cart-panel">
+        <h2 class="h3" style="margin:0">{{ 'cart.summary' | t }}</h2>
+        {% render 'cart-summary', id: 'page', show_express: true %}
+      </div>
+    </div>
+  {%- else -%}
+    <div class="empty-state">
+      <div class="empty-state__icon">{% render 'icon', name: 'cart' %}</div>
+      <h2 class="h3">{{ 'cart.empty' | t }}</h2>
+      <p>{{ 'cart.empty_text' | t }}</p>
+      <a class="btn btn--accent btn--lg" href="{{ routes.all_products_collection_url }}">{{ 'cart.continue' | t }}</a>
+      {%- if shop.customer_accounts_enabled and customer == nil -%}
+        <p style="margin-top:24px">{{ 'cart.login_html' | t: link: routes.account_login_url }}</p>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Carrito",
+  "settings": []
+}
+{% endschema %}

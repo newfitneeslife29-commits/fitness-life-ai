@@ -1,0 +1,20 @@
+<article class="page-width" style="padding-bottom:80px">
+  <nav class="crumbs" aria-label="{{ 'general.breadcrumbs' | t }}">
+    <ol><li><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a></li><li><a href="{{ blog.url }}">{{ blog.title }}</a></li></ol>
+  </nav>
+  <header class="prose" style="margin:0 auto;padding:24px 0">
+    <span class="eyebrow">{{ article.published_at | time_tag: format: 'date' }}</span>
+    <h1>{{ article.title }}</h1>
+  </header>
+  {%- if article.image -%}
+    <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:40px">{{ article.image | image_url: width: 2000 | image_tag: loading: 'eager', widths: '750,1100,1500,2000', sizes: '100vw', alt: article.image.alt | escape }}</div>
+  {%- endif -%}
+  <div class="prose rte" style="margin:0 auto">{{ article.content }}</div>
+</article>
+
+{% schema %}
+{
+  "name": "Artículo",
+  "settings": []
+}
+{% endschema %}

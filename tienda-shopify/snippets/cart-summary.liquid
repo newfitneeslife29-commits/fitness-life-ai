@@ -1,0 +1,52 @@
+{%- comment -%} Resumen, cupón y botón de pago. Parámetro: id {%- endcomment -%}
+<div class="cart-sum">
+  <div class="cart-sum__row">
+    <span>{{ 'cart.subtotal' | t }}</span>
+    <span>{{ cart.items_subtotal_price | money }}</span>
+  </div>
+  {%- for d in cart.cart_level_discount_applications -%}
+    <div class="cart-sum__row cart-sum__discount">
+      <span>{% render 'icon', name: 'tag' %} {{ d.title }}</span>
+      <span>-{{ d.total_allocated_amount | money }}</span>
+    </div>
+  {%- endfor -%}
+  <div class="cart-sum__row cart-sum__row--total">
+    <span>{{ 'cart.total' | t }}</span>
+    <span>{{ cart.total_price | money_with_currency }}</span>
+  </div>
+  <p class="cart-sum__note">
+    {%- if cart.taxes_included -%}{{ 'cart.taxes_included_shipping_at_checkout' | t }}{%- else -%}{{ 'cart.taxes_and_shipping_at_checkout' | t }}{%- endif -%}
+  </p>
+</div>
+
+{%- if settings.cart_show_note -%}
+  <div>
+    <label class="field__label" for="CartNote-{{ id }}">{{ 'cart.note' | t }}</label>
+    <textarea class="field__input" id="CartNote-{{ id }}" name="note" form="CartForm-{{ id }}" data-cart-note rows="2" style="min-height:80px">{{ cart.note }}</textarea>
+  </div>
+{%- endif -%}
+
+<form action="{{ routes.cart_url }}" method="post" id="CartForm-{{ id }}" data-cart-form novalidate style="display:grid;gap:12px">
+  {%- if settings.cart_show_discount -%}
+    <div class="cart-coupon">
+      <label class="visually-hidden" for="Coupon-{{ id }}">{{ 'cart.coupon' | t }}</label>
+      <input class="field__input" id="Coupon-{{ id }}" type="text" data-coupon placeholder="{{ 'cart.coupon' | t }}" autocomplete="off">
+    </div>
+  {%- endif -%}
+  <button class="btn btn--accent btn--full btn--lg" type="submit" name="checkout"{% if cart.item_count == 0 %} disabled{% endif %}>
+    {% render 'icon', name: 'lock', stroke: 2 %}
+    <span>{{ 'cart.checkout' | t }}</span>
+  </button>
+  {%- if additional_checkout_buttons and show_express -%}
+    <div class="additional-checkout-buttons">{{ content_for_additional_checkout_buttons }}</div>
+  {%- endif -%}
+</form>
+
+{%- if settings.cart_trust_text != blank -%}
+  <div class="cart-trust">{% render 'icon', name: 'shield', stroke: 2 %}<div>{{ settings.cart_trust_text }}</div></div>
+{%- endif -%}
+{%- if shop.enabled_payment_types.size > 0 -%}
+  <ul class="payments" style="justify-content:center" aria-label="{{ 'general.payment_methods' | t }}">
+    {%- for type in shop.enabled_payment_types -%}<li>{{ type | payment_type_svg_tag }}</li>{%- endfor -%}
+  </ul>
+{%- endif -%}

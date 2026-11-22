@@ -1,0 +1,52 @@
+{%- comment -%} Líneas del carrito (compartido por el carrito lateral y la página del carrito). {%- endcomment -%}
+<ul class="cart-items">
+  {%- for item in cart.items -%}
+    <li class="cart-item" data-cart-line="{{ forloop.index }}">
+      <a href="{{ item.url }}">
+        {%- if item.image -%}
+          {{ item.image | image_url: width: 240 | image_tag: class: 'cart-item__img', alt: item.product.title, loading: 'lazy' }}
+        {%- else -%}
+          <span class="cart-item__img" style="display:block"></span>
+        {%- endif -%}
+      </a>
+      <div>
+        <div class="cart-item__top">
+          <div>
+            <a class="cart-item__title" href="{{ item.url }}">{{ item.product.title }}</a>
+            {%- unless item.product.has_only_default_variant -%}
+              <p class="cart-item__meta">{{ item.variant.title }}</p>
+            {%- endunless -%}
+            {%- for p in item.properties -%}
+              {%- assign first = p.first | slice: 0 -%}
+              {%- if p.last != blank and first != '_' -%}
+                <p class="cart-item__meta">{{ p.first }}: {{ p.last }}</p>
+              {%- endif -%}
+            {%- endfor -%}
+            {%- if item.selling_plan_allocation -%}
+              <p class="cart-item__meta">{{ item.selling_plan_allocation.selling_plan.name }}</p>
+            {%- endif -%}
+            {%- for d in item.line_level_discount_allocations -%}
+              <span class="cart-item__discount">{% render 'icon', name: 'tag' %}{{ d.discount_application.title }} (-{{ d.amount | money }})</span>
+            {%- endfor -%}
+          </div>
+          <div class="price" style="flex-direction:column;align-items:flex-end;gap:0">
+            {%- if item.original_line_price != item.final_line_price -%}
+              <s class="price__compare">{{ item.original_line_price | money }}</s>
+              <span class="price__sale">{{ item.final_line_price | money }}</span>
+            {%- else -%}
+              <span>{{ item.final_line_price | money }}</span>
+            {%- endif -%}
+          </div>
+        </div>
+        <div class="cart-item__bottom">
+          <div class="qty qty--sm">
+            <button type="button" data-qty="minus" aria-label="{{ 'products.product.quantity.decrease' | t: product: item.product.title | escape }}">{% render 'icon', name: 'minus', stroke: 2 %}</button>
+            <input type="number" data-qty-input value="{{ item.quantity }}" min="0" inputmode="numeric" aria-label="{{ 'products.product.quantity.label' | t }}">
+            <button type="button" data-qty="plus" aria-label="{{ 'products.product.quantity.increase' | t: product: item.product.title | escape }}">{% render 'icon', name: 'plus', stroke: 2 %}</button>
+          </div>
+          <a class="cart-item__remove" href="{{ item.url_to_remove }}" data-remove aria-label="{{ 'cart.remove' | t: product: item.product.title | escape }}">{% render 'icon', name: 'trash' %}</a>
+        </div>
+      </div>
+    </li>
+  {%- endfor -%}
+</ul>

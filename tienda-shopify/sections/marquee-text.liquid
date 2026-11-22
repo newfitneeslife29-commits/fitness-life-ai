@@ -1,0 +1,36 @@
+{%- assign words = section.settings.words | split: ',' -%}
+<div class="marquee-text" aria-hidden="true" style="--marquee-speed: {{ section.settings.speed }}s">
+  <div class="marquee-text__track">
+    {%- for n in (1..4) -%}
+      {%- for w in words -%}<span class="marquee-text__item">{{ w | strip | escape }}</span>{%- endfor -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Texto en movimiento",
+  "settings": [
+    {
+      "type": "text",
+      "id": "words",
+      "label": "Palabras (separadas por comas)",
+      "default": "Tech, Home, Beauty, Fashion, Sports, Pets, Kitchen"
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Segundos por vuelta",
+      "min": 10,
+      "max": 90,
+      "step": 5,
+      "default": 45
+    }
+  ],
+  "presets": [
+    {
+      "name": "Texto en movimiento"
+    }
+  ]
+}
+{% endschema %}

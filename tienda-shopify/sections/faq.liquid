@@ -1,0 +1,164 @@
+{%- assign s = section.settings -%}
+<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="faq">
+      <div class="center" style="margin-bottom:32px">
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        {%- if s.as_page_title -%}<h1>{{ s.title | escape }}</h1>{%- else -%}<h2>{{ s.title | escape }}</h2>{%- endif -%}
+      </div>
+      {%- for block in section.blocks -%}
+        <details class="accordion" {{ block.shopify_attributes }}>
+          <summary>{{ block.settings.question | escape }}<span class="accordion__plus"></span></summary>
+          <div class="accordion__content rte">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{%- if section.blocks.size > 0 -%}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {%- for block in section.blocks -%}
+        { "@type": "Question", "name": {{ block.settings.question | json }}, "acceptedAnswer": { "@type": "Answer", "text": {{ block.settings.answer | strip_html | json }} } }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+</script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Preguntas frecuentes",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Completa las respuestas con tus datos reales (plazos, países, métodos de pago). Las respuestas de ejemplo remiten a tus políticas oficiales."
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Help"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Frequently asked questions"
+    },
+    {
+      "type": "checkbox",
+      "id": "as_page_title",
+      "label": "Usar como título principal de la página (H1)",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "blocks": [
+    {
+      "type": "question",
+      "name": "Pregunta",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Pregunta",
+          "default": "How do I know where my order is?"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "Respuesta",
+          "default": "<p>When your order ships we email you the tracking number. You can also find it in your account order history.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Preguntas frecuentes",
+      "blocks": [
+        {
+          "type": "question",
+          "settings": {
+            "question": "How do I know where my order is?",
+            "answer": "<p>When your order ships we email you the tracking number. You can also find it in your account order history, or on our order tracking page.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "How long does shipping take?",
+            "answer": "<p>Delivery time depends on the product and your address. You will see it on each product page and in our <a href=\"/policies/shipping-policy\">shipping policy</a>.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "How much is shipping?",
+            "answer": "<p>The exact cost is calculated at checkout based on your address, before you pay.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Which payment methods do you accept?",
+            "answer": "<p>You can see every available method at checkout and at the bottom of this page. Payments are processed by Shopify's secure checkout.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Is it safe to shop here?",
+            "answer": "<p>Yes. Payment happens in Shopify's encrypted checkout; we never see or store your card details.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Can I return a product?",
+            "answer": "<p>See time limits and conditions in our <a href=\"/policies/refund-policy\">refund policy</a>.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Can I use a discount code?",
+            "answer": "<p>Yes. Enter it in the cart or at checkout, in the \"Discount code\" field.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "How can I contact you?",
+            "answer": "<p>Message us through our <a href=\"/pages/contact\">contact page</a> and include your order number if you have already purchased.</p>"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

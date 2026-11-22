@@ -1,0 +1,67 @@
+{%- comment -%}
+  Vistos recientemente: la lista se guarda solo en el navegador del cliente
+  y cada tarjeta se pide a Shopify (sección card-render).
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width" data-recently-viewed data-limit="{{ s.limit }}" data-exclude="{{ product.handle }}">
+    <div data-slider>
+      <div class="section-head">
+        <h2 class="section-head__title">{{ s.title | escape }}</h2>
+        <div class="slider-nav">
+          <button type="button" data-slider-prev aria-label="{{ 'general.previous' | t }}">{% render 'icon', name: 'chevron-left', stroke: 2 %}</button>
+          <button type="button" data-slider-next aria-label="{{ 'general.next' | t }}">{% render 'icon', name: 'chevron-right', stroke: 2 %}</button>
+        </div>
+      </div>
+      <div class="slider" data-slider-track data-recent-items style="--cols-desktop: 5; --slider-mobile: 2.2"></div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Vistos recientemente",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Recently viewed"
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Máximo de productos",
+      "min": 3,
+      "max": 12,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "presets": [
+    {
+      "name": "Vistos recientemente"
+    }
+  ]
+}
+{% endschema %}

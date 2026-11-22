@@ -1,0 +1,128 @@
+{%- assign s = section.settings -%}
+<section class="section{% if s.style == 'dark' %} section--dark{% elsif s.style == 'surface' %} section--surface{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="split{% if s.reverse %} split--reverse{% endif %}">
+      <div class="split__media" data-reveal>
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600,900,1200,1400', sizes: '(min-width: 990px) 50vw, 100vw', alt: s.image.alt | escape }}
+        {%- else -%}
+          <div class="brand-canvas" aria-hidden="true">
+            <span class="brand-canvas__blob brand-canvas__blob--1"></span>
+            <span class="brand-canvas__blob brand-canvas__blob--2"></span>
+            <span class="brand-canvas__grid"></span>
+          </div>
+          <div style="position:absolute;inset:0;display:grid;place-items:center;color:#fff">
+            <div style="width:38%;max-width:200px">{% render 'icon', name: 'globe', stroke: 1 %}</div>
+          </div>
+        {%- endif -%}
+      </div>
+      <div data-reveal style="--i: 1">
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        {%- if s.as_page_title -%}<h1>{{ s.title }}</h1>{%- else -%}<h2 class="h1">{{ s.title }}</h2>{%- endif -%}
+        <div class="split__text rte">{{ s.text }}</div>
+        {%- if s.button_label != blank -%}
+          <a class="btn btn--accent btn--lg" href="{{ s.button_link | default: routes.all_products_collection_url }}">{{ s.button_label | escape }}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Imagen con texto",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Imagen"
+    },
+    {
+      "type": "checkbox",
+      "id": "reverse",
+      "label": "Imagen a la derecha",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Our story"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "label": "Título",
+      "default": "One store, hundreds of ideas"
+    },
+    {
+      "type": "checkbox",
+      "id": "as_page_title",
+      "label": "Usar como título principal de la página (H1)",
+      "default": false
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Texto",
+      "default": "<p>Tell customers who is behind the store, why you started it and how you choose your products. Shoppers trust stores that show who they really are.</p>"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Botón",
+      "default": "Discover products"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Enlace del botón"
+    },
+    {
+      "type": "select",
+      "id": "style",
+      "label": "Fondo",
+      "default": "none",
+      "options": [
+        {
+          "value": "none",
+          "label": "Normal"
+        },
+        {
+          "value": "surface",
+          "label": "Suave"
+        },
+        {
+          "value": "dark",
+          "label": "Oscuro"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "presets": [
+    {
+      "name": "Imagen con texto"
+    }
+  ]
+}
+{% endschema %}

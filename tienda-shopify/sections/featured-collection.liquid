@@ -1,0 +1,185 @@
+{%- liquid
+  assign s = section.settings
+  assign coll = s.collection
+  assign limit = s.limit
+  assign products = coll.products
+  if coll == blank
+    assign products = collections.all.products
+  endif
+-%}
+{%- if products.size > 0 or request.design_mode -%}
+<section class="section{% if s.style == 'surface' %} section--surface{% elsif s.style == 'dark' %} section--dark{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width"{% if s.layout == 'slider' %} data-slider{% endif %}>
+    <div class="section-head" data-reveal>
+      <div>
+        {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+        <h2 class="section-head__title">{{ s.title | escape }}</h2>
+        {%- if s.subtitle != blank -%}<p class="section-head__sub">{{ s.subtitle | escape }}</p>{%- endif -%}
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
+        {%- if s.layout == 'slider' -%}
+          <div class="slider-nav">
+            <button type="button" data-slider-prev aria-label="{{ 'general.previous' | t }}">{% render 'icon', name: 'chevron-left', stroke: 2 %}</button>
+            <button type="button" data-slider-next aria-label="{{ 'general.next' | t }}">{% render 'icon', name: 'chevron-right', stroke: 2 %}</button>
+          </div>
+        {%- endif -%}
+        {%- if s.show_link and coll != blank -%}
+          <a class="section-head__link" href="{{ coll.url }}">{% if s.link_label != blank %}{{ s.link_label | escape }}{% else %}{{ 'general.see_all' | t }}{% endif %}{% render 'icon', name: 'arrow-right', stroke: 2.2 %}</a>
+        {%- endif -%}
+      </div>
+    </div>
+
+    {%- if products.size > 0 -%}
+      <div class="{% if s.layout == 'slider' %}slider{% else %}grid{% endif %}" style="--cols-desktop: {{ s.columns }}; --slider-mobile: 1.7"{% if s.layout == 'slider' %} data-slider-track{% endif %}>
+        {%- for product in products limit: limit -%}
+          {% render 'product-card', product: product, index: forloop.index0 %}
+        {%- endfor -%}
+      </div>
+    {%- else -%}
+      <div class="notice">{{ 'sections.featured.empty_admin' | t }}</div>
+    {%- endif -%}
+  </div>
+</section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Colección de productos",
+  "class": "section-featured",
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Etiqueta",
+      "default": "Best sellers"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Our customers' favorites"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtítulo"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Colección",
+      "info": "Ejemplos: \"Más vendidos\" (colección automática ordenada por Más vendidos), \"Novedades\" (ordenada por Fecha: más reciente), \"Ofertas\" (condición: precio de comparación mayor que 0)."
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Número de productos",
+      "min": 2,
+      "max": 16,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Columnas en ordenador",
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Diseño",
+      "default": "slider",
+      "options": [
+        {
+          "value": "slider",
+          "label": "Carrusel"
+        },
+        {
+          "value": "grid",
+          "label": "Cuadrícula"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "style",
+      "label": "Fondo",
+      "default": "none",
+      "options": [
+        {
+          "value": "none",
+          "label": "Normal"
+        },
+        {
+          "value": "surface",
+          "label": "Suave"
+        },
+        {
+          "value": "dark",
+          "label": "Oscuro"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_link",
+      "label": "Enlace \"Ver todo\"",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "Texto del enlace",
+      "default": "View all"
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Espacio superior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Espacio inferior",
+      "min": 0,
+      "max": 120,
+      "step": 8,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "presets": [
+    {
+      "name": "Más vendidos",
+      "settings": {
+        "eyebrow": "Best sellers",
+        "title": "Our customers' favorites"
+      }
+    },
+    {
+      "name": "Novedades",
+      "settings": {
+        "eyebrow": "Just in",
+        "title": "New arrivals"
+      }
+    },
+    {
+      "name": "Ofertas",
+      "settings": {
+        "eyebrow": "Deals",
+        "title": "Price drops",
+        "style": "surface"
+      }
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,139 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "title": {
+          "type": "title",
+          "settings": {
+            "show_vendor": true
+          }
+        },
+        "price": {
+          "type": "price",
+          "settings": {}
+        },
+        "stock": {
+          "type": "stock",
+          "settings": {
+            "low_threshold": 10
+          }
+        },
+        "div1": {
+          "type": "divider",
+          "settings": {}
+        },
+        "variants": {
+          "type": "variant_picker",
+          "settings": {
+            "swatches": true
+          }
+        },
+        "breaks": {
+          "type": "quantity_breaks",
+          "settings": {
+            "title": "Buy more, save more",
+            "tiers": ""
+          }
+        },
+        "buy": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_quantity": true,
+            "show_dynamic_checkout": true
+          }
+        },
+        "complementary": {
+          "type": "complementary",
+          "settings": {
+            "title": "Complete your order",
+            "limit": 3
+          }
+        },
+        "perks": {
+          "type": "perks",
+          "settings": {
+            "delivery_min": 0,
+            "delivery_max": 0,
+            "delivery_note": "Estimated time; you will receive your tracking number by email.",
+            "shipping_text": "The exact cost is calculated at checkout based on your address.",
+            "returns_text": "See time limits and conditions in our policy."
+          }
+        },
+        "description": {
+          "type": "description",
+          "settings": {
+            "open": true
+          }
+        },
+        "specs": {
+          "type": "specs",
+          "settings": {
+            "title": "Features & specifications"
+          }
+        },
+        "shipping": {
+          "type": "policy",
+          "settings": {
+            "policy": "shipping"
+          }
+        },
+        "returns": {
+          "type": "policy",
+          "settings": {
+            "policy": "refund"
+          }
+        },
+        "share": {
+          "type": "share",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "title",
+        "price",
+        "stock",
+        "div1",
+        "variants",
+        "breaks",
+        "buy",
+        "complementary",
+        "perks",
+        "description",
+        "specs",
+        "shipping",
+        "returns",
+        "share"
+      ],
+      "settings": {
+        "ratio": "square",
+        "cover": false
+      }
+    },
+    "related": {
+      "type": "product-recommendations",
+      "settings": {
+        "eyebrow": "You may also like",
+        "title": "Related products",
+        "limit": 8,
+        "columns": 4,
+        "pt": 40,
+        "pb": 40
+      }
+    },
+    "recent": {
+      "type": "recently-viewed",
+      "settings": {
+        "title": "Recently viewed",
+        "limit": 8,
+        "pt": 24,
+        "pb": 56
+      }
+    }
+  },
+  "order": [
+    "main",
+    "related",
+    "recent"
+  ]
+}

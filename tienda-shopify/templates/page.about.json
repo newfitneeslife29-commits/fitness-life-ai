@@ -1,0 +1,87 @@
+{
+  "sections": {
+    "story": {
+      "type": "image-with-text",
+      "settings": {
+        "eyebrow": "About us",
+        "title": "One store, hundreds of ideas",
+        "as_page_title": true,
+        "text": "<p>[Write your real story here: who is behind the store, where you work from and why you started it.]</p><p>[Explain how you choose your products and what you do to make sure every order arrives safely.]</p>",
+        "button_label": "Discover products",
+        "style": "none",
+        "reverse": false,
+        "pt": 32,
+        "pb": 56
+      }
+    },
+    "values": {
+      "type": "values",
+      "blocks": {
+        "v1": {
+          "type": "value",
+          "settings": {
+            "icon": "lock",
+            "title": "Protected payment",
+            "text": "<p>You pay through Shopify's secure checkout. We never see or store your card details.</p>"
+          }
+        },
+        "v2": {
+          "type": "value",
+          "settings": {
+            "icon": "truck",
+            "title": "Tracked orders",
+            "text": "<p>When your order ships, you get an email with a tracking number so you always know where it is.</p>"
+          }
+        },
+        "v3": {
+          "type": "value",
+          "settings": {
+            "icon": "return",
+            "title": "Clear policies",
+            "text": "<p>Shipping and return terms are published before you pay. No hidden fine print.</p>"
+          }
+        },
+        "v4": {
+          "type": "value",
+          "settings": {
+            "icon": "chat",
+            "title": "Real people",
+            "text": "<p>Questions before or after you buy? Message us through the contact page.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "settings": {
+        "eyebrow": "Shop with confidence",
+        "title": "How shopping with us works",
+        "style": "dark",
+        "pt": 72,
+        "pb": 72
+      }
+    },
+    "cta": {
+      "type": "rich-text",
+      "settings": {
+        "eyebrow": "Contact",
+        "title": "Let's talk",
+        "text": "<p>If you have any question about a product or an order, just message us.</p>",
+        "button_label": "Contact us",
+        "button_link": "/pages/contact",
+        "center": true,
+        "surface": false,
+        "pt": 64,
+        "pb": 72
+      }
+    }
+  },
+  "order": [
+    "story",
+    "values",
+    "cta"
+  ]
+}

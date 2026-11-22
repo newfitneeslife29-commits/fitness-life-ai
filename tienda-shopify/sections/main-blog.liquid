@@ -1,0 +1,28 @@
+<div class="page-width">
+  <div class="page-hero"><span class="eyebrow">Blog</span><h1>{{ blog.title }}</h1></div>
+  {%- paginate blog.articles by 12 -%}
+    <div class="grid" style="--cols-desktop: 3; --cols-mobile: 1; padding-bottom: 32px">
+      {%- for article in blog.articles -%}
+        <article class="card" data-reveal style="--i: {{ forloop.index0 }}">
+          <a class="card__media" href="{{ article.url }}" style="aspect-ratio: 16 / 10" tabindex="-1" aria-hidden="true">
+            {%- if article.image -%}{{ article.image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '400,600,900', sizes: '(min-width: 750px) 33vw, 100vw', alt: article.image.alt | escape }}{%- endif -%}
+          </a>
+          <div class="card__info">
+            <span class="card__vendor">{{ article.published_at | time_tag: format: 'date' }}</span>
+            <h2 class="card__title" style="font-size:1.15rem"><a href="{{ article.url }}">{{ article.title }}</a></h2>
+            <p class="muted" style="font-size:.92rem">{{ article.excerpt_or_content | strip_html | truncatewords: 24 }}</p>
+          </div>
+        </article>
+      {%- endfor -%}
+    </div>
+    {% render 'pagination', paginate: paginate %}
+  {%- endpaginate -%}
+  <div style="height:64px"></div>
+</div>
+
+{% schema %}
+{
+  "name": "Blog",
+  "settings": []
+}
+{% endschema %}

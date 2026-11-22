@@ -1,0 +1,49 @@
+<div class="page-width">
+  <div class="page-hero" style="padding-bottom:12px">
+    <h1>{% if search.performed %}{{ 'general.search.results_for' | t: terms: search.terms }}{% else %}{{ 'general.search.title' | t }}{% endif %}</h1>
+    <div style="max-width:640px;margin-top:20px">{% render 'search-bar', id: 'page' %}</div>
+  </div>
+
+  {%- if search.performed -%}
+    {%- paginate search.results by 24 -%}
+      {% render 'results-toolbar', results: search, id: section.id, count: search.results_count %}
+      <div class="coll-layout{% if search.filters.size > 0 %} coll-layout--sidebar{% endif %}">
+        {%- if search.filters.size > 0 -%}
+          <aside class="facets-side" data-facets-side>{% render 'facets', results: search, id: section.id, section_id: section.id %}</aside>
+        {%- endif -%}
+        <div data-results>
+          {%- if search.results_count > 0 -%}
+            <div class="grid" style="--cols-desktop: 4">
+              {%- for item in search.results -%}
+                {%- if item.object_type == 'product' -%}
+                  {% render 'product-card', product: item, index: forloop.index0 %}
+                {%- else -%}
+                  <a class="card" href="{{ item.url }}" style="text-decoration:none">
+                    <div class="card__media" style="display:grid;place-items:center">{% render 'icon', name: 'sparkle' %}</div>
+                    <div class="card__info"><span class="card__vendor">{{ item.object_type }}</span><h3 class="card__title">{{ item.title }}</h3></div>
+                  </a>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+            {% render 'pagination', paginate: paginate %}
+          {%- else -%}
+            <div class="empty-state">
+              <div class="empty-state__icon">{% render 'icon', name: 'search' %}</div>
+              <h2 class="h3">{{ 'general.search.no_results' | t: terms: search.terms }}</h2>
+              <p>{{ 'general.search.no_results_text' | t }}</p>
+              <a class="btn btn--accent" href="{{ routes.collections_url }}">{{ 'collections.all_categories' | t }}</a>
+            </div>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endpaginate -%}
+  {%- endif -%}
+</div>
+<div style="height:64px"></div>
+
+{% schema %}
+{
+  "name": "Resultados de búsqueda",
+  "settings": []
+}
+{% endschema %}

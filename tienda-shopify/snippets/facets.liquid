@@ -1,0 +1,48 @@
+{%- comment -%}
+  Filtros nativos de Shopify (Search & Discovery). Parámetros: results (collection o search), id, section_id
+{%- endcomment -%}
+<form class="facets" data-facets data-section-id="{{ section_id }}" id="Facets-{{ id }}">
+  {%- if results.terms -%}
+    <input type="hidden" name="q" value="{{ results.terms | escape }}">
+    <input type="hidden" name="options[prefix]" value="last">
+    <input type="hidden" name="type" value="product">
+  {%- endif -%}
+  {%- for filter in results.filters -%}
+    {%- case filter.type -%}
+      {%- when 'list', 'boolean' -%}
+        <details class="facet"{% if forloop.index < 4 or filter.active_values.size > 0 %} open{% endif %}>
+          <summary>{{ filter.label }}{% if filter.active_values.size > 0 %} <span class="filter-btn__count">{{ filter.active_values.size }}</span>{% endif %}{% render 'icon', name: 'chevron-down', stroke: 2.5 %}</summary>
+          <ul class="facet__list">
+            {%- for value in filter.values -%}
+              <li>
+                <label class="facet__check{% if value.count == 0 and value.active == false %} is-disabled{% endif %}">
+                  <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value.count == 0 and value.active == false %} disabled{% endif %}>
+                  <span>{{ value.label | escape }}</span>
+                  <span class="facet__n">{{ value.count }}</span>
+                </label>
+              </li>
+            {%- endfor -%}
+          </ul>
+        </details>
+      {%- when 'price_range' -%}
+        <details class="facet" open>
+          <summary>{{ filter.label }}{% render 'icon', name: 'chevron-down', stroke: 2.5 %}</summary>
+          <div class="facet__price">
+            <label>
+              <span class="field__label">{{ 'collections.filters.from' | t }}</span>
+              <input class="field__input" type="number" inputmode="decimal" name="{{ filter.min_value.param_name }}"
+                {% if filter.min_value.value %}value="{{ filter.min_value.value | money_without_currency | replace: ',', '' }}"{% endif %}
+                placeholder="0" min="0" max="{{ filter.range_max | money_without_currency | replace: ',', '' }}">
+            </label>
+            <label>
+              <span class="field__label">{{ 'collections.filters.to' | t }}</span>
+              <input class="field__input" type="number" inputmode="decimal" name="{{ filter.max_value.param_name }}"
+                {% if filter.max_value.value %}value="{{ filter.max_value.value | money_without_currency | replace: ',', '' }}"{% endif %}
+                placeholder="{{ filter.range_max | money_without_currency | replace: ',', '' }}" min="0" max="{{ filter.range_max | money_without_currency | replace: ',', '' }}">
+            </label>
+          </div>
+        </details>
+    {%- endcase -%}
+  {%- endfor -%}
+  <noscript><button class="btn btn--full" type="submit" style="margin-top:16px">{{ 'collections.filters.apply' | t }}</button></noscript>
+</form>
