@@ -60,7 +60,7 @@
               <div class="empty-state__icon">{% render 'icon', name: 'sparkle' %}</div>
               <h2 class="h3">{{ 'collections.coming_soon' | t }}</h2>
               <p>{{ 'collections.coming_soon_text' | t }}</p>
-              <a class="btn btn--accent" href="{{ routes.collections_url }}">{{ 'collections.browse_other' | t }}</a>
+              <a class="btn btn--accent" href="{{ routes.all_products_collection_url }}">{{ 'collections.browse_other' | t }}</a>
             {%- else -%}
               <div class="empty-state__icon">{% render 'icon', name: 'search' %}</div>
               <h2 class="h3">{{ 'collections.empty' | t }}</h2>

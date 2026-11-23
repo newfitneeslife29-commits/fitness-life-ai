@@ -6,12 +6,12 @@
         "s1": {
           "type": "slide",
           "settings": {
-            "kicker": "Now open",
-            "heading": "Everything you're looking for, <em>in one place.</em>",
-            "text": "<p>Tech, home, beauty, fashion and much more. Hand-picked products, secure checkout and order tracking from start to finish.</p>",
-            "button_label": "Shop now",
-            "button2_label": "Browse categories",
-            "button2_link": "/collections",
+            "kicker": "Trending now",
+            "heading": "Today's most wanted products, <em>in one place.</em>",
+            "text": "<p>Discover trending finds that make everyday life easier, with secure checkout and order tracking from start to finish.</p>",
+            "button_label": "Shop best sellers",
+            "button2_label": "New arrivals",
+            "button2_link": "shopify://collections/new-arrivals",
             "align": "left",
             "shade": 55,
             "button_link": "shopify://collections/best-sellers"
@@ -21,8 +21,8 @@
           "type": "slide",
           "settings": {
             "kicker": "Just in",
-            "heading": "New ideas that <em>make life easier.</em>",
-            "text": "<p>Discover the latest products we have added to the store.</p>",
+            "heading": "Fresh finds <em>you'll love.</em>",
+            "text": "<p>See the latest products we've added to the store.</p>",
             "button_label": "See new arrivals",
             "button_link": "shopify://collections/new-arrivals",
             "align": "left",
@@ -88,112 +88,6 @@
         "surface": false
       }
     },
-    "categories": {
-      "type": "collection-list",
-      "blocks": {
-        "c0": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Tech & Electronics",
-            "icon": "cat-tech",
-            "collection": "tech-electronics"
-          }
-        },
-        "c1": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Home & Decor",
-            "icon": "cat-home",
-            "collection": "home-decor"
-          }
-        },
-        "c2": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Beauty & Personal Care",
-            "icon": "cat-beauty",
-            "collection": "beauty-personal-care"
-          }
-        },
-        "c3": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Accessories",
-            "icon": "cat-accessories",
-            "collection": "accessories"
-          }
-        },
-        "c4": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Kitchen",
-            "icon": "cat-kitchen",
-            "collection": "kitchen"
-          }
-        },
-        "c5": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Sports & Fitness",
-            "icon": "cat-sport",
-            "collection": "sports-fitness"
-          }
-        },
-        "c6": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Pets",
-            "icon": "cat-pets",
-            "collection": "pets"
-          }
-        },
-        "c7": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Toys & Entertainment",
-            "icon": "cat-toys",
-            "collection": "toys-entertainment"
-          }
-        },
-        "c8": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Fashion",
-            "icon": "cat-fashion",
-            "collection": "fashion"
-          }
-        },
-        "c9": {
-          "type": "collection",
-          "settings": {
-            "fallback_name": "Innovative Products",
-            "icon": "cat-innovation",
-            "collection": "innovative-products"
-          }
-        }
-      },
-      "block_order": [
-        "c0",
-        "c1",
-        "c2",
-        "c3",
-        "c4",
-        "c5",
-        "c6",
-        "c7",
-        "c8",
-        "c9"
-      ],
-      "settings": {
-        "eyebrow": "Explore",
-        "title": "Popular categories",
-        "columns": 5,
-        "bento": false,
-        "surface": false,
-        "pt": 56,
-        "pb": 40
-      }
-    },
     "bestsellers": {
       "type": "featured-collection",
       "settings": {
@@ -210,13 +104,6 @@
         "collection": "best-sellers"
       }
     },
-    "marquee": {
-      "type": "marquee-text",
-      "settings": {
-        "words": "Tech, Home, Beauty, Fashion, Sports, Pets, Kitchen, Toys",
-        "speed": 45
-      }
-    },
     "offer": {
       "type": "special-offer",
       "settings": {
@@ -230,7 +117,8 @@
         "pt": 56,
         "pb": 40,
         "button_link": "shopify://collections/deals"
-      }
+      },
+      "disabled": true
     },
     "new": {
       "type": "featured-collection",
@@ -364,9 +252,7 @@
   "order": [
     "hero",
     "trust",
-    "categories",
     "bestsellers",
-    "marquee",
     "offer",
     "new",
     "weekly",
