@@ -56,10 +56,17 @@
           {% render 'pagination', paginate: paginate %}
         {%- else -%}
           <div class="empty-state">
-            <div class="empty-state__icon">{% render 'icon', name: 'search' %}</div>
-            <h2 class="h3">{{ 'collections.empty' | t }}</h2>
-            <p>{{ 'collections.empty_text' | t }}</p>
-            <a class="btn" href="{{ collection.url }}">{{ 'collections.filters.clear' | t }}</a>
+            {%- if collection.all_products_count == 0 -%}
+              <div class="empty-state__icon">{% render 'icon', name: 'sparkle' %}</div>
+              <h2 class="h3">{{ 'collections.coming_soon' | t }}</h2>
+              <p>{{ 'collections.coming_soon_text' | t }}</p>
+              <a class="btn btn--accent" href="{{ routes.collections_url }}">{{ 'collections.browse_other' | t }}</a>
+            {%- else -%}
+              <div class="empty-state__icon">{% render 'icon', name: 'search' %}</div>
+              <h2 class="h3">{{ 'collections.empty' | t }}</h2>
+              <p>{{ 'collections.empty_text' | t }}</p>
+              <a class="btn" href="{{ collection.url }}">{{ 'collections.filters.clear' | t }}</a>
+            {%- endif -%}
           </div>
         {%- endif -%}
       </div>
