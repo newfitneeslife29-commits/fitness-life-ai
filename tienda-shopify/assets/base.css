@@ -832,3 +832,4 @@ input:checked + .swatch { background: var(--swatch, var(--surface)); background-
 @media (max-width: 380px) { .wordmark { font-size: 1.2rem; } }
 .searchbar__form > .icon-search { position: absolute; left: 16px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
 @media (max-width: 749px) { .section-head { flex-wrap: wrap; align-items: flex-end; } .section-head > div:first-child { flex: 1 1 60%; min-width: 0; } }
+.footer .wordmark__mark path, .brand-canvas ~ div .wordmark__mark path, [style*="color:#fff"] .wordmark__mark path { fill: var(--ink); }

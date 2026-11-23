@@ -2,6 +2,7 @@
   assign s = section.settings
   assign product = s.product
 -%}
+{%- if product != blank or request.design_mode -%}
 <section class="section{% if s.surface %} section--surface{% endif %}" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
   <div class="page-width">
     {%- if product != blank -%}
@@ -55,6 +56,7 @@
     {%- endif -%}
   </div>
 </section>
+{%- endif -%}
 
 {% schema %}
 {

@@ -13,7 +13,8 @@
             "button2_label": "Browse categories",
             "button2_link": "/collections",
             "align": "left",
-            "shade": 55
+            "shade": 55,
+            "button_link": "shopify://collections/best-sellers"
           }
         },
         "s2": {
@@ -23,8 +24,7 @@
             "heading": "New ideas that <em>make life easier.</em>",
             "text": "<p>Discover the latest products we have added to the store.</p>",
             "button_label": "See new arrivals",
-            "button_link": "/collections/all?sort_by=created-descending",
-            "button2_label": "",
+            "button_link": "shopify://collections/new-arrivals",
             "align": "left",
             "shade": 55
           }
@@ -36,8 +36,8 @@
       ],
       "settings": {
         "inset": true,
-        "height": 82,
-        "height_mobile": 74,
+        "height": 80,
+        "height_mobile": 75,
         "autoplay": true,
         "speed": 6
       }
@@ -95,70 +95,80 @@
           "type": "collection",
           "settings": {
             "fallback_name": "Tech & Electronics",
-            "icon": "cat-tech"
+            "icon": "cat-tech",
+            "collection": "tech-electronics"
           }
         },
         "c1": {
           "type": "collection",
           "settings": {
             "fallback_name": "Home & Decor",
-            "icon": "cat-home"
+            "icon": "cat-home",
+            "collection": "home-decor"
           }
         },
         "c2": {
           "type": "collection",
           "settings": {
             "fallback_name": "Beauty & Personal Care",
-            "icon": "cat-beauty"
+            "icon": "cat-beauty",
+            "collection": "beauty-personal-care"
           }
         },
         "c3": {
           "type": "collection",
           "settings": {
             "fallback_name": "Accessories",
-            "icon": "cat-accessories"
+            "icon": "cat-accessories",
+            "collection": "accessories"
           }
         },
         "c4": {
           "type": "collection",
           "settings": {
             "fallback_name": "Kitchen",
-            "icon": "cat-kitchen"
+            "icon": "cat-kitchen",
+            "collection": "kitchen"
           }
         },
         "c5": {
           "type": "collection",
           "settings": {
             "fallback_name": "Sports & Fitness",
-            "icon": "cat-sport"
+            "icon": "cat-sport",
+            "collection": "sports-fitness"
           }
         },
         "c6": {
           "type": "collection",
           "settings": {
             "fallback_name": "Pets",
-            "icon": "cat-pets"
+            "icon": "cat-pets",
+            "collection": "pets"
           }
         },
         "c7": {
           "type": "collection",
           "settings": {
             "fallback_name": "Toys & Entertainment",
-            "icon": "cat-toys"
+            "icon": "cat-toys",
+            "collection": "toys-entertainment"
           }
         },
         "c8": {
           "type": "collection",
           "settings": {
             "fallback_name": "Fashion",
-            "icon": "cat-fashion"
+            "icon": "cat-fashion",
+            "collection": "fashion"
           }
         },
         "c9": {
           "type": "collection",
           "settings": {
             "fallback_name": "Innovative Products",
-            "icon": "cat-innovation"
+            "icon": "cat-innovation",
+            "collection": "innovative-products"
           }
         }
       },
@@ -196,7 +206,8 @@
         "show_link": true,
         "link_label": "View all",
         "pt": 40,
-        "pb": 56
+        "pb": 56,
+        "collection": "best-sellers"
       }
     },
     "marquee": {
@@ -212,14 +223,13 @@
         "eyebrow": "Special offer",
         "title": "Deals of the week",
         "text": "<p>Describe the offer exactly as you set it up in Shopify: how much it takes off, which products it applies to and when it ends.</p>",
-        "code": "",
-        "end_date": "",
         "timezone_offset": "-05:00",
         "hide_expired": true,
         "button_label": "See deals",
         "fine_print": "Promotion terms are shown at checkout.",
         "pt": 56,
-        "pb": 40
+        "pb": 40,
+        "button_link": "shopify://collections/deals"
       }
     },
     "new": {
@@ -234,7 +244,8 @@
         "show_link": true,
         "link_label": "View all",
         "pt": 56,
-        "pb": 56
+        "pb": 56,
+        "collection": "new-arrivals"
       }
     },
     "weekly": {
@@ -259,7 +270,8 @@
         "show_link": true,
         "link_label": "View all deals",
         "pt": 56,
-        "pb": 56
+        "pb": 56,
+        "collection": "deals"
       }
     },
     "values": {
@@ -324,7 +336,8 @@
         "show_link": true,
         "link_label": "View all",
         "pt": 64,
-        "pb": 40
+        "pb": 40,
+        "collection": "best-sellers"
       }
     },
     "recent": {

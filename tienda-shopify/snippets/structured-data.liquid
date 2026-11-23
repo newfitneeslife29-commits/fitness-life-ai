@@ -36,7 +36,8 @@
       "url": {{ request.origin | json }},
       "potentialAction": {
         "@type": "SearchAction",
-        "target": {{ request.origin | append: routes.search_url | append: '?q={search_term_string}' | json }},
+        {%- capture search_target -%}{{ request.origin }}{{ routes.search_url }}?q={search_term_string}{%- endcapture -%}
+        "target": {{ search_target | json }},
         "query-input": "required name=search_term_string"
       }
     }
