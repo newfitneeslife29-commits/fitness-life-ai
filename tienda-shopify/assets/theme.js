@@ -1,4 +1,4 @@
-/* VANTORA STORE — interacción del tema (sin dependencias) */
+/* KAVIRO STORE — interacción del tema (sin dependencias) */
 (() => {
   'use strict';
   const T = window.theme || {};
@@ -205,7 +205,7 @@
       }
     }
   };
-  window.VantoraCart = Cart;
+  window.KaviroCart = Cart;
 
   // Formulario de producto
   document.addEventListener('submit', async (e) => {
@@ -606,7 +606,7 @@
   try {
     const p = $('[data-recent-handle]');
     if (p) {
-      const key = 'vantora:recent';
+      const key = 'kaviro:recent';
       const h = p.dataset.recentHandle;
       const list = JSON.parse(localStorage.getItem(key) || '[]').filter((x) => x !== h);
       list.unshift(h);
@@ -615,7 +615,7 @@
   } catch (_) { /* almacenamiento bloqueado */ }
   $$('[data-recently-viewed]').forEach(async (wrap) => {
     let list = [];
-    try { list = JSON.parse(localStorage.getItem('vantora:recent') || '[]'); } catch (_) { /* */ }
+    try { list = JSON.parse(localStorage.getItem('kaviro:recent') || '[]'); } catch (_) { /* */ }
     const current = wrap.dataset.exclude;
     list = list.filter((h) => h !== current).slice(0, Number(wrap.dataset.limit || 8));
     const sec = wrap.closest('.shopify-section');

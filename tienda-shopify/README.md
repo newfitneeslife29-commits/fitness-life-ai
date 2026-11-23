@@ -1,16 +1,16 @@
-# VANTORA STORE — tema de Shopify
+# KAVIRO STORE — tema de Shopify
 
 Tema de Shopify (Online Store 2.0) hecho a medida para una tienda multimarca de dropshipping.
 **La tienda está en inglés**; el editor del tema (lo que ves tú en Shopify) está en español.
 
-Archivo para subir: **`vantora-store-theme.zip`** (en esta misma carpeta).
+Archivo para subir: **`kaviro-store-theme.zip`** (en esta misma carpeta).
 
 ---
 
 ## 1. Instalar el tema (5 minutos)
 
 1. Crea tu tienda en [shopify.com](https://www.shopify.com) (tiene prueba gratis).
-2. En el panel: **Tienda online › Temas › Agregar tema › Subir archivo .zip** y elige `vantora-store-theme.zip`.
+2. En el panel: **Tienda online › Temas › Agregar tema › Subir archivo .zip** y elige `kaviro-store-theme.zip`.
 3. Pulsa **Personalizar** para revisarlo y luego **Publicar**.
 4. **Configuración › Idiomas**: deja **English** como idioma predeterminado.
 
@@ -107,7 +107,7 @@ Ofertas con cuenta atrás (**Inicio › Oferta especial**): pon el código y la 
 - [ ] Dominio propio conectado (**Configuración › Dominios**)
 - [ ] Quita la contraseña de la tienda (**Preferencias**)
 
-> **Nombre y legalidad**: antes de invertir en el nombre "Vantora Store", comprueba que el dominio y el nombre estén libres en tu país y en EE. UU. Vender sin empresa registrada puede tener implicaciones fiscales y limitar los métodos de pago disponibles; consúltalo con un contador de tu país.
+> **Nombre y legalidad**: antes de invertir en el nombre "Kaviro Store", comprueba que el dominio y el nombre estén libres en tu país y en EE. UU. Vender sin empresa registrada puede tener implicaciones fiscales y limitar los métodos de pago disponibles; consúltalo con un contador de tu país.
 
 ---
 
@@ -127,5 +127,5 @@ Para volver a generar el .zip después de cambios:
 
 ```bash
 cd tienda-shopify
-zip -r vantora-store-theme.zip assets config layout locales sections snippets templates
+zip -r kaviro-store-theme.zip assets config layout locales sections snippets templates
 ```
