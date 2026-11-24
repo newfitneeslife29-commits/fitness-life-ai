@@ -885,3 +885,7 @@ input:checked + .swatch { background: var(--swatch, var(--surface)); background-
 .break__label { min-width: 0; flex: 1 1 140px; }
 .break__label small { overflow-wrap: anywhere; }
 .buy-trust { max-width: 100%; }
+/* iOS: evitar zoom automático al tocar campos (mínimo 16px) */
+@media (max-width: 989px) {
+  input, select, textarea, .field__input, .select__select, .cart-coupon .field__input, .qty input, .qty--sm input, .toolbar .select__select, .localization .select__select, .searchbar__input, .newsletter__input { font-size: 16px !important; }
+}
