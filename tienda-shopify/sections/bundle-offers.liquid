@@ -1,0 +1,138 @@
+{%- comment -%}
+  Ofertas por packs, con precio total, ahorro y botón que añade la cantidad exacta.
+  El descuento real lo aplica Shopify (descuento automático "Compra X, llévate Y").
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign product = s.product
+  assign end_ok = false
+  if s.end_date != blank
+    assign end_ts = s.end_date | date: '%s' | plus: 0
+    assign now_ts = 'now' | date: '%s' | plus: 0
+    if end_ts > now_ts
+      assign end_ok = true
+    endif
+  endif
+-%}
+{%- if product != blank -%}
+{%- assign variant = product.selected_or_first_available_variant -%}
+<section class="section bundles-section{% if s.dark %} section--dark{% endif %}" id="deals" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+  <div class="page-width">
+    <div class="bundles__head" data-reveal>
+      {%- if s.eyebrow != blank -%}<span class="eyebrow">{{ s.eyebrow | escape }}</span>{%- endif -%}
+      <h2 class="h1">{{ s.title }}</h2>
+      {%- if s.text != blank -%}<div class="bundles__sub">{{ s.text }}</div>{%- endif -%}
+      {%- if end_ok and s.show_countdown -%}
+        <div class="countdown bundles__countdown" data-countdown="{{ s.end_date | strip | replace: ' ', 'T' }}:00{{ s.timezone_offset | strip }}" aria-label="{{ 'sections.offer.ends_in' | t }}">
+          <div class="countdown__unit"><span class="countdown__num" data-d>00</span><span class="countdown__lbl">{{ 'sections.offer.days' | t }}</span></div>
+          <div class="countdown__unit"><span class="countdown__num" data-h>00</span><span class="countdown__lbl">{{ 'sections.offer.hours' | t }}</span></div>
+          <div class="countdown__unit"><span class="countdown__num" data-m>00</span><span class="countdown__lbl">{{ 'sections.offer.minutes' | t }}</span></div>
+          <div class="countdown__unit"><span class="countdown__num" data-s>00</span><span class="countdown__lbl">{{ 'sections.offer.seconds' | t }}</span></div>
+        </div>
+      {%- endif -%}
+    </div>
+
+    <div class="bundles" style="--n: {{ section.blocks.size | at_least: 1 }}">
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign b = block.settings
+          assign qty = b.quantity
+          assign full = variant.price | times: qty
+          assign total = full
+          if b.pack_price > 0
+            assign total = b.pack_price | times: 100 | round
+          endif
+          assign saved = full | minus: total
+          assign per = total | divided_by: qty
+        -%}
+        <article class="bundle{% if b.highlight %} bundle--hi{% endif %}" data-reveal style="--i: {{ forloop.index0 }}" {{ block.shopify_attributes }}>
+          {%- if b.badge != blank -%}<span class="bundle__badge">{{ b.badge | escape }}</span>{%- endif -%}
+          <div class="bundle__media">
+            {%- if b.image != blank -%}
+              {{ b.image | image_url: width: 600 | image_tag: loading: 'lazy', widths: '300,450,600', sizes: '(min-width: 990px) 30vw, 90vw', alt: b.title | escape }}
+            {%- elsif product.featured_media -%}
+              {{ product.featured_media | image_url: width: 600 | image_tag: loading: 'lazy', widths: '300,450,600', sizes: '(min-width: 990px) 30vw, 90vw', alt: product.title | escape }}
+            {%- endif -%}
+            <span class="bundle__count">× {{ qty }}</span>
+          </div>
+          <div class="bundle__body">
+            <h3 class="bundle__title">{{ b.title | escape }}</h3>
+            <p class="bundle__qty">{{ b.subtitle | escape }}</p>
+            <div class="bundle__price">
+              <span class="bundle__total">{{ total | money }}</span>
+              {%- if saved > 0 -%}<s class="bundle__full">{{ full | money }}</s>{%- endif -%}
+            </div>
+            {%- if saved > 0 -%}
+              <p class="bundle__save">{{ 'sections.bundles.you_save' | t }} {{ saved | money }} · {{ per | money }} {{ 'sections.bundles.per_jar' | t }}</p>
+            {%- else -%}
+              <p class="bundle__save bundle__save--muted">{{ per | money }} {{ 'sections.bundles.per_jar' | t }}</p>
+            {%- endif -%}
+            {%- if product.available -%}
+              <button class="btn btn--full{% if b.highlight %} btn--accent{% endif %} bundle__btn" type="button" data-quick-add="{{ variant.id }}" data-qty="{{ qty }}">
+                {% render 'icon', name: 'cart', stroke: 2 %}<span>{{ b.button | escape }}</span>
+              </button>
+            {%- else -%}
+              <button class="btn btn--full" type="button" disabled>{{ 'products.product.sold_out' | t }}</button>
+            {%- endif -%}
+          </div>
+        </article>
+      {%- endfor -%}
+    </div>
+
+    {%- if s.note != blank -%}<p class="bundles__note">{% render 'icon', name: 'check', stroke: 2.4 %}{{ s.note | escape }}</p>{%- endif -%}
+
+    <ol class="steps" data-reveal>
+      <li><span class="steps__n">1</span><div><strong>{{ s.step1_title | escape }}</strong><span>{{ s.step1_text | escape }}</span></div></li>
+      <li><span class="steps__n">2</span><div><strong>{{ s.step2_title | escape }}</strong><span>{{ s.step2_text | escape }}</span></div></li>
+      <li><span class="steps__n">3</span><div><strong>{{ s.step3_title | escape }}</strong><span>{{ s.step3_text | escape }}</span></div></li>
+    </ol>
+  </div>
+</section>
+{%- elsif request.design_mode -%}
+  <div class="page-width"><div class="notice">{{ 'sections.featured_product.empty_admin' | t }}</div></div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Ofertas por packs",
+  "class": "section-bundles",
+  "max_blocks": 4,
+  "settings": [
+    { "type": "paragraph", "content": "El precio de cada pack debe coincidir con el descuento automático creado en Shopify › Descuentos (cantidad mínima de artículos)." },
+    { "type": "product", "id": "product", "label": "Producto" },
+    { "type": "text", "id": "eyebrow", "label": "Etiqueta", "default": "Black Friday" },
+    { "type": "inline_richtext", "id": "title", "label": "Título", "default": "Choose your deal" },
+    { "type": "richtext", "id": "text", "label": "Texto" },
+    { "type": "checkbox", "id": "show_countdown", "label": "Mostrar cuenta atrás", "default": true },
+    { "type": "text", "id": "end_date", "label": "Fin de la oferta (AAAA-MM-DD HH:MM)", "info": "Debe coincidir con la fecha de fin del descuento en Shopify." },
+    { "type": "text", "id": "timezone_offset", "label": "Zona horaria", "default": "-05:00" },
+    { "type": "text", "id": "note", "label": "Nota bajo las tarjetas" },
+    { "type": "text", "id": "step1_title", "label": "Paso 1 · título", "default": "Pick your pack" },
+    { "type": "text", "id": "step1_text", "label": "Paso 1 · texto", "default": "Tap the button on the deal you want." },
+    { "type": "text", "id": "step2_title", "label": "Paso 2 · título", "default": "Pack price applied automatically" },
+    { "type": "text", "id": "step2_text", "label": "Paso 2 · texto", "default": "You'll see the discount in your cart. No code needed." },
+    { "type": "text", "id": "step3_title", "label": "Paso 3 · título", "default": "Free shipping with tracking" },
+    { "type": "text", "id": "step3_text", "label": "Paso 3 · texto", "default": "We email your tracking number as soon as it ships." },
+    { "type": "checkbox", "id": "dark", "label": "Fondo oscuro", "default": false },
+    { "type": "range", "id": "pt", "label": "Espacio superior", "min": 0, "max": 120, "step": 8, "unit": "px", "default": 56 },
+    { "type": "range", "id": "pb", "label": "Espacio inferior", "min": 0, "max": 120, "step": 8, "unit": "px", "default": 56 }
+  ],
+  "blocks": [
+    {
+      "type": "bundle",
+      "name": "Pack",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Título", "default": "2 Jars" },
+        { "type": "text", "id": "subtitle", "label": "Subtítulo", "default": "Most popular choice" },
+        { "type": "range", "id": "quantity", "label": "Unidades en el carrito", "min": 1, "max": 10, "step": 1, "default": 2 },
+        { "type": "number", "id": "pack_price", "label": "Precio del pack (USD, 0 = precio normal × unidades)", "info": "Debe coincidir con el descuento automático creado en Shopify." },
+        { "type": "text", "id": "badge", "label": "Etiqueta (opcional)", "default": "Most popular" },
+        { "type": "checkbox", "id": "highlight", "label": "Destacar", "default": false },
+        { "type": "text", "id": "button", "label": "Botón", "default": "Add 2 jars to cart" },
+        { "type": "image_picker", "id": "image", "label": "Imagen (opcional)" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Ofertas por packs" }]
+}
+{% endschema %}

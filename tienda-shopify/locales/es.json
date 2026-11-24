@@ -88,6 +88,12 @@
       "placeholder": "Your email address",
       "success": "Thanks for subscribing!",
       "legal": "By subscribing you agree to receive marketing emails. Unsubscribe at any time."
+    },
+    "bundles": {
+      "you_save": "You save",
+      "per_jar": "per jar",
+      "best_value": "Best value",
+      "popular": "Most popular"
     }
   },
   "products": {
@@ -132,8 +138,8 @@
       "breaks": {
         "one": "1 item",
         "n": {
-          "one": "{{ count }} item",
-          "other": "{{ count }} items"
+          "one": "{{ count }} Jar",
+          "other": "{{ count }} Jars"
         },
         "unit": "item"
       },
@@ -151,6 +157,11 @@
       "specs": {
         "brand": "Brand",
         "weight": "Weight"
+      },
+      "trust": {
+        "secure": "Secure checkout",
+        "shipping": "Free shipping",
+        "guarantee": "30-day damaged item guarantee"
       }
     }
   },

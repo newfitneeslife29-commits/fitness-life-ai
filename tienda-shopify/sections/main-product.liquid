@@ -186,23 +186,34 @@
             {%- endcomment -%}
             {%- assign tiers_src = product.metafields.custom.quantity_breaks.value | default: b.tiers -%}
             {%- if tiers_src != blank -%}
+              {%- assign tiers = tiers_src | split: ',' -%}
               <div class="breaks" data-breaks {{ block.shopify_attributes }}>
                 <div class="breaks__title">{% render 'icon', name: 'tag' %}{{ b.title | escape }}</div>
                 <div class="break" data-min="1">
                   <span class="break__radio"></span>
-                  <span class="break__label">{{ 'products.product.breaks.one' | t }}<small>{{ variant.price | money }} / {{ 'products.product.breaks.unit' | t }}</small></span>
+                  <span class="break__label"><strong>{{ 'products.product.breaks.n' | t: count: 1 }}</strong><small>{{ variant.price | money }} {{ 'sections.bundles.per_jar' | t }}</small></span>
+                  <span class="break__price">{{ variant.price | money }}</span>
                 </div>
-                {%- assign tiers = tiers_src | split: ',' -%}
                 {%- for t in tiers -%}
-                  {%- assign parts = t | strip | split: ':' -%}
-                  {%- assign q = parts[0] | plus: 0 -%}
-                  {%- assign off = parts[1] | plus: 0 -%}
-                  {%- if q > 1 and off > 0 -%}
-                    {%- assign unit = 100 | minus: off | times: variant.price | divided_by: 100 -%}
+                  {%- liquid
+                    assign parts = t | strip | split: ':'
+                    assign q = parts[0] | plus: 0
+                    assign v = parts[1] | plus: 0
+                    assign full = variant.price | times: q
+                    if v > 100
+                      assign total = v
+                    else
+                      assign total = 100 | minus: v | times: full | divided_by: 100
+                    endif
+                    assign saved = full | minus: total
+                    assign per = total | divided_by: q
+                  -%}
+                  {%- if q > 1 and saved > 0 -%}
                     <div class="break" data-min="{{ q }}">
                       <span class="break__radio"></span>
-                      <span class="break__label">{{ 'products.product.breaks.n' | t: count: q }}<small>{{ unit | money }} / {{ 'products.product.breaks.unit' | t }}</small></span>
-                      <span class="break__tag">-{{ off }}%</span>
+                      <span class="break__label"><strong>{{ 'products.product.breaks.n' | t: count: q }}</strong><small>{{ per | money }} {{ 'sections.bundles.per_jar' | t }} · {{ 'sections.bundles.you_save' | t }} {{ saved | money }}</small></span>
+                      {%- if forloop.last and tiers.size > 1 -%}<span class="break__tag">{{ 'sections.bundles.best_value' | t }}</span>{%- elsif forloop.first -%}<span class="break__tag">{{ 'sections.bundles.popular' | t }}</span>{%- endif -%}
+                      <span class="break__price">{{ total | money }}<s>{{ full | money }}</s></span>
                     </div>
                   {%- endif -%}
                 {%- endfor -%}
@@ -231,6 +242,16 @@
                 </div>
                 {%- if b.show_dynamic_checkout -%}
                   {{ form | payment_button }}
+                {%- endif -%}
+                <div class="buy-trust">
+                  <span>{% render 'icon', name: 'lock', stroke: 2 %}{{ 'products.product.trust.secure' | t }}</span>
+                  <span>{% render 'icon', name: 'truck', stroke: 2 %}{{ 'products.product.trust.shipping' | t }}</span>
+                  <span>{% render 'icon', name: 'return', stroke: 2 %}{{ 'products.product.trust.guarantee' | t }}</span>
+                </div>
+                {%- if shop.enabled_payment_types.size > 0 -%}
+                  <ul class="payments buy-trust" aria-label="{{ 'general.payment_methods' | t }}">
+                    {%- for type in shop.enabled_payment_types -%}<li>{{ type | payment_type_svg_tag }}</li>{%- endfor -%}
+                  </ul>
                 {%- endif -%}
                 <p class="buy__error" role="alert"></p>
               {%- endform -%}

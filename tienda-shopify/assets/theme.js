@@ -231,7 +231,7 @@
     const b = e.target.closest('[data-quick-add]');
     if (!b) return;
     e.preventDefault();
-    const ok = await Cart.add([{ id: Number(b.dataset.quickAdd), quantity: 1 }], b);
+    const ok = await Cart.add([{ id: Number(b.dataset.quickAdd), quantity: Number(b.dataset.qty || 1) }], b);
     if (ok) { b.classList.add('is-added'); setTimeout(() => b.classList.remove('is-added'), 1600); }
   });
 
