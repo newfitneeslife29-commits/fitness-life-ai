@@ -14,7 +14,7 @@
   endif
 -%}
 {%- unless expired and s.hide_expired and request.design_mode == false -%}
-<section class="section" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
+<section class="section" id="offer" style="--section-pt: {{ s.pt }}px; --section-pb: {{ s.pb }}px">
   <div class="page-width">
     <div class="promo" data-offer data-hide-expired="{{ s.hide_expired }}" data-reveal>
       <div class="promo__content">

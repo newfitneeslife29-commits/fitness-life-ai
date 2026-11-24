@@ -833,3 +833,5 @@ input:checked + .swatch { background: var(--swatch, var(--surface)); background-
 .searchbar__form > .icon-search { position: absolute; left: 16px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
 @media (max-width: 749px) { .section-head { flex-wrap: wrap; align-items: flex-end; } .section-head > div:first-child { flex: 1 1 60%; min-width: 0; } }
 .footer .wordmark__mark path, .brand-canvas ~ div .wordmark__mark path, [style*="color:#fff"] .wordmark__mark path { fill: var(--ink); }
+.breaks__title svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+.section .promo .countdown__unit { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); color: #fff; }
