@@ -64,12 +64,27 @@ def text_filter(t, font, size, y, a, b, style):
     raise ValueError(style)
 
 
-def main(out="kaviro_ad.mp4"):
+def probe(f):
+    return float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","csv=p=0",f]).decode().strip())
+
+
+def main(out="kaviro_ad.mp4", voice=None):
+    if voice:
+        vlen = probe(voice) + 0.9  # 0.4s de entrada + 0.5s de respiro final
+        pre = sum(d for _, d, _ in SCENES[:-1]) - XF * (len(SCENES) - 1)
+        last = max(5.0, round(vlen - pre, 2))
+        f, _, t = SCENES[-1]
+        t = [(a, b_, c, d, e, (last if g == 5.0 else g), h) for (a, b_, c, d, e, g, h) in t]
+        SCENES[-1] = (f, last, t)
     parts = []
     for i, (f, dur, texts) in enumerate(SCENES):
         src = os.path.join(D, f)
         seg = os.path.join(D, f"seg{i}.mp4")
-        vf = [
+        srclen = probe(src)
+        vf = []
+        if dur > srclen - 0.05:
+            vf.append(f"setpts=PTS*{(dur + 0.1) / srclen:.4f}")
+        vf += [
             "scale=1080:1920:force_original_aspect_ratio=increase",
             "crop=1080:1920",
             "fps=30",
@@ -101,7 +116,14 @@ def main(out="kaviro_ad.mp4"):
     music = os.path.join(D, "music.mp3")
     cmd = ["ffmpeg", "-y", "-loglevel", "error"] + inputs
     total = sum(d for _, d in parts) - XF * (len(parts) - 1)
-    if os.path.exists(music):
+    if voice:
+        cmd += ["-stream_loop", "-1", "-i", music, "-i", voice]
+        n = len(parts)
+        fc_str += (f";[{n}:a]atrim=0:{total:.2f},asetpts=PTS-STARTPTS,volume=0.22,afade=t=in:d=0.5,afade=t=out:st={total-1.2:.2f}:d=1.2[m]"
+                   f";[{n+1}:a]adelay=400|400,volume=1.6,highpass=f=80,acompressor=threshold=-18dB:ratio=3:attack=5:release=120[vo]"
+                   f";[m][vo]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]")
+        cmd += ["-filter_complex", fc_str, "-map", prev, "-map", "[a]", "-c:a", "aac", "-b:a", "192k"]
+    elif os.path.exists(music):
         cmd += ["-i", music]
         fc_str += f";[{len(parts)}:a]atrim=0:{total:.2f},afade=t=in:d=0.5,afade=t=out:st={total-1.2:.2f}:d=1.2,volume=0.8[a]"
         cmd += ["-filter_complex", fc_str, "-map", prev, "-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
