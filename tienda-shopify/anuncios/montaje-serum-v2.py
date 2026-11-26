@@ -30,10 +30,10 @@ SCENES = [
     ]),
     ("c4.mp4", 5.0, [
         ("FREE SHIPPING ON EVERY ORDER", XB, 38, 195, 0.1, 5.0, "pill"),
-        ("1 bottle  $19.99", BOLD, 54, 268, 0.3, 5.0, "card"),
-        ("2 bottles  $34.99", BOLD, 54, 350, 0.5, 5.0, "card"),
-        ("3 bottles  $46.99", BOLD, 64, 440, 0.7, 5.0, "hl"),
-        ("Just $15.66 per bottle  ·  kavirostore.store", XB, 36, 545, 1.0, 5.0, "pill_accent"),
+        ("1 bottle  $19.73", BOLD, 54, 268, 0.3, 5.0, "card"),
+        ("2 bottles  $34.61", BOLD, 54, 350, 0.5, 5.0, "card"),
+        ("3 bottles  $46.83", BOLD, 64, 440, 0.7, 5.0, "hl"),
+        ("Just $15.61 per bottle  ·  kavirostore.store", XB, 36, 545, 1.0, 5.0, "pill_accent"),
     ]),
 ]
 XF = 0.35  # duración del fundido entre escenas
