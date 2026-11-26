@@ -12,21 +12,21 @@ if not os.path.exists(MED):
 # (archivo, segundos a usar, [(texto, fuente, tamaño, y, inicio, fin, estilo)])
 SCENES = [
     ("c0.mp4", 4.6, [
-        ("HOLIDAY GIFT IDEA", XB, 40, 250, 0.2, 4.6, "pill"),
-        ("The gift every new mom", BOLD, 72, 340, 0.3, 4.6, "big"),
-        ("actually uses", BOLD, 72, 425, 0.5, 4.6, "big"),
+        ("HOLIDAY GIFT IDEA", XB, 40, 1270, 0.2, 4.6, "pill"),
+        ("The gift every new mom", BOLD, 72, 1360, 0.3, 4.6, "big"),
+        ("actually uses", BOLD, 72, 1445, 0.5, 4.6, "big"),
     ]),
     ("c1.mp4", 4.6, [
-        ("Hands-free &", BOLD, 84, 250, 0.2, 4.6, "big"),
-        ("stroller-ready", BOLD, 84, 345, 0.4, 4.6, "big"),
+        ("Hands-free &", BOLD, 84, 1300, 0.2, 4.6, "big"),
+        ("stroller-ready", BOLD, 84, 1395, 0.4, 4.6, "big"),
     ]),
     ("c2.mp4", 4.6, [
         ("Changing pad included", BOLD, 70, 250, 0.2, 4.6, "big"),
         ("Insulated bottle pockets  ·  Room for everything", MED, 36, 345, 0.6, 4.6, "pill"),
     ]),
     ("c3.mp4", 4.6, [
-        ("Made for moms", BOLD, 84, 250, 0.2, 4.6, "big"),
-        ("and dads", BOLD, 84, 345, 0.4, 4.6, "big"),
+        ("Made for moms", BOLD, 84, 1500, 0.2, 4.6, "big"),
+        ("and dads", BOLD, 84, 1595, 0.4, 4.6, "big"),
     ]),
     ("c4.mp4", 5.0, [
         ("ORDER BY DEC 10 FOR CHRISTMAS", XB, 38, 195, 0.1, 5.0, "pill"),
