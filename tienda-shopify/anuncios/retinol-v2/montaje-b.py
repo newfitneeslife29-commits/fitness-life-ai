@@ -5,9 +5,9 @@ sys.path.insert(0, __import__('os').path.dirname(__file__))
 import base_montaje as m
 B, XB, MED = m.BOLD, m.XB, m.MED
 m.SCENES = [
-    ("c5.mp4", 5.5, [
-        ("My new favorite", B, 80, 1400, 0.2, 5.5, "big"),
-        ("face cream just arrived", B, 74, 1495, 0.5, 5.5, "big"),
+    ("c5.mp4", 3.2, [
+        ("My new favorite", B, 80, 1400, 0.15, 3.2, "big"),
+        ("face cream just arrived", B, 74, 1495, 0.35, 3.2, "big"),
     ]),
     ("c1.mp4", 5.5, [
         ("3 in 1 jar:", B, 80, 220, 0.2, 5.5, "big"),
